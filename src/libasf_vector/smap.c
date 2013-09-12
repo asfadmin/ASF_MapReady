@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include "dateUtil.h"
 #include "hdf5.h"
+#include "smap.h"
 
 void shape_smap_init(char *inFile)
 {
@@ -20,8 +21,14 @@ void shape_smap_init(char *inFile)
     asfPrintError("Could not create database file '%s'\n", dbaseFile);
 
   // Add fields to database
-  if (DBFAddField(dbase, "POLYGON", FTString, 5, 0) == -1)
-    asfPrintError("Could not add POLYGON field to database file\n");
+  if (DBFAddField(dbase, "GRANULE", FTString, 255, 0) == -1)
+    asfPrintError("Could not add GRANULE field to database file\n");
+  if (DBFAddField(dbase, "START_TIME", FTString, 30, 0) == -1)
+    asfPrintError("Could not add START_TIME field to database file\n");
+  if (DBFAddField(dbase, "STOP_TIME", FTString, 30, 0) == -1)
+    asfPrintError("Could not add STOP_TIME field to database file\n");
+  if (DBFAddField(dbase, "ORBIT_DIR", FTString, 15, 0) == -1)
+    asfPrintError("Could not add ORBIT_DIR field to database file\n");
 
   // Close the database for initialization
   DBFClose(dbase);
@@ -65,7 +72,7 @@ static void check_smap_file(char *inDataName,
 }
 
 static void read_smap_outline(char *inDataName, int *vertex_count, 
-			      float *lat, float *lon)
+			      double *lat, double *lon)
 {
   hsize_t dims[2], count[2], offset[2], pixels[1];
   hid_t file, group, dataset, datatype, dataspace, memspace;
@@ -87,7 +94,7 @@ static void read_smap_outline(char *inDataName, int *vertex_count,
   count[0] = nl;
   count[1] = ns;
   pixels[0] = nl*ns;
-  int ii, kk, index, counts=0;
+  int ii, kk, counts=0;
   float *values = (float *) MALLOC(sizeof(float)*ns*nl);
 
   // Read latitude
@@ -99,7 +106,7 @@ static void read_smap_outline(char *inDataName, int *vertex_count,
   kk = 0;
   for (ii=0; ii<ns; ii++) {
     if (meta_is_valid_double(values[kk*ns+ii])) {
-      lat[counts] = values[kk*ns+ii];
+      lat[counts] = (double) values[kk*ns+ii];
       counts++;
     }
   }
@@ -108,14 +115,14 @@ static void read_smap_outline(char *inDataName, int *vertex_count,
     ii = ns - 1;
     while (!meta_is_valid_double(values[kk*ns+ii]))
       ii--;
-    lat[counts] = values[kk*ns+ii];
+    lat[counts] = (double) values[kk*ns+ii];
     counts++;
   }
   // Last line
   kk = nl - 1;
   for (ii=ns-1; ii>0; ii--) {
     if (meta_is_valid_double(values[kk*ns+ii])) {
-      lat[counts] = values[kk*ns+ii];
+      lat[counts] = (double) values[kk*ns+ii];
       counts++;
     }
   }
@@ -124,7 +131,7 @@ static void read_smap_outline(char *inDataName, int *vertex_count,
     ii = 0;
     while (!meta_is_valid_double(values[kk*ns+ii]))
       ii++;
-    lat[counts] = values[kk*ns+ii];
+    lat[counts] = (double) values[kk*ns+ii];
     counts++;
   }
 
@@ -145,7 +152,7 @@ static void read_smap_outline(char *inDataName, int *vertex_count,
   kk = 0;
   for (ii=0; ii<ns; ii++) {
     if (meta_is_valid_double(values[kk*ns+ii])) {
-      lon[counts] = values[kk*ns+ii];
+      lon[counts] = (double) values[kk*ns+ii];
       counts++;
     }
   }
@@ -154,14 +161,14 @@ static void read_smap_outline(char *inDataName, int *vertex_count,
     ii = ns - 1;
     while (!meta_is_valid_double(values[kk*ns+ii]))
       ii--;
-    lon[counts] = values[kk*ns+ii];
+    lon[counts] = (double) values[kk*ns+ii];
     counts++;
   }
   // Last line
   kk = nl - 1;
   for (ii=ns-1; ii>0; ii--) {
     if (meta_is_valid_double(values[kk*ns+ii])) {
-      lon[counts] = values[kk*ns+ii];
+      lon[counts] = (double) values[kk*ns+ii];
       counts++;
     }
   }
@@ -170,7 +177,7 @@ static void read_smap_outline(char *inDataName, int *vertex_count,
     ii = 0;
     while (!meta_is_valid_double(values[kk*ns+ii]))
       ii++;
-    lon[counts] = values[kk*ns+ii];
+    lon[counts] = (double) values[kk*ns+ii];
     counts++;
   }
 
@@ -192,7 +199,7 @@ int smap2shape(char *inFile, char *outFile)
 {
   DBFHandle dbase;
   SHPHandle shape;
-  float *lat, *lon;
+  double *lat, *lon;
   int line_count, sample_count, vertex_count;
 
   // Initalize the database file
@@ -201,66 +208,32 @@ int smap2shape(char *inFile, char *outFile)
 
   // Read lat/lon for boundary of SMAP data set
   check_smap_file(inFile, &line_count, &sample_count);
-  lat = (float *) MALLOC(sizeof(float)*(line_count+sample_count)*2);
-  lon = (float *) MALLOC(sizeof(float)*(line_count+sample_count)*2);
-  read_smap_outline(inFile, &vertex_count, lat, lon);
+  lat = (double *) MALLOC(sizeof(double)*(line_count+sample_count)*2+1);
+  lon = (double *) MALLOC(sizeof(double)*(line_count+sample_count)*2+1);
+  read_smap_outline(inFile, &vertex_count, lat, lon);  
+  lat[vertex_count] = lat[0];
+  lon[vertex_count] = lon[0];
 
-  // Create temporary processing directory
-  char *tmpDir = (char *) MALLOC(sizeof(char)*(strlen(outFile)+25));
-  sprintf(tmpDir, "%s-", outFile);
-  strcat(tmpDir, time_stamp_dir());
-  create_clean_dir(tmpDir);
-  char *tmpFile = (char *) MALLOC(sizeof(char)*(strlen(tmpDir)+25));
+	// Read metadata
+  smap_meta *smap = read_smap_meta(inFile);	
 
-  // Check for vertices crossing the date lines
-  int ii, crosses_dateline = FALSE;
-  float diff;
-  for (ii=1; ii<vertex_count; ii++) {
-    diff = fabs(lon[ii-1] - lon[ii]);
-    if (diff > 1.0)
-      crosses_dateline = TRUE;
-  }
-  if (crosses_dateline) {
-    sprintf(tmpFile, "%s%cboundary1.csv", tmpDir, DIR_SEPARATOR);
-    FILE *fp = FOPEN(tmpFile, "w");
-    fprintf(fp, "# Format: POLYGON\n");
-    fprintf(fp, "# ID,latitude,longitude\n");
-    for (ii=0; ii<vertex_count; ii++)
-      if (lon[ii] < 0.0)
-	fprintf(fp, "%5d,%.4f,%.4f\n", ii, lat[ii], lon[ii]);
-    FCLOSE(fp);
-    sprintf(tmpFile, "%s%cboundary2.csv", tmpDir, DIR_SEPARATOR);
-    fp = FOPEN(tmpFile, "w");
-    fprintf(fp, "# Format: POLYGON\n");
-    fprintf(fp, "# ID,latitude,longitude\n");
-    for (ii=0; ii<vertex_count; ii++)
-      if (lon[ii] >= 0.0)
-	fprintf(fp, "%5d,%.4f,%.4f\n", ii, lat[ii], lon[ii]);
-    FCLOSE(fp);
-    sprintf(tmpFile, "%s%cboundary.lst", tmpDir, DIR_SEPARATOR);
-    fp = FOPEN(tmpFile, "w");
-    fprintf(fp, "%s%cboundary1.csv\n", tmpDir, DIR_SEPARATOR);
-    fprintf(fp, "%s%cboundary2.csv\n", tmpDir, DIR_SEPARATOR);
-    FCLOSE(fp);
-    polygon2shape(tmpFile, outFile, 1);
-  }
-  else {
-    sprintf(tmpFile, "%s%cboundary.csv", tmpDir, DIR_SEPARATOR);
-    FILE *fp = FOPEN(tmpFile, "w");
-    fprintf(fp, "# Format: POLYGON\n");
-    fprintf(fp, "# ID,latitude,longitude\n");
-    for (ii=0; ii<vertex_count; ii++)
-      fprintf(fp, "%5d,%.4f,%.4f\n", ii, lat[ii], lon[ii]);
-    FCLOSE(fp);
-    polygon2shape(tmpFile, outFile, 0);
-  }
+  // Write attributes
+  DBFWriteStringAttribute(dbase, 0, 0, smap->file_name);
+  DBFWriteStringAttribute(dbase, 0, 1, smap->orbit_start_date_time);
+  DBFWriteStringAttribute(dbase, 0, 2, smap->orbit_stop_date_time);
+  DBFWriteStringAttribute(dbase, 0, 3, smap->orbit_direction);
+
+  // Write shape object
+  SHPObject *shapeObject=NULL;
+  shapeObject =
+    SHPCreateSimpleObject(SHPT_POLYGON, vertex_count+1, lon, lat, NULL);
+  SHPWriteObject(shape, -1, shapeObject);
+  SHPDestroyObject(shapeObject);  
   
   // Clean up
   FREE(lat);
   FREE(lon);
-  remove_dir(tmpDir);
-  FREE(tmpDir);
-  FREE(tmpFile);
+  FREE(smap);
   close_shape(dbase, shape);
   write_esri_proj_file(outFile);
 
