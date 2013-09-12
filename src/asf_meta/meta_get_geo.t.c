@@ -56,19 +56,20 @@ static void test_mgll(meta_parameters *meta, double line, double samp,
   //CU_ASSERT(within_tol(dop,dop1,.0001));
 
   double sr = slant;
-  double incid = PI-meta_incid(meta,line,samp);
+  double incid = meta_incid(meta,line,samp);
 
   double ht = meta_get_sat_height(meta,line,samp);
   double er = meta_get_earth_radius(meta,line,samp);
 
   double look = meta_look(meta,line,samp);
 
-  CU_ASSERT(within_tol(2.*er*sr*cos(incid),sr*sr+er*er-ht*ht,.01));
+  CU_ASSERT(ht>er);
+  CU_ASSERT(er+sr>ht);
+  CU_ASSERT(within_tol(2.*er*sr*cos(PI-incid),sr*sr+er*er-ht*ht,.01));
   CU_ASSERT(within_tol(2.*sr*ht*cos(look),sr*sr+ht*ht-er*er,.01));
 
-  // Why doesn't this work??
-  //slant1 = slant_from_incid(incid,er,ht);
-  //CU_ASSERT(within_tol(slant1,sr,.0001));
+  slant1 = slant_from_incid(incid,er,ht);
+  CU_ASSERT(within_tol(slant1,sr,.001));
 
   double look1 = look_from_incid(incid,er,ht);
   CU_ASSERT(within_tol(look1,look,.001));
