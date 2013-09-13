@@ -1,0 +1,45 @@
+import os.path
+
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#include",
+        "#src/asf",
+        "#src/asf_meta",
+        "#src/libasf_proj",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+
+localenv.AppendUnique(LIBS = [
+        "asf",
+        "asf_meta",
+        "asf_proj",
+        ])
+
+head_build_dir, tail_build_dir = os.path.split(Dir(".").path)
+
+localenv.AppendUnique(LIBPATH = [
+        "#" + os.path.join(head_build_dir, "asf"),
+        "#" + os.path.join(head_build_dir, "asf_meta"),
+        "#" + os.path.join(head_build_dir, "libasf_proj"),
+        ])
+
+bins = localenv.Program("airsarin", [
+        "airsarin.c",
+        "airsar2ddr.c",
+        "airsar_io.c",
+        ])
+
+globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+
+mans = localenv.File(["airsarin.1"])
+
+globalenv.Install(globalenv["inst_dirs"]["mans"], mans)
+
+# run the unit test, and set its dependencies
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [bins, mans])
