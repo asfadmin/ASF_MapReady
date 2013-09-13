@@ -1,0 +1,49 @@
+import os.path
+
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#include",
+        "#src/asf",
+        "#src/asf_meta",
+        "#src/libasf_proj",
+        "#src/libasf_raster",
+        "#src/libasf_sar",
+        "#src/libasf_terrcorr",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs netcdf")
+localenv.ParseConfig("pkg-config --cflags --libs libpng")
+localenv.ParseConfig("pkg-config --cflags --libs gdal")
+
+localenv.AppendUnique(LIBS = [
+        "asf",
+        "asf_meta",
+        "asf_proj",
+        "asf_raster",
+        "asf_fft",
+        "asf_sar",
+        ])
+
+head_build_dir, tail_build_dir = os.path.split(Dir(".").path)
+
+localenv.AppendUnique(LIBPATH = [
+        "#" + os.path.join(head_build_dir, "asf"),
+        "#" + os.path.join(head_build_dir, "asf_meta"),
+        "#" + os.path.join(head_build_dir, "libasf_proj"),
+        "#" + os.path.join(head_build_dir, "libasf_raster"),
+        "#" + os.path.join(head_build_dir, "asf_fft"),
+        "#" + os.path.join(head_build_dir, "libasf_sar"),
+        ])
+
+bins = localenv.Program("asf_calibrate", Glob("*.c"))
+
+globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+
+# run the unit test, and set its dependencies
+test_result = localenv.UnitTest("test.semaphore", None)
+localenv.Depends(test_result, [bins])
