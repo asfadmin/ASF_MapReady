@@ -31,6 +31,9 @@ void import_seasat_h5(const char *inBaseName, const char *outBaseName)
   int nl = meta->general->line_count;
   int ns = meta->general->sample_count;
 
+  meta->sar->original_line_count = nl;
+  meta->sar->original_sample_count = ns;
+
   char *h5_filename = appendExt(inBaseName, ".h5");
   char *img_filename = appendExt(outBaseName, ".img");
 
