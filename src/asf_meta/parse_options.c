@@ -81,7 +81,7 @@ static int parse_val(char * inbuf, char * key, double * val)
   while (isspace((int)(*p)))
     *p-- = '\0';
 
-  if(strcasecmp(buf, key) == 0)
+  if(strcmp_case(buf, key) == 0)
   {
     p = eq + 1;
     while (isspace((int)(*p)))
@@ -780,20 +780,20 @@ static datum_type_t parse_datum_option(int *argc, char **argv[])
 
   if (extract_string_options(argc, argv, datum, "--datum", "-datum", NULL))
   {
-    if (g_ascii_strcasecmp(datum, "WGS84") == 0)
+    if (strcmp_case(datum, "WGS84") == 0)
     {
       the_datum = WGS84_DATUM;
     }
-    else if (g_ascii_strcasecmp(datum, "NAD27") == 0 ||
-      g_ascii_strcasecmp(datum, "clrk66") == 0)
+    else if (strcmp_case(datum, "NAD27") == 0 ||
+      strcmp_case(datum, "clrk66") == 0)
     {
       the_datum = NAD27_DATUM;
     }
-    else if (g_ascii_strcasecmp(datum, "NAD83") == 0)
+    else if (strcmp_case(datum, "NAD83") == 0)
     {
       the_datum = NAD83_DATUM;
     }
-    else if (g_ascii_strcasecmp(datum, "HUGHES") == 0)
+    else if (strcmp_case(datum, "HUGHES") == 0)
     {
       the_datum = HUGHES_DATUM;
     }
@@ -818,15 +818,15 @@ static resample_method_t parse_resample_method_option(int *argc, char **argv[])
   if (extract_string_options(argc, argv, resample_method, "--resample-method",
     "-resample-method", NULL))
   {
-    if (g_ascii_strcasecmp(resample_method, "nearest_neighbor") == 0)
+    if (strcmp_case(resample_method, "nearest_neighbor") == 0)
     {
       ret = RESAMPLE_NEAREST_NEIGHBOR;
     }
-    else if (g_ascii_strcasecmp(resample_method, "bilinear") == 0)
+    else if (strcmp_case(resample_method, "bilinear") == 0)
     {
       ret = RESAMPLE_BILINEAR;
     }
-    else if (g_ascii_strcasecmp(resample_method, "bicubic") == 0)
+    else if (strcmp_case(resample_method, "bicubic") == 0)
     {
       ret = RESAMPLE_BICUBIC;
     }

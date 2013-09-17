@@ -1,6 +1,8 @@
 #include "CUnit/Basic.h"
 #include "asf_meta.h"
 
+int is_valid_ll2s_transform(meta_parameters *meta);
+
 static int within_tol(double a, double b)
 {
   static const double tol = .00001;
