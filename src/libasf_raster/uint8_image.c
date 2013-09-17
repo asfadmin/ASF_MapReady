@@ -25,6 +25,7 @@
 #include "asf.h"
 #include "asf_tiff.h"
 #include "asf_jpeg.h"
+#include "asf_raster.h"
 
 #ifndef linux
 #ifndef darwin

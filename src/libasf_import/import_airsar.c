@@ -929,6 +929,7 @@ void import_airsar(const char *inBaseName, radiometry_t radiometry,
   FREE(general);
 }
 
+/*
 // The purpose of this code is to refine the values of the along
 // and cross track offsets, so that the meta_get_latLon() value
 // returned at the corners of the image matches what the correct
@@ -999,7 +1000,6 @@ getObjective(const gsl_vector *x, void *params, gsl_vector *f)
 
   return GSL_SUCCESS;
 }
-/*
 static void coarse_search(double c0_extent_min, double c0_extent_max,
                           double s0_extent_min, double s0_extent_max,
                           double *c0_min, double *s0_min,
@@ -1218,9 +1218,7 @@ void read_meta_airsar(char *inBaseName, char *outBaseName)
   airsar_general *general = read_airsar_general(inBaseName);
   char *inFile = (char *) MALLOC(sizeof(char)*255);
   char *outFile = (char *) MALLOC(sizeof(char)*255);
-  airsar_header *header;
   meta_parameters *meta;
-  int line_offset;
   
   if (general->c_cross_data) {
     sprintf(inFile, "%s_c.demi2", inBaseName);

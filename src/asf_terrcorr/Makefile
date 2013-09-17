@@ -28,7 +28,7 @@ LIBS  = \
 	$(ZLIB_LIBS) \
 	-lm
 
-CFLAGS += \
+CFLAGS += -Werror \
 	$(TIFF_CFLAGS) \
 	$(GSL_CFLAGS) \
 	$(PROJ_CFLAGS) \

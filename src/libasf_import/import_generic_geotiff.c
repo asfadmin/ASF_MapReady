@@ -251,7 +251,6 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   short linear_units=-1;
   short angular_units=-1;
   double scale_factor;
-  char no_data[25];
   TIFF *input_tiff;
   GTIF *input_gtif;
   meta_parameters *meta_out; // Return value
