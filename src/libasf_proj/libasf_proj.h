@@ -584,17 +584,17 @@ int project_eqc_arr_inv(project_parameters_t *pps,
 // www.remotesensing.org/geotiff/proj_list/sinusoidal.html
 int project_sin(project_parameters_t *pps,
 		double lat, double lon, double height,
-		double *x, double *y, double *z);
+		double *x, double *y, double *z, datum_type_t);
 int project_sin_arr(project_parameters_t *pps,
 		    double *lat, double *lon, double *height,
 		    double **projected_x, double **projected_y,
-		    double **projected_z, long length);
+		    double **projected_z, long length, datum_type_t);
 int project_sin_inv(project_parameters_t *pps, double x, double y, double z,
-		    double *lat, double *lon, double *height);
+		    double *lat, double *lon, double *height, datum_type_t);
 int project_sin_arr_inv(project_parameters_t *pps,
 			double *x, double *y, double *z,
 			double **lat, double **lon, double **height,
-			long length);
+			long length, datum_type_t);
 
 // EASE grid - Global
 // www.remotesensing.org/geotiff/proj_list/cylindrical_equal_area.html
