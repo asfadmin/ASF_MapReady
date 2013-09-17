@@ -213,7 +213,6 @@ spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor);
 const char *datum_toString(datum_type_t);
 const char *spheroid_toString(spheroid_type_t spheroid);
 char *proj2str(projection_type_t type);
-datum_type_t getDatum(char datum_str);
 
 /**************************************************************************
    project_set_avg_height
