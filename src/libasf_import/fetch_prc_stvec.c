@@ -614,7 +614,7 @@ static char *get_arclist_from_settings(const char *sensor)
                       sensor);
      }
      FREE(settings_file);
-     return arclist;     
+     return STRDUP(arclist);     
    }
    else {
      asfPrintError("Could not open mapready_settings.cfg");
