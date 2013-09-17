@@ -350,22 +350,22 @@ void report_validation_errors(char *outputFile, char *file,
       fprintf(outFP, "\n-----------------------------------------------\n");
 
       sprintf(msg, "FAIL: Validation Checking of \n  %s\n\n", file);
-      fprintf(outFP, msg);
+      fprintf(outFP, "%s", msg);
       sprintf(msg, "%s Block Errors:\n\n", block_id);
-      fprintf(outFP, msg);
+      fprintf(outFP, "%s", msg);
 
-      fprintf(outFP, err_msg);
+      fprintf(outFP, "%s", err_msg);
 
       fprintf(outFP, "-----------------------------------------------\n\n");
   }
   fprintf(stderr,"\n-----------------------------------------------\n");
 
   sprintf(msg, "FAIL: Validation Checking of \n  %s\n\n", file);
-  fprintf(stderr,msg);
+  fprintf(stderr,"%s",msg);
   sprintf(msg, "%s Block Errors:\n\n", block_id);
-  fprintf(stderr,msg);
+  fprintf(stderr,"%s",msg);
 
-  fprintf(stderr,err_msg);
+  fprintf(stderr,"%s",err_msg);
 
   fprintf(stderr,"-----------------------------------------------\n\n");
   if(outputFile && strlen(outputFile) && outFP) FCLOSE(outFP);
@@ -396,11 +396,11 @@ void report_difference_errors(char *outputFile,
 
       sprintf(msg, "FAIL: Differences found when comparing:\n  %s\nto\n  %s\n\n",
               file1, file2);
-      fprintf(outFP, msg);
+      fprintf(outFP, "%s", msg);
       sprintf(msg, "%s Block Errors:\n\n", block_id);
-      fprintf(outFP, msg);
+      fprintf(outFP, "%s", msg);
 
-      fprintf(outFP, err_msg);
+      fprintf(outFP, "%s", err_msg);
 
       fprintf(outFP, "-----------------------------------------------\n\n");
   }
@@ -408,11 +408,11 @@ void report_difference_errors(char *outputFile,
 
   sprintf(msg, "FAIL: Differences found when comparing:\n  %s\nto\n  %s\n\n",
           file1, file2);
-  fprintf(stderr,msg);
+  fprintf(stderr,"%s",msg);
   sprintf(msg, "%s Block Errors:\n\n", block_id);
-  fprintf(stderr,msg);
+  fprintf(stderr,"%s",msg);
 
-  fprintf(stderr,err_msg);
+  fprintf(stderr,"%s",err_msg);
 
   fprintf(stderr,"-----------------------------------------------\n\n");
   if(outputFile && strlen(outputFile) && outFP) FCLOSE(outFP);
