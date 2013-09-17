@@ -19,7 +19,7 @@ LIBS  = \
 	$(GSL_LIBS) \
 	-lz
 
-CFLAGS += \
+CFLAGS += -Werror \
 	$(GEOTIFF_CFLAGS) \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
@@ -97,7 +97,7 @@ OBJS  = \
 
 all: build_only
 	mv libasf_import.a $(LIBDIR)
-	cp asf_import.h fgdc_meta.h dem_meta.h \
+	cp asf_import.h fgdc_meta.h dem_meta.h prc_stvecs.h \
 	$(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)

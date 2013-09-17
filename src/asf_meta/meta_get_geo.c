@@ -305,6 +305,7 @@ static int get_error(meta_parameters *meta,
   return 0;
 }
 
+/*
 static int get_error_ext(meta_parameters *meta,
 			 lat_lon target, double elev,
 			 double old_xSamp, double old_yLine,
@@ -315,11 +316,9 @@ static int get_error_ext(meta_parameters *meta,
   err = meta_get_latLon(meta,old_yLine,old_xSamp,elev,&old.lat,&old.lon);
   if (err)
     return err;
-  /*
-  printf("old: x=%.1f; y=%.1f; lat=%.4f, lon=%.4f\n",
-	 old_yLine, old_xSamp, old.lat, old.lon);
-  printf("new: x=%.1f; y=%.1f\n", xSamp, yLine);
-  */
+  //printf("old: x=%.1f; y=%.1f; lat=%.4f, lon=%.4f\n",
+  //       old_yLine, old_xSamp, old.lat, old.lon);
+  //printf("new: x=%.1f; y=%.1f\n", xSamp, yLine);
   int div=2;
   double xBound, yBound;
   xBound = old_xSamp + (xSamp - old_xSamp)/2;
@@ -341,6 +340,7 @@ static int get_error_ext(meta_parameters *meta,
   *error = get_distance(new,target);
   return 0;
 }
+*/
 
 /******************************************************************
  * meta_get_lineSamp:
@@ -418,11 +418,13 @@ double meta_get_lineSamp_tolerance()
   return tolerance;
 }
 
-static int compare_diffs(const latlon_pixel *a, const latlon_pixel *b)
+static int compare_diffs(const void *a_, const void *b_)
 {
-  if ((*a).diff  > (*b).diff)
+  latlon_pixel *a = (latlon_pixel*)a_;
+  latlon_pixel *b = (latlon_pixel*)b_;
+  if (a->diff  > b->diff)
     return 1;
-  else if (FLOAT_EQUIVALENT((*a).diff, (*b).diff))
+  else if (FLOAT_EQUIVALENT(a->diff, b->diff))
     return 0;
   else
     return -1;

@@ -57,7 +57,7 @@ meta_parameters *meta_read(const char *inName)
   char              *ddr_name       = appendExt(inName,".ddr");
   meta_parameters   *meta           = raw_init(); /* Allocate and initialize basic structs */
   char **junk=NULL;
-  int junk2, ii;
+  int junk2;
 
   /* Read file with appropriate reader for version.  */
   if ( !fileExists(meta_name) && fileExists(ddr_name)) {

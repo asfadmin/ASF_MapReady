@@ -904,7 +904,7 @@ char *sin_projection_desc(project_parameters_t *pps)
 int
 project_sin(project_parameters_t *pps,
 	    double lat, double lon, double height,
-	    double *x, double *y, double *z)
+	    double *x, double *y, double *z, datum_type_t datum)
 {
   return project_worker_arr(sin_projection_desc(pps),
 			    &lat, &lon, &height, &x, &y, &z, 1);
@@ -914,7 +914,7 @@ int
 project_sin_arr(project_parameters_t *pps,
 		double *lat, double *lon, double *height,
 		double **projected_x, double **projected_y,
-		double **projected_z, long length)
+		double **projected_z, long length, datum_type_t datum)
 {
   long ii; 
   int negative=FALSE, positive=FALSE;
@@ -934,7 +934,7 @@ project_sin_arr(project_parameters_t *pps,
 
 int
 project_sin_inv(project_parameters_t *pps, double x, double y, double z,
-		double *lat, double *lon, double *height)
+		double *lat, double *lon, double *height, datum_type_t datum)
 {
   return project_worker_arr_inv(sin_projection_desc(pps),
 				&x, &y, &z, &lat, &lon, &height, 1);
@@ -944,7 +944,7 @@ int
 project_sin_arr_inv(project_parameters_t *pps,
 		    double *x, double *y, double *z,
 		    double **lat, double **lon, double **height,
-		    long length)
+		    long length, datum_type_t datum)
 {
   return project_worker_arr_inv(sin_projection_desc(pps),
 				x, y, z, lat, lon, height, length);

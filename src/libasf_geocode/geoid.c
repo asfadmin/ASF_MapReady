@@ -58,19 +58,19 @@ float get_geoid_height(double lat, double lon)
     double x = lon*4.;
 
     // bilinear interp
-    int y0 = (int)y;
-    int y1 = y0 + 1;
-    double yf = y-y0;
+    int y_0 = (int)y;
+    int y_1 = y_0 + 1;
+    double yf = y-y_0;
 
-    int x0 = (int)x;
-    int x1 = x0 + 1;
-    double xf = x-x0;
+    int x_0 = (int)x;
+    int x_1 = x_0 + 1;
+    double xf = x-x_0;
 
     return
-         xf     * yf     * geoid_height_at(x1,y1) +
-         (1-xf) * yf     * geoid_height_at(x0,y1) +
-         xf     * (1-yf) * geoid_height_at(x1,y0) +
-         (1-xf) * (1-yf) * geoid_height_at(x0,y0);
+         xf     * yf     * geoid_height_at(x_1,y_1) +
+         (1-xf) * yf     * geoid_height_at(x_0,y_1) +
+         xf     * (1-yf) * geoid_height_at(x_1,y_0) +
+         (1-xf) * (1-yf) * geoid_height_at(x_0,y_0);
 }
 
 void test_geoid(void)
@@ -88,11 +88,11 @@ void test_geoid(void)
           asfPrintWarning("test_geoid #1 failed: %d %d %f %f\n", i, j, a0, a1);
 
         if (i<w-1 && j<h-1) {
-          double i1 = i+.5;
-          double j1 = j+.5;
+          double ii = i+.5;
+          double jj = j+.5;
 
-          double lat = 90.0 - j1/4.0;
-          double lon = i1/4.0;
+          double lat = 90.0 - jj/4.0;
+          double lon = ii/4.0;
 
           float b0 = get_geoid_height(lat,lon);
           float b1 = .25*(geoid_height_at(i,j)+geoid_height_at(i+1,j)+
@@ -100,10 +100,10 @@ void test_geoid(void)
           if (fabs(b0-b1) > .0001)
             asfPrintWarning("test_geoid #2 failed: %d %d %f %f\n", i, j, b0, b1);
 
-          i1 = i+.25;
-          j1 = j+.75;
-          lat = 90.0 - j1/4.0;
-          lon = i1/4.0;
+          ii = i+.25;
+          jj = j+.75;
+          lat = 90.0 - jj/4.0;
+          lon = ii/4.0;
           float c0 = get_geoid_height(lat,lon);
 
           float u = .75*geoid_height_at(i,j) + .25*geoid_height_at(i+1,j);

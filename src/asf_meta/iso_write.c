@@ -5,6 +5,7 @@
 #include "asf_nan.h"
 #include "xml_util.h"
 
+/*
 static void date2str(iso_dateTime dateUTC, char *str)
 {
   int year = dateUTC.year;
@@ -17,6 +18,7 @@ static void date2str(iso_dateTime dateUTC, char *str)
   else
     sprintf(str, "%4d-%02d-%02d", year, month, day);
 }
+*/
 
 static void dateTime2str(iso_dateTime timeUTC, char *str)
 {
@@ -1480,7 +1482,7 @@ void iso_meta_write(iso_meta *iso, const char *gapFile, const char *outFile)
   	      node = xmlNewChild(parent, NULL, BAD_CAST "gap", NULL);
    	      sprintf(num, "%ld", kk+1);
 	      xmlNewProp(node, BAD_CAST "num", BAD_CAST num);
-	      sprintf(str, "%ld", lines[kk]);
+	      sprintf(str, "%d", lines[kk]);
 	      xmlNewChild(node, NULL, BAD_CAST "start", BAD_CAST str);
 	      sprintf(str, "%d", gaps[kk]);
 	      xmlNewChild(node, NULL, BAD_CAST "length", BAD_CAST str);
@@ -1687,7 +1689,6 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
   
   xmlNodePtr parent, section, node, node2, node3, node4, node5, node6, node7;
   xmlNodePtr node8, node9, node10, node11, node12, node13, node14, node15;
-  xmlNodePtr node16, node17;
   xmlNodePtr composedOf = xmlNewChild(root, gmd, BAD_CAST "composedOf", NULL);
   xmlNodePtr ds_dataSet = 
     xmlNewChild(composedOf, gmd, BAD_CAST "DS_DataSet", NULL);

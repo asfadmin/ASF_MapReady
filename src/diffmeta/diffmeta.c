@@ -82,6 +82,8 @@ void compare_meta_char(char *err_msgs, char *block_id, char *var_name,
 void compare_meta_double_with_tolerance(char *err_msgs, char *block_id, char *var_name,
                       double var1, double var2,
                       double tolerance, int *failed);
+static char* data_type2str_w(int data_type);
+static char* image_data_type2str_w(int image_data_type);
 
 int main(int argc, char **argv)
 {
@@ -348,22 +350,22 @@ void report_validation_errors(char *outputFile, char *file,
       fprintf(outFP, "\n-----------------------------------------------\n");
 
       sprintf(msg, "FAIL: Validation Checking of \n  %s\n\n", file);
-      fprintf(outFP, msg);
+      fprintf(outFP, "%s", msg);
       sprintf(msg, "%s Block Errors:\n\n", block_id);
-      fprintf(outFP, msg);
+      fprintf(outFP, "%s", msg);
 
-      fprintf(outFP, err_msg);
+      fprintf(outFP, "%s", err_msg);
 
       fprintf(outFP, "-----------------------------------------------\n\n");
   }
   fprintf(stderr,"\n-----------------------------------------------\n");
 
   sprintf(msg, "FAIL: Validation Checking of \n  %s\n\n", file);
-  fprintf(stderr,msg);
+  fprintf(stderr,"%s",msg);
   sprintf(msg, "%s Block Errors:\n\n", block_id);
-  fprintf(stderr,msg);
+  fprintf(stderr,"%s",msg);
 
-  fprintf(stderr,err_msg);
+  fprintf(stderr,"%s",err_msg);
 
   fprintf(stderr,"-----------------------------------------------\n\n");
   if(outputFile && strlen(outputFile) && outFP) FCLOSE(outFP);
@@ -394,11 +396,11 @@ void report_difference_errors(char *outputFile,
 
       sprintf(msg, "FAIL: Differences found when comparing:\n  %s\nto\n  %s\n\n",
               file1, file2);
-      fprintf(outFP, msg);
+      fprintf(outFP, "%s", msg);
       sprintf(msg, "%s Block Errors:\n\n", block_id);
-      fprintf(outFP, msg);
+      fprintf(outFP, "%s", msg);
 
-      fprintf(outFP, err_msg);
+      fprintf(outFP, "%s", err_msg);
 
       fprintf(outFP, "-----------------------------------------------\n\n");
   }
@@ -406,11 +408,11 @@ void report_difference_errors(char *outputFile,
 
   sprintf(msg, "FAIL: Differences found when comparing:\n  %s\nto\n  %s\n\n",
           file1, file2);
-  fprintf(stderr,msg);
+  fprintf(stderr,"%s",msg);
   sprintf(msg, "%s Block Errors:\n\n", block_id);
-  fprintf(stderr,msg);
+  fprintf(stderr,"%s",msg);
 
-  fprintf(stderr,err_msg);
+  fprintf(stderr,"%s",err_msg);
 
   fprintf(stderr,"-----------------------------------------------\n\n");
   if(outputFile && strlen(outputFile) && outFP) FCLOSE(outFP);
@@ -824,12 +826,13 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
     validate_string(precheck_err_msgs, mg2->acquisition_date,
                     "General", "acquisition_date",
                     &failed);
-# define NUM_SENSOR_STRINGS 7
+# define NUM_SENSOR_STRINGS 9
     char *sensor_strings[NUM_SENSOR_STRINGS] =
       {"SIR-C", "ERS1",
        "ERS2",  "JERS1",
        "ALOS",  "RSAT-1",
-       "AIRSAR"};
+       "AIRSAR", "UAVSAR",
+       "SEASAT"};
     verify_string(precheck_err_msgs, mg2->sensor,
                   sensor_strings, NUM_SENSOR_STRINGS,
                   "General", "sensor",
@@ -847,7 +850,11 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
   // need to be put into a .h file.  The code here should develop the array of
   // valid mode strings at run time.  The same thing may apply to the sensor_name,
   // sensor, and other strings or lists of characters...
+
+  // I am commenting this out for now -- looks like the mode now contains
+  // some extra information
 # define NUM_MODE_STRINGS 164
+/*
     char *mode_strings[NUM_MODE_STRINGS] =
       {
         "ALOS","STD",
@@ -877,6 +884,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                   mode_strings, NUM_MODE_STRINGS,
                   "General", "mode",
                   0, &failed);
+*/
   }
 
   // FIXME: Add a verify_enum() function and let it use a hook to a
@@ -2034,10 +2042,10 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                       mg1->acquisition_date, mg2->acquisition_date, &failed);
   compare_meta_enum(compare_err_msgs, "General", "data_type",
                     mg1->data_type, mg2->data_type,
-                    data_type2str, &failed);
+                    data_type2str_w, &failed);
   compare_meta_enum(compare_err_msgs, "General", "image_data_type",
                     mg1->image_data_type, mg2->image_data_type,
-                    image_data_type2str, &failed);
+                    image_data_type2str_w, &failed);
   compare_meta_int(compare_err_msgs, "General", "orbit",
                    mg1->orbit, mg2->orbit, &failed);
   compare_meta_char(compare_err_msgs, "General", "orbit_direction",
@@ -2811,4 +2819,15 @@ int is_geocentric(meta_parameters *meta)
 
     return ret;
 }
+
+static char* data_type2str_w(int data_type)
+{
+ return data_type2str((data_type_t)data_type);
+}
+
+static char* image_data_type2str_w(int image_data_type)
+{
+ return image_data_type2str((image_data_type_t)image_data_type);
+}
+
 

@@ -4,12 +4,13 @@
 #include "envi.h"
 #include "asf_nan.h"
 #include "time.h"
+#include "earth_radius2datum.h"
 
 char *get_str_element(char *str, int num)
 {
   int ii;
   char *p, *q, *end;
-  char *line = strdup(str);
+  char *line = STRDUP(str);
   p = line; 
   q = line;
   end = strchr(line, '}');
@@ -38,7 +39,6 @@ envi_header* read_envi(char *envi_name)
   FILE *fp;
   char line[255]="", key[25]="", value[25]="", *map_info_ptr=NULL;
   char *proj_info_ptr, proj_info[255]="", bla[25], map_info[255]="";
-  char tmp[50], *p, *q;
   int projection_key=-1;
 
   // Allocate memory for ESRI header structure
@@ -125,7 +125,7 @@ envi_header* read_envi(char *envi_name)
     {
     case 1:
       sprintf(envi->projection, "Geographic Lat/Lon");
-      sscanf(map_info, "%i, %i, %lf, %lf, %lf, %lf, %lf, %lf",
+      sscanf(map_info, "%i, %i, %lf, %lf, %lf, %lf",
 	     &envi->ref_pixel_x, &envi->ref_pixel_y, &envi->pixel_easting,
 	     &envi->pixel_northing, &envi->proj_dist_x, &envi->proj_dist_y);
       envi->pixel_size_x = fabs(envi->proj_dist_x);
@@ -306,6 +306,9 @@ envi_header* meta2envi(meta_parameters *meta)
   {
     switch (meta->projection->type)
       {
+      default:
+        asfPrintError("Unsupported projection: %d\n", meta->projection->type);
+        break;
       case LAT_LONG_PSEUDO_PROJECTION:
 	sprintf(envi->projection, "Geographic Lat/Lon");
 	break;
@@ -593,6 +596,9 @@ void write_envi_header(const char *headerFile, const char *dataFile,
   if (meta->projection) {
     switch (meta->projection->type)
       {
+      default:
+        asfPrintError("Unsupported projection: %d\n", meta->projection->type);
+        break;
       case LAT_LONG_PSEUDO_PROJECTION:
 	fprintf(fp, 
 		"map info = {%s, %d, %d, %.5f, %.5f, %f, %f, %s, units=Degrees}\n", 
