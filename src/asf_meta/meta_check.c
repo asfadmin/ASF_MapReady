@@ -271,8 +271,7 @@ int isRadarsat2(char *dataFile, char **error)
 	           xml_get_string_value(doc, "product.sourceAttributes.satellite"), 20);
       
       // only care about Radarsat-2 data
-      if (satellite &&
-	  strcmp_case(satellite, "RADARSAT-2") == 0) {
+      if (strcmp_case(satellite, "RADARSAT-2") == 0) {
 	
 	found = TRUE;
 	strncpy_safe(dataType, xml_get_string_value(doc, 
