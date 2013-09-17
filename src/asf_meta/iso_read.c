@@ -82,7 +82,7 @@ iso_meta *iso_meta_read(const char *xmlFile)
 {
   int ii, kk, numAnnotations, numLayers, numAuxRasterFiles;
   iso_polLayer_t *polLayer;
-  char **beamID, errorMessage[1024];
+  char **beamID;
   char str[1024], element[1024];
 
   if (!fileExists(xmlFile))

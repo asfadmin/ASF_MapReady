@@ -12,8 +12,6 @@ void test_read_proj_file()
   projection_type_t proj_type;
   datum_type_t datum;
   spheroid_type_t spheroid;
-  meta_projection *meta_proj;
-  double projZ;
 
   read_proj_file("utm.proj", &pps, &proj_type, &datum, &spheroid);
   CU_ASSERT(proj_type == UNIVERSAL_TRANSVERSE_MERCATOR);

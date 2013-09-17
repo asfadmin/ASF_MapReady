@@ -911,6 +911,9 @@ void alos_to_latlon(meta_parameters *meta,
 void scan_to_latlon(meta_parameters *meta,
         double x, double y, double z,
         double *lat, double *lon, double *height);
+void uavsar_to_latlon(meta_parameters *meta,
+                      double xSample, double yLine, double height,
+                      double *lat, double *lon);
 void location_to_latlon(meta_parameters *meta,
 			double x, double y, double z,
 			double *lat_d, double *lon, double *height);
