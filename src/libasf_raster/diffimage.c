@@ -278,7 +278,7 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
 	      shift_data_t **data_shift)
 {
   extern FILE *fLog;            /* output file descriptor, stdout or log file */
-  int bandflag, strictflag;
+  int bandflag=0, strictflag=0;
   int num_names_extracted1 = 0, num_names_extracted2 = 0, band = 0;
   char msg[1024], type_str[255];
   stats_t inFile1_stats[MAX_BANDS], inFile2_stats[MAX_BANDS];
@@ -5027,7 +5027,7 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2,
   ppm_pgm_info_t pgm1, pgm2; // Header info
   double cs1, cs2;
   char msg[1024];
-  FILE *fp1, *fp2, *outputFP = NULL;
+  FILE *fp1 = NULL, *fp2 = NULL, *outputFP = NULL;
 
   if (outfile && strlen(outfile) > 0) {
       outputFP = (FILE*)FOPEN(outfile, "a");

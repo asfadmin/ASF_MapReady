@@ -55,7 +55,8 @@ int trim(char *infile, char *outfile,
   }
 
   /* Some sort of conditional on the validity of the corner coordinates would 
-     be nice here.*/
+     be nice here.
+
   if (metaIn->projection) {
     double bX, mX, bY, mY;
     bY = metaIn->projection->startY;
@@ -63,6 +64,7 @@ int trim(char *infile, char *outfile,
     mY = metaIn->projection->perY;
     mX = metaIn->projection->perX;
   }
+  */
 
   meta_write(metaOut, outfile);
 
