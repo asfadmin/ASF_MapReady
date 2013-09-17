@@ -872,23 +872,22 @@ void meta_get_corner_coords(meta_parameters *meta)
 {
   double lat, lon;
 
-  if (!meta->location) {
+  if (!meta->location)
     meta->location = meta_location_init();
-    int nl = meta->general->line_count;
-    int ns = meta->general->sample_count;
-    meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
-    meta->location->lon_start_near_range = lon;
-    meta->location->lat_start_near_range = lat;
-    meta_get_latLon(meta, 0, ns, 0.0, &lat, &lon);
-    meta->location->lon_start_far_range = lon;
-    meta->location->lat_start_far_range = lat;
-    meta_get_latLon(meta, nl, 0, 0.0, &lat, &lon);
-    meta->location->lon_end_near_range = lon;
-    meta->location->lat_end_near_range = lat;
-    meta_get_latLon(meta, nl, ns, 0.0, &lat, &lon);
-    meta->location->lon_end_far_range = lon;
-    meta->location->lat_end_far_range = lat;
-  }
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+  meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
+  meta->location->lon_start_near_range = lon;
+  meta->location->lat_start_near_range = lat;
+  meta_get_latLon(meta, 0, ns, 0.0, &lat, &lon);
+  meta->location->lon_start_far_range = lon;
+  meta->location->lat_start_far_range = lat;
+  meta_get_latLon(meta, nl, 0, 0.0, &lat, &lon);
+  meta->location->lon_end_near_range = lon;
+  meta->location->lat_end_near_range = lat;
+  meta_get_latLon(meta, nl, ns, 0.0, &lat, &lon);
+  meta->location->lon_end_far_range = lon;
+  meta->location->lat_end_far_range = lat;
 }
 
 double *get_a_coeffs(meta_parameters *meta)

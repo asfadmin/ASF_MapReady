@@ -19,7 +19,7 @@
 #define DM_MAX_START_LINE     DM_MAX_LINE_COUNT
 #define DM_MIN_START_SAMPLE   0
 #define DM_MAX_START_SAMPLE   DM_MAX_SAMPLE_COUNT
-#define DM_MIN_PIXEL_SIZE     0.2
+#define DM_MIN_PIXEL_SIZE     0
 #define DM_MAX_PIXEL_SIZE     1500.0
 #define DM_MIN_X_PIXEL_SIZE   DM_MIN_PIXEL_SIZE
 #define DM_MAX_X_PIXEL_SIZE   DM_MAX_PIXEL_SIZE
@@ -57,8 +57,8 @@
 #define DM_MAX_AZIMUTH_TIME_PER_PIXEL   0.07
 #define DM_MIN_SLANT_SHIFT              -1100.0
 #define DM_MAX_SLANT_SHIFT              400.0
-#define DM_MIN_TIME_SHIFT               -100.0
-#define DM_MAX_TIME_SHIFT               100.0
+#define DM_MIN_TIME_SHIFT               -10000000.0
+#define DM_MAX_TIME_SHIFT               10000000.0
 #define DM_MIN_SLANT_RANGE_FIRST_PIXEL  650000.0
 #define DM_MAX_SLANT_RANGE_FIRST_PIXEL  1200000.0
 #define DM_MIN_WAVELENGTH               0.01

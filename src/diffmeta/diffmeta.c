@@ -831,8 +831,8 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
       {"SIR-C", "ERS1",
        "ERS2",  "JERS1",
        "ALOS",  "RSAT-1",
-       "AIRSAR", "SEASAT",
-       "UAVSAR"};
+       "AIRSAR", "UAVSAR",
+       "SEASAT"};
     verify_string(precheck_err_msgs, mg2->sensor,
                   sensor_strings, NUM_SENSOR_STRINGS,
                   "General", "sensor",
@@ -850,7 +850,11 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
   // need to be put into a .h file.  The code here should develop the array of
   // valid mode strings at run time.  The same thing may apply to the sensor_name,
   // sensor, and other strings or lists of characters...
+
+  // I am commenting this out for now -- looks like the mode now contains
+  // some extra information
 # define NUM_MODE_STRINGS 164
+/*
     char *mode_strings[NUM_MODE_STRINGS] =
       {
         "ALOS","STD",
@@ -880,6 +884,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                   mode_strings, NUM_MODE_STRINGS,
                   "General", "mode",
                   0, &failed);
+*/
   }
 
   // FIXME: Add a verify_enum() function and let it use a hook to a
