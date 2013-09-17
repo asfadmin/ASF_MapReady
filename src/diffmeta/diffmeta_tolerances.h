@@ -55,7 +55,7 @@
 #define DM_MAX_RANGE_TIME_PER_PIXEL     1.0e-05
 #define DM_MIN_AZIMUTH_TIME_PER_PIXEL   -0.07
 #define DM_MAX_AZIMUTH_TIME_PER_PIXEL   0.07
-#define DM_MIN_SLANT_SHIFT              -400.0
+#define DM_MIN_SLANT_SHIFT              -1100.0
 #define DM_MAX_SLANT_SHIFT              400.0
 #define DM_MIN_TIME_SHIFT               -100.0
 #define DM_MAX_TIME_SHIFT               100.0

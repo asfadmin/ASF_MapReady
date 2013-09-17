@@ -824,12 +824,13 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
     validate_string(precheck_err_msgs, mg2->acquisition_date,
                     "General", "acquisition_date",
                     &failed);
-# define NUM_SENSOR_STRINGS 7
+# define NUM_SENSOR_STRINGS 9
     char *sensor_strings[NUM_SENSOR_STRINGS] =
       {"SIR-C", "ERS1",
        "ERS2",  "JERS1",
        "ALOS",  "RSAT-1",
-       "AIRSAR"};
+       "AIRSAR", "SEASAT",
+       "UAVSAR"};
     verify_string(precheck_err_msgs, mg2->sensor,
                   sensor_strings, NUM_SENSOR_STRINGS,
                   "General", "sensor",
