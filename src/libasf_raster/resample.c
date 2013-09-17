@@ -93,6 +93,9 @@ static float filter(      /****************************************/
 
       return (kersum);
     }
+
+    asfPrintError("Not reached");
+    return 0;
 }
 
 static int

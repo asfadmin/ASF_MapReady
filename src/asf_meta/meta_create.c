@@ -28,7 +28,7 @@ meta_parameters *meta_create(const char *fName)
 	meta_parameters *meta = raw_init();
 	int success=FALSE;
 	char **junk=NULL;
-	int junk2, ii;
+	int junk2;
 
 	if (require_ceos_metadata(fName,&junk,&junk2) != NO_CEOS_METADATA) {
 		ceos_init(fName, meta, REPORT_LEVEL_STATUS);

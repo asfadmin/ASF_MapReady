@@ -5,6 +5,8 @@
 #include "asf_meta.h"
 #endif
 
+#include "prc_stvecs.h"
+
 #define TOOLS_META_EXT    ".meta"
 #define TOOLS_IMAGE_EXT   ".img"
 #define TOOLS_RAW_EXT     ".img"
@@ -108,7 +110,7 @@ void import_uavsar(const char *inFileName, int line, int sample, int width,
 void import_uavsar_ext(const char *inFileName, int line, int sample, int width,
 		       int height, radiometry_t radiometry, int firstBandOnly,
 		       const char *data_type, const char *outBaseName);
-
+void read_meta_uavsar(const char *inFileName, const char *outBaseName);
 void import_gamma_isp(const char *inDataName, const char *inMetaName,
               const char *data_type, const char *image_data_type,
               int complex_flag, int multilook_flag,

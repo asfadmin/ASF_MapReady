@@ -2,6 +2,7 @@
 #include "airsar.h"
 #include "asf_meta.h"
 #include "asf_endian.h"
+#include "asf_import.h"
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_math.h>
@@ -1720,5 +1721,8 @@ uavsar_type_t uavsar_type_name_to_enum(const char *type_name)
   else {
     asfPrintError("uavsar_type_name_to_enum() Failure: No such uavsar type name: %s", type_name);
   }
+  // Not Reached
+  asfPrintError("Internal error");
+  return 0;
 }
 

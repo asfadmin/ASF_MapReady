@@ -256,7 +256,7 @@ stf_data_ext_t require_stf_data(const char *stfName, char **dataName)
            "****************************************************************\n",
            stfName, extensionList);
     if (logflag)   {printLog(logbuf);}
-    printf(logbuf);
+    printf("%s",logbuf);
     exit(EXIT_FAILURE);
   }
 

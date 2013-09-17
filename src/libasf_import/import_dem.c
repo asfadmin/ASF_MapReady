@@ -478,8 +478,12 @@ void import_dem(const char *inBaseName, int list, const char *outBaseName,
     FCLOSE(fpList);
     if (strcmp_case(dem_type, "SRTM") == 0 && jpl)
       dem_files = read_jpl_srtm_dem(inBaseName, tmp_dir, &file_count, tiles);
-    else if (strcmp_case(dem_type, "NED") == 0)
-      dem_files = read_usgs_ned_dem(inBaseName, tmp_dir, &file_count, tiles);
+    else if (strcmp_case(dem_type, "NED") == 0) {
+      asfPrintError("NED is currently not supported\n");
+      //dem_files = read_usgs_ned_dem(inBaseName, tmp_dir, &file_count, tiles);
+      dem_files = read_usgs_ned_dem(NULL,0,NULL,NULL);
+      dem_files = NULL;
+    }
     zip = TRUE;
   }
   else if (findExt(inBaseName) && 

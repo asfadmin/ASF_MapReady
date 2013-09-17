@@ -709,7 +709,7 @@ static char *polLayer2str(iso_polLayer_t pol)
 
 meta_parameters *iso2meta(iso_meta *iso)
 {
-  int ii, kk;
+  int ii;
   meta_parameters *meta = raw_init();
   char str[30];
 
@@ -786,8 +786,8 @@ meta_parameters *iso2meta(iso_meta *iso)
     sprintf(str, ", %s", polLayer2str(comps->imageData[ii].polLayer));
     strcat(meta->general->bands, str);
   }
-  int line_count = meta->general->line_count = info->numberOfRows;
-  int sample_count = meta->general->sample_count = info->numberOfColumns;
+  meta->general->line_count = info->numberOfRows;
+  meta->general->sample_count = info->numberOfColumns;
   meta->general->start_line = info->startRow;
   meta->general->start_sample = info->startColumn;
   meta->general->x_pixel_size = info->groundRangeResolution;
