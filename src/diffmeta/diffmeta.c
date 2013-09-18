@@ -34,9 +34,12 @@ CAVEATS:
 
 /* Turning this on, since we read a lot of blocks that aren't actually tested
    yet.  Want to keep the read code until we get the test code going.  This
-   enables us to use -Werror
+   enables us to use -Werror.  This warning appears new as in gcc 4.6
 */
+#if __GNUC__ > 4 || \
+              (__GNUC__ == 4 && (__GNUC_MINOR__ >= 6 ) )
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
 
 /**** MACRO DEFINITIONS ****/
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
