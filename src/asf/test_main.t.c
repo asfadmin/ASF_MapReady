@@ -14,7 +14,7 @@ int main()
       return CU_get_error();
 
    /* add a suite to the registry */
-   pSuite = CU_add_suite("asf_meta suite", NULL, NULL);
+   pSuite = CU_add_suite("asf suite", NULL, NULL);
    if (NULL == pSuite) {
       CU_cleanup_registry();
       return CU_get_error();
