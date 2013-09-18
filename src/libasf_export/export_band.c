@@ -344,7 +344,7 @@ void initialize_png_file_ext(const char *output_file_name,
 	trans_rgb_value[0].red = 0;
 	trans_rgb_value[0].green = 0;
 	trans_rgb_value[0].blue = 0;
-	png_set_tRNS(*png_ptr, *info_ptr, trans_rgb_value, 256, NULL);
+	png_set_tRNS(*png_ptr, *info_ptr, (png_byte*)trans_rgb_value, 256, NULL);
       }
       else {
 	png_byte trans_values[256];
@@ -427,12 +427,13 @@ void initialize_pgm_file(const char *output_file_name,
   *opgm = FOPEN (output_file_name, "wb");
 
   unsigned char out[256];
-  sprintf (out, "%s\n%ld\n%ld\n%d\n",
+  char *c_out = (char*)out;
+  sprintf (c_out, "%s\n%ld\n%ld\n%d\n",
            PGM_MAGIC_NUMBER,
            (long int) meta->general->sample_count,
            (long int) meta->general->line_count,
            max_color_value);
-  int len = strlen(out);
+  int len = strlen(c_out);
 
   FWRITE(out, sizeof(unsigned char), len, *opgm);
 
@@ -642,7 +643,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         break;
       case ALBERS_EQUAL_AREA:
       {
-	int pcs;
+	short pcs;
 	if (albers_2_pcs(md->projection, &pcs))
 	  GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, pcs);
 	else
@@ -2901,7 +2902,6 @@ char *sample_mapping2string(scale_t sample_mapping)
 void colormap_to_lut_file(meta_colormap *cm, const char *lut_file)
 {
   int i;
-  char line[256];
 
   FILE *fp = FOPEN(lut_file, "wt");
   fprintf(fp, "# Temporary look-up table file for asf_export\n");
@@ -2909,9 +2909,8 @@ void colormap_to_lut_file(meta_colormap *cm, const char *lut_file)
   fprintf(fp, "# Number of elements: %d\n", cm->num_elements);
   fprintf(fp, "# Index   Red   Green   Blue\n");
   for (i=0; i<cm->num_elements; i++) {
-    sprintf(line, "%d %d %d %d\n",
+    fprintf(fp, "%d %d %d %d\n",
             i, cm->rgb[i].red, cm->rgb[i].green, cm->rgb[i].blue);
-    fprintf(fp, line);
   }
   FCLOSE(fp);
 }

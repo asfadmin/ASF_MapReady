@@ -1193,7 +1193,7 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
 				    meta_parameters *md,
 				    iso_meta *iso)
 {
-  hid_t h5_file, h5_datagroup, h5_metagroup, h5_data, h5_proj;
+  hid_t h5_file, h5_datagroup, h5_metagroup, h5_data;
   hid_t h5_array, h5_time, h5_lat, h5_lon, h5_xgrid, h5_ygrid;
   hid_t h5_section, h5_level1, h5_level2, h5_level3, h5_level4;
   int ii, kk, complex=FALSE, projected=FALSE;
