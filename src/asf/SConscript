@@ -1,40 +1,55 @@
+import os.path
+
 Import("globalenv")
 localenv = globalenv.Clone()
 
 localenv.AppendUnique(CPPPATH = [
-        "#include",
-        ])
+    "#include",
+])
     
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 
 libs = localenv.SharedLibrary("asf", [
-        "asf_tiff.c",
-        "check.c",
-        "cla.c",
-        "endian.c",
-        "error.c",
-        "fileUtil.c",
-        "log.c",
-        "stopwatch.c",
-        "share.c",
-        "strUtil.c",
-        "system.c",
-        "tmpdir.c",
-        "license.c",
-        "splash_screen.c",
-        "print_alerts.c",
-        "diagnostics.c",
-        "matrix.c",
-        "vector.c",
-        "complex.c",
-        "solve1d.c",
-        "socket.c",
-        "httpUtil.c",
-        "caplib.c",
-        ])
+    "asf_tiff.c",
+    "check.c",
+    "cla.c",
+    "endian.c",
+    "error.c",
+    "fileUtil.c",
+    "log.c",
+    "stopwatch.c",
+    "share.c",
+    "strUtil.c",
+    "system.c",
+    "tmpdir.c",
+    "license.c",
+    "splash_screen.c",
+    "print_alerts.c",
+    "diagnostics.c",
+    "matrix.c",
+    "vector.c",
+    "complex.c",
+    "solve1d.c",
+    "socket.c",
+    "httpUtil.c",
+    "caplib.c",
+])
 
 globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
 
+head_build_dir, tail_build_dir = os.path.split(Dir(".").path)
+
 # run the unit test, and set its dependencies
-test_result = localenv.UnitTest("test.semaphore", None)
-localenv.Depends(test_result, [libs])
+test_result = localenv.UnitTest(
+    [
+        "strUtil.t.c",
+        "test_main.t.c",
+        "complex.t.c",
+        "vector.t.c",
+        "solve1d.t.c",
+    ],
+    [libs],
+    LIBS = ["asf", "m", "cunit"],
+    LIBPATH = ["#" + os.path.join(head_build_dir, "asf")],
+    RPATH = [os.path.join(head_build_dir, "asf")]
+)
