@@ -131,7 +131,7 @@ else
 
 ### Begin Unix Section
 
-CFLAGS += \
+CFLAGS += -Werror \
 	$(GTK_CFLAGS) \
 	$(shell /usr/bin/pkg-config --cflags libglade-2.0) \
 	$(GSL_CFLAGS) \
