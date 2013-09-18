@@ -2856,7 +2856,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     }
   }
 
-  if (resample_method == BICUBIC &&
+  if (resample_method == RESAMPLE_BICUBIC &&
       omd->general->data_type == ASF_BYTE &&
       (out_of_range_negative || out_of_range_positive))
   {
