@@ -17,7 +17,7 @@ LIBS =	$(PROJ_LIBS) \
 
 OBJS = project.o spheroid_axes_lengths.o datum_spheroid.o geotiff_support.o
 
-all: build_only test
+all: build_only
 	cp libasf_proj.a $(LIBDIR)
 	cp libasf_proj.h geotiff_support.h $(ASF_INCLUDE_DIR)
 	cp spheroids.h $(ASF_INCLUDE_DIR)
