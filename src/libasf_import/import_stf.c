@@ -79,6 +79,10 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
           sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; break;
   }
 
+  if (!tempFlag) {
+    //asfPrintStatus("No radiometry set.\n");
+  }
+
   if (lat_constrained) {
     /* Determine start and end line for latitude constraint */
     createSubset(inDataName, lowerLat, upperLat, &imgStart, &imgEnd,

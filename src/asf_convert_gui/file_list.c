@@ -841,7 +841,12 @@ add_thumbnail (GtkTreeIter * iter)
     else {
         GError *err = NULL;
         GThread *Thread;
-        if((Thread = g_thread_create((GThreadFunc)do_thumbnail, ref, FALSE, &err)) == NULL) {
+#if ! (GLIB_MAJOR_VERSION > 2 || (GLIB_MINOR_VERSION >= 32))
+        Thread = g_thread_create((GThreadFunc)do_thumbnail, ref, FALSE, &err);
+#else
+        Thread = g_thread_try_new("MapReadyThumbnail", (GThreadFunc)do_thumbnail, ref, &err);
+#endif
+        if (Thread == NULL) {
           asfPrintStatus("Failed to create thumbnail generation thread: %s\n", err->message);
         }
     }

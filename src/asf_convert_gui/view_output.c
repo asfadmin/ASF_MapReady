@@ -36,7 +36,10 @@ void show_image_with_asf_view_arg(gchar * in_name, gchar *arg)
 
         if (!ttp)
         {
+            // g_thread_init() no longer necessary as of Glib 2.32
+#if ! (GLIB_MAJOR_VERSION > 2 || (GLIB_MINOR_VERSION >= 32))
             if (!g_thread_supported ()) g_thread_init (NULL);
+#endif
             ttp = g_thread_pool_new ((GFunc) asf_view_thread, NULL, 4, TRUE, &err);
             g_assert(!err);
         }

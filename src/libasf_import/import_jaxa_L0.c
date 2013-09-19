@@ -515,7 +515,6 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
                                int num_red_chunks, int num_green_chunks, int num_blue_chunks, int num_nir_chunks,
                                char *bands, int *num_bands, int save_intermediates, const char *out_file)
 {
-    int rframe_number, gframe_number, bframe_number, nframe_number;
     char jpegRed[JL0_DIR_LEN + JL0_FILE_LEN + 1];
     char red_all_chunks[JL0_DIR_LEN + JL0_FILE_LEN + 1];
     char jpegGreen[JL0_DIR_LEN + JL0_FILE_LEN + 1];
@@ -697,10 +696,6 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     int gband_valid = (valid_gSOI && !g_eof) ? 1 : 0; // was in the correct target (time) window and the end
     int bband_valid = (valid_bSOI && !b_eof) ? 1 : 0; // of file was not hit (per ALOS spec)
     int nband_valid = (valid_nSOI && !n_eof) ? 1 : 0;
-    rframe_number = 1;
-    gframe_number = 1;
-    bframe_number = 1;
-    nframe_number = 1;
 
     // Update number of bands and the band string
     // Note: In ASF Internal Format, bands are typically written in blue->green->red->near-infrared order
@@ -741,7 +736,7 @@ int import_jaxa_L0_avnir_bands(int *red_lines, int *green_lines, int *blue_lines
     // scaler of the frame time else terminate ingest, i.e. only pad frames if the EXACT number
     // of lines of missing data can be calculated from the difference in frame times ...this
     // is risky and maybe we shouldn't be doing it?
-    int done;
+    int done=FALSE;
     target_time = 0.0;
     asfPrintStatus("Converting band data jpeg frames (16x7100) into ASF Internal Format...\n");
     while (!feof(rin) && !feof(gin) && !feof(bin) && !feof(nin) && !done) {
