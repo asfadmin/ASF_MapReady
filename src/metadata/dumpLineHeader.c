@@ -107,7 +107,7 @@ void dumpLineHeader(const char *inName, const char *template, int line_number)
   printf("Format template: %s\n", template);
 
   // Determine offset and jump to it
-  offset = firstRecordLen(inName);
+  offset = firstRecordLen((char*)inName);
   FILE *fpData = FOPEN(inName, "rb");
 
   int current_line = 1;

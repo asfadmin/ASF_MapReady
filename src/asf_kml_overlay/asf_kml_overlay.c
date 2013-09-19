@@ -139,26 +139,6 @@ static int checkForOption(char* key, int argc, char* argv[])
   return(FLAG_NOT_SET);
 }
 
-static double max2(double a, double b)
-{
-  return a > b ? a : b;
-}
-
-static double max4(double a, double b, double c, double d)
-{
-  return max2(max2(a,b), max2(c,d));
-}
-
-static double min2(double a, double b)
-{
-  return a < b ? a : b;
-}
-
-static double min4(double a, double b, double c, double d)
-{
-  return min2(min2(a,b), min2(c,d));
-}
-
 int main(int argc, char *argv[])
 {
   char inFile[512], outFile[512], *colormap=NULL;

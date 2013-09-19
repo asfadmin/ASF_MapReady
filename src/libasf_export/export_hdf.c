@@ -284,7 +284,7 @@ static h5_t *initialize_h5_file_meta(const char *output_file_name,
 {
   hid_t h5_file, h5_datagroup, h5_metagroup, h5_data, h5_proj;
   hid_t h5_array, h5_time, h5_lat, h5_lon, h5_xgrid, h5_ygrid;
-  int ii, kk, complex=FALSE, projected=FALSE;
+  int ii, kk, projected=FALSE;
   char *spatial_ref=NULL, *datum=NULL, *spheroid=NULL;
   char dataset[50], group[50], str_attr[50], tmp[50];
   double fValue;
@@ -305,10 +305,6 @@ static h5_t *initialize_h5_file_meta(const char *output_file_name,
   int band_count = mg->band_count;
   h5->var_count = band_count;
   h5->var = (hid_t *) MALLOC(sizeof(hid_t)*h5->var_count);
-
-  // Check for complex data
-  if (mg->image_data_type == COMPLEX_IMAGE)
-    complex = TRUE;
 
   // Create new HDF5 file
   h5_file = 
@@ -1193,10 +1189,10 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
 				    meta_parameters *md,
 				    iso_meta *iso)
 {
-  hid_t h5_file, h5_datagroup, h5_metagroup, h5_data, h5_proj;
+  hid_t h5_file, h5_datagroup, h5_metagroup, h5_data;
   hid_t h5_array, h5_time, h5_lat, h5_lon, h5_xgrid, h5_ygrid;
   hid_t h5_section, h5_level1, h5_level2, h5_level3, h5_level4;
-  int ii, kk, complex=FALSE, projected=FALSE;
+  int ii, kk, projected=FALSE;
   char dataset[50], group[50], str[50], str_attr[50];
   char level1[255], level2[255], level3[255], level4[255];
   char **str_array;
@@ -1220,10 +1216,6 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
   int band_count = info->numberOfLayers;
   h5->var_count = band_count;
   h5->var = (hid_t *) MALLOC(sizeof(hid_t)*h5->var_count);
-  
-  // Check for complex data
-  if (info->imageDataType == COMPLEX_DATA_TYPE)
-    complex = TRUE;
   
   // Create new HDF5 file
   h5_file = 

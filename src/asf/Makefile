@@ -61,7 +61,7 @@ check: unit_tests.c build_only
 	./asf_tester
 
 clean:
-	rm -rf $(OBJS) asf.a test_data/*.img asf_tester library_cooking_pot
+	rm -rf $(OBJS) asf.a test_data/*.img asf_tester library_cooking_pot test *.t.o
 
 distclean:
 	rm -f core *~ TAGS gdb_init.com

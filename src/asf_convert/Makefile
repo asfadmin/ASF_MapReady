@@ -34,6 +34,8 @@ LIBS  = \
 	$(ZLIB_LIBS) \
 	-lm
 
+CFLAGS += -Wall -Werror
+
 OBJS  = asf_convert.o
 
 all:    asf_convert clean

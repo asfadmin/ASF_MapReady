@@ -229,7 +229,7 @@ int asf_baseline(char *baseName, char *interferogram, char *seeds,
 	       "deramping interferogram with refined baseline (deramp)");
   sprintf(tmp, "%s_ml", interferogram);
   asfPrintStatus("   Multilooking refined interferogram ...\n");
-  check_return(multilook("igramd", tmp, "a_cpx.meta", NULL),
+  check_return(asf_insar_multilook("igramd", tmp, "a_cpx.meta", NULL),
 	       "multilooking refined interferogram (multilook)");
 
   return(0);

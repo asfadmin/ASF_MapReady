@@ -32,6 +32,8 @@ LIBS  = \
 	$(HDFEOS5_LIBS) \
 	$(ZLIB_LIBS)
 
+CFLAGS += -Wall -Werror
+
 OBJS  = asf_kml_overlay.o
 
 all:    asf_kml_overlay clean
