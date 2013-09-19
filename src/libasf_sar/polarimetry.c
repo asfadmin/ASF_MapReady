@@ -1753,13 +1753,6 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          const char *classFile,
                          int class_band)
 {
-  int debug_mode = classFile && strcmp_case(classFile, "DEBUG")==0;
-  int debug_band = -1;
-  if (debug_mode) {
-    debug_band = class_band;
-    class_band = -1;
-  }
-
   char *meta_name = appendExt(inFile, ".meta");
   meta_parameters *inMeta = meta_read(meta_name);
 

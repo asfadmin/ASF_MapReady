@@ -112,6 +112,7 @@ static int outOfBounds(int x, int y, int srcSize, int lines, int samples)
   return FALSE;
 }
 
+/*
 // TopOffPeak:
 // Given an array of peak values, use trilinear interpolation to determine the 
 // exact (i.e. float) top. This works by finding the peak of a parabola which 
@@ -139,7 +140,6 @@ static void topOffPeak(float *peaks, int size, int i, int j, int maxI,
   else *dj = j;
 }
 
-/*
 // FindPeak: 
 // Just determines the maxium amplitude value and checks whether it is 
 // actually the peak for the neighborhood
