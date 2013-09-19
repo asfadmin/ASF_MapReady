@@ -360,9 +360,9 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
   float *c13_imag=NULL, *c22=NULL, *c23_real=NULL, *c23_imag=NULL, *c33=NULL;
   float *t11=NULL, *t12_real=NULL, *t12_imag=NULL, *t13_real=NULL;
   float *t13_imag=NULL, *t22=NULL, *t23_real=NULL, *t23_imag=NULL, *t33=NULL;
-  float C11, C12_real, C12_imag, C13_real, C13_imag;
-  float C22, C23_real, C23_imag, C33;
-  float phase, phase12, phase13, phase23;
+  //float C11, C12_real, C12_imag, C13_real, C13_imag;
+  //float C22, C23_real, C23_imag, C33;
+  //float phase, phase12, phase13, phase23;
 
   amp_buf = MALLOC(sizeof(float)*ns);
 
@@ -563,9 +563,9 @@ static void polarimetric_image_rows_load_new_rows(PolarimetricImageRows *self,
   float *c13_imag=NULL, *c22=NULL, *c23_real=NULL, *c23_imag=NULL, *c33=NULL;
   float *t11=NULL, *t12_real=NULL, *t12_imag=NULL, *t13_real=NULL;
   float *t13_imag=NULL, *t22=NULL, *t23_real=NULL, *t23_imag=NULL, *t33=NULL;
-  float phase, phase12, phase13, phase23;
-  float C11, C12_real, C12_imag, C13_real, C13_imag;
-  float C22, C23_real, C23_imag, C33;
+  //float phase, phase12, phase13, phase23;
+  //float C11, C12_real, C12_imag, C13_real, C13_imag;
+  //float C22, C23_real, C23_imag, C33;
 
   amp_buf = MALLOC(sizeof(float)*ns);
 

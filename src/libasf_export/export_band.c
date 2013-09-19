@@ -708,7 +708,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
         // The following is recommended by the standard
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-        free (citation);
+        FREE (citation);
       }
         break;
       case LAMBERT_CONFORMAL_CONIC:
@@ -770,7 +770,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
         // The following is recommended by the standard
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-        free (citation);
+        FREE (citation);
       }
       break;
       case POLAR_STEREOGRAPHIC:
@@ -847,7 +847,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         }
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-        free (citation);
+        FREE (citation);
       }
       break;
       case LAMBERT_AZIMUTHAL_EQUAL_AREA:
@@ -902,7 +902,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
         // The following is recommended by the standard
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-        free (citation);
+        FREE (citation);
       }
         break;
       case EQUI_RECTANGULAR:
@@ -958,7 +958,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
         // The following is recommended by the standard
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-        free (citation);
+        FREE (citation);
       }
         break;
       case EQUIDISTANT:
@@ -997,7 +997,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
         // The following is recommended by the standard
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-        free (citation);
+        FREE (citation);
       }
         break;
       case MERCATOR:
@@ -1065,7 +1065,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
         // The following is recommended by the standard
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-        free (citation);
+        FREE (citation);
       }
         break;
       case SINUSOIDAL:
@@ -1109,7 +1109,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
 		      "bad citation length");
 	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
 	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-	  free (citation);
+	  FREE (citation);
 	}
 	break;
       case EASE_GRID_GLOBAL:
@@ -1151,7 +1151,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
 		    "NSIDC EASE-Grid Global");
 	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
 	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-	  free (citation);
+	  FREE (citation);
 	}
 	break;
       case EASE_GRID_NORTH:
@@ -1190,7 +1190,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
 		    "NSIDC EASE-Grid North");
 	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
 	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-	  free (citation);
+	  FREE (citation);
 	}
 	break;
       case EASE_GRID_SOUTH:
@@ -1229,7 +1229,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
 		    "NSIDC EASE-Grid South");
 	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
 	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-	  free (citation);
+	  FREE (citation);
 	}
 	break;
       case LAT_LONG_PSEUDO_PROJECTION:
@@ -1241,7 +1241,6 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
       default:
         asfPrintWarning ("Unsupported map projection found.  TIFF file will not\n"
             "contain projection information.\n");
-	free(citation);
         break;
     }
   }
@@ -1324,7 +1323,6 @@ export_band_image (const char *metadata_file_name,
                    int *noutputs,
                    char ***output_names)
 {
-  int map_projected;
   int is_geotiff = 1;
   TIFF *otif = NULL; // FILE* pointer for TIFF files
   GTIF *ogtif = NULL;
@@ -1338,7 +1336,6 @@ export_band_image (const char *metadata_file_name,
   char *lut_file = NULL;
 
   meta_parameters *md = meta_read (metadata_file_name);
-  map_projected = is_map_projected(md);
 
   if (format == PNG_GE)
     meta_write(md, output_file_name);

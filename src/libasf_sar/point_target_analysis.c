@@ -139,6 +139,7 @@ static void topOffPeak(float *peaks, int size, int i, int j, int maxI,
   else *dj = j;
 }
 
+/*
 // FindPeak: 
 // Just determines the maxium amplitude value and checks whether it is 
 // actually the peak for the neighborhood
@@ -163,6 +164,7 @@ static void findPeak(float *s, int size, double *peakX, double *peakY)
   *peakX = bestLocX;
   *peakY = bestLocY;
 }
+*/
 
 static float findPeakSimple(float *s, int size, double *peakX, double *peakY)
 {
@@ -257,7 +259,6 @@ int point_target_analysis(char *inFile, char *crFile, char *ptaFile)
       meta_get_lineSamp(meta, lat, lon, height, &posY, &posX);
       if (!outOfBounds(posX, posY, srcSize, line_count, sample_count)) {
 	// Get subsets
-	int ii, kk;
 	int size = srcSize*srcSize;
 	int peakSize = pta.peak_search;
 	float *chip = (float *) MALLOC(sizeof(float)*size);
@@ -270,6 +271,7 @@ int point_target_analysis(char *inFile, char *crFile, char *ptaFile)
 	FCLOSE(fpImg);
 
 	// Make sure that peak chip is in sigma
+	//int ii, kk;
 	//if (meta->general->radiometry == r_AMP) {
 	//  for (ii=0; ii<peakSize; ii++) {
 	//    for (kk=0; kk<peakSize; kk++) {

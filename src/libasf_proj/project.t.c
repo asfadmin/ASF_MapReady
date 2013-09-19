@@ -141,6 +141,9 @@ int testa_utm_arr(project_parameters_t * pps,  char * name,
     return ok;
 }
 
+void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
+               double x_correct, double y_correct);
+
 int testa_utmz(double lat_deg, double lon_deg,
 	       double x_correct, double y_correct)
 {
