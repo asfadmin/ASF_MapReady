@@ -10,8 +10,8 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
 		  char *masterFile, char *slaveFile, char *outBase,
 		  float *average)
 {
-  char ampFile[255], phaseFile[255], igramFile[512];
-  char cohFile[512], ml_ampFile[255], ml_phaseFile[255], ml_igramFile[512];
+  char ampFile[255], phaseFile[255]; //, igramFile[512];
+  char cohFile[512], ml_ampFile[255], ml_phaseFile[255]; //, ml_igramFile[512];
   FILE *fpMaster, *fpSlave, *fpAmp, *fpPhase, *fpCoh, *fpAmp_ml, *fpPhase_ml;
   int line, sample_count, line_count, count;
   float	bin_high, bin_low, max=0.0, sum_a, sum_b, ampScale;
