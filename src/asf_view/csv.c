@@ -78,7 +78,7 @@ void open_csv(const char *csv_file)
             snprintf(errbuf, 1024, "Don't know how to load: %s", csv_file);
             message_box(errbuf);
             strcat(errbuf, "\n");
-            printf(errbuf);
+            printf("%s",errbuf);
         }
 #endif
 }

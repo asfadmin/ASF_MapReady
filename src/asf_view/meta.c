@@ -381,7 +381,10 @@ void open_mdv()
 
         if (!ttp)
         {
+// g_thread_init() not necessary for glib 2.32 and later
+#if ! (GLIB_MAJOR_VERSION > 2 || (GLIB_MINOR_VERSION >= 32))
             if (!g_thread_supported ()) g_thread_init (NULL);
+#endif
             ttp = g_thread_pool_new ((GFunc) mdv_thread, NULL, 4, TRUE, &err);
             g_assert(!err);
         }

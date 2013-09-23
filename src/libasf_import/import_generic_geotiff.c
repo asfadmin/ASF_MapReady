@@ -129,8 +129,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                          // the array, e.g. read_tiff_meta() in the asf_view tool.
 
   // Open the input tiff file.
-  TIFFErrorHandler oldHandler;
-  oldHandler = TIFFSetWarningHandler(NULL);
+  //TIFFErrorHandler oldHandler = TIFFSetWarningHandler(NULL);
   input_tiff = XTIFFOpen (inFileName, "r");
   if (input_tiff == NULL)
     asfPrintError ("Error opening input TIFF file:\n    %s\n", inFileName);
@@ -1749,9 +1748,9 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     stats = meta_statistics_init(num_bands);
     int is_dem = (mg->image_data_type == DEM) ? 1 : 0;
     if(!stats) asfPrintError("Out of memory.  Cannot allocate statistics struct.\n");
-    int ii, nb;
+    int ii;
     int ret = 0;
-    for (ii=0, nb=num_bands; ii<num_bands; ii++) {
+    for (ii=0; ii<num_bands; ii++) {
       ret = tiff_image_band_statistics(input_tiff, meta_out,
                                        &stats->band_stats[ii], is_dem,
                                        num_bands, ii,
@@ -3032,6 +3031,9 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, unsigned long row, i
       //        is an uncompressed tile in raster format (row-order 2D array
       //        in memory.)
       bytes_read = TIFFReadTile(tif, tbuf, tile_col, row, 0, band);
+      if (bytes_read <= 0) {
+        //asfPrintWarning("No data\n");
+      }
       uint32 num_preceding_tile_rows = floor(row / t.tileLength);
       row_in_tile = row - (num_preceding_tile_rows * t.tileLength);
       uint32 i;

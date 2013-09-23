@@ -1,11 +1,9 @@
 #include "CUnit/Basic.h"
 
-void test_vector();
-void test_strUtil();
-void test_complex();
-void test_solve1d();
+void test_geoid(void);
+void test_geoid_adjust(void);
 
-int main()
+int main(void)
 {
    CU_pSuite pSuite = NULL;
 
@@ -14,17 +12,16 @@ int main()
       return CU_get_error();
 
    /* add a suite to the registry */
-   pSuite = CU_add_suite("asf suite", NULL, NULL);
+   pSuite = CU_add_suite("libasf_geocode suite", NULL, NULL);
    if (NULL == pSuite) {
       CU_cleanup_registry();
       return CU_get_error();
    }
 
    /* add the tests to the suite */
-   if ((NULL == CU_add_test(pSuite, "vector", test_vector)) ||
-       (NULL == CU_add_test(pSuite, "strUtil", test_strUtil)) ||
-       (NULL == CU_add_test(pSuite, "solve1d", test_solve1d)) ||
-       (NULL == CU_add_test(pSuite, "complex", test_complex)))
+   if ((NULL == CU_add_test(pSuite, "geoid", test_geoid)) ||
+       //(NULL == CU_add_test(pSuite, "strUtil", test_strUtil)) ||
+       (NULL == CU_add_test(pSuite, "geoid_adjust", test_geoid_adjust)))
    {
       CU_cleanup_registry();
       return CU_get_error();

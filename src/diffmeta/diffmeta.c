@@ -32,6 +32,15 @@ CAVEATS:
 #include "diffmeta.h"
 #include "diffmeta_tolerances.h"
 
+/* Turning this on, since we read a lot of blocks that aren't actually tested
+   yet.  Want to keep the read code until we get the test code going.  This
+   enables us to use -Werror.  This warning appears new as in gcc 4.6
+*/
+#if __GNUC__ > 4 || \
+              (__GNUC__ == 4 && (__GNUC_MINOR__ >= 6 ) )
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
+
 /**** MACRO DEFINITIONS ****/
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
 
@@ -94,7 +103,6 @@ int main(int argc, char **argv)
   extern char *optarg;          /* current argv[] */
   int c;                        /* option letter from getopt() */
   extern FILE *fLog;            /* output file descriptor, stdout or log file */
-  FILE *fError;                 /* Error log, stderr or log file */
   extern int logflag, quietflag;
   int formatflag;
   int is_not_a_geotiff=1; // GeoTIFFs don't require the same fields
@@ -169,10 +177,6 @@ int main(int argc, char **argv)
   // Set up output redirection for error and log messages
   if (logflag == 0) {
     fLog = NULL;
-    fError = NULL;
-  }
-  else {
-    fError = fLog;
   }
   if (!outputflag) {
     sprintf(msg, "Missing output file name ...file differences will be directed to stderr (only)\n");

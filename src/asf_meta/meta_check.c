@@ -351,13 +351,14 @@ int isUAVSAR(char *dataFile, char **error)
     // originally produced.
     // The only identifier for even UAVSAR, I could find, was the URL.
     char line[512];
-    FILE *fp;
-    fp = fopen(inFile, "r");
-    while (fgets(line, 512, fp)) {
-      if (strstr(line, "uavsar.jpl.nasa.gov"))
-	found = TRUE;
+    FILE *fp = fopen(inFile, "r");;
+    if (fp) {
+      while (fgets(line, 512, fp)) {
+        if (strstr(line, "uavsar.jpl.nasa.gov"))
+   	  found = TRUE;
+      }
+      fclose(fp);
     }
-    fclose(fp);
   }
   FREE(inFile);
 

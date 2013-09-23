@@ -14,10 +14,10 @@ static double pixel_size;
 static datum_type_t datum;
 static resample_method_t rm;
 
-extern void set_options_testing();
+extern static void set_options_testing();
 
 static const double tol = 0.00001;
-int within_tol(double a, double b)
+static int within_tol(double a, double b)
 {
     if (ISNAN(a)) return ISNAN(b);
     if (ISNAN(b)) return ISNAN(a);
@@ -34,7 +34,7 @@ static void print_args(int len, char **p)
     }
 }
 
-void print_proj(project_parameters_t *pps, projection_type_t pt)
+static void print_proj(project_parameters_t *pps, projection_type_t pt)
 {
     switch (pt)
     {
@@ -86,7 +86,7 @@ void print_proj(project_parameters_t *pps, projection_type_t pt)
     }
 }
 
-int projcmp(project_parameters_t* pps, project_parameters_t* pps2,
+static int projcmp(project_parameters_t* pps, project_parameters_t* pps2,
 	    projection_type_t pt)
 {
     switch (pt)
@@ -146,7 +146,7 @@ int projcmp(project_parameters_t* pps, project_parameters_t* pps2,
     }    
 }
 
-void test_file(project_parameters_t* pps, projection_type_t pt)
+static void test_file(project_parameters_t* pps, projection_type_t pt)
 {
     static char * opts [] =
 	{ "--read-proj-file", "tmp" };
@@ -175,7 +175,7 @@ void test_file(project_parameters_t* pps, projection_type_t pt)
     }
 }
 
-void no_arg_test()
+static void no_arg_test()
 {
     static char * opts [] =
 	{ "unrelated" };
@@ -195,7 +195,7 @@ void no_arg_test()
     }
 }
 
-void utm_test_1()
+static void utm_test_1()
 {
     static char * opts [] =
 	{ "-p", "utm", "-z", "4", "--datum", "WGS84", "other", "stuff" };
@@ -222,7 +222,7 @@ void utm_test_1()
     }
 }
 
-void utm_test_2()
+static void utm_test_2()
 {
     static char * opts [] =
 	{ "-p", "utm", "extra", "stuff" };
@@ -247,7 +247,7 @@ void utm_test_2()
     }
 }
 
-void utm_test_3()
+static void utm_test_3()
 {
     static char * opts [] =
 	{ "-p" };
@@ -265,7 +265,7 @@ void utm_test_3()
     }
 }
 
-void utm_test_4()
+static void utm_test_4()
 {
     static char * opts [] =
 	{ "-p", "utm", "-z", "more", "args" };
@@ -283,7 +283,7 @@ void utm_test_4()
     }
 }
 
-void utm_test_5()
+static void utm_test_5()
 {
     static char * opts [] =
 	{ "-p", "utm", "--zone", "5", "--another-arg" };
@@ -305,7 +305,7 @@ void utm_test_5()
     }
 }
 
-void utm_test_6()
+static void utm_test_6()
 {
     static char * opts [] =
 	{ "-p", "utm", "-z", "illegal" };
@@ -323,7 +323,7 @@ void utm_test_6()
     }
 }
 
-void utm_test_7()
+static void utm_test_7()
 {
     static char * opts [] =
 	{ "--projection", "utm", "-z", "123f" };
@@ -341,7 +341,7 @@ void utm_test_7()
     }
 }
 
-void utm_test_8()
+static void utm_test_8()
 {
     static char * opts [] =
 	{ "--projection", "utm", "-z", "23" };
@@ -363,7 +363,7 @@ void utm_test_8()
     }
 }
 
-void utm_test_9()
+static void utm_test_9()
 {
     static char * opts [] =
 	{ "--projection", "utm", "-z", "-12" };
@@ -384,7 +384,7 @@ void utm_test_9()
     }
 }
 
-void utm_test_10()
+static void utm_test_10()
 {
     static char * opts [] =
 	{ "--projection", "utm", "-z", "-13", "--center-latitude", "45.6" };
@@ -408,7 +408,7 @@ void utm_test_10()
     }
 }
 
-void utm_test_11()
+static void utm_test_11()
 {
     static char * opts [] =
 	{ "--projection", "utm", "-z", "6", "--central-meridian", "45.6" };
@@ -432,7 +432,7 @@ void utm_test_11()
     }
 }
 
-void utm_test_12()
+static void utm_test_12()
 {
     static char * opts [] =
 	{ "--projection", "utm",
@@ -460,7 +460,7 @@ void utm_test_12()
     }
 }
 
-void utm_test_13()
+static void utm_test_13()
 {
     static char * opts [] =
 	{ "--projection", "utm",
@@ -486,7 +486,7 @@ void utm_test_13()
     }
 }
 
-void utm_test_14()
+static void utm_test_14()
 {
     static char * opts [] =
 	{ "--projection", "utm",
@@ -513,7 +513,7 @@ void utm_test_14()
     }
 }
 
-void utm_test_15()
+static void utm_test_15()
 {
     static char * opts [] =
 	{ "--projection", "utm",
@@ -540,7 +540,7 @@ void utm_test_15()
     }
 }
 
-void utm_test_16()
+static void utm_test_16()
 {
     static char * opts [] =
 	{ "--projection", "utm",
@@ -567,7 +567,7 @@ void utm_test_16()
     }
 }
 
-void utm_test_17()
+static void utm_test_17()
 {
     static char * opts [] =
 	{ "--projection", "utm",
@@ -595,7 +595,7 @@ void utm_test_17()
 }
 
 
-void test_utm_options()
+static void test_utm_options()
 {
     utm_test_1();
     utm_test_2();
@@ -616,7 +616,7 @@ void test_utm_options()
     utm_test_17();
 }
 
-void ps_test_1()
+static void ps_test_1()
 {
     static char * opts [] =
 	{ "--projection", "ps", "--first-standard-parallel", "61", "--central-meridian", "-59" };
@@ -637,7 +637,7 @@ void ps_test_1()
     }
 }
 
-void ps_test_2()
+static void ps_test_2()
 {
     static char * opts [] =
 	{ "--projection", "ps", "--central-meridian", "59", "--first-standard-parallel", "-61", "f1", "f2"  };
@@ -660,7 +660,7 @@ void ps_test_2()
 }
 
 
-void ps_test_3()
+static void ps_test_3()
 {
     static char * opts [] =
 	{ "-p", "ps", "--central-meridian", "59", "--first-standard-parallel", "-61"  };
@@ -681,7 +681,7 @@ void ps_test_3()
     }
 }
 
-void ps_test_4()
+static void ps_test_4()
 {
     static char * opts [] =
 	{ "-p", "ps", "--central-meridian", "0", "--first-standard-parallel", "61"  };
@@ -702,7 +702,7 @@ void ps_test_4()
     }
 }
 
-void ps_test_5()
+static void ps_test_5()
 {
     static char * opts [] =
 	{ "-p", "ps", "--central-meridian", "59", "--first-standard-parallel", "-61"  };
@@ -723,7 +723,7 @@ void ps_test_5()
     }
 }
 
-void ps_test_6()
+static void ps_test_6()
 {
     static char * opts [] =
 	{ "-p", "ps", "--central-meridian", "123zap", "--first-standard-parallel", "-61"  };
@@ -740,7 +740,7 @@ void ps_test_6()
     }
 }
 
-void ps_test_7()
+static void ps_test_7()
 {
     static char * opts [] =
 	{ "-p", "ps", "--central-meridian", "59", "--first-standard-parallel", "-61", "-n"  };
@@ -761,7 +761,7 @@ void ps_test_7()
     }
 }
 
-void ps_test_8()
+static void ps_test_8()
 {
     static char * opts [] =
 	{ "-p", "ps", "--central-meridian", "59", "--first-standard-parallel", "-61", "-s"  };
@@ -783,7 +783,7 @@ void ps_test_8()
     }
 }
 
-void ps_test_9()
+static void ps_test_9()
 {
     static char * opts [] =
 	{ "-p", "ps", "--central-meridian", "159",
@@ -805,7 +805,7 @@ void ps_test_9()
     }
 }
 
-void ps_test_10()
+static void ps_test_10()
 {
     static char * opts [] =
 	{ "--projection", "ps", "--first-standard-parallel", "19", "--central-meridian", "-101",
@@ -827,7 +827,7 @@ void ps_test_10()
     }
 }
 
-void ps_test_11()
+static void ps_test_11()
 {
     static char * opts [] =
 	{ "--projection", "ps", "--first-standard-parallel", "19", "--central-meridian", "-101",
@@ -849,7 +849,7 @@ void ps_test_11()
     }
 }
 
-void ps_test_12()
+static void ps_test_12()
 {
     static char * opts [] =
 	{ "--projection", "ps", "--first-standard-parallel", "19",
@@ -872,7 +872,7 @@ void ps_test_12()
     }
 }
 
-void ps_test_13()
+static void ps_test_13()
 {
     static char * opts [] =
 	{ "-p", "ps", "--central-meridian", "-101", "-s"  };
@@ -896,7 +896,7 @@ void ps_test_13()
     }
 }
 
-void ps_test_14()
+static void ps_test_14()
 {
     static char * opts [] =
 	{ "-p", "ps", "--central-meridian", "-101", "-n"  };
@@ -918,7 +918,7 @@ void ps_test_14()
     }
 }
 
-void ps_test_15()
+static void ps_test_15()
 {
     static char * opts [] =
 	{ "-p", "ps", "--first-standard-parallel", "-11", "-n"  };
@@ -939,7 +939,7 @@ void ps_test_15()
     }
 }
 
-void ps_test_16()
+static void ps_test_16()
 {
     static char * opts [] =
 	{ "-p", "ps", "--first-standard-parallel", "-n"  };
@@ -956,7 +956,7 @@ void ps_test_16()
     }
 }
 
-void ps_test_17()
+static void ps_test_17()
 {
     static char * opts [] =
 	{ "--projection", "ps", "--central-meridian", "-n"  };
@@ -973,7 +973,7 @@ void ps_test_17()
     }
 }
 
-void ps_test_18()
+static void ps_test_18()
 {
     static char * opts [] =
 	{ "--projection", "ps", "--first-standard-parallel", "7", "--central-meridian"  };
@@ -990,7 +990,7 @@ void ps_test_18()
     }
 }
 
-void ps_test_19()
+static void ps_test_19()
 {
     static char * opts [] =
 	{ "--projection", "ps", "--central-meridian", "7", "--first-standard-parallel"  };
@@ -1007,7 +1007,7 @@ void ps_test_19()
     }
 }
 
-void ps_test_20()
+static void ps_test_20()
 {
     static char * opts [] =
 	{ "-p", "ps", "--first-standard-parallel", "-81", "-n",
@@ -1033,7 +1033,7 @@ void ps_test_20()
     }
 }
 
-void ps_test_21()
+static void ps_test_21()
 {
     static char * opts [] =
 	{ "-p", "ps", "--first-standard-parallel", "-11.101", "--north-pole",
@@ -1061,7 +1061,7 @@ void ps_test_21()
     }
 }
 
-void ps_test_22()
+static void ps_test_22()
 {
     static char * opts [] =
 	{ "-p", "ps", "-n",
@@ -1088,7 +1088,7 @@ void ps_test_22()
     }
 }
 
-void ps_test_23()
+static void ps_test_23()
 {
     static char * opts [] =
 	{ "hey", "-p", "ps", "-n",
@@ -1120,7 +1120,7 @@ void ps_test_23()
     }
 }
 
-void ps_test_24()
+static void ps_test_24()
 {
     static char * opts [] =
 	{ "-p", "ps", "-n",
@@ -1150,7 +1150,7 @@ void ps_test_24()
     }
 }
 
-void ps_test_25()
+static void ps_test_25()
 {
     static char * opts [] =
 	{ "--projection", "ps", "--first-standard-parallel", "11fff9", "--central-meridian", "-101",
@@ -1168,7 +1168,7 @@ void ps_test_25()
     }
 }
 
-void test_ps_options()
+static void test_ps_options()
 {
     ps_test_1();
     ps_test_2();
@@ -1197,7 +1197,7 @@ void test_ps_options()
     ps_test_25();
 }
 
-void lamcc_test_1()
+static void lamcc_test_1()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--first-standard-parallel", "17",
@@ -1221,7 +1221,7 @@ void lamcc_test_1()
     }    
 }
 
-void lamcc_test_2()
+static void lamcc_test_2()
 {
     static char * opts [] =
 	{ "-p", "lamcc", "--first-standard-parallel", "17",
@@ -1245,7 +1245,7 @@ void lamcc_test_2()
     }    
 }
 
-void lamcc_test_3()
+static void lamcc_test_3()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--first-standard-parallel", "17", "--second-standard-parallel", "18",
@@ -1268,7 +1268,7 @@ void lamcc_test_3()
     }    
 }
 
-void lamcc_test_4()
+static void lamcc_test_4()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--first-standard-parallel", "17", "--second-standard-parallel", "18",
@@ -1290,7 +1290,7 @@ void lamcc_test_4()
     }    
 }
 
-void lamcc_test_5()
+static void lamcc_test_5()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--first-standard-parallel", "17",
@@ -1313,7 +1313,7 @@ void lamcc_test_5()
     }    
 }
 
-void lamcc_test_6()
+static void lamcc_test_6()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--first-standard-parallel", "17z", "--second-standard-parallel", "18",
@@ -1331,7 +1331,7 @@ void lamcc_test_6()
     }    
 }
 
-void lamcc_test_7()
+static void lamcc_test_7()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--first-standard-parallel", "17", "--second-standard-parallel", "1o8",
@@ -1349,7 +1349,7 @@ void lamcc_test_7()
     }    
 }
 
-void lamcc_test_8()
+static void lamcc_test_8()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--first-standard-parallel", "17", "--second-standard-parallel", "18",
@@ -1367,7 +1367,7 @@ void lamcc_test_8()
     }    
 }
 
-void lamcc_test_9()
+static void lamcc_test_9()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--first-standard-parallel", "17", "--second-standard-parallel", "18",
@@ -1385,7 +1385,7 @@ void lamcc_test_9()
     }    
 }
 
-void lamcc_test_10()
+static void lamcc_test_10()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--first-standard-parallel", "--second-standard-parallel", "18",
@@ -1403,7 +1403,7 @@ void lamcc_test_10()
     }    
 }
 
-void lamcc_test_11()
+static void lamcc_test_11()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--first-standard-parallel", "17", "--second-standard-parallel",
@@ -1421,7 +1421,7 @@ void lamcc_test_11()
     }    
 }
 
-void lamcc_test_12()
+static void lamcc_test_12()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--first-standard-parallel", "17", "--second-standard-parallel", "0",
@@ -1439,7 +1439,7 @@ void lamcc_test_12()
     }    
 }
 
-void lamcc_test_13()
+static void lamcc_test_13()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--first-standard-parallel", "17", "--second-standard-parallel", "0",
@@ -1457,7 +1457,7 @@ void lamcc_test_13()
     }    
 }
 
-void lamcc_test_14()
+static void lamcc_test_14()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--center-latitude", "17", "--second-standard-parallel", "0",
@@ -1475,7 +1475,7 @@ void lamcc_test_14()
     }    
 }
 
-void lamcc_test_15()
+static void lamcc_test_15()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--center-latitude", "17", "--central-meridian", "45",
@@ -1493,7 +1493,7 @@ void lamcc_test_15()
     }    
 }
 
-void lamcc_test_16()
+static void lamcc_test_16()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--center-latitude", "17", "--central-meridian", "45",
@@ -1519,7 +1519,7 @@ void lamcc_test_16()
     }    
 }
 
-void lamcc_test_17()
+static void lamcc_test_17()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--second-standard-parallel", "17.3", "--central-meridian", "45",
@@ -1541,7 +1541,7 @@ void lamcc_test_17()
     }    
 }
 
-void lamcc_test_18()
+static void lamcc_test_18()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--center-latitude", "17", "--central-meridian", "45",
@@ -1563,7 +1563,7 @@ void lamcc_test_18()
     }    
 }
 
-void lamcc_test_19()
+static void lamcc_test_19()
 {
     static char * opts [] =
 	{ "--projection", "lamcc", "--center-latitude", "17", "--second-standard-parallel", "45",
@@ -1585,7 +1585,7 @@ void lamcc_test_19()
     }    
 }
 
-void lamcc_test_20()
+static void lamcc_test_20()
 {
     static char * opts [] =
 	{ "--projection", "lamcc"  };
@@ -1606,7 +1606,7 @@ void lamcc_test_20()
     }    
 }
 
-void lamcc_test_21()
+static void lamcc_test_21()
 {
     static char * opts [] =
 	{ "-p", "lamcc", "--center-latitude", "17.778", "--second-standard-parallel", "45.001",
@@ -1630,7 +1630,7 @@ void lamcc_test_21()
     }    
 }
 
-void lamcc_test_22()
+static void lamcc_test_22()
 {
     static char * opts [] =
 	{ "-p", "lamcc", "--center-latitude", "17.778", "--second-standard-parallel", "45.001",
@@ -1657,7 +1657,7 @@ void lamcc_test_22()
     }    
 }
 
-void lamcc_test_23()
+static void lamcc_test_23()
 {
     static char * opts [] =
 	{ "-p", "lamcc", "--center-latitude", "17.778", "--second-standard-parallel", "45.001",
@@ -1677,7 +1677,7 @@ void lamcc_test_23()
     }    
 }
 
-void lamcc_test_24()
+static void lamcc_test_24()
 {
     static char * opts [] =
 	{ "-p", "lamcc", "--center-latitude", "17.778",
@@ -1711,7 +1711,7 @@ void lamcc_test_24()
     }    
 }
 
-void lamcc_test_25()
+static void lamcc_test_25()
 {
     static char * opts [] =
 	{ "-p", "lamcc", "--center-latitude", "17.778",
@@ -1746,7 +1746,7 @@ void lamcc_test_25()
     }    
 }
 
-void lamcc_test_26()
+static void lamcc_test_26()
 {
     static char * opts [] =
 	{ "-p", "lamcc", "--center-latitude", "17.778",
@@ -1775,7 +1775,7 @@ void lamcc_test_26()
     }    
 }
 
-void lamcc_test_27()
+static void lamcc_test_27()
 {
     static char * opts [] =
 	{ "-p", "lamcc", "--center-latitude", "17.778",
@@ -1804,7 +1804,7 @@ void lamcc_test_27()
     }    
 }
 
-void lamcc_test_28()
+static void lamcc_test_28()
 {
     static char * opts [] =
 	{ "-p", "lamcc", "--center-latitude", "17.778",
@@ -1843,7 +1843,7 @@ void lamcc_test_28()
     }    
 }
 
-void lamcc_test_29()
+static void lamcc_test_29()
 {
     static char * opts [] =
 	{ "-p", "lamcc", "--center-latitude", "17.778",
@@ -1873,7 +1873,7 @@ void lamcc_test_29()
     }    
 }
 
-void lamcc_test_30()
+static void lamcc_test_30()
 {
     static char * opts [] =
 	{ "-p", "lamcc", "--second-standard-parallel", "45.001",
@@ -1903,7 +1903,7 @@ void lamcc_test_30()
     }    
 }
 
-void test_lamcc_options()
+static void test_lamcc_options()
 {
     lamcc_test_1();
     lamcc_test_2();
@@ -1936,7 +1936,7 @@ void test_lamcc_options()
     lamcc_test_30();
 }
 
-void lamaz_test_1()
+static void lamaz_test_1()
 {
     static char * opts [] =
 	{ "-p", "lamaz", "--center-latitude", "17.778",
@@ -1961,7 +1961,7 @@ void lamaz_test_1()
     }    
 }
 
-void lamaz_test_2()
+static void lamaz_test_2()
 {
     static char * opts [] =
 	{ "-p", "lamaz", "--center-latitude", "17.778",
@@ -1986,7 +1986,7 @@ void lamaz_test_2()
     }    
 }
 
-void lamaz_test_3()
+static void lamaz_test_3()
 {
     static char * opts [] =
 	{ "-p", "lamaz", "--center-latitude", "17.778",
@@ -2011,7 +2011,7 @@ void lamaz_test_3()
     }    
 }
 
-void lamaz_test_4()
+static void lamaz_test_4()
 {
     static char * opts [] =
 	{ "-p", "lamaz", "--center-latitude", "17.778",
@@ -2039,7 +2039,7 @@ void lamaz_test_4()
     }    
 }
 
-void lamaz_test_5()
+static void lamaz_test_5()
 {
     static char * opts [] =
 	{ "yo",
@@ -2066,7 +2066,7 @@ void lamaz_test_5()
     }    
 }
 
-void lamaz_test_6()
+static void lamaz_test_6()
 {
     static char * opts [] =
 	{ "stuff", "at", "the", "beginning", "-p", "lamaz",
@@ -2102,7 +2102,7 @@ void lamaz_test_6()
     }    
 }
 
-void lamaz_test_7()
+static void lamaz_test_7()
 {
     static char * opts [] =
 	{ "--log", "logfile", "-p", "lamaz", "input", "output"  };
@@ -2131,7 +2131,7 @@ void lamaz_test_7()
     }    
 }
 
-void lamaz_test_8()
+static void lamaz_test_8()
 {
     static char * opts [] =
 	{ "-p", "lamaz", "--center-latitude", "17.778",
@@ -2160,7 +2160,7 @@ void lamaz_test_8()
     }    
 }
 
-void lamaz_test_9()
+static void lamaz_test_9()
 {
     static char * opts [] =
 	{ "-p", "lamaz", "--center-latitude", "17.778",
@@ -2189,7 +2189,7 @@ void lamaz_test_9()
     }    
 }
 
-void lamaz_test_10()
+static void lamaz_test_10()
 {
     static char * opts [] =
 	{ "-p", "lamaz", "--center-latitude", "17.778",
@@ -2215,7 +2215,7 @@ void lamaz_test_10()
     }    
 }
 
-void lamaz_test_11()
+static void lamaz_test_11()
 {
     static char * opts [] =
 	{ "-p", "lamaz", "--center-latitude", "17.778",
@@ -2242,7 +2242,7 @@ void lamaz_test_11()
     }    
 }
 
-void lamaz_test_12()
+static void lamaz_test_12()
 {
     static char * opts [] =
 	{ "-log" ,"mylogfile", "-p", "lamaz", "--center-latitude", "17.778",
@@ -2270,7 +2270,7 @@ void lamaz_test_12()
     }    
 }
 
-void lamaz_test_13()
+static void lamaz_test_13()
 {
     static char * opts [] =
 	{ "-log" ,"mylogfile", "-quiet",
@@ -2299,7 +2299,7 @@ void lamaz_test_13()
     }    
 }
 
-void test_lamaz_options()
+static void test_lamaz_options()
 {
     lamaz_test_1();
     lamaz_test_2();
@@ -2316,7 +2316,7 @@ void test_lamaz_options()
     lamaz_test_13();
 }
 
-void albers_test_1()
+static void albers_test_1()
 {
     static char * opts [] =
 	{ "-p", "albers"  };
@@ -2342,7 +2342,7 @@ void albers_test_1()
     }
 }
 
-void albers_test_2()
+static void albers_test_2()
 {
     static char * opts [] =
 	{ "--quiet", "-p", "albers", "--second-standard-parallel", "45.001",
@@ -2379,7 +2379,7 @@ void albers_test_2()
     }    
 }
 
-void albers_test_3()
+static void albers_test_3()
 {
     static char * opts [] =
 	{ "--quiet", "--projection", "albers", "--false-easting", "1",
@@ -2417,7 +2417,7 @@ void albers_test_3()
     }    
 }
 
-void albers_test_4()
+static void albers_test_4()
 {
     static char * opts [] =
 	{ "--quiet", "--projection", "albers", "--false-easting", "1",
@@ -2454,7 +2454,7 @@ void albers_test_4()
     }    
 }
 
-void albers_test_5()
+static void albers_test_5()
 {
     static char * opts [] =
 	{ "--quiet", "--projection", "albers", "--false-easting", "1",
@@ -2493,7 +2493,7 @@ void albers_test_5()
     }    
 }
 
-void albers_test_6()
+static void albers_test_6()
 {
     static char * opts [] =
 	{ "--quiet", "--height", "14.9", "--projection", "albers", "--false-easting", "1",
@@ -2532,7 +2532,7 @@ void albers_test_6()
     }    
 }
 
-void albers_test_7()
+static void albers_test_7()
 {
     static char * opts [] =
 	{ "--quiet", "--height", "14.9", "--write-proj-file", "tmp",
@@ -2575,7 +2575,7 @@ void albers_test_7()
     }    
 }
 
-void albers_test_8()
+static void albers_test_8()
 {
     static char * opts [] =
 	{ "--quiet", 
@@ -2618,7 +2618,7 @@ void albers_test_8()
     }    
 }
 
-void albers_test_9()
+static void albers_test_9()
 {
     static char * opts [] =
 	{ "--quiet", "dude",
@@ -2664,7 +2664,7 @@ void albers_test_9()
     }    
 }
 
-void albers_test_10()
+static void albers_test_10()
 {
     static char * opts [] =
 	{ "--quiet", "dude",
@@ -2711,7 +2711,7 @@ void albers_test_10()
     }    
 }
 
-void albers_test_11()
+static void albers_test_11()
 {
     static char * opts [] =
 	{ "--quiet", "dude",
@@ -2758,7 +2758,7 @@ void albers_test_11()
     }    
 }
 
-void albers_test_12()
+static void albers_test_12()
 {
     static char * opts [] =
 	{ "--quiet", "dude",
@@ -2808,7 +2808,7 @@ void albers_test_12()
     }    
 }
 
-void albers_test_13()
+static void albers_test_13()
 {
     static char * opts [] =
 	{ "--quiet", "dude", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
@@ -2876,7 +2876,7 @@ void albers_test_13()
     }    
 }
 
-void test_albers_options()
+static void test_albers_options()
 {
     albers_test_1();
     albers_test_2();
@@ -2893,7 +2893,7 @@ void test_albers_options()
     albers_test_13();
 }
 
-const char * random_string(int length)
+static const char * random_string(int length)
 {
     static const char * vowels = "aeiou";
     static const char * consonants = "bcdfghjklmnpqrstvwxyz";
@@ -2913,12 +2913,12 @@ const char * random_string(int length)
     return str;
 }
 
-void test_random()
+static void test_random()
 {
     projection_type_t pt;
     int argc = 0;
-    char *argv[256];
-    char *extra_stuff[256];
+    const char *argv[256];
+    const char *extra_stuff[256];
 
     srand(121);
 
@@ -2933,8 +2933,8 @@ void test_random()
 
 	for (i = 0; i < n; ++i)
 	{
-	    argv[i] = strdup(random_string(rand() % 50 + 5));
-	    extra_stuff[i] = strdup(argv[i]);
+	    argv[i] = STRDUP(random_string(rand() % 50 + 5));
+	    extra_stuff[i] = STRDUP(argv[i]);
 	}
     }
 
@@ -2967,7 +2967,7 @@ void test_random()
 }
 
 
-int main(int argc, char * argv [])
+int test_geocode_options()
 {
     quietflag = 1;
     set_options_testing(1);

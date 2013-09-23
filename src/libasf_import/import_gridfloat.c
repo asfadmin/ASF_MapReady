@@ -93,6 +93,8 @@ meta_parameters *read_meta_gridfloat_ext(char *inBaseName, char *flt_file,
     }
     fclose(fp);
 
+    asfPrintStatus("Byte Order: %s\n", msbfirst ? "MSB" : "LSB");
+
     if (nrows < 0 || ncols < 0) {
         asfPrintError(
             "Header file did not contain Row/Column infomation.\n"

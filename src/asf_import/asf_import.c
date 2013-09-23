@@ -23,7 +23,7 @@ following defines.
 "              [-interferogam <file>] [-coherence <file>] [-slave <file>]\n"\
 "              [-baseline <file>] [-cpx_gamma <file>] [-line <start line subset>]\n"\
 "              [-sample <start sample subset>] [-width <subset width>]\n"\
-"              [-height <subset height>] [-uavsar <type>]\n"\ 
+"              [-height <subset height>] [-uavsar <type>]\n"\
 "              [-subset <latUL> <lonUL> <latLR> <lonLR>] [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
 

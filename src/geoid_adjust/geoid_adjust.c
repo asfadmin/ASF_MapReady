@@ -63,8 +63,6 @@ static int strmatches(const char *key, ...)
 int
 main (int argc, char *argv[])
 {
-  test_geoid();
-
   int currArg = 1;
   int NUM_ARGS = 2;
 

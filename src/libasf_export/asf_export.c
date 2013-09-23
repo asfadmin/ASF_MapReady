@@ -370,7 +370,7 @@ write_insar_xml_to_file(char *output_file_name, char *insar_xml)
      asfPrintStatus("\nWriting InSAR metadata (%s) ...\n", output_file_name);
      FILE *fp = FOPEN(output_file_name, "wt");
     if ( NULL != fp ) {
-        fprintf(fp, insar_xml);
+        fprintf(fp, "%s", insar_xml);
         FCLOSE(fp);
     }
 }
@@ -444,7 +444,7 @@ write_dem_xml_to_file(char *output_file_name, char *dem_xml)
   asfPrintStatus("\nWriting DEM metadata (%s) ...\n", output_file_name);
   FILE *fp = FOPEN(output_file_name, "wt");
   if ( NULL != fp ) {
-    fprintf(fp, dem_xml);
+    fprintf(fp, "%s", dem_xml);
     FCLOSE(fp);
   }
 }

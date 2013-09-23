@@ -6,7 +6,7 @@
 /* local constants */
 #define VERSION 4.0
 
-int multilook(char *inFile, char *outFile, char *metaFile, char *overlay)
+int asf_insar_multilook(char *inFile, char *outFile, char *metaFile, char *overlay)
 {
   meta_parameters *metaIn, *metaOut;
   char inAmp[255], inPhase[255], outAmp[255], outPhase[255], outRGB[255];

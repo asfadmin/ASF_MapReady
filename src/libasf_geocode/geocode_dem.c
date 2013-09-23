@@ -241,25 +241,6 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
   // Output image.
   FloatImage *oim = float_image_new (oi_size_x, oi_size_y);
 
-  // Translate the command line notion of the resampling method into
-  // the lingo known by the float_image class.  The compiler is
-  // reassured with a default.
-  float_image_sample_method_t float_image_sample_method
-    = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
-  switch ( resample_method ) {
-  case RESAMPLE_NEAREST_NEIGHBOR:
-    float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
-    break;
-  case RESAMPLE_BILINEAR:
-    float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
-    break;
-  case RESAMPLE_BICUBIC:
-    float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;
-    break;
-  default:
-    g_assert_not_reached ();
-  }
-
   // We need to find the z coordinates in the output projection of all
   // the pixels in the input DEM.  We store these values in their own
   // FloatImage instance.
