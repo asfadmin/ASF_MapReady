@@ -78,6 +78,8 @@ src_subs = [
     "asf_airsar_import",
     "asf_polsarpro_import",
     "brs2jpg",
+    "diffimage",
+    "diffmeta",
     "libasf_import",
     "libasf_terrcorr",
     "libasf_ardop",
