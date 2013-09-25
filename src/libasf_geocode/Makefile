@@ -92,7 +92,7 @@ CFLAGS += $(DEBUG_FEATURES)
 # Object files.
 OBJS := $(patsubst %.c, %.o, $(SOURCES))
 
-all: build_only share_files test
+all: build_only share_files
 
 share_files:
 	mv libasf_geocode.a $(LIBDIR)
