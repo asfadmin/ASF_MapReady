@@ -270,9 +270,9 @@ static int fftMatchBF(char *file1, char *file2, float *dx, float *dy, float *cer
   }
 
   quietflag = qf_saved;
-  //asfPrintStatus("Result %s:\n"
-  //               "dx1=%8.2f dy1=%8.2f cert=%f\n"
-  //               "dx2=%8.2f dy2=%8.2f cert=%f\n", ok?"Yes":"No", dx1, dy1, cert1, dx2, dy2, cert2);
+  asfPrintStatus("Result %s:\n"
+                 "dx1=%8.2f dy1=%8.2f cert=%f\n"
+                 "dx2=%8.2f dy2=%8.2f cert=%f\n", ok?"Yes":"No", dx1, dy1, cert1, dx2, dy2, cert2);
 
   return ok; 
 }
@@ -424,9 +424,9 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   int nl = mini(meta1->general->line_count, meta2->general->line_count);
   int ns = mini(meta1->general->sample_count, meta2->general->sample_count);
 
-  const int size = 256; // 512;
-  const int overlap = 0; // 256;
-  const double tol = .33;
+  const int size = 512;
+  const int overlap = 256;
+  const double tol = .28;
 
   long long lsz = (long long)size;
   FILE *fp = NULL;
@@ -455,7 +455,7 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
           asfPrintError("Bad tile_x: %d %d %d %d %d\n", jj, num_x, tile_x, size, ns);
         tile_x = ns - size;
       }
-      //asfPrintStatus("Matching tile starting at (L,S) (%d,%d)\n", tile_y, tile_x);
+      asfPrintStatus("Matching tile starting at (L,S) (%d,%d)\n", tile_y, tile_x);
       char trim_append[64], smooth_append[64];
       sprintf(trim_append, "_chip_%05d_%05d", tile_x, tile_y);
       char *trim_chip1 = appendToBasename(inFile1, trim_append);
@@ -473,9 +473,9 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
       matches[kk].x_offset = dx;
       matches[kk].y_offset = dy;
       matches[kk].valid = ok && cert>tol;
+      asfPrintStatus("%sResult: dx=%f, dy=%f, cert=%f\n",
+                     matches[kk].valid?"GOOD ":"BAD ", dx, dy, cert);
       ++kk;
-      //asfPrintStatus("%sResult: dx=%f, dy=%f, cert=%f\n",
-      //               matches[kk].valid?"":"BAD: ", dx, dy, cert);
       //printf("%4.1f ", dx);
       FREE(trim_chip1);
       FREE(trim_chip2);
@@ -484,7 +484,7 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
     //printf("\n");
   }
 
-  //print_matches(matches, num_x, num_y, stdout);
+  print_matches(matches, num_x, num_y, stdout);
 
   int removed;
   do {
@@ -497,7 +497,7 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   FILE *offset_fp = FOPEN(name,"w");
   //print_matches(matches, num_x, num_y, stdout);
   print_matches(matches, num_x, num_y, offset_fp);
-  //asfPrintStatus("Offsets written to: %s\n", name);
+  asfPrintStatus("Offsets written to: %s\n", name);
   FCLOSE(offset_fp);
   FREE(name);
   FREE(base);
@@ -540,12 +540,13 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
     *certainty = (float)n / (float)len;
   }
 
-  //asfPrintStatus("Final Result: dx=%f, dy=%f, cert=%f\n", *avgLocX, *avgLocY, *certainty);
+  asfPrintStatus("Final Result: dx=%f, dy=%f, cert=%f\n", *avgLocX, *avgLocY, *certainty);
 
   meta_free(meta1);
   meta_free(meta2);
   FCLOSE(fp);
   FREE(matches);
+  exit(1);
   return (0);
 }
 
