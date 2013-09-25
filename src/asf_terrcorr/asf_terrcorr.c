@@ -7,7 +7,7 @@
 "          [-mask-height-cutoff <height in meters>]\n"\
 "          [-fill <fill value> | -no-fill] [-update-original-meta (-u)]\n"\
 "          [-other-file <basename>] [-do-radiometric] [-smooth-dem-holes]\n"\
-"          [-no-match] [-offsets <range> <azimuth>]\n"\
+"          [-no-match] [-grid-match] [-offsets <range> <azimuth>]\n"\
 "          [-use-zero-offsets-if-match-fails] [-save-ground-range-dem]\n"\
 "          [-save-incidence-angles] [-use-nearest-neighbor]\n"\
 "          [-use-bilinear]\n"\
@@ -180,6 +180,13 @@
 "     -no-match\n"\
 "          Don't use the DEM for matching.\n"\
 "\n"\
+"     -grid-match\n"\
+"          Instead of using a full-image match, generate a fftmatch.txt file\n"\
+"          with FFT match offsets using grid tiles over the images.  The\n"\
+"          program will exit after generating this grid.  The user must\n"\
+"          then warp the image (using fit_warp and remap tools) and then\n"\
+"          run asf_terrcorr again without matching.\n"\
+"\n"\
 "     -offsets <range offset> <azimuth offset>\n"\
 "          Use these offsets instead of matching the DEM to the SAR image.\n"\
 "          The offsets are in pixels.\n"\
@@ -331,6 +338,7 @@ main (int argc, char *argv[])
   int mask_height_cutoff_specified = FALSE;
   int smooth_dem_holes = FALSE;
   int no_matching = FALSE;
+  int grid_matching = FALSE;
   int use_gr_dem = FALSE;
   int add_speckle = TRUE;
   int if_coreg_fails_use_zero_offsets = FALSE;
@@ -376,6 +384,9 @@ main (int argc, char *argv[])
     }
     else if (strmatches(key,"-no-match","--no-match",NULL)) {
       no_matching = TRUE;
+    }
+    else if (strmatches(key,"-grid-match","--grid-match",NULL)) {
+      grid_matching = TRUE;
     }
     else if (strmatches(key,"-use-gr-dem", "--use-gr-dem",NULL)) {
       use_gr_dem = TRUE;
@@ -503,6 +514,12 @@ main (int argc, char *argv[])
   demFile = argv[currArg+1];
   outFile = argv[currArg+2];
 
+  int matching_level = MATCHING_FULL;
+  if (no_matching)
+    matching_level = MATCHING_NONE;
+  else if (grid_matching)
+    matching_level = MATCHING_GRID;
+
   int ret =  asf_terrcorr_ext(inFile, demFile,inMaskFile,outFile, pixel_size,
                               clean_files, do_resample, do_corner_matching,
                               do_interp, do_fftMatch_verification,
@@ -511,7 +528,7 @@ main (int argc, char *argv[])
                               update_original_metadata_with_offsets,
                               mask_height_cutoff, doRadiometric,
                               smooth_dem_holes, other_files,
-                              no_matching, range_offset, azimuth_offset,
+                              matching_level, range_offset, azimuth_offset,
                               use_gr_dem, add_speckle,
                               if_coreg_fails_use_zero_offsets, save_ground_dem,
                               save_incid_angles, use_nearest_neighbor);

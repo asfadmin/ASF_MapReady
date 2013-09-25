@@ -2504,6 +2504,9 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     }
     else {
       update_status("Terrain Correcting...");
+
+      int matching_level = cfg->terrain_correct->no_matching ? MATCHING_NONE : MATCHING_FULL;
+
       check_return(
 		   asf_terrcorr_ext(inFile, cfg->terrain_correct->dem,
 				    cfg->terrain_correct->mask, outFile,
@@ -2517,7 +2520,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
 				    cfg->terrain_correct->water_height_cutoff,
 				    cfg->terrain_correct->do_radiometric,
 				    cfg->terrain_correct->smooth_dem_holes,
-				    NULL, cfg->terrain_correct->no_matching,
+				    NULL,
+                                    matching_level,
 				    cfg->terrain_correct->range_offset,
 				    cfg->terrain_correct->azimuth_offset,
 				    cfg->terrain_correct->use_gr_dem,
