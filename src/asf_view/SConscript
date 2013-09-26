@@ -109,6 +109,3 @@ shares = localenv.File([
 
 globalenv.Install(globalenv["inst_dirs"]["shares"], shares)
 
-# run the unit test, and set its dependencies
-test_result = localenv.UnitTest("test.semaphore", None)
-Depends(test_result, [bins, shares])

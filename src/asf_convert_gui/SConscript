@@ -83,7 +83,3 @@ docs = localenv.File([
         ])
 
 globalenv.Install(globalenv["inst_dirs"]["docs"], docs)
-
-# run the unit test, and set its dependencies
-test_result = localenv.UnitTest("test.semaphore", None)
-localenv.Depends(test_result, [bins, shares, docs])
