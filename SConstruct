@@ -96,6 +96,7 @@ src_subs = [
     "sgpsdp",
     "libasf_export",
     "trim",
+    "make_overlay",
     ]
 
 # do the actual building
