@@ -109,4 +109,3 @@ shares = localenv.File([
 
 globalenv.Install(globalenv["inst_dirs"]["shares"], shares)
 
-Depends(test_result, [bins, shares])
