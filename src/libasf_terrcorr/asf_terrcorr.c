@@ -108,7 +108,6 @@ fftMatchQ(char *file1, char *file2, float *dx, float *dy, float *cert,
     char match_file[256];
     strcpy(match_file,"fft_match.txt");
     fftMatch_gridded(file1, file2, match_file, dx, dy, cert);
-    asfPrintStatus("   Grid matching: dx=%6.3f, dy=%6.3f\n", *dx, *dy);
   }
   else {
     fftMatch(file1, file2, NULL, dx, dy, cert);
@@ -843,6 +842,12 @@ int match_dem(meta_parameters *metaSAR,
       // Match the real and simulated SAR image to determine the offset.
       int use_grid_matching = matching_level == MATCHING_GRID;
       fftMatchQ(srFile, demTrimSimSar, &dx, &dy, &cert, use_grid_matching);
+
+      // Now that we've generated the grid, we are done, user must use
+      // fit_warp and remap
+      if (use_grid_matching)
+        return 0;
+
       asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f, dy=%f.\n",
              100*cert, dx, dy);
     }
@@ -1497,6 +1502,13 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
         TRUE, TRUE, madssap, clean_files, matching_level, add_speckle,
         if_coreg_fails_use_zero_offsets,
         range_offset, azimuth_offset, &t_offset, &x_offset);
+
+  if (matching_level == MATCHING_GRID)
+  {
+      // when using grid matching, after generating the grid we are done.
+      asfPrintStatus("Done.\n");
+      return 0;
+  }
 
   if (update_original_metadata_with_offsets)
   {
