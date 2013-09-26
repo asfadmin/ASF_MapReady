@@ -95,6 +95,7 @@ src_subs = [
     "asf_meta",
     "sgpsdp",
     "libasf_export",
+    "trim",
     ]
 
 # do the actual building
