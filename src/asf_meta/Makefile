@@ -3,7 +3,9 @@
 include ../../make_support/system_rules
 
 LIBS = $(XML_LIBS) $(GSL_LIBS) $(PROJ_LIBS)
-CFLAGS += $(XML_CFLAGS)
+
+# Had to add -Wno-unused-function because flex generates some
+CFLAGS += -Werror -Wno-unused-function $(XML_CFLAGS)
 
 # Things used/needed by make's implicit rules for lex and yacc.
 # Need the GNU flex and bison, others are broken in variety of ways.

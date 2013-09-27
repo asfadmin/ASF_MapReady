@@ -28,18 +28,16 @@ void validateXML(const char *xmlFile, const char *schemaFile)
     asfPrintError("Metadata file (%s) does not exist!\n", xmlFile);
   xmlDocPtr xmlDoc = xmlReadFile(xmlFile, NULL, 0);
   if (xmlDoc == NULL) {
-    xmlFreeDoc(xmlDoc);
     asfPrintError("Could not parse metadata file (%s)\n", xmlFile);
   }
   xmlDocPtr schemaDoc = xmlReadFile(schemaFile, NULL, XML_PARSE_NONET);
   if (schemaDoc == NULL) {
     xmlFreeDoc(xmlDoc);
-    xmlFreeDoc(schemaDoc);
     asfPrintError("Metadata file (%s) could not be validated\n"
 		  "XML schema file (%s) cannot be loaded or is not "
 		  "well-formed\n", xmlFile, schemaFile);
   }
-  xmlSchemaParserCtxtPtr parserContext = xmlSchemaNewParserCtxt(schemaDoc);
+  xmlSchemaParserCtxtPtr parserContext = NULL; //xmlSchemaNewParserCtxt(schemaDoc);
   if (parserContext == NULL) {
     xmlFreeDoc(xmlDoc);
     xmlFreeDoc(schemaDoc);
