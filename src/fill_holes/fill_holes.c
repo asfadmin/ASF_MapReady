@@ -46,8 +46,8 @@ int main(int argc,char *argv[])
   char  infile[256];          // Input file name                         
   char  outfile[256];         // Output file name                        
   float cutoff = -900;        // Height below which is a hole            
-  float max_slope = 60;       // Maximum slope allowed (from horizontal) 
-  int max_hole_width = 1000;  // Maximum width of a hole
+  //float max_slope = 60;       // Maximum slope allowed (from horizontal) 
+  //int max_hole_width = 1000;  // Maximum width of a hole
 
   do {
     char *key = argv[currArg++];
@@ -65,12 +65,14 @@ int main(int argc,char *argv[])
         cutoff = atof(GET_ARG(1));
     }
     else if (strmatches(key,"--max-slope","-max-slope",NULL)) {
+        asfPrintError("Option -max-slope not supported yet!\n");
         CHECK_ARG(1);
-        max_slope = atof(GET_ARG(1));
+        //max_slope = atof(GET_ARG(1));
     }
     else if (strmatches(key,"--max-hole-width","-max-hole-width",NULL)) {
+        asfPrintError("Option -max-hole-width not supported yet!\n");
         CHECK_ARG(1);
-        max_hole_width = atoi(GET_ARG(1));
+        //max_hole_width = atoi(GET_ARG(1));
     }
     else if (strmatches(key,"--",NULL)) {
         break;
