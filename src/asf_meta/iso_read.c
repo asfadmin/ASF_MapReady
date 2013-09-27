@@ -37,6 +37,8 @@ void validateXML(const char *xmlFile, const char *schemaFile)
 		  "XML schema file (%s) cannot be loaded or is not "
 		  "well-formed\n", xmlFile, schemaFile);
   }
+  // Need to figure out the proper method of calling xmlSchemaNewParserCtxt
+  // Argument should be "const char *" not "xmlDocPtr"
   xmlSchemaParserCtxtPtr parserContext = NULL; //xmlSchemaNewParserCtxt(schemaDoc);
   if (parserContext == NULL) {
     xmlFreeDoc(xmlDoc);
