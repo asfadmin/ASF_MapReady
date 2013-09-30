@@ -50,7 +50,7 @@ char *format2str(format_type_t format)
 
   if (format == META)
     strcpy(str, "META");
-  else if (format == LEADER || format == CEOS)
+  else if (format == LEADER)
     strcpy(str, "CEOS");
   else if (format == STF_META)
     strcpy(str, "STF");
@@ -94,7 +94,7 @@ int convert2vector(c2v_config *cfg)
   strcpy(inFile, cfg->input_file);
   strcpy(outFile_in, cfg->output_file);
   int listFlag = cfg->list;
-  int timeFlag = cfg->time;
+  //int timeFlag = cfg->time;
   int stackFlag = cfg->stack;
 
   int ret = 0;
@@ -129,7 +129,7 @@ int convert2vector(c2v_config *cfg)
   else if (inFormat == TERRASAR_META && outFormat == SHAPEFILE)
     ret = terrasar2shape(inFile, outFile, listFlag);
   else if (inFormat == TERRASAR_META && outFormat == META)
-    ret = terrasar2meta(inFile, outFile, listFlag);
+    ret = write_terrasar2meta(inFile, outFile, listFlag);
   else if (inFormat == POINT && outFormat == KMLFILE)
     ret = point2kml(inFile, outFile, listFlag);
   else if (inFormat == POINT && outFormat == SHAPEFILE)

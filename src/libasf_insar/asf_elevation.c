@@ -71,11 +71,11 @@ int asf_elevation(char *unwrapped_phase, char *phase_mask,
     while (1)
       {
 	float seed_x,seed_y,height,phase;
-	int seek_x,seek_y;
+	int seek_y; // int seek_x;
 	/*Read in each seed point*/
 	if (3!=fscanf(fseed,"%f%f%f",&seed_x,&seed_y,&height))
 	  break;/*Break out when no more points.*/
-	seek_x=(int)((seed_x-ss)/xScale);
+	//seek_x=(int)((seed_x-ss)/xScale);
 	seek_y=(int)((seed_y-sl)/yScale);
 	get_float_line(fphase, meta, seek_y, phase_line);
 	phase = phase_line[seek_y];
@@ -172,7 +172,7 @@ int asf_elevation(char *unwrapped_phase, char *phase_mask,
 	coh_factor = (FLOAT_EQUALS_ZERO(coh[x])) ? 0.0 : sqrt((1-coh[x])/coh[x]);
 	base_height = phase2elevBase[x]/(-Bp_y*sinFlat[x] - Bn_y*cosFlat[x]);
 	sigma_height = base_height * coh_factor;
-	eleverr[x] = (float) fabs(base_height*coh_factor);
+	eleverr[x] = (float) fabs(sigma_height);
       }
       else
 	eleverr[x] = -1.0;

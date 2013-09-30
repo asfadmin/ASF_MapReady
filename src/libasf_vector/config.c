@@ -169,10 +169,7 @@ c2v_config *init_fill_c2v_config()
 #define newStruct(type) (type *)MALLOC(sizeof(type))
 #define LINE_LEN 8196
 
-  FILE *fConfig, *fDefaults;
-  char line[LINE_LEN], params[25];
-  char *test;
-  int i;
+  char params[25];
 
   // Create structure
   strcpy(params, "");
@@ -210,7 +207,7 @@ c2v_config *read_c2v_config(char *configFile)
 {
   FILE *fConfig;
   c2v_config *cfg=NULL;
-  char line[255], params[50], tmp[50];
+  char line[255], params[50];
   char *test;
 
   strcpy(params, "");
@@ -358,7 +355,7 @@ int write_c2v_config(char *configFile, c2v_config *cfg)
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the height references for KML.\n"
 	    "# The recognized height references are 'clampToGround' and 'relativeToGround'.\n\n");
-  fprintf(fConfig, "height = %s\n", cfg->height);
+  fprintf(fConfig, "height = %d\n", cfg->height);
   // width
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the width of the boundary for KML.\n\n");
