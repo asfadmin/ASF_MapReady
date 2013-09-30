@@ -97,6 +97,9 @@ src_subs = [
     "libasf_export",
     "trim",
     "make_overlay",
+    "asf_kml_overlay",
+    "sample_plugin",
+    #"metadata_gui",
     ]
 
 # do the actual building
