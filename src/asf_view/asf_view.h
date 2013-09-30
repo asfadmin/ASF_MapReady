@@ -418,6 +418,7 @@ extern UserPolygon g_polys[MAX_POLYS];
 extern UserPolygon *g_poly;
 extern int which_poly;
 extern int g_show_north_arrow;
+extern int g_outline;
 
 extern Shape **g_shapes;
 extern int num_shapes;

@@ -20,12 +20,6 @@ void write_kml_style_keys_ext(FILE *kml_file, c2v_config *cfg);
    files' location to be fully specified, e.g.:
     googleearth /export/home/user/files/the/dir/here/the_file.kml
 */
-static void swap(double *x, double *y)
-{
-    double tmp = *x;
-    *x = *y;
-    *y = tmp;
-}
 
 const char *altitude_mode()
 {
@@ -59,27 +53,6 @@ void kml_header(FILE *kml_file)
     fprintf(kml_file,
             "<kml xmlns=\"http://earth.google.com/kml/2.2\">\n");
     fprintf(kml_file, "<Document>\n");
-}
-
-static void
-update_latlon_maxes(double lat, double lon, double *max_lat, double *min_lat,
-                    double *max_lon, double *min_lon)
-{
-    if (lat>*max_lat) *max_lat = lat;
-    if (lat<*min_lat) *min_lat = lat;
-
-    if (lon>*max_lon) *max_lon = lon;
-    if (lon<*min_lon) *min_lon = lon;
-}
-
-static void rotate(double x_in, double y_in, double x0, double y0, double ang,
-                   double *xr, double *yr)
-{
-    double x = x_in - x0;
-    double y = y_in - y0;
-
-    *xr = x0 + sin(ang)*x + cos(ang)*y;
-    *yr = y0 + cos(ang)*x - sin(ang)*y;
 }
 
 static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
@@ -1994,8 +1967,8 @@ static void shape_kml_init(char *inFile, char *format, char *header,
   if (strcmp(format, "META") == 0) {
     // FIXME: initialization currently requires metadata structure
     asfPrintError("Conversion of META format currently not supported!\n");
-    meta_parameters *meta;
-    shape_meta_init(inFile, meta);
+    //meta_parameters *meta;
+    //shape_meta_init(inFile, meta);
   }
   else if (strcmp(format, "POINT") == 0)
     shape_point_init(inFile);

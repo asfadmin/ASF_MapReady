@@ -543,6 +543,8 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
       project_eqr(&(proj->param), geoc_lat, lon, height, x, y, z, proj->datum);
       break;
     case EQUIDISTANT:
+      // Some special treatment required for PROJ4 limitation
+      geoc_lat = atan(tan(lat)/(1-ecc2(proj->re_minor,proj->re_major)));
       project_eqc(&(proj->param), geoc_lat, lon, height, x, y, z, proj->datum);
       break;
     case SINUSOIDAL:

@@ -1642,7 +1642,7 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
   iso_setup *setup = iso->setup;
   iso_productQuality *quality = iso->productQuality;
   iso_processing *proc = iso->processing;
-  iso_instrument *inst = iso->instrument;
+  //iso_instrument *inst = iso->instrument;
   iso_productSpecific *spec = iso->productSpecific;
   
   // Set up 
@@ -1664,8 +1664,8 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
 			BAD_CAST "gco"); 
   //xmlNs *srv = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/srv", 
   //			BAD_CAST "srv");
-  xmlNs *xs = xmlNewNs(root, BAD_CAST "http://www.w3.org/2001/XMLSchema", 
-		       BAD_CAST "xs");
+  //xmlNs *xs = xmlNewNs(root, BAD_CAST "http://www.w3.org/2001/XMLSchema", 
+  //		       BAD_CAST "xs");
   //xmlNs *gsr = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gsr", 
   //			BAD_CAST "gsr");
   //xmlNs *gss = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gss", 
@@ -1676,11 +1676,11 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
   //			BAD_CAST "gmx");
   xmlNs *eos = xmlNewNs(root, BAD_CAST "http://earthdata.nasa.gov/schema/eos", 
 			BAD_CAST "eos");
-  xmlNs *echo = xmlNewNs(root, 
-			 BAD_CAST "http://www.echo.nasa.gov/ingest/schemas/operatations",
-			 BAD_CAST "echo");
-  xmlNs *xlink = xmlNewNs(root, BAD_CAST "http://www.w3.org/1999/xlink", 
-			  BAD_CAST "xlink"); 
+  //xmlNs *echo = xmlNewNs(root, 
+  //			 BAD_CAST "http://www.echo.nasa.gov/ingest/schemas/operatations",
+  //			 BAD_CAST "echo");
+  //xmlNs *xlink = xmlNewNs(root, BAD_CAST "http://www.w3.org/1999/xlink", 
+  //                        BAD_CAST "xlink"); 
   xmlNs *gml = xmlNewNs(root, BAD_CAST "http://www.opengis.net/gml/3.2", 
 			BAD_CAST "gml"); 
   xmlNs *gmi = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gmi", 

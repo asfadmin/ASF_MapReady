@@ -227,7 +227,6 @@ static void close_stack(FILE *fp, ursa_type_t *ursa)
 
 static void add_to_stack_kml(FILE *fp, ursa_type_t *ursa, int nCols)
 {
-  int ii;
   ymd_date startDate, endDate, centerDate;
   hms_time startTime, endTime, centerTime;
   char mon[][5]= 
