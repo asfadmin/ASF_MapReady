@@ -724,7 +724,7 @@ static void write_dbase_field_to_csv(DBFHandle dbase, int record,
                                      int field, char *line)
 {
   DBFFieldType dbaseType;
-  char fieldName[25], str[50];
+  char fieldName[25], *str;
   int nWidth, nDecimals, nValue;
   double fValue;
   const char *sValue;
@@ -735,14 +735,17 @@ static void write_dbase_field_to_csv(DBFHandle dbase, int record,
     {
     case FTString:
       sValue = DBFReadStringAttribute(dbase, record, field);
+      str = MALLOC(sizeof(char)*(strlen(sValue)+10));
       sprintf(str, "\"%s\",", sValue);
       break;
     case FTInteger:
       nValue = DBFReadIntegerAttribute(dbase, record, field);
+      str = MALLOC(sizeof(char)*64);
       sprintf(str, "%d,", nValue);
       break;
     case FTDouble:
       fValue = DBFReadDoubleAttribute(dbase, record, field);
+      str = MALLOC(sizeof(char)*64);
       sprintf(str, "%s,", lf(fValue));
       break;
     case FTLogical:
@@ -750,6 +753,7 @@ static void write_dbase_field_to_csv(DBFHandle dbase, int record,
       break;
     }
   strcat(line, str);
+  FREE(str);
 
 }
 
