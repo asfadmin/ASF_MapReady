@@ -316,7 +316,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
 	asf->a2 = rdr.a[2];
       }
       
-      if (ceos->product == SLC && ceos->sensor == ERS &&
+      if (ceos->product == SLC && ceos->satellite == ERS &&
 	  meta->general->radiometry > r_AMP &&
 	  meta->general->radiometry < r_POWER) {
 	asfPrintStatus("Applying calibration adjustment of x1.3 for SLC data."
@@ -970,21 +970,21 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
 
     invIncAngle = 1.0;
     asf_scansar_cal_params *p = meta->calibration->asf_scansar;
-    double look = 25.0; // FIXME: hack to get things compiled
-    double index = (look-16.3)*10.0;
-    double noiseValue;
-    double *noise = p->noise;
 
-    if (index <= 0)
-      noiseValue = noise[0];
-    else if (index >= 255)
-      noiseValue = noise[255];
-    else {
-      // Use linear interpolation on noise array
-      int base = (int)index;
-      double frac = index - base;
-      noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
-    }
+    //double look = 25.0; // FIXME: hack to get things compiled
+    //double index = (look-16.3)*10.0;
+    //double noiseValue;
+    //double *noise = p->noise;
+    //if (index <= 0)
+    //  noiseValue = noise[0];
+    //else if (index >= 255)
+    //  noiseValue = noise[255];
+    //else {
+    //  // Use linear interpolation on noise array
+    //  int base = (int)index;
+    //  double frac = index - base;
+    //  noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
+    //}
 
     // Convert (amplitude) data number to scaled
     // No removal of noise floor anymore
@@ -1114,21 +1114,21 @@ float cal2amp(meta_parameters *meta, float incid, int sample, char *bandExt,
     else if (radiometry == r_BETA || radiometry == r_BETA_DB)
       invIncAngle = 1/sin(incid);
 
-    double look = 25.0; // FIXME: hack to get things compiled
-    double index = (look-16.3)*10.0;
-    double noiseValue;
-    double *noise = p->noise;
+    //double look = 25.0; // FIXME: hack to get things compiled
+    //double index = (look-16.3)*10.0;
+    //double noiseValue;
+    //double *noise = p->noise;
 
-    if (index <= 0)
-      noiseValue = noise[0];
-    else if (index >= 255)
-      noiseValue = noise[255];
-    else {
-      // Use linear interpolation on noise array
-      int base = (int)index;
-      double frac = index - base;
-      noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
-    }
+    //if (index <= 0)
+    //  noiseValue = noise[0];
+    //else if (index >= 255)
+    //  noiseValue = noise[255];
+    //else {
+    //  // Use linear interpolation on noise array
+    //  int base = (int)index;
+    //  double frac = index - base;
+    //  noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
+    //}
 
     // Convert (amplitude) data number to scaled, noise-removed power
     //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;

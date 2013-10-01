@@ -680,7 +680,7 @@ static void add_outline(GdkPixbuf *pb, ImageInfo *ii)
     }
  
     int clr = GREEN;
-    if (k > 0) clr = 10 + k;
+    if (k > 0) clr = 11 + k;
     k++;
 
     put_line(pb, l1, s1, l2, s2, clr, ii);
