@@ -63,7 +63,6 @@ int main(int argc, char **argv)
   int c;                        /* option letter from getopt() */
   char ch;
   extern FILE *fLog;            /* output file descriptor, stdout or log file */
-  FILE *fError;                 /* Error log, stderr or log file */
   extern int logflag, quietflag;
   int outputflag=0;
   int bandflag=0;
@@ -154,10 +153,6 @@ int main(int argc, char **argv)
   // Set up output redirection for error and log messages
   if (logflag == 0) {
     fLog = NULL;
-    fError = NULL;
-  }
-  else {
-    fError = fLog;
   }
   if (!outputflag) {
       sprintf(msg, "Missing output file name ...file differences will be "
@@ -170,6 +165,12 @@ int main(int argc, char **argv)
             logFile, outputFile);
     if (outputFile) FREE(outputFile);
     asfPrintError(msg);
+  }
+  if (strictflag) {
+    asfPrintWarning("-strict option is not yet implemented -- ignored.\n");
+  }
+  if (strictflag) {
+    asfPrintWarning("-band option is not yet implemented -- ignored.\n");
   }
 
   char **bands1 = NULL, **bands2 = NULL;
