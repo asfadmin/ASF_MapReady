@@ -47,6 +47,7 @@ MAPREADY_MODULES = \
 	src/gr2sr \
 	src/to_sr \
 	src/deskew \
+	src/libasf_metadata \
 	src/metadata \
 	src/resample \
 	src/fill_holes \
