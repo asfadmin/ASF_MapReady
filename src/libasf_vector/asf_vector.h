@@ -32,6 +32,7 @@ typedef enum {
   GRANULE_LIST,
   GRANULE_DETAILS_A3,
   GRANULE_DETAILS,
+  GRANULE,
   FOOT_PRINT,
   MULTIMATCH,
   URSA,
@@ -319,6 +320,9 @@ int hap2shape(char *inFile, char *outFile, int listFlag);
 
 // Prototypes from smap.c
 int smap2shape(char *inFile, char *outFile);
+
+// Prototypes from granule.c
+int granule2shpe(char *inFile, char *outFile);
 
 // Prototypes from custom.c
 int custom2shape(char *inFile, const char *format,
