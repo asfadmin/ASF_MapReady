@@ -28,18 +28,18 @@ void validateXML(const char *xmlFile, const char *schemaFile)
     asfPrintError("Metadata file (%s) does not exist!\n", xmlFile);
   xmlDocPtr xmlDoc = xmlReadFile(xmlFile, NULL, 0);
   if (xmlDoc == NULL) {
-    xmlFreeDoc(xmlDoc);
     asfPrintError("Could not parse metadata file (%s)\n", xmlFile);
   }
   xmlDocPtr schemaDoc = xmlReadFile(schemaFile, NULL, XML_PARSE_NONET);
   if (schemaDoc == NULL) {
     xmlFreeDoc(xmlDoc);
-    xmlFreeDoc(schemaDoc);
     asfPrintError("Metadata file (%s) could not be validated\n"
 		  "XML schema file (%s) cannot be loaded or is not "
 		  "well-formed\n", xmlFile, schemaFile);
   }
-  xmlSchemaParserCtxtPtr parserContext = xmlSchemaNewParserCtxt(schemaDoc);
+  // Need to figure out the proper method of calling xmlSchemaNewParserCtxt
+  // Argument should be "const char *" not "xmlDocPtr"
+  xmlSchemaParserCtxtPtr parserContext = NULL; //xmlSchemaNewParserCtxt(schemaDoc);
   if (parserContext == NULL) {
     xmlFreeDoc(xmlDoc);
     xmlFreeDoc(schemaDoc);
@@ -82,7 +82,7 @@ iso_meta *iso_meta_read(const char *xmlFile)
 {
   int ii, kk, numAnnotations, numLayers, numAuxRasterFiles;
   iso_polLayer_t *polLayer;
-  char **beamID, errorMessage[1024];
+  char **beamID;
   char str[1024], element[1024];
 
   if (!fileExists(xmlFile))

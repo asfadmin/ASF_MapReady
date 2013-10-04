@@ -20,14 +20,12 @@ HARDWARE/SOFTWARE LIMITATIONS:
 BUGS:
 
 *****************************************************************************/
-#include "asf.h"
-#include <unistd.h>
 #include "asf_meta.h"
 #include "ardop_defs.h"
-#include "../../include/asf_endian.h"
-#include <asf_export.h>
 #include <assert.h>
+#include <asf_export.h>
 #include <asf_sar.h>
+
 
 /* Functions in calibration.c (date: Jan 2003) */
 void calculateRCS(int projectionFlag, meta_parameters *meta, float *DNsquared,
@@ -77,34 +75,6 @@ void setPatchLoc(patch *p,satellite *s,meta_parameters *meta,int leftFile,int le
     fixed2gei(&centerSt,0.0);/*Puts state vector in inertial frame*/
     p->g=init_geolocate_meta(&centerSt,meta);
   }
-}
-
-
-meta_parameters *raw_init(void);
-
-// Commented out since asf has the same function in it... bit it
-// is more verbose if the unlink() fails whereas this version fails
-// silently
-//static void remove_file(const char * file)
-//{
-//  if (fileExists(file))
-    //unlink(file);
-//}
-
-static void clean(const char *file)
-{
-    if (file)
-    {
-        char *img_file = appendExt(file, ".img");
-        char *meta_file = appendExt(file, ".meta");
-
-        remove_file(img_file);
-        remove_file(meta_file);
-        remove_file(file);
-
-        free(img_file);
-        free(meta_file);
-    }
 }
 
 // if png_flag is true, outputs a PNG.  if false, outputs a jpeg
@@ -243,7 +213,7 @@ static void patchToRGBImage(char *outname, int png_flag)
     finalize_jpeg_file(ofp,&cinfo);
   FREE(jpgname);
   FREE(pngname);
-  clean(polar_name);
+  removeImgAndMeta(polar_name);
   FREE(polar_name);
 }
 
@@ -402,6 +372,9 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,
 
   outputBuf = (complexFloat *)MALLOC(p->n_range*sizeof(complexFloat));
   mlBuf = (complexFloat *)MALLOC(p->n_range*f->nlooks*sizeof(complexFloat));
+
+  meta->general->center_latitude = NAN;
+  meta->general->center_longitude = NAN;
 
   /* Fill in metadata */
   meta_get_latLon(meta, meta->general->line_count/2,

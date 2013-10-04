@@ -84,6 +84,7 @@ void generate_config_file(char *configFile, int line_count, int sample_count)
 static char *datum2envi(datum_type_t datum)
 {
   char *datumStr = (char *) MALLOC(sizeof(char)*128);
+  strcpy(datumStr, MAGIC_UNSET_STRING);
   switch (datum) {
   case NAD27_DATUM:
     strcpy(datumStr, "North America 1927");
@@ -102,6 +103,9 @@ static char *datum2envi(datum_type_t datum)
     break;
   case HUGHES_DATUM:
     strcpy(datumStr, "Hughes");
+    break;
+  default:
+    asfPrintError("Unsupported datum: %d\n", (int)datum);
     break;
   }
   return datumStr;

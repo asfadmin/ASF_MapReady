@@ -962,7 +962,6 @@ void GetDataDictionary(FILE *fp, unsigned long ddOffset,char **dd)
   unsigned char* pTmpUchar;
   unsigned long endPos;
   unsigned long ddLen;
-  int level;
 
   /* Allocate temporary variables */
   pTmpUchar = MALLOC(EMIF_T_UCHAR_LEN);
@@ -977,7 +976,6 @@ void GetDataDictionary(FILE *fp, unsigned long ddOffset,char **dd)
   /* Allocate the data dictionary and read the data dictionary from */
   /* the file into it.                                              */
   *dd = MALLOC(1 + sizeof(unsigned char) * ddLen);
-  level = 0; // Level of nesting in {} pairs
 //  fseek(fp, ddOffset, SEEK_SET);
 
   /* Read the dictionary (a string) */

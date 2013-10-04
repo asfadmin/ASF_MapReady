@@ -87,7 +87,6 @@ int read_seasat_h5_client(int row_start, int n_rows_to_get,
                           meta_parameters *meta, int data_type)
 {
     ReadSeasatClientInfo *info = (ReadSeasatClientInfo*) read_client_info;
-    int ns = meta->general->sample_count;
 
     float *dest = (float*)dest_void;
 

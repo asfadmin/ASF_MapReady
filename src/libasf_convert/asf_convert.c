@@ -26,27 +26,6 @@
 #define FLOAT_COMPARE(a, b) (abs((a) - (b)) \
 			     < UNIT_TESTS_MICRON ? 1 : 0)
 
-static char *t3_matrix[9] = {"T11.bin","T12_real.bin","T12_imag.bin",
-			     "T13_real.bin","T13_imag.bin","T22.bin",
-			     "T23_real.bin","T23_imag.bin","T33.bin"};
-static char *t4_matrix[16] = {"T11.bin","T12_real.bin","T12_imag.bin",
-			      "T13_real.bin","T13_imag.bin","T14_real.bin",
-			      "T14_imag.bin","T22.bin","T23_real.bin",
-			      "T23_imag.bin","T24_real.bin","T24_imag.bin",
-			      "T33.bin","T34_real.bin","T34_imag.bin",
-			      "T44.bin"};
-static char *c2_matrix[4] = {"C11.bin","C12_real.bin","C12_imag.bin",
-			     "C22.bin"};
-static char *c3_matrix[9] = {"C11.bin","C12_real.bin","C12_imag.bin",
-			     "C13_real.bin","C13_imag.bin","C22.bin",
-			     "C23_real.bin","C23_imag.bin","C33.bin"};
-static char *c4_matrix[16] = {"C11.bin","C12_real.bin","C12_imag.bin",
-			      "C13_real.bin","C13_imag.bin","C14_real.bin",
-			      "C14_imag.bin","C22.bin","C23_real.bin",
-			      "C23_imag.bin","C24_real.bin","C24_imag.bin",
-			      "C33.bin","C34_real.bin","C34_imag.bin",
-			      "C44.bin"};
-
 static char *freeman2_decomposition[2] = 
   {"Freeman2_Ground","Freeman2_Vol"};
 static char *freeman3_decomposition[3] = 
@@ -2525,6 +2504,9 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     }
     else {
       update_status("Terrain Correcting...");
+
+      int matching_level = cfg->terrain_correct->no_matching ? MATCHING_NONE : MATCHING_FULL;
+
       check_return(
 		   asf_terrcorr_ext(inFile, cfg->terrain_correct->dem,
 				    cfg->terrain_correct->mask, outFile,
@@ -2538,7 +2520,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
 				    cfg->terrain_correct->water_height_cutoff,
 				    cfg->terrain_correct->do_radiometric,
 				    cfg->terrain_correct->smooth_dem_holes,
-				    NULL, cfg->terrain_correct->no_matching,
+				    NULL,
+                                    matching_level,
 				    cfg->terrain_correct->range_offset,
 				    cfg->terrain_correct->azimuth_offset,
 				    cfg->terrain_correct->use_gr_dem,

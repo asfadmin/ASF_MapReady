@@ -68,12 +68,12 @@
 void stat_write(stat_parameters *stats, const char *file_name, const int num_bands)
 {
 	FILE *stat_file;
-	char stat_name[256];
+	//char stat_name[256];
 	char equation_str[256];
 	int  band, ii;
 
-	create_name(stat_name, file_name, ".stat");
-	stat_file = FOPEN(stat_name, "w");
+	//create_name(stat_name, file_name, ".stat");
+	stat_file = FOPEN(file_name, "w");
 
 /* Write stats structure to file */
 	fprintf(stat_file,"# Statistics for image file of the same base name\n");

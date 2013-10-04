@@ -231,11 +231,15 @@ void import_gamma_isp(const char *inDataName, const char *inMetaName,
   meta_parameters *meta=NULL;
   char tmpFile[255], *outFile;
 
+  if (strlen(outBaseName)>240) {
+    asfPrintError("File name is too long: %s\n", outBaseName);
+  }
+
   // Read metadata from gamma file
   meta = meta_read_gamma_isp(inMetaName, data_type, image_data_type);
   if (complex_flag || meta->general->data_type <= REAL64) {
-    sprintf(outFile, "%s.meta", outBaseName);
-    meta_write(meta, outFile);
+    sprintf(tmpFile, "%s.meta", outBaseName);
+    meta_write(meta, tmpFile);
   }
   else {
     sprintf(tmpFile, "%s_cpx.meta", outBaseName);

@@ -28,6 +28,10 @@
 
 static const int PAD = DEM_GRID_RHS_PADDING;
 
+const int MATCHING_NONE = 0;
+const int MATCHING_FULL = 1;
+const int MATCHING_GRID = 2;
+
 static void ensure_ext(char **filename, const char *ext)
 {
   char *ret = MALLOC(sizeof(char)*(strlen(*filename)+strlen(ext)+5));
@@ -93,20 +97,26 @@ static void clean(const char *file)
 }
 
 static void
-fftMatchQ(char *file1, char *file2, float *dx, float *dy, float *cert)
+fftMatchQ(char *file1, char *file2, float *dx, float *dy, float *cert,
+          int use_grid_matching)
 {
   int qf_saved = quietflag;
-  quietflag = 1;
-  //quietflag = 0;
-  
-  //char match_file[256];
-  //strcpy(match_file,"fft_match.txt");
-  fftMatch(file1, file2, NULL, dx, dy, cert);
-  //asfPrintStatus("Regular matching: dx=%6.3f, dy=%6.3f\n", *dx, *dy);
-  //fftMatch_gridded(file1, file2, match_file, dx, dy, cert);
-  //asfPrintStatus("   Grid matching: dx=%6.3f, dy=%6.3f\n", *dx, *dy);
+  //quietflag = 1;
+  quietflag = 0;
 
-  if (!meta_is_valid_double(*dx) || !meta_is_valid_double(*dy) || cert==0) {
+  if (use_grid_matching) {
+    char match_file[256];
+    strcpy(match_file,"fft_match.txt");
+    fftMatch_gridded(file1, file2, match_file, dx, dy, cert);
+  }
+  else {
+    fftMatch(file1, file2, NULL, dx, dy, cert);
+    asfPrintStatus("Regular matching: dx=%6.3f, dy=%6.3f\n", *dx, *dy);
+
+    // We don't do this for the grid matching, as that already does
+    // forward & backward matching on each grid section
+
+    if (!meta_is_valid_double(*dx) || !meta_is_valid_double(*dy) || cert==0) {
       // bad match the first way, sometimes we can get a good match by
       // reversing the order (chips are taken from the other file)
       // in this case, any valid offsets will need to be flipped
@@ -116,6 +126,7 @@ fftMatchQ(char *file1, char *file2, float *dx, float *dy, float *cert)
           *dx = -(*dx);
       if (meta_is_valid_double(*dy))
           *dy = -(*dy);
+    }
   }
 
   quietflag = qf_saved;
@@ -174,19 +185,19 @@ fftMatch_atCorners(char *output_dir, char *sar, char *dem, const int size)
   trim(sar, chopped_sar, (long long)0, (long long)0, lsz, lsz);
   trim(dem, chopped_dem, (long long)0, (long long)0, lsz, lsz);
 
-  fftMatchQ(chopped_sar, chopped_dem, &dx_ur, &dy_ur, &cert);
+  fftMatchQ(chopped_sar, chopped_dem, &dx_ur, &dy_ur, &cert, FALSE);
   asfPrintStatus("UR: %14.10f %14.10f %14.10f\n", dx_ur, dy_ur, cert);
 
   trim(sar, chopped_sar, (long long)(ns-size), (long long)0, lsz, lsz);
   trim(dem, chopped_dem, (long long)(ns-size), (long long)0, lsz, lsz);
 
-  fftMatchQ(chopped_sar, chopped_dem, &dx_ul, &dy_ul, &cert);
+  fftMatchQ(chopped_sar, chopped_dem, &dx_ul, &dy_ul, &cert, FALSE);
   asfPrintStatus("UL: %14.10f %14.10f %14.10f\n", dx_ul, dy_ul, cert);
 
   trim(sar, chopped_sar, (long long)0, (long long)(nl-size), lsz, lsz);
   trim(dem, chopped_dem, (long long)0, (long long)(nl-size), lsz, lsz);
 
-  fftMatchQ(chopped_sar, chopped_dem, &dx_lr, &dy_lr, &cert);
+  fftMatchQ(chopped_sar, chopped_dem, &dx_lr, &dy_lr, &cert, FALSE);
   asfPrintStatus("LR: %14.10f %14.10f %14.10f\n", dx_lr, dy_lr, cert);
 
   trim(sar, chopped_sar, (long long)(ns-size), (long long)(nl-size),
@@ -194,7 +205,7 @@ fftMatch_atCorners(char *output_dir, char *sar, char *dem, const int size)
   trim(dem, chopped_dem, (long long)(ns-size), (long long)(nl-size),
        lsz, lsz);
 
-  fftMatchQ(chopped_sar, chopped_dem, &dx_ll, &dy_ll, &cert);
+  fftMatchQ(chopped_sar, chopped_dem, &dx_ll, &dy_ll, &cert, FALSE);
   asfPrintStatus("LL: %14.10f %14.10f %14.10f\n", dx_ll, dy_ll, cert);
 
   asfPrintStatus("Range shift: %14.10f top\n", (double)(dx_ul-dx_ur));
@@ -238,7 +249,7 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
   int if_coreg_fails_use_zero_offsets = FALSE;
   int update_original_metadata_with_offsets = FALSE;
   float mask_height_cutoff = -999; // not used
-  int no_matching = FALSE;
+  int matching_level = MATCHING_FULL;
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
   int use_gr_dem=FALSE;
@@ -253,7 +264,7 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
       generate_water_mask, save_clipped_dem,
       update_original_metadata_with_offsets, mask_height_cutoff,
       doRadiometric, smooth_dem_holes, NULL,
-      no_matching, range_offset, azimuth_offset, use_gr_dem, add_speckle,
+      matching_level, range_offset, azimuth_offset, use_gr_dem, add_speckle,
       if_coreg_fails_use_zero_offsets, save_ground_dem, save_incid_angles,
       use_nearest_neighbor);
 }
@@ -277,7 +288,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int if_coreg_fails_use_zero_offsets = FALSE;
   int fill_value = 0;
   int update_orig_metadata_with_offsets = FALSE;
-  int no_matching = FALSE;
+  int matching_level = MATCHING_FULL;
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
   int use_gr_dem = FALSE;
@@ -293,7 +304,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
                        save_clipped_dem, update_orig_metadata_with_offsets,
                        mask_height_cutoff, doRadiometric, smooth_dem_holes,
                        other_files_to_update_with_offsets,
-                       no_matching, range_offset, azimuth_offset, use_gr_dem,
+                       matching_level, range_offset, azimuth_offset, use_gr_dem,
                        add_speckle, if_coreg_fails_use_zero_offsets,
                        save_ground_dem, save_incid_angles,
                        use_nearest_neighbor);
@@ -598,7 +609,7 @@ int match_dem(meta_parameters *metaSAR,
               int apply_dem_padding,
               int mask_dem_same_size_and_projection,
               int clean_files,
-              int no_matching,
+              int matching_level, // 0=None, 1=Full, 2=Grid
               int add_speckle,
 	      int if_coreg_fails_use_zero_offsets,
               double range_offset,
@@ -621,7 +632,7 @@ int match_dem(meta_parameters *metaSAR,
   double saved_time_shift = metaSAR->sar->time_shift;
   double saved_slant_shift = metaSAR->sar->slant_shift;
 
-  if (no_matching) {
+  if (matching_level == MATCHING_NONE) {
     // User supplied the offsets, not calculated
     asfPrintStatus("No matching of DEM and SAR image!\n");
     asfPrintStatus("Applying range offset: %f (meters)\n", range_offset);
@@ -652,7 +663,7 @@ int match_dem(meta_parameters *metaSAR,
   do // matches: while (redo_clipping);
   {
     ++num_attempts;
-    if (!no_matching)
+    if (matching_level != 0)
       asfPrintStatus("\nUsing DEM '%s' for refining geolocation ... "
              "(iteration #%d)\n", demFile, num_attempts);
 
@@ -701,7 +712,7 @@ int match_dem(meta_parameters *metaSAR,
       asfPrintError("User specified no speckle -- quitting.\n"
                     "Simulated SAR image is %s.img\n", demTrimSimSar);
 
-    if (!no_matching)
+    if (matching_level != 0)
       asfPrintStatus("Determining image offsets...\n");
 
     if (userMaskFile) {
@@ -786,7 +797,7 @@ int match_dem(meta_parameters *metaSAR,
               //               srFile, srTrimSimSar);
               trim(demTrimSimSar, demTrimSimSar_ffft,xtl,ytl,xbr-xtl,ybr-ytl);
               trim(srFile, srTrimSimSar, xtl, ytl, xbr-xtl, ybr-ytl);
-              fftMatchQ(srTrimSimSar, demTrimSimSar_ffft, &dx, &dy, &cert);
+              fftMatchQ(srTrimSimSar, demTrimSimSar_ffft, &dx, &dy, &cert, FALSE);
 
               if (cert < cert_cutoff) {
                   asfPrintStatus("Match: %.2f%% certainty. (%f,%f)\n"
@@ -826,15 +837,22 @@ int match_dem(meta_parameters *metaSAR,
 
       meta_free(maskmeta);
     }
-    else if (!no_matching) {
+    else if (matching_level != MATCHING_NONE) {
       // This is the normal case -- no user mask, regular matching
       // Match the real and simulated SAR image to determine the offset.
-      fftMatchQ(srFile, demTrimSimSar, &dx, &dy, &cert);
+      int use_grid_matching = matching_level == MATCHING_GRID;
+      fftMatchQ(srFile, demTrimSimSar, &dx, &dy, &cert, use_grid_matching);
+
+      // Now that we've generated the grid, we are done, user must use
+      // fit_warp and remap
+      if (use_grid_matching)
+        return 0;
+
       asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f, dy=%f.\n",
              100*cert, dx, dy);
     }
     else {
-      // no_matching and no user mask
+      // no matching and no user mask
       asfPrintStatus("Skipped co-registration.\n");
     }
 
@@ -843,7 +861,7 @@ int match_dem(meta_parameters *metaSAR,
 
     redo_clipping = FALSE;
 
-    if (!no_matching) {
+    if (matching_level != MATCHING_NONE) {
       if (fabs(dy) > required_match || fabs(dx) > required_match ||
           do_refine_geolocation)
       {
@@ -902,7 +920,7 @@ int match_dem(meta_parameters *metaSAR,
     
   } while (redo_clipping);
 
-  if (!no_matching) {
+  if (matching_level != MATCHING_NONE) {
     // Corner test
     if (do_corner_matching) {
       int chipsz = 256;
@@ -921,7 +939,7 @@ int match_dem(meta_parameters *metaSAR,
       float dx2, dy2;
 
       asfPrintStatus("Verifying offsets are now close to zero...\n");
-      fftMatchQ(srFile, demTrimSimSar, &dx2, &dy2, &cert);
+      fftMatchQ(srFile, demTrimSimSar, &dx2, &dy2, &cert, FALSE);
 
       asfPrintStatus("Correlation after shift (cert=%5.2f%%): "
                      "dx=%f, dy=%f.\n",
@@ -1047,7 +1065,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   double t_offset, x_offset;
   char output_dir[255];
   char *userMaskClipped = NULL;
-  int no_matching = FALSE;
+  int matching_level = MATCHING_FULL;
   double range_offset = 0.0;
   double azimuth_offset = 0.0;
   meta_parameters *metaSAR;
@@ -1061,7 +1079,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
             simAmpFile, demSlant, NULL, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
             do_refine_geolocation, do_trim_slant_range_dem, apply_dem_padding,
-            madssap, clean_files, no_matching, add_speckle, FALSE,
+            madssap, clean_files, matching_level, add_speckle, FALSE,
             range_offset, azimuth_offset, &t_offset, &x_offset);
 
   if (clean_files)
@@ -1080,7 +1098,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
                      float mask_height_cutoff, int doRadiometric,
                      int smooth_dem_holes,
                      char **other_files_to_update_with_offset,
-                     int no_matching, double range_offset,
+                     int matching_level, double range_offset,
                      double azimuth_offset, int use_gr_dem, int add_speckle,
                      int if_coreg_fails_use_zero_offsets, int save_ground_dem,
                      int save_incid_angles, int use_nearest_neighbor)
@@ -1126,7 +1144,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   //printf("mask_height_cutoff: %f\n", mask_height_cutoff);
   //printf("doRadiometric: %d\n", doRadiometric);
   //printf("smooth_dem_holes: %d\n", smooth_dem_holes);
-  //printf("no_matching: %d\n", no_matching);
+  //printf("matching_level: %d (0=none,1=full,2=grid)\n", matching_level);
   //printf("range_offset: %f\n", range_offset);
   //printf("azimuth_offset: %f\n", azimuth_offset);
   //printf("use_gr_dem: %d\n", use_gr_dem);
@@ -1192,7 +1210,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
 /* We are removing this for now -- matching for everyone ...
   if (strcmp_case(metaSAR->general->sensor, "ALOS") == 0 &&
       strcmp_case(metaSAR->general->sensor_name, "SAR") == 0) {
-    no_matching = TRUE;
+    matching_level = MATCHING_NONE;
     asfPrintStatus("No DEM matching for ALOS Palsar data!\n");
   }
 */
@@ -1202,7 +1220,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       metaSAR->sar && metaSAR->sar->image_type == 'S' &&
       metaSAR->transform && strcmp(metaSAR->transform->type, "slant") == 0 &&
       strstr(metaSAR->general->basename, "1.1") != NULL) {
-    no_matching = TRUE;
+    matching_level = MATCHING_NONE;
     asfPrintStatus("No DEM matching for ALOS Palsar L1.1 data!\n");
     is_Palsar_L11 = TRUE;
   }
@@ -1481,9 +1499,16 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   match_dem(metaSAR, sarFile, demChunk, srFile, output_dir, userMaskFile,
         demTrimSimSar, demTrimSlant, demGround, userMaskClipped, dem_grid_size,
         do_corner_matching, do_fftMatch_verification, FALSE,
-        TRUE, TRUE, madssap, clean_files, no_matching, add_speckle,
+        TRUE, TRUE, madssap, clean_files, matching_level, add_speckle,
         if_coreg_fails_use_zero_offsets,
         range_offset, azimuth_offset, &t_offset, &x_offset);
+
+  if (matching_level == MATCHING_GRID)
+  {
+      // when using grid matching, after generating the grid we are done.
+      asfPrintStatus("Done.\n");
+      return 0;
+  }
 
   if (update_original_metadata_with_offsets)
   {

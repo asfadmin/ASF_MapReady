@@ -159,7 +159,7 @@ static GdkPixbuf * make_small_image(int force, ThumbnailData *tdata,
         pixbuf_small =
             gdk_pixbuf_scale_simple(pb, small_image_x_dim, small_image_y_dim,
                                     GDK_INTERP_BILINEAR);
-        gdk_pixbuf_unref(pb);
+        g_object_unref(pb);
 
         if (!pixbuf_small)
             asfPrintError("Failed to allocate scaled thumbnail pixbuf\n");
