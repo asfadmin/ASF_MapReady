@@ -335,7 +335,7 @@ void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
   FILE *fpIn, *fpOut;
   char projcsStr[100], geogcsStr[200], projStr[500], datumStr[150];
   char spheroidStr[100], esri_prj_file_name[255];
-  char **error;
+  char *error;
 
   project_parameters_t pps;
   projection_type_t proj_type;
@@ -348,11 +348,11 @@ void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
 
   // Get projection information
   if (meta &&
-      meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR ||
-      meta->projection->type == POLAR_STEREOGRAPHIC ||
-      meta->projection->type == ALBERS_EQUAL_AREA ||
-      meta->projection->type == LAMBERT_CONFORMAL_CONIC ||
-      meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
+      (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR ||
+       meta->projection->type == POLAR_STEREOGRAPHIC ||
+       meta->projection->type == ALBERS_EQUAL_AREA ||
+       meta->projection->type == LAMBERT_CONFORMAL_CONIC ||
+       meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA)) {
     
     pps = meta->projection->param;
     proj_type = meta->projection->type;
@@ -363,7 +363,7 @@ void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
       semimajor / (semimajor - meta->projection->re_minor);
   }
   else if (projFile) {
-    parse_proj_args_file(projFile, &pps, &proj_type, &datum, &spheroid, error);
+    parse_proj_args_file(projFile, &pps, &proj_type, &datum, &spheroid, &error);
     fpIn = FOPEN(projFile, "r");
     //spheroid = get_spheroid(fpIn);
     FCLOSE(fpIn);
@@ -410,16 +410,19 @@ void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
 	semimajor = HUGHES_SEMIMAJOR;
 	inv_flattening = HUGHES_INV_FLATTENING;
 	break;
+      default:
+        asfPrintError("Unknown spheroid: %d\n", spheroid);
+        break;
       }
   }
 
   // Convert the projection information into ESRI projection format
   if ((meta &&
-       meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR ||
-       meta->projection->type == POLAR_STEREOGRAPHIC ||
-       meta->projection->type == ALBERS_EQUAL_AREA ||
-       meta->projection->type == LAMBERT_CONFORMAL_CONIC ||
-       meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA) || projFile) {
+       (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR ||
+        meta->projection->type == POLAR_STEREOGRAPHIC ||
+        meta->projection->type == ALBERS_EQUAL_AREA ||
+        meta->projection->type == LAMBERT_CONFORMAL_CONIC ||
+        meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA)) || projFile) {
 
     // Construct geographic coordinate system string
     sprintf(geogcsStr, "GEOGCS[");
@@ -458,6 +461,9 @@ void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
 	strcat(geogcsStr, "\"GCS_HUGHES\",");
 	strcat(datumStr, "\"D_HUGHES\",");
 	break;
+      default:
+        asfPrintError("Unknown datum: %d\n", datum);
+        break;
       }
     strcat(geogcsStr, datumStr);
     switch (spheroid)
@@ -502,12 +508,18 @@ void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
 	sprintf(spheroidStr, "SPHEROID[\"HUGHES\",%.0f,%9f]]",
 		semimajor, inv_flattening);
 	break;
+      default:
+        asfPrintError("Unknown spheroid: %d\n", spheroid);
+        break;
       }
     strcat(geogcsStr, spheroidStr);  
     
     // Construct projection string
     switch (proj_type)
       {
+      default:
+        asfPrintError("Unknown proj_type: %d\n", proj_type);
+        break;
       case LAT_LONG_PSEUDO_PROJECTION:
 	break;
       case UNIVERSAL_TRANSVERSE_MERCATOR:
@@ -712,7 +724,7 @@ static void write_dbase_field_to_csv(DBFHandle dbase, int record,
                                      int field, char *line)
 {
   DBFFieldType dbaseType;
-  char fieldName[25], str[50];
+  char fieldName[25], *str;
   int nWidth, nDecimals, nValue;
   double fValue;
   const char *sValue;
@@ -723,14 +735,17 @@ static void write_dbase_field_to_csv(DBFHandle dbase, int record,
     {
     case FTString:
       sValue = DBFReadStringAttribute(dbase, record, field);
+      str = MALLOC(sizeof(char)*(strlen(sValue)+10));
       sprintf(str, "\"%s\",", sValue);
       break;
     case FTInteger:
       nValue = DBFReadIntegerAttribute(dbase, record, field);
+      str = MALLOC(sizeof(char)*64);
       sprintf(str, "%d,", nValue);
       break;
     case FTDouble:
       fValue = DBFReadDoubleAttribute(dbase, record, field);
+      str = MALLOC(sizeof(char)*64);
       sprintf(str, "%s,", lf(fValue));
       break;
     case FTLogical:
@@ -738,16 +753,16 @@ static void write_dbase_field_to_csv(DBFHandle dbase, int record,
       break;
     }
   strcat(line, str);
+  FREE(str);
 
 }
 
 static void write_name_field_to_csv(DBFHandle dbase, int record, char *header)
 {
-  DBFFieldType dbaseType;
   char fieldName[25], str[50];
   int nWidth, nDecimals;
 
-  dbaseType = DBFGetFieldInfo(dbase, record, fieldName, &nWidth, &nDecimals);
+  DBFGetFieldInfo(dbase, record, fieldName, &nWidth, &nDecimals);
   sprintf(str, "%s,", fieldName);
   strcat(header, str);
 }

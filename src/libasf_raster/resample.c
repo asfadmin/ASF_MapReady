@@ -93,6 +93,9 @@ static float filter(      /****************************************/
 
       return (kersum);
     }
+
+    asfPrintError("Not reached");
+    return 0;
 }
 
 static int
@@ -108,7 +111,7 @@ resample_impl(const char *infile, const char *outfile,
              onp, onl,              /* out number of pixels,lines     */
              xnsk,                  /* kernel size in samples (x)     */
              ynsk,                  /* kernel size in samples (y)     */
-             xhalf,yhalf,           /* half of the kernel size        */
+             yhalf,                 /* half of the kernel size        */
              n_lines,               /* number of lines in this kernel */
              s_line,                /* start line for input file      */
              xi = 0,                /* inbuf int x sample #           */
@@ -145,7 +148,6 @@ resample_impl(const char *infile, const char *outfile,
 
     xbase = 1.0 / (2.0 * xscalfact) - 0.5;
     xrate = 1.0 / xscalfact;
-    xhalf = (xnsk-1)/2;
 
     ybase = 1.0 / (2.0 * yscalfact) - 0.5;
     yrate = 1.0 / yscalfact;

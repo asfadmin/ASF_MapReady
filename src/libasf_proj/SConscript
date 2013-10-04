@@ -17,6 +17,3 @@ libs = localenv.SharedLibrary("libasf_proj", [
 
 globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
 
-# run the unit test, and set its dependencies
-test_result = localenv.UnitTest("test.semaphore", None)
-localenv.Depends(test_result, [libs])

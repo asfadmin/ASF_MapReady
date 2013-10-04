@@ -238,7 +238,7 @@ int isTerrasar_ext(char *dataFile, int checkPolarimetry, char **error)
 
 int isTerrasar(char *dataFile, char **error)
 {
-  isTerrasar_ext(dataFile, FALSE, &error);
+  return isTerrasar_ext(dataFile, FALSE, error);
 }
 
 int isRadarsat2(char *dataFile, char **error)
@@ -271,8 +271,7 @@ int isRadarsat2(char *dataFile, char **error)
 	           xml_get_string_value(doc, "product.sourceAttributes.satellite"), 20);
       
       // only care about Radarsat-2 data
-      if (satellite &&
-	  strcmp_case(satellite, "RADARSAT-2") == 0) {
+      if (strcmp_case(satellite, "RADARSAT-2") == 0) {
 	
 	found = TRUE;
 	strncpy_safe(dataType, xml_get_string_value(doc, 
@@ -339,7 +338,6 @@ int isRadarsat2(char *dataFile, char **error)
 
 int isUAVSAR(char *dataFile, char **error)
 {
-  char dataType[25];
   int found = FALSE;
   char *inFile = STRDUP(dataFile);
   // Let's first check for an .ann extension
@@ -353,135 +351,17 @@ int isUAVSAR(char *dataFile, char **error)
     // originally produced.
     // The only identifier for even UAVSAR, I could find, was the URL.
     char line[512];
-    FILE *fp;
-    fp = fopen(inFile, "r");
-    while (fgets(line, 512, fp)) {
-      if (strstr(line, "uavsar.jpl.nasa.gov"))
-	found = TRUE;
+    FILE *fp = fopen(inFile, "r");;
+    if (fp) {
+      while (fgets(line, 512, fp)) {
+        if (strstr(line, "uavsar.jpl.nasa.gov"))
+   	  found = TRUE;
+      }
+      fclose(fp);
     }
-    fclose(fp);
   }
   FREE(inFile);
 
   return found;
 }
 
-// Literally a copy of the lzFetch function. However, had to be done since
-// the original functionality, written for Vexcel par files, indexed location
-// blocks. This does not work with the location block in the metadata file.
-int isspace(int c);
-
-static char *getString(char *file,char *param, int *err)
-{
-  int structDepth, indexVec = 0;
-  char structName[16][255];
-  char line[255];
-  FILE *in = fopen(file, "r");
-
-  if (in == NULL) {
-    if (err == NULL)
-      asfPrintError("Couldn't open spec file '%s'!\n", file);
-    else {
-      *err = 3;
-      return NULL;
-    }
-  }
-    
-  structDepth=0;
-  strcpy(structName[structDepth],"");
-  
-  while (NULL != fgets(line, 255, in)) {
-    if (strchr(line, '{') != NULL) {
-      char newStruct[255];
-      char index[255];
-      sscanf(line, "%s", newStruct);
-      if (0 == strcmp(newStruct, "state_vector")) {
-	sprintf(index, "[%d]", indexVec);
-	indexVec++;
-      }
-      else strcpy(index, "");
-      strcpy(structName[structDepth+1], structName[structDepth]);
-      if (structDepth != 0)
-	strcat(structName[structDepth+1], ".");
-      strcat(structName[structDepth+1], newStruct);
-      strcat(structName[structDepth+1], index);
-      structDepth++;
-    } 
-    else if (strchr(line,'}') != NULL)
-      structDepth--;
-    else {
-      char thisParamName[255];
-      char thisParam[255];
-      sscanf(line, "%s", thisParamName);
-      strcpy(thisParam, structName[structDepth]);
-      if (structDepth != 0)
-	strcat(thisParam, ".");
-      strcat(thisParam, thisParamName);
-      if (0 == strcmp(thisParam, param)) {
-	char *ret = (char *) MALLOC(sizeof(char)*255);
-	char *end = strchr(line, '#');
-	end--;
-	while (isspace(*end)) {
-	  *end = '\0';
-	  end--;
-	}
-	char *start = strchr(line, ':');
-	start++;
-	while (isspace(*start)) 
-	  start++;
-	strcpy(ret, start);
-	if (err!=NULL)
-	  *err=0; 
-	FCLOSE(in);
-	return ret;
-      }
-    }
-  }
-  if (err == NULL) {
-    asfPrintWarning("Couldn't find field '%s' in spec file '%s'.\n",
-		    param, file);
-    FCLOSE(in);
-    return NULL;
-  }
-  *err = 1;
-  FCLOSE(in);
-  return NULL;
-}
-
-static double getDouble(char *file, char *param, int *err)
-{
-  double ret;
-  char *str;
-  
-  str = getString(file, param, err);
-  if ((err != NULL) && (*err != 0)) 
-    return 0.0;
-  if (str == NULL && err != NULL) 
-    *err = 2;
-  if (str && 1 != sscanf(str, "%lf", &ret)) {
-    if (err == NULL)
-      asfPrintError("Couldn't convert '%s' to a double.\n",str);
-    else
-      *err=2;
-  }
-  FREE(str);
-  return ret;
-}
-
-static int getInt(char *file, char *param, int *err)
-{
-    int ret;
-    char *str = getString(file, param, err);
-    if ((err != NULL) && (*err != 0)) 
-      return 0;
-    if (!str) 
-      return 0;
-    if (1 != sscanf(str, "%d", &ret)) {
-      if (err==NULL) 
-	asfPrintError("Couldn't convert '%s' to an integer.\n", str);
-      else
-	*err=3;
-    }
-    FREE(str);
-    return ret;
-}

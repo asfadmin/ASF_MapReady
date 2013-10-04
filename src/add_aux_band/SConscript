@@ -33,6 +33,3 @@ bins = localenv.Program("add_aux_band", Glob("*.c"))
 
 globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
 
-# run the unit test, and set its dependencies
-test_result = localenv.UnitTest("test.semaphore", None)
-localenv.Depends(test_result, [bins])

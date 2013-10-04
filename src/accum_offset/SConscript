@@ -35,6 +35,3 @@ mans = localenv.File(["accum_offset.1"])
 
 globalenv.Install(globalenv["inst_dirs"]["mans"], mans)
 
-# run the unit test, and set its dependencies
-test_result = localenv.UnitTest("test.semaphore", None)
-localenv.Depends(test_result, [bins, mans])

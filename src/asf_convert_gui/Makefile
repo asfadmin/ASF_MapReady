@@ -100,7 +100,7 @@ else
 
 ### Begin Unix Section
 
-CFLAGS += -Wall \
+CFLAGS += -Werror -Wall \
 	$(GSL_CFLAGS) \
 	$(JPEG_CFLAGS) \
 	$(PROJ_CFLAGS) \

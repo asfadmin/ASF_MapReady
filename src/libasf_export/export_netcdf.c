@@ -75,7 +75,7 @@ void nc_meta_str(int group_id, char *name, char *desc, char *units,
 		 char *value)
 {
   int var_id;
-  const char *str_value = (char *) MALLOC(sizeof(char)*strlen(value));
+  char *str_value = (char *) MALLOC(sizeof(char)*(1+strlen(value)));
   strcpy(str_value, value);
   char *str = (char *) MALLOC(sizeof(char)*1024);
   nc_def_var(group_id, name, NC_STRING, 0, 0, &var_id);
@@ -84,7 +84,7 @@ void nc_meta_str(int group_id, char *name, char *desc, char *units,
     strcpy(str, units);
     nc_put_att_text(group_id, var_id, "units", strlen(str), str);
   }
-  nc_put_var_string(group_id, var_id, &str_value);
+  nc_put_var_string(group_id, var_id, (const char **)&str_value);
 }
 
 netcdf_t *initialize_netcdf_file(const char *output_file, 
@@ -669,7 +669,7 @@ netcdf_t *initialize_netcdf_file(const char *output_file,
   nc_meta_int(meta_id, "general_band_count", "number of bands in image", NULL, 
 	      &mg->band_count);
   nc_meta_str(meta_id, "general_bands", "bands of the sensor", NULL, 
-	      &mg->bands);
+	      (char*)&mg->bands);
   nc_meta_int(meta_id, "general_line_count", "number of lines in image", NULL, 
 	      &mg->line_count);
   nc_meta_int(meta_id, "general_sample_count", "number of samples in image", 

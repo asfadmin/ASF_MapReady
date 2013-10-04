@@ -186,6 +186,9 @@ static int find_dataset(char *inDataName, char *dataset)
 
 static int compare_values(const int *a, const int *b)
 {
+  int *a = (int*)av;
+  int *b = (int*)bv;
+
   int tmp = *a - *b;
   if (tmp > 0)
     return 1;
@@ -541,12 +544,13 @@ static void read_smap_subset(char *dataName, int band,
   else
     fp = FOPEN(outDataName, "ab");
   asfPrintStatus("   Band: %s\n", dataName);
-  int ii, kk;
+  int ii;
   for (ii=line; ii<line+height; ii++) {
     offset[0] = ii;
     H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
     H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, amp);
     /*
+    int kk;
     if (strcmp_case(dataName, "cell_lat") != 0 &&
 	strcmp_case(dataName, "cell_lon") != 0) {
       for (kk=sample; kk<sample+width; kk++) {

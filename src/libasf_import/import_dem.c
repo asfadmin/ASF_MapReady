@@ -162,7 +162,7 @@ static char **read_aster_dem(unzFile *file, int file_count,
   char tmp[10];
   unz_file_info pfile_info;
   char szFileName[1024], szComment[1024], extraField[1024];
-  uLong fileNameBufferSize, extraFieldBufferSize, commentBufferSize;
+  uLong fileNameBufferSize=1023, extraFieldBufferSize=1023, commentBufferSize=1023;
 
   char **dem_files = (char **) MALLOC(sizeof(char *)*file_count);
   for (ii=0; ii<file_count; ii++)
@@ -269,7 +269,7 @@ static char **read_jpl_srtm_dem(const char *infile, const char *tmp_dir,
   char tmp[10];
   unz_file_info pfile_info;
   char szFileName[1024], szComment[1024], extraField[1024];
-  uLong fileNameBufferSize, extraFieldBufferSize, commentBufferSize;
+  uLong fileNameBufferSize=1023, extraFieldBufferSize=1023, commentBufferSize=1023;
 
   char *line = (char *) MALLOC(sizeof(char)*512);
   int count = 0;
@@ -372,7 +372,7 @@ static char **read_usgs_ned_dem(unzFile *file, int file_count,
   char tmp[10];
   unz_file_info pfile_info;
   char szFileName[1024], szComment[1024], extraField[1024];
-  uLong fileNameBufferSize, extraFieldBufferSize, commentBufferSize;
+  uLong fileNameBufferSize=1023, extraFieldBufferSize=1023, commentBufferSize=1023;
 
   char **dem_files = (char **) MALLOC(sizeof(char *)*file_count);
   for (ii=0; ii<file_count; ii++)
@@ -478,8 +478,12 @@ void import_dem(const char *inBaseName, int list, const char *outBaseName,
     FCLOSE(fpList);
     if (strcmp_case(dem_type, "SRTM") == 0 && jpl)
       dem_files = read_jpl_srtm_dem(inBaseName, tmp_dir, &file_count, tiles);
-    else if (strcmp_case(dem_type, "NED") == 0)
-      dem_files = read_usgs_ned_dem(inBaseName, tmp_dir, &file_count, tiles);
+    else if (strcmp_case(dem_type, "NED") == 0) {
+      asfPrintError("NED is currently not supported\n");
+      //dem_files = read_usgs_ned_dem(inBaseName, tmp_dir, &file_count, tiles);
+      dem_files = read_usgs_ned_dem(NULL,0,NULL,NULL);
+      dem_files = NULL;
+    }
     zip = TRUE;
   }
   else if (findExt(inBaseName) && 

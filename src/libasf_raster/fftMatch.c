@@ -351,7 +351,7 @@ static int remove_outliers(offset_point_t *matches, int len)
     }
   }
   //printf("Removed %d points that were outliers in Y.\n", rmy);
-  //printf("Removed %d points overall\n", rmx+rmy);
+  //asfPrintStatus("Removed %d outliers\n", rmx+rmy);
   return rmx+rmy;
 }
 
@@ -424,15 +424,11 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   int nl = mini(meta1->general->line_count, meta2->general->line_count);
   int ns = mini(meta1->general->sample_count, meta2->general->sample_count);
 
-  const int size = 256; // 512;
-  const int overlap = 0; // 256;
-  const double tol = .33;
+  const int size = 512;
+  const int overlap = 256;
+  const double tol = .28;
 
   long long lsz = (long long)size;
-  FILE *fp = NULL;
-  
-  if (gridFile) 
-    fp = FOPEN(gridFile, "w");
 
   int num_x = (ns - size) / (size - overlap);
   int num_y = (nl - size) / (size - overlap);
@@ -440,7 +436,7 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
 
   offset_point_t *matches = MALLOC(sizeof(offset_point_t)*len); 
 
-  int ii, jj, kk=0;
+  int ii, jj, kk=0, nvalid=0;
   for (ii=0; ii<num_y; ++ii) {
     int tile_y = ii*(size - overlap);
     if (tile_y + size > nl) {
@@ -456,14 +452,15 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
         tile_x = ns - size;
       }
       //asfPrintStatus("Matching tile starting at (L,S) (%d,%d)\n", tile_y, tile_x);
-      char trim_append[64], smooth_append[64];
-      sprintf(trim_append, "_chip_%05d_%05d", tile_x, tile_y);
+      char trim_append[64];
+      sprintf(trim_append, "_chip_%05d_%05d", tile_y, tile_x);
       char *trim_chip1 = appendToBasename(inFile1, trim_append);
       char *trim_chip2 = appendToBasename(inFile2, trim_append);
-      sprintf(smooth_append, "_smooth_chip_%05d_%05d", tile_x, tile_y);
-      char *smooth_chip1 = appendToBasename(inFile1, smooth_append);
       trim(inFile1, trim_chip1, (long long)tile_x, (long long)tile_y, lsz, lsz);
       trim(inFile2, trim_chip2, (long long)tile_x, (long long)tile_y, lsz, lsz);
+      //char smooth_append[64];
+      //sprintf(smooth_append, "_smooth_chip_%05d_%05d", tile_x, tile_y);
+      //char *smooth_chip1 = appendToBasename(inFile1, smooth_append);
       //smooth(trim_chip1, smooth_chip1, 3, EDGE_TRUNCATE);
       float dx, dy, cert;
       int ok = fftMatchBF(trim_chip1, trim_chip2, &dx, &dy, &cert, tol);
@@ -473,34 +470,43 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
       matches[kk].x_offset = dx;
       matches[kk].y_offset = dy;
       matches[kk].valid = ok && cert>tol;
+      asfPrintStatus("%s: %5d %5d dx=%7.3f, dy=%7.3f, cert=%5.3f\n",
+                     matches[kk].valid?"GOOD":"BAD ", tile_y, tile_x, dx, dy, cert);
+      if (matches[kk].valid) ++nvalid;
       ++kk;
-      //asfPrintStatus("%sResult: dx=%f, dy=%f, cert=%f\n",
-      //               matches[kk].valid?"":"BAD: ", dx, dy, cert);
       //printf("%4.1f ", dx);
+      removeImgAndMeta(trim_chip1);
       FREE(trim_chip1);
+      removeImgAndMeta(trim_chip2);
       FREE(trim_chip2);
-      FREE(smooth_chip1);
+      //unlink(smooth_chip1);
+      //FREE(smooth_chip1);
     }
     //printf("\n");
   }
 
   //print_matches(matches, num_x, num_y, stdout);
 
-  int removed;
+  asfPrintStatus("Removing grid offset outliers.\n");
+  asfPrintStatus("Starting with %d offsets.\n", nvalid);
+
+  int removed, iter=0;
   do {
     removed = remove_outliers(matches, len);
+    if (removed > 0)
+      asfPrintStatus("Iteration %d: Removed %d outliers\n", ++iter, removed);
   }
   while (removed > 0);
+  asfPrintStatus("Finished removing outliers.\n");
 
-  char *base = get_basename(meta1->general->basename);
-  char *name = appendExt(base, ".offsets.txt");
-  FILE *offset_fp = FOPEN(name,"w");
-  //print_matches(matches, num_x, num_y, stdout);
-  print_matches(matches, num_x, num_y, offset_fp);
-  //asfPrintStatus("Offsets written to: %s\n", name);
-  FCLOSE(offset_fp);
-  FREE(name);
-  FREE(base);
+  if (gridFile) {
+    FILE *offset_fp = FOPEN(gridFile,"w");
+    print_matches(matches, num_x, num_y, offset_fp);
+    FCLOSE(offset_fp);
+  }
+
+  char *name = appendExt(inFile1, ".offsets.txt");
+  FILE *fp = FOPEN(name, "w");
 
   int valid_points = 0;
   for (ii=0; ii<len; ++ii) {
@@ -540,12 +546,19 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
     *certainty = (float)n / (float)len;
   }
 
-  //asfPrintStatus("Final Result: dx=%f, dy=%f, cert=%f\n", *avgLocX, *avgLocY, *certainty);
+  asfPrintStatus("Found %d offsets.\n", valid_points);
+  asfPrintStatus("Average tile offset: dx=%f, dy=%f, cert=%f\n",
+                 *avgLocX, *avgLocY, *certainty);
 
   meta_free(meta1);
   meta_free(meta2);
+
   FCLOSE(fp);
+  asfPrintStatus("Generated grid match file: %s\n", name);
+
   FREE(matches);
+  FREE(name);
+
   return (0);
 }
 

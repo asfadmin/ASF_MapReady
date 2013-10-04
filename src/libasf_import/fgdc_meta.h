@@ -2,6 +2,11 @@
 #define __FGDC_H__
 
 #include "asf_meta.h"
+
+#ifdef HOST_FILLORDER
+#undef HOST_FILLORDER
+#endif
+
 #include "gdal.h"
 #include "ogr_srs_api.h"
 
@@ -158,7 +163,7 @@ meta_projection *gdal2meta_projection(GDALDatasetH hGdal,
 				      int rowcount, int colcount);
 fgdc_meta *fgdc_meta_init(void);
 fgdc_meta *read_fgdc_meta(const char *dataFile);
-void update_fgdc_meta(fgdc_meta *fgdc, char *configFile);
+void update_fgdc_meta(fgdc_meta *fgdc, const char *configFile);
 
 
 #endif

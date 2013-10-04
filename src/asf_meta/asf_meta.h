@@ -864,7 +864,7 @@ int put_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
     int num_lines_to_put, const complexFloat *source);
 int put_band_complexFloat_line(FILE *file, meta_parameters *meta, 
 			       int band_number, int line_number, 
-			       const float *source);
+			       const complexFloat *source);
 int get_partial_byte_line(FILE *file, meta_parameters *meta, int line_number,
         int sample_number, int num_samples_to_get,
         unsigned char *dest);
@@ -911,6 +911,9 @@ void alos_to_latlon(meta_parameters *meta,
 void scan_to_latlon(meta_parameters *meta,
         double x, double y, double z,
         double *lat, double *lon, double *height);
+void uavsar_to_latlon(meta_parameters *meta,
+                      double xSample, double yLine, double height,
+                      double *lat, double *lon);
 void location_to_latlon(meta_parameters *meta,
 			double x, double y, double z,
 			double *lat_d, double *lon, double *height);

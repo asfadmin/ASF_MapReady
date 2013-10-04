@@ -42,7 +42,7 @@ void proj_to_latlon(meta_projection *proj, double x, double y, double z,
       project_eqc_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
       break;
     case SINUSOIDAL:
-      project_sin_inv(&(proj->param), x, y, z, lat, lon, height);
+      project_sin_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
       break;
     case SCANSAR_PROJECTION:
       asfPrintError("'proj_to_latlon' not defined for SCANSAR_PROJECTION.\n"
@@ -543,10 +543,12 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
       project_eqr(&(proj->param), geoc_lat, lon, height, x, y, z, proj->datum);
       break;
     case EQUIDISTANT:
+      // Some special treatment required for PROJ4 limitation
+      geoc_lat = atan(tan(lat)/(1-ecc2(proj->re_minor,proj->re_major)));
       project_eqc(&(proj->param), geoc_lat, lon, height, x, y, z, proj->datum);
       break;
     case SINUSOIDAL:
-      project_sin(&(proj->param), lat, lon, height, x, y, x);
+      project_sin(&(proj->param), lat, lon, height, x, y, x, proj->datum);
       break;
     case LAT_LONG_PSEUDO_PROJECTION:
       *x = lon*R2D;

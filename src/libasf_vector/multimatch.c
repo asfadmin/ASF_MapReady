@@ -7,9 +7,11 @@ int multimatch2shape(char *inFile, char *outFile, int listFlag)
 {
   DBFHandle dbase;
   SHPHandle shape;
-  char line[1024], n;
+  char line[1024], n=0;
   double lat, lon, ref_x, ref_y, ref_z, search_x, search_y, search_z;
   double dx, dy, dz, direction, speed;
+
+  open_shape(outFile, &dbase, &shape);
 
   // Read information from line
   sscanf(line, "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",

@@ -31,8 +31,12 @@
 #ifndef M_PI
 # define M_PI PI
 #endif
+#ifndef D2R
 #define D2R (PI/180.0)
+#endif
+#ifndef R2D
 #define R2D (180.0/PI)
+#endif
 #define DEGREES2ARCMINUTES 60.0
 #define ARCMINUTES2DEGREES (1.0/DEGREES2ARCMINUTES)
 #define DEGREES2ARCSECONDS 3600.0
@@ -297,6 +301,9 @@ const char *bin_postfix(void);
 
 /* wrapper for unlink */
 int remove_file(const char *file);
+
+/* delete image and metadata files given a basename */
+void removeImgAndMeta(const char *base);
 
 
 /***************************************************************************

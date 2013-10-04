@@ -1299,7 +1299,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->sar->deskewed = 1;
   ceos_init_stVec(in_fName, ceos, meta);
   if (ceos->product == SLC) {
-    double time, slant;
+    //double time, slant;
     //meta_get_timeSlantDop(meta, 0, 0, &time, &slant, NULL);
     //printf("slant_range_first_pixel: %.3f\n", slant);
     double slant2 = dssr->rng_gate

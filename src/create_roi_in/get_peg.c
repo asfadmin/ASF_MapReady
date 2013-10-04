@@ -433,7 +433,8 @@ void radar_to_xyz(ellipsoid elp, pegtype peg, pegtrans *ptm)
    calculate the SCH vel, SCH acc, and space craft height
  -----------------------------------------------------------------------*/
 void get_peg_info(double start_time, int nl, int prf, char *vecfile,
-                  double *schvel, double *schacc, double *height, double *earthrad)
+                  double *schvel, double *schacc, double *height, double *earthrad,
+                  double *height_dt, double *lat, double *lon)
 {
   FILE *fpin;
   double times[MAX_OBS];
@@ -541,6 +542,9 @@ void get_peg_info(double start_time, int nl, int prf, char *vecfile,
   schacc[2] = platacc[2];
   
   *height = llhpeg[2];
+  *height_dt = (*height-llh[0][2])/(scene_cen_time - start_time);
   *earthrad = ptm.radcur;
+  *lat = llhpeg[0];
+  *lon = llhpeg[1];
 }
 

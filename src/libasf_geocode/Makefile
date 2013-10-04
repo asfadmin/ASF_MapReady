@@ -37,25 +37,28 @@ INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR)
 
 CPPFLAGS := $(INCLUDE_FLAGS)
 
+CFLAGS += $(GSL_CFLAGS) $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
+
 # I'd like to use -Wconversion as advised by the GSL, but it seems to
 # make it impossible to pass arguments of type float to functions that
 # take type float (still get a complaint about argument being passed
 # as float due to prototype rather than double.
 #          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
-CFLAGS += $(GSL_CFLAGS) $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) \
-	-Wall -W -Wmissing-prototypes -Wstrict-prototypes \
+CFLAGS += -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
 	-Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
-	-Wwrite-strings -Wnested-externs -fno-common
+	-Wwrite-strings -Wnested-externs -fno-common -Werror
 
-LIBS :=	$(LIBDIR)/libasf_reporting.a \
+LIBS :=	\
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(JPEG_LIBS) \
+	$(TIFF_LIBS) \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
+	$(XML_LIBS) \
 	-lm
 
 # These defines enable various debugging behavior and output.  Leaving
@@ -89,7 +92,9 @@ CFLAGS += $(DEBUG_FEATURES)
 # Object files.
 OBJS := $(patsubst %.c, %.o, $(SOURCES))
 
-all: build_only
+all: build_only share_files
+
+share_files:
 	mv libasf_geocode.a $(LIBDIR)
 	cp asf_geocode.h $(ASF_INCLUDE_DIR)
 	rm -rf $(SHAREDIR)/projections
@@ -104,12 +109,16 @@ build_only: $(OBJS)
 $(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*h)
 
 clean:
-	rm -rf $(OBJS) core.* core *~ libasf_geocode.a
+	rm -rf $(OBJS) core.* core *~ libasf_geocode.a test *.t.o
 
 parse_test: geocode_options.t.c
 	$(CC) -DTEST_PARSE_OPTIONS $(INCLUDE_FLAGS) geocode_options.t.c \
 	geocode_options.c $(LDLIBS) $(LDFLAGS) \
 	-o geocode_options.t
+
+test: *.t.c
+	$(CC) -DTEST $(CFLAGS) *.t.c $(SOURCES) $(LIBDIR)/libcunit.a $(LIBS) -lm -o test
+	./test
 
 # If any command responsible for producing a target exits with a
 # nonzero exit status, delete that target.
