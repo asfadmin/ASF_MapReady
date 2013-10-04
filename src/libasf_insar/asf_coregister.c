@@ -266,7 +266,6 @@ int coregister_fine(char *masterFile, char *slaveFile, int nOffX, int nOffY,
 {
   int x1, x2, y1, y2, srcSize=32, trgSize, borderX=80, borderY=80;
   int gridResolution=20, pointNo, goodPoints, attemptedPoints;
-  char gridRes[256];
   float minSNR = 0.3;  // Threshold for deleting points
   float maxDisp = 1.8; // Forward and reverse correlations which differ by more
                        // than this will be deleted
@@ -284,8 +283,8 @@ int coregister_fine(char *masterFile, char *slaveFile, int nOffX, int nOffY,
   FILE *fp = FOPEN(ficoFile, "w");
 
   // Check to see if the last parameter contains a number, the grid resolution
-  if (gridRes)
-    gridResolution=atoi(gridRes);
+  if (gridSize>0)
+    gridResolution=gridSize;
   if (gridResolution<2)
     gridResolution=20;
   if (!quietflag)
@@ -490,8 +489,8 @@ int asf_coregister(int datatype, char *coregType, char *baseName, int deskew,
       
       // Determine offset first patch - pixel level
       asfPrintStatus("\n   Coregistering first patch to pixel level ...\n");
-      check_return(coregister_coarse(masterPatch, slavePatch, &p1_range_offset,
-				     &p1_azimuth_offset, NULL),
+      check_return(coregister_coarse(masterPatch, slavePatch, p1_range_offset,
+				     p1_azimuth_offset, NULL),
 		   "offset estimation first patch (coregister_coarse)");
       
       // Determine default start of last patch
@@ -542,8 +541,8 @@ int asf_coregister(int datatype, char *coregType, char *baseName, int deskew,
       
       // Determine offset last patch - pixel level
       asfPrintStatus("\n   Coregistering last patch to pixel level ...\n");
-      check_return(coregister_coarse(masterPatch, slavePatch, &pL_range_offset,
-				     &pL_azimuth_offset, NULL),
+      check_return(coregister_coarse(masterPatch, slavePatch, pL_range_offset,
+				     pL_azimuth_offset, NULL),
 		   "offset estimation last patch (coregister_coarse)");
 
       // Determine whether the measured offset are beyond the given limit

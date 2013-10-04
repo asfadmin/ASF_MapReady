@@ -33,7 +33,7 @@ int main(argc,argv)
 	if (writeRules)
 	{
 		printf("# ENDIAN_FLAGS variable determined by endian.c\n");
-		printf("ENDIAN_FLAGS = -D%s_endian ",littleEndian?"lil":"big");
+		printf("ENDIAN_FLAGS = -DASF_%s_ENDIAN ",littleEndian?"LIL":"BIG");
 	}
 	else
 	{
@@ -81,7 +81,7 @@ int main(argc,argv)
 	if (writeRules)
 	{/*This is a continuation of the "ENDIAN_FLAGS" line from the previous write*/
 		printf("%s\n",
-			ieee?(littleEndian?"-Dlil_ieee":  "-Dbig_ieee"):
+			ieee?(littleEndian?"-DASF_LIL_IEEE":  "-DASF_BIG_IEEE"):
 			          (is_cray?"-Dcray_float":"-Dnon_ieee "));
 	}
 	else

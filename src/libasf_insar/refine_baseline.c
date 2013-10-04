@@ -468,7 +468,7 @@ static int test_base(char *basefile, char *matfile, char *vecfile)
 {
   int i, j;
   int m, n = 4;   /* m and n are rows and columns of matrix A */
-  double sum, rms, errsum;
+  double sum, errsum;
   double **A;
   double *b, *x, *Ax;
   FILE *fp;
@@ -528,7 +528,7 @@ static int test_base(char *basefile, char *matfile, char *vecfile)
     sum += (b[i] - Ax[i])*(b[i] - Ax[i]);
     errsum += (b[i] - Ax[i]);
   }
-  rms = sqrt(sum/(double)(m));
+  //double rms = sqrt(sum/(double)(m));
   //asfPrintStatus("\n   rms diff(b, A*x) = %f, avg diff(b, A*x) = %f\n\n", 
   //  rms, errsum/(double)m);
 

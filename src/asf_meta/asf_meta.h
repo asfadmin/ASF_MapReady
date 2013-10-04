@@ -34,6 +34,7 @@
 #include "asf.h"
 #include "hdf5.h"
 #include "uavsar.h"
+#include "seasat_slant_shift.h"
 
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
@@ -121,6 +122,7 @@ typedef enum {
   GAMMA,
   ROIPAC,
   SMAP,
+  SEASAT_H5,
   GRIDDED_RGPS
 } input_format_t;
 
@@ -657,6 +659,9 @@ stateVector meta_interp_stVec(meta_parameters *meta,double time);
 int meta_uses_incid_polynomial(meta_parameters *meta);
 double meta_incid(meta_parameters *sar,double y,double x);
 
+/*Return the yaw angle in radians*/
+double meta_yaw(meta_parameters *meta, double y, double x);
+
 /*Return the look angle: this is the angle measured
   by the satellite between earth's center and the target point.
   Returns radians.*/
@@ -859,7 +864,7 @@ int put_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
     int num_lines_to_put, const complexFloat *source);
 int put_band_complexFloat_line(FILE *file, meta_parameters *meta, 
 			       int band_number, int line_number, 
-			       const float *source);
+			       const complexFloat *source);
 int get_partial_byte_line(FILE *file, meta_parameters *meta, int line_number,
         int sample_number, int num_samples_to_get,
         unsigned char *dest);
@@ -906,6 +911,9 @@ void alos_to_latlon(meta_parameters *meta,
 void scan_to_latlon(meta_parameters *meta,
         double x, double y, double z,
         double *lat, double *lon, double *height);
+void uavsar_to_latlon(meta_parameters *meta,
+                      double xSample, double yLine, double height,
+                      double *lat, double *lon);
 void location_to_latlon(meta_parameters *meta,
 			double x, double y, double z,
 			double *lat_d, double *lon, double *height);

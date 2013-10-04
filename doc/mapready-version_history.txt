@@ -1,15 +1,31 @@
 MapReady Version History
 
-MapReady 3.1.17 (released 2012 November 30)
+MapReady 3.2.1 (beta) (released 2013 June 27)
+New Functionality
+- Support for SEASAT HDF5 data in ASF View and MapReady.
+
+MapReady 3.1.24 (released 2013 June 14)
+- Now allow export of the incidence angles even when not performing
+  radiometric terrain correction.
+
+MapReady 3.1.22 (released 2012 December 21)
+New Functionality
 - Enhanced support for ingest and terrain correction of PolSARPro data,
-  including radiometric terrain correction.
+  including radiometric terrain correction
 - Support for geocoding to geographic coordinates
-- Fixes in geolocation of Palsar L1.1 (SLC) data
 - Support use of ERS 1/2 precision state vectors
 - Added ability to account for the geoid during terrain correction
 - No longer support pixel size specification for terrain correction,
-  software will choose appropriate size.
+  software will choose appropriate size
 - Enhanced support for UAVSAR, TerraSAR-X and Radarsat-2 data
+Bug Fixes
+- Fixes in geolocation of Palsar L1.1 (SLC) data
+Known Issues
+- UAVSAR geolocation for .mlc files off. Use .grd files when possible.
+- Windows MapReady *.meta file not being removed (or in wrong location)
+  after processing PolSARPro files.
+- Some color differences between MapReady output and the PolSARPro .bmp
+  files may be seen. This is due to different mapping methods.
 
 MapReady 3.0.4 (released 2012 May 4)
 - Support for UAVSAR data

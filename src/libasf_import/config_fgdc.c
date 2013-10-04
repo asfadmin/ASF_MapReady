@@ -103,6 +103,7 @@ static int read_int(char *line, char *param)
   return value;
 }
 
+/*
 static double read_double(char *line, char *param)
 {
   char *tmp;
@@ -113,6 +114,7 @@ static double read_double(char *line, char *param)
 
   return value;
 }
+*/
 
 int init_fgdc_config(char *configFile, char *type)
 {
@@ -665,7 +667,7 @@ int init_fgdc_config(char *configFile, char *type)
   return(0);
 }
 
-void update_fgdc_meta(fgdc_meta *fgdc, char *configFile)
+void update_fgdc_meta(fgdc_meta *fgdc, const char *configFile)
 {
   FILE *fConfig;
   char line[512], params[50];

@@ -825,9 +825,7 @@ settings_get_from_gui()
             ret->generate_layover_mask =
                 get_checked("layover_mask_checkbutton");
             ret->do_radiometric = get_checked("radiometric_checkbutton");
-
-            if(ret->do_radiometric)
-                ret->save_incid_angles = get_checked("save_incid_angles_checkbutton"); 
+            ret->save_incid_angles = get_checked("save_incid_angles_checkbutton"); 
         }
         else
         {
@@ -1378,6 +1376,9 @@ static int get_input_data_format(const char *infile)
   else if (is_alos_mosaic(infile)) {
     return INPUT_FORMAT_ALOS_MOSAIC;
   }
+  else if (is_seasat_h5(infile)) {
+    return INPUT_FORMAT_SEASAT_H5;
+  }
   else if (is_uavsar_polsar(infile)) {
     return INPUT_FORMAT_UAVSAR_POLSAR;
   }
@@ -1443,6 +1444,10 @@ get_input_data_format_string(int input_data_format)
 
       case INPUT_FORMAT_UAVSAR_INSAR:
         format_arg_to_import = "uavsar";
+        break;
+
+      case INPUT_FORMAT_SEASAT_H5:
+        format_arg_to_import = "seasat_h5";
         break;
     }
 
@@ -1582,6 +1587,7 @@ settings_to_config_string(const Settings *s,
              input_data_format == INPUT_FORMAT_UAVSAR_INSAR ||
              input_data_format == INPUT_FORMAT_TERRASARX    ||
 	     input_data_format == INPUT_FORMAT_RADARSAT2    ||
+	     input_data_format == INPUT_FORMAT_SEASAT_H5    ||
              input_data_format == INPUT_FORMAT_POLSARPRO));
     sprintf(ret, "%s\n", ret);
 

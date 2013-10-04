@@ -199,7 +199,8 @@ meta_parameters* open_jpeg(const char *data_name, ClientInterface *client);
 int try_tiff(const char *filename, int try_extensions);
 int handle_tiff_file(const char *filename, char *meta_name, char *data_name,
                      char **err);
-meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client, char *filename);
+meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client,
+                                const char *filename);
 int open_tiff_data(const char *data_name, const char *band, ClientInterface *client);
 
 /* read_png.c */
@@ -242,6 +243,13 @@ meta_parameters *read_uavsar_meta(const char *meta_name, const char *data_name);
 int open_uavsar_data(const char *filename, int multilook,
                      meta_parameters *meta, ClientInterface *client);
 
+// read_seasat_h5.c
+int try_seasat_h5(const char *filename, int try_extensions);
+int handle_seasat_h5_file(const char *filename, char *meta_name, char *data_name,
+                         char **err);
+meta_parameters *read_seasat_h5_meta(const char *meta_name);
+int open_seasat_h5_data(const char *filename,
+                        meta_parameters *meta, ClientInterface *client);
 /* big_image.c */
 GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair);
 void fill_big(ImageInfo *ii);
@@ -410,6 +418,7 @@ extern UserPolygon g_polys[MAX_POLYS];
 extern UserPolygon *g_poly;
 extern int which_poly;
 extern int g_show_north_arrow;
+extern int g_outline;
 
 extern Shape **g_shapes;
 extern int num_shapes;

@@ -326,9 +326,11 @@ static void determine_extents(char **infiles, int n_inputs,
     meta_free(meta0);
 }
 
-int compare_big_doubles(const double *a, const double *b)
+int compare_big_doubles(const void *a, const void *b)
 {
-  double temp = *a - *b;
+  double A = *(double*)a;
+  double B = *(double*)b;
+  double temp = A - B;
   if (temp > 0)
     return 1;
   else if (temp < 0)
@@ -337,9 +339,11 @@ int compare_big_doubles(const double *a, const double *b)
     return 0;
 }
 
-int compare_small_doubles(const double *a, const double *b)
+int compare_small_doubles(const void *a, const void *b)
 {
-  double temp = *a - *b;
+  double A = *(double*)a;
+  double B = *(double*)b;
+  double temp = A - B;
   if (temp > 0)
     return -1;
   else if (temp < 0)
@@ -524,7 +528,7 @@ int main(int argc, char *argv[])
     extract_double_options(&argc, &argv, &background_val, "-background",
                            "--background", "-b", NULL);
     char *preference = (char *) MALLOC(sizeof(char)*50);
-    sprintf(preference, "");
+    strcpy(preference, "");
     extract_string_options(&argc, &argv, preference, "-preference",
 			   "--preference", "-p", NULL);
 

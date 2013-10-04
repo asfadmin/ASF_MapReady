@@ -288,6 +288,10 @@ static char *file_is_valid(const gchar * file)
     if(ext && strcmp_case(ext, ".ann")==0)
       return STRDUP(file);
 
+    // Seasat H5
+    if(ext && strcmp_case(ext, ".h5")==0)
+      return STRDUP(file);
+    
     // check for ALOS mosaics - might have an extension (or not)
     // so we check for a little more
     if (endsWith(file, "_HDR.txt") || endsWith(file, "_HDR")) {
@@ -837,7 +841,12 @@ add_thumbnail (GtkTreeIter * iter)
     else {
         GError *err = NULL;
         GThread *Thread;
-        if((Thread = g_thread_create((GThreadFunc)do_thumbnail, ref, FALSE, &err)) == NULL) {
+#if ! (GLIB_MAJOR_VERSION > 2 || (GLIB_MINOR_VERSION >= 32))
+        Thread = g_thread_create((GThreadFunc)do_thumbnail, ref, FALSE, &err);
+#else
+        Thread = g_thread_try_new("MapReadyThumbnail", (GThreadFunc)do_thumbnail, ref, &err);
+#endif
+        if (Thread == NULL) {
           asfPrintStatus("Failed to create thumbnail generation thread: %s\n", err->message);
         }
     }

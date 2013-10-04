@@ -399,7 +399,7 @@ main(int argc, char *argv[])
 //  meta->sar->slant_shift = -1080;			// emperical value from a single delta scene
 //  meta->sar->time_shift = 0.18;			// emperical value from a single delta scene
 
-  if (USE_CLOCK_DRIFT ==1) meta->sar->slant_shift = 0.0;
+  if (USE_CLOCK_DRIFT ==1) meta->sar->slant_shift = SEASAT_SLANT_SHIFT; // -1000.0;
   else meta->sar->slant_shift = 0.0;
 
   meta->sar->slant_range_first_pixel = srf;
@@ -512,7 +512,22 @@ main(int argc, char *argv[])
       remove(tmpstr);
       strcat(strcpy(tmpstr,grfilename),".meta");
       remove(tmpstr);
-    
+
+      /* geocode and export to geotiff */
+      sprintf(tmpstr,"asf_geocode -p utm %s %s_utm\n",cropfile,cropfile);
+      err = system(tmpstr);
+      if (err) {printf("Error returned from asf_geocode\n"); exit(1);}
+
+      sprintf(tmpstr,"asf_export -format geotiff %s_utm %s\n",cropfile,cropfile);
+      err = system(tmpstr);
+      if (err) {printf("Error returned from asf_export to geotiff\n"); exit(1);}
+ 
+      /* remove the utm projected internal format image */
+      strcat(strcpy(tmpstr,cropfile),"_utm.img");
+      remove(tmpstr);
+      strcat(strcpy(tmpstr,cropfile),"_utm.meta");
+      remove(tmpstr);
+ 
       /* this changes the basename in the metadata from blah_SLANT to blah_STD  */
       meta_parameters *crop_meta = meta_read(cropfile);
       strcpy(crop_meta->general->basename, cropfile);
@@ -527,7 +542,7 @@ main(int argc, char *argv[])
       sprintf(tmpfile,"%s_QCFULL",cropfile);
       sprintf(tmpstr,"asf_export -format jpeg %s_small %s\n",cropfile,tmpfile);
       err = system(tmpstr);
-      if (err) {printf("Error returned from asf_export\n"); exit(1);}
+      if (err) {printf("Error returned from asf_export to jpeg\n"); exit(1);}
       
       /* remove the small .img file */
       strcat(strcpy(tmpstr,cropfile),"_small.img");

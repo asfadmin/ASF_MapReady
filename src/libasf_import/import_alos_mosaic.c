@@ -220,7 +220,7 @@ void import_alos_mosaic(const char *inBaseName, radiometry_t radiometry,
   sprintf(dataName, "%s_IMG", inBaseName);
   sprintf(metaName, "%s_HDR", inBaseName);
   if (!fileExists(metaName))
-    sprintf(metaName, "%s_HDR.txt");
+    sprintf(metaName, "%s_HDR.txt", inBaseName);
   if (findExt(outBaseName) && strcmp_case(findExt(outBaseName), ".img") == 0)
     strcpy(outName, outBaseName);
   else

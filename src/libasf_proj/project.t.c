@@ -1,5 +1,6 @@
 #include "libasf_proj.h"
 #include "asf_meta.h"
+#include "CUnit/Basic.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -23,9 +24,14 @@ static const int NUM_REPS = 3;
 static int nfail = 0;
 static int nok = 0;
 
+static const datum_type_t datum = WGS84_DATUM;
+
+/*
 #define TEST_POLY(inx, iny, outx, outy) { \
                        double x,y; \
                        project_poly(inx,iny,&x,&y); \
+                       CU_ASSERT(within_tol(x,outx)); \
+                       CU_ASSERT(within_tol(y,outy)); \
                        if (!within_tol(x,outx) || !within_tol(y, outy)) { \
                          printf("Fail: proj_poly(" #inx "," #iny "," \
                                 #outx "," #outy "): got (%f,%f)\n", \
@@ -33,6 +39,7 @@ static int nok = 0;
                          ++nfail; \
                        } else { ++nok; } \
 		       }
+*/
 
 static const double tol = 0.00005;
 int within_tol(double a, double b)
@@ -42,6 +49,9 @@ int within_tol(double a, double b)
 
 int check(char * name, double x, double y, double x_correct, double y_correct)
 {
+    CU_ASSERT(within_tol(x, x_correct));
+    CU_ASSERT(within_tol(y, y_correct));
+
     if (!within_tol(x, x_correct) || !within_tol(y, y_correct))
     {
 	printf("Fail: %s.  Expected: (%f,%f) Got: (%f,%f)\n",
@@ -61,9 +71,11 @@ int check(char * name, double x, double y, double x_correct, double y_correct)
 
 void test_poly()
 {
+/*
     TEST_POLY(0, -90, 0, 0);
     TEST_POLY(33, -95, -467100.408, 3663659.262);
     TEST_POLY(77, -86, 100412.759, 8553464.807);
+*/
 }
 
 /************************************** Universal Transverse Mercator Tests */
@@ -96,11 +108,14 @@ int testa_utm_arr(project_parameters_t * pps,  char * name,
 	yarr[i] = lon;
     }
     
-    project_utm_arr(pps, xarr, yarr, &xarr_out, &yarr_out, ARR_TEST_SIZE);
+    project_utm_arr(pps, xarr, yarr, NULL, &xarr_out, &yarr_out, NULL, ARR_TEST_SIZE, datum);
 
     ok = 1;
     for (i = 1; i < ARR_TEST_SIZE; ++i)
-    {
+    { 
+        CU_ASSERT(within_tol(xarr_out[i], xarr_out[0]));
+        CU_ASSERT(within_tol(yarr_out[i], yarr_out[0]));
+
 	if (!within_tol(xarr_out[i], xarr_out[0]) ||
 	    !within_tol(yarr_out[i], yarr_out[0]))
 	{
@@ -127,6 +142,16 @@ int testa_utm_arr(project_parameters_t * pps,  char * name,
 }
 
 void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
+               double x_correct, double y_correct);
+
+int testa_utmz(double lat_deg, double lon_deg,
+	       double x_correct, double y_correct)
+{
+    testa_utm(lon_deg,lat_deg,lon_deg,x_correct,y_correct);
+    return utm_zone(lon_deg);
+}
+
+void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
 	       double x_correct, double y_correct)
 {
     char name[256];
@@ -139,17 +164,17 @@ void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
     lon = lon_deg * DEG_TO_RAD;
 
     pps.utm.lon0 = lon0;
-    pps.utm.zone = MAGIC_UNSET_INT;
+    pps.utm.zone = utm_zone(lon0_deg);
 
     /* normal function call check */
     {
-	double x, y;
-	double lat_out, lon_out;
+	double x, y, z;
+	double lat_out, lon_out, h;
 
 	sprintf(name, "project_utm(%f,%f,%f)",
 		lon0_deg, lat_deg, lon_deg);
 	
-	project_utm(&pps, lat, lon, &x, &y);
+	project_utm(&pps, lat, lon, 0, &x, &y, &z, datum);
 	
 	ok = check(name, x, y, x_correct, y_correct);
 
@@ -160,7 +185,7 @@ void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
 	    sprintf(name, "project_utm_inv(%f,%f,%f)",
 		    lon0_deg, x, y);
 	    
-	    project_utm_inv(&pps, x, y, &lat_out, &lon_out);
+	    project_utm_inv(&pps, x, y, 0, &lat_out, &lon_out, &h, datum);
 	    check(name, lat, lon, lat_out, lon_out);
 	}
     }
@@ -210,8 +235,8 @@ void testa_random_utm()
     reference_lon = rand() % 360 - 180;
     reference_lat = rand() % 120 - 60;
 
-    pps.utm.lon0 = reference_lon * DEG_TO_RAD;
-    pps.utm.zone = MAGIC_UNSET_INT;
+    //pps.utm.lon0 = reference_lon * DEG_TO_RAD;
+    pps.utm.zone = utm_zone(reference_lon);
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
@@ -224,16 +249,19 @@ void testa_random_utm()
 	    ( (double)rand() / (double)RAND_MAX * 1 - .5 ) );
     }
 
-    project_utm_arr(&pps, x, y, &xa, &ya, ARR_TEST_SIZE);
+    project_utm_arr(&pps, x, y, NULL, &xa, &ya, NULL, ARR_TEST_SIZE, datum);
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
-	project_utm(&pps, x[i], y[i], &xp[i], &yp[i]); 
+	project_utm(&pps, x[i], y[i], ASF_PROJ_NO_HEIGHT, &xp[i], &yp[i], NULL, datum); 
     }
 
     /* do they agree? */
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
+	CU_ASSERT(within_tol(xa[i], xp[i]));
+        CU_ASSERT(within_tol(ya[i], yp[i]));
+
 	if (!within_tol(xa[i], xp[i]) || !within_tol(ya[i], yp[i]))
 	{
 	    printf("Fail: project_utm{_arr} - Random[%d] (%d,%f,%f)"
@@ -254,12 +282,15 @@ void testa_random_utm()
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
-	project_utm_inv(&pps,xp[i], yp[i], &xp[i], &yp[i]);
+	project_utm_inv(&pps, xp[i], yp[i], ASF_PROJ_NO_HEIGHT, &xp[i], &yp[i], NULL, datum);
     }
 
     /* agrees with original values ? */
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
+	CU_ASSERT(within_tol(x[i], xp[i]));
+        CU_ASSERT(within_tol(y[i], yp[i]));
+
 	if (!within_tol(xp[i], x[i]) || !within_tol(yp[i], y[i]))
 	{
 	    printf("Fail: project_utm/project_utm_inv doesn't match."
@@ -283,10 +314,13 @@ void testa_random_utm()
 	yp[i] = ya[i];
     }
 
-    project_utm_arr_inv(&pps, xp, yp, &xa, &ya, ARR_TEST_SIZE);
+    project_utm_arr_inv(&pps, xp, yp, NULL, &xa, &ya, NULL, ARR_TEST_SIZE, datum);
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
+	CU_ASSERT(within_tol(x[i], xa[i]));
+        CU_ASSERT(within_tol(y[i], ya[i]));
+
 	if (!within_tol(xa[i], x[i]) || !within_tol(ya[i], y[i]))
 	{
 	    printf("Fail: project_utm_arr/project_utm_arr_inv doesn't match."
@@ -317,6 +351,17 @@ void test_random_utm(int N)
 void test_utm()
 {
     testa_utm(-112, 45.25919444, -111.5, 460769.27, 5011648.45);
+
+    int z;
+
+    z=testa_utmz(65,-145,594301,7209947);
+    CU_ASSERT(z==6);
+
+    z=testa_utmz(25,145,298154,2766437);
+    CU_ASSERT(z==55);
+
+    z=testa_utmz(44.63166955, -110.49717093, 539884, 4942158);
+    CU_ASSERT(z==12);
 
     test_random_utm(NUM_REPS);
 }
@@ -351,11 +396,14 @@ int testa_ps_arr(project_parameters_t * pps, char * name,
 	yarr_in[i] = lon;
     }
     
-    project_ps_arr(pps, xarr_in, yarr_in, &xarr, &yarr, ARR_TEST_SIZE);
+    project_ps_arr(pps, xarr_in, yarr_in, NULL, &xarr, &yarr, NULL, ARR_TEST_SIZE, datum);
     
     ok = 1;
     for (i = 1; i < ARR_TEST_SIZE; ++i)
     {
+	CU_ASSERT(within_tol(xarr[i], xarr[0]));
+        CU_ASSERT(within_tol(yarr[i], yarr[0]));
+
 	if (!within_tol(xarr[i], xarr[0]) || 
 	    !within_tol(yarr[i], yarr[0]))
 	{
@@ -387,8 +435,8 @@ void testa_ps(double lat0_deg, double lon0_deg, double lat_deg, double lon_deg,
     project_parameters_t pps;
     int ok;
 
-    lat0 = lat0_deg * DEG_TO_RAD;
-    lon0 = lon0_deg * DEG_TO_RAD;
+    lat0 = lat0_deg; // * DEG_TO_RAD;
+    lon0 = lon0_deg; // * DEG_TO_RAD;
     lat = lat_deg * DEG_TO_RAD;
     lon = lon_deg * DEG_TO_RAD;
 
@@ -400,13 +448,13 @@ void testa_ps(double lat0_deg, double lon0_deg, double lat_deg, double lon_deg,
 
     /* normal function call check */
     {
-	double x, y;
-	double lat_out, lon_out;
+	double x, y, z;
+	double lat_out, lon_out, h;
 
 	sprintf(name, "project_ps(%f,%f,%f,%f)",
 		lat0_deg, lon0_deg, lat_deg, lon_deg);
 	
-	project_ps(&pps, lat, lon, &x, &y);
+	project_ps(&pps, lat, lon, 0, &x, &y, &z, datum);
 	
 	ok = check(name, x, y, x_correct, y_correct);
 
@@ -417,7 +465,7 @@ void testa_ps(double lat0_deg, double lon0_deg, double lat_deg, double lon_deg,
 	    sprintf(name, "project_ps_inv(%f,%f,%f,%f)",
 		    lat0_deg, lon0_deg, x, y);
 	    
-	    project_ps_inv(&pps, x, y, &lat_out, &lon_out);
+	    project_ps_inv(&pps, x, y, 0, &lat_out, &lon_out, &h, datum);
 
 	    check(name, lat, lon, lat_out, lon_out);
 	}
@@ -478,20 +526,24 @@ void testa_random_ps()
     reference_lat = rand() % 45 + 45;
     reference_lon = rand() % 360 - 180;
 
-    pps.ps.slat = reference_lat * DEG_TO_RAD;
-    pps.ps.slon = reference_lon * DEG_TO_RAD;
+    pps.ps.slat = reference_lat; // * DEG_TO_RAD;
+    pps.ps.slon = reference_lon; // * DEG_TO_RAD;
     pps.ps.is_north_pole = 1;
 
-    project_ps_arr(&pps, x, y, &xa, &ya, ARR_TEST_SIZE);
+    project_ps_arr(&pps, x, y, NULL, &xa, &ya, NULL, ARR_TEST_SIZE, datum);
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
-	project_ps(&pps, x[i], y[i], &xp[i], &yp[i]); 
+        double h;
+	project_ps(&pps, x[i], y[i], 0, &xp[i], &yp[i], &h, datum); 
     }
 
     /* do they agree? */
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
+	CU_ASSERT(within_tol(xa[i], xp[i]));
+        CU_ASSERT(within_tol(ya[i], yp[i]));
+
 	if (!within_tol(xa[i], xp[i]) || !within_tol(ya[i], yp[i]))
 	{
 	    printf("Fail: project_ps{_arr} - Random[%d] (%d,%d,%f,%f)"
@@ -512,12 +564,16 @@ void testa_random_ps()
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
-	project_ps_inv(&pps, xp[i], yp[i], &xp[i], &yp[i]);
+        double h;
+	project_ps_inv(&pps, xp[i], yp[i], 0, &xp[i], &yp[i], &h, datum);
     }
 
     /* agrees with original values ? */
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
+	CU_ASSERT(within_tol(x[i], xp[i]));
+        CU_ASSERT(within_tol(y[i], yp[i]));
+
 	if (!within_tol(xp[i], x[i]) || !within_tol(yp[i], y[i]))
 	{
 	    printf("Fail: project_ps/project_ps_inv doesn't match."
@@ -542,10 +598,13 @@ void testa_random_ps()
 	yp[i] = ya[i];
     }
 
-    project_ps_arr_inv(&pps, xp, yp, &xa, &ya, ARR_TEST_SIZE);
+    project_ps_arr_inv(&pps, xp, yp, NULL, &xa, &ya, NULL, ARR_TEST_SIZE, datum);
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
+	CU_ASSERT(within_tol(xa[i], x[i]));
+        CU_ASSERT(within_tol(ya[i], y[i]));
+
 	if (!within_tol(xa[i], x[i]) || !within_tol(ya[i], y[i]))
 	{
 	    printf("Fail: project_ps_arr/project_ps_arr_inv doesn't match."
@@ -596,14 +655,14 @@ void test_alb()
 {
 }
 
-typedef int project_f_t(project_parameters_t*, double, double,
-		     double*, double*);
-typedef int project_f_arr_t(project_parameters_t*, double*, double*,
-			 double**, double**, long);
-typedef int project_f_inv_t(project_parameters_t*, double, double,
-			 double*, double*);
-typedef int project_f_arr_inv_t(project_parameters_t*, double*, double*,
-			     double**, double**, long);
+typedef int project_f_t(project_parameters_t*, double, double, double,
+		     double*, double*, double*, datum_type_t);
+typedef int project_f_arr_t(project_parameters_t*, double*, double*, double *,
+			 double**, double**, double**, long, datum_type_t);
+typedef int project_f_inv_t(project_parameters_t*, double, double, double,
+			 double*, double*, double *, datum_type_t);
+typedef int project_f_arr_inv_t(project_parameters_t*, double*, double*, double*,
+			     double**, double**, double**, long, datum_type_t);
 typedef double gen_lat_t(void);
 typedef double gen_lon_t(void);
 
@@ -617,7 +676,7 @@ void testa_random(char * name,
 		  gen_lon_t *gen_lon)
 {
     {
-	double lat, lon, x, y, lat_out, lon_out, lat_deg, lon_deg;
+	double lat, lon, x, y, z, h, lat_out, lon_out, lat_deg, lon_deg;
 	int ok;
 	
 	lat_deg = gen_lat();
@@ -626,13 +685,16 @@ void testa_random(char * name,
 	lat = lat_deg * DEG_TO_RAD;
 	lon = lon_deg * DEG_TO_RAD;
 	
-	x = y = lat_out = lon_out = HUGE_VAL;
+	x = y = z = h = lat_out = lon_out = HUGE_VAL;
 	ok = FALSE;
 	
-	if (project_f(pps, lat, lon, &x, &y))
+	if (project_f(pps, lat, lon, 0, &x, &y, &z, datum))
 	{
-	    if (project_f_inv(pps, x, y, &lat_out, &lon_out))
+	    if (project_f_inv(pps, x, y, 0, &lat_out, &lon_out, &h, datum))
 	    {
+                CU_ASSERT(within_tol(lat, lat_out));
+                CU_ASSERT(within_tol(lon, lon_out));
+
 		ok = within_tol(lat, lat_out) && within_tol(lon, lon_out);
 	    }
 	}
@@ -668,14 +730,17 @@ void testa_random(char * name,
 	    lon_rad[i] = gen_lon() * DEG_TO_RAD;
 	}
 
-	if (project_f_arr(pps, lat_rad, lon_rad, &px, &py, ARR_TEST_SIZE))
+	if (project_f_arr(pps, lat_rad, lon_rad, NULL, &px, &py, NULL, ARR_TEST_SIZE, datum))
 	{
-	    if (project_f_arr_inv(pps, px, py, &lat_out, &lon_out, 
-				  ARR_TEST_SIZE))
+	    if (project_f_arr_inv(pps, px, py, NULL, &lat_out, &lon_out, NULL,
+				  ARR_TEST_SIZE, datum))
 	    {
 		ok = TRUE;
 		for (i = 0; i < ARR_TEST_SIZE; ++i)
 		{
+                    CU_ASSERT(within_tol(lat_rad[i], lat_out[i]));
+                    CU_ASSERT(within_tol(lon_rad[i], lon_out[i]));
+
 		    if (!within_tol(lat_rad[i], lat_out[i]) ||
 			!within_tol(lon_rad[i], lon_out[i]))
 		    {
@@ -731,7 +796,7 @@ double gen_ps_lat()
 double gen_utm_lat()
 {
     /* any latitude, -90 to +90 */
-    return (double) ( rand() % 180 - 90 );
+    return (double) ( rand() % 160 - 80 );
 }
 
 double gen_utm_lon()
@@ -801,7 +866,7 @@ void testa_random_utm2()
     int slon;
 
     slon = gen_utm_lon();
-    pps.utm.zone = MAGIC_UNSET_INT;
+    pps.utm.zone = utm_zone(slon);
     pps.utm.lon0 = slon * DEG_TO_RAD;
 
     sprintf(name, "utm(%d)", slon);
@@ -835,8 +900,6 @@ void perf_test_ps()
     project_parameters_t pps;
 
     int i, n=0;
-    struct timeval tv1, tv2;
-    int elapsed1, elapsed2;
 
     lat0 = 71 * DEG_TO_RAD;
     lon0 = -96 * DEG_TO_RAD;
@@ -865,23 +928,20 @@ void perf_test_ps()
 	y[i] = (double)rand() / (double)RAND_MAX * .707 + .707;
     }
 
-    gettimeofday(&tv1, NULL);
-    project_ps_arr(&pps, x, y, &x1, &y1, N);
-    gettimeofday(&tv2, NULL);
+    project_ps_arr(&pps, x, y, NULL, &x1, &y1, NULL, N, datum);
 
-    elapsed1 = tv2.tv_sec - tv1.tv_sec;
-
-    gettimeofday(&tv1, NULL);
     for (i = 0; i < N; ++i)
     {
-	project_ps(&pps, x[i], y[i], &xo[i], &yo[i]); 
+        double h;
+	project_ps(&pps, x[i], y[i], 0, &xo[i], &yo[i], &h, datum); 
     }
-    gettimeofday(&tv2, NULL);
-    elapsed2 = tv2.tv_sec - tv1.tv_sec;
 
     /* do they agree? */
     for (i = 0; i < N; ++i)
     {
+        CU_ASSERT(within_tol(x1[i], xo[i]));
+        CU_ASSERT(within_tol(y1[i], yo[i]));
+
 	if (!within_tol(x1[i], xo[i]) || !within_tol(y1[i], yo[i]))
 	{
 	    printf("x[%d] = %f, xo[%d] = %f, y[%d] = %f, yo[%d] = %f\n",
@@ -902,10 +962,6 @@ void perf_test_ps()
     else
     {
 	++nok;
-
-	printf("perf_test_ps results -- (iters: %d)\n", N);
-	printf("  Elapsed #1 (array): %d sec\n", elapsed1);
-	printf("  Elapsed #2 (point): %d sec\n", elapsed2);
     }
 
     free(yo);
@@ -916,7 +972,7 @@ void perf_test_ps()
     free(x);
 }
 
-int main(int argc, char * argv [])
+void test_project()
 {
     test_poly();
     test_utm();
@@ -929,10 +985,6 @@ int main(int argc, char * argv [])
 
     test_random_all();
 
-    if (nfail == 0)
-	printf("%d tests passed!\n", nok);
-    else
+    if (nfail > 0)
 	printf("%d ok, %d failures.\n", nok, nfail);
-
-    return nfail;
 }

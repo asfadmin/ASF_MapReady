@@ -169,7 +169,13 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
       FREAD(&intValue, 1, 4, fpIn);
       int total_number_lines = bigInt32(intValue);
       FREAD(&intValue, 1, 4, fpIn);
-      
+   
+      if (0) {
+        asfPrintStatus("burst index: %d\n", burst_index);
+        asfPrintStatus("bytes in burst: %d\n", bytes_in_burst);
+        asfPrintStatus("range_sample_relative_index: %d\n", range_sample_relative_index);
+      }
+ 
       // Check for the first and last azimuth and range pixel
       asfv = 1; // azimuth sample first valid
       aslv = azimuth_samples; // azimuth sample last valid

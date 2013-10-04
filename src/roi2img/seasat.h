@@ -9,6 +9,7 @@
 
 #define MAX_CLOCK_DRIFT  4097   /* 12 bit field */
 
+#include "seasat_slant_shift.h"
 
 typedef struct {
     int year;/*Gregorian year (e.g. 1998)*/

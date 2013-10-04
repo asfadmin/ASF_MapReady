@@ -11,6 +11,7 @@ int which_poly=0;
 
 int g_show_north_arrow = FALSE;
 int g_lhs_visible = TRUE;
+int g_outline = FALSE;
 
 // current sizes of the large image.
 // keep half the size around, we need that during the redraw, which
@@ -632,7 +633,64 @@ static void add_pts(GdkPixbuf *pb, ImageInfo *ii)
     put_marker(pb, line, samp, 1, PURPLE, ii);
   }
 }
-   
+  
+static void add_outline(GdkPixbuf *pb, ImageInfo *ii)
+{
+  if (!g_outline)
+    return;
+
+  printf("Drawing outline...\n");
+
+  meta_parameters *meta = ii->meta;
+  int k=0, n = (current_image_info_index + 1) % n_images_loaded;
+  while (n != current_image_info_index) {
+    ImageInfo *ii1 = &image_info[n];
+    meta_parameters *meta1 = ii1->meta;
+    int nl = meta1->general->line_count;
+    int ns = meta1->general->sample_count;
+    double lat, lon, l1, s1, l2, s2, l3, s3, l4, s4;
+
+    if (meta1->location) {
+      lat = meta1->location->lat_start_near_range;
+      lon = meta1->location->lon_start_near_range;
+      meta_get_lineSamp(meta, lat, lon, 0, &l1, &s1);
+      lat = meta1->location->lat_start_far_range;
+      lon = meta1->location->lon_start_far_range;
+      meta_get_lineSamp(meta, lat, lon, 0, &l2, &s2);
+      lat = meta1->location->lat_end_far_range;
+      lon = meta1->location->lon_end_far_range;
+      meta_get_lineSamp(meta, lat, lon, 0, &l3, &s3);
+      lat = meta1->location->lat_end_near_range;
+      lon = meta1->location->lon_end_near_range;
+      meta_get_lineSamp(meta, lat, lon, 0, &l4, &s4);
+    }
+    else {
+      meta_get_latLon(meta1, 0, 0, 0, &lat, &lon);
+      meta_get_lineSamp(meta, lat, lon, 0, &l1, &s1);
+      //printf("Corner 1: %f %f -> %f %f\n", lat, lon, l1, s1);
+      meta_get_latLon(meta1, nl-1, 0, 0, &lat, &lon);
+      meta_get_lineSamp(meta, lat, lon, 0, &l2, &s2);
+      //printf("Corner 2: %f %f -> %f %f\n", lat, lon, l2, s2);
+      meta_get_latLon(meta1, nl-1, ns-1, 0, &lat, &lon);
+      meta_get_lineSamp(meta, lat, lon, 0, &l3, &s3);
+      //printf("Corner 3: %f %f -> %f %f\n", lat, lon, l3, s3);
+      meta_get_latLon(meta1, 0, ns-1, 0, &lat, &lon);
+      meta_get_lineSamp(meta, lat, lon, 0, &l4, &s4);
+      //printf("Corner 4: %f %f -> %f %f\n", lat, lon, l4, s4);
+    }
+ 
+    int clr = GREEN + k++; 
+    put_line(pb, l1, s1, l2, s2, clr, ii);
+    put_line(pb, l2, s2, l3, s3, clr, ii);
+    put_line(pb, l3, s3, l4, s4, clr, ii);
+    put_line(pb, l4, s4, l1, s1, clr, ii);
+
+    n++;
+    n %= n_images_loaded;
+  }
+  
+}
+ 
 static void add_north_arrow(GdkPixbuf *pb, ImageInfo *ii)
 {
   if (!g_show_north_arrow)
@@ -905,6 +963,7 @@ GdkPixbuf * make_big_image(ImageInfo *ii, int show_crosshair)
       add_north_arrow(pb, ii);
       //add_cr(pb, ii);
       add_pts(pb, ii);
+      add_outline(pb, ii);
     }
 
     // draw the polygon
@@ -1433,6 +1492,9 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         if (subimages != 4) {
             subimages = 4;
         }
+    }
+    else if (event->keyval == GDK_o || event->keyval == GDK_O) {
+        g_outline = !g_outline;
     }
     else if (event->keyval == GDK_f || event->keyval == GDK_F) {
         double lat=0, lon=0; //, x, y;

@@ -17,6 +17,8 @@
 #ifdef __APPLE__
 #include <CoreServices/CoreServices.h>
 #include <ApplicationServices/ApplicationServices.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <CoreFoundation/CFArray.h>
 #endif
 
 #define POINT __tmp_point
@@ -1304,6 +1306,27 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 #ifdef win32
         asfSystem_NoWait("\"%s\" \"%s\"", ge, kml_filename);
 #elif defined __APPLE__
+        CFURLRef docURL = CFURLCreateFromFileSystemRepresentation(
+            NULL, (UInt8 *) kml_filename, strlen(kml_filename), FALSE);
+        CFURLRef appURL;
+        LSRolesMask role = kLSRolesAll;
+        OSStatus status = LSGetApplicationForURL(docURL, role, NULL, &appURL);
+        if (status == kLSApplicationNotFoundErr) {
+            asfPrintStatus("Failed to open %s\n", kml_filename);
+        }
+        else {
+            CFURLRef docURLs[] = { docURL };
+            CFArrayRef launchItems = CFArrayCreate(
+                NULL,
+                (const void**)docURLs, sizeof(docURLs) / sizeof(CFURLRef),
+                NULL);
+            LSLaunchURLSpec launchUrlSpec = {
+                appURL, launchItems, NULL, kLSLaunchDefaults, NULL
+            };
+            status = LSOpenFromURLSpec (&launchUrlSpec, NULL);
+            CFRelease(launchItems);
+        }
+/*
         FSRef f;
         OSStatus os_status = FSPathMakeRef((const UInt8 *)kml_filename, &f, NULL);
         if(os_status == noErr) {
@@ -1314,6 +1337,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
         else {
           asfPrintStatus("Failed to open %s\n", kml_filename);
         }
+*/
 #else
         int pid = fork();
         if (pid == 0) {
