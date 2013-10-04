@@ -322,7 +322,7 @@ int hap2shape(char *inFile, char *outFile, int listFlag);
 int smap2shape(char *inFile, char *outFile);
 
 // Prototypes from granule.c
-int granule2shpe(char *inFile, char *outFile);
+int granule2shape(char *inFile, char *outFile);
 
 // Prototypes from custom.c
 int custom2shape(char *inFile, const char *format,
