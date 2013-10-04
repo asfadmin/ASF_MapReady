@@ -17,7 +17,7 @@ static void appendBand(int band, char *bandStr, char *bands)
 	if (band == 0)
 		strcpy(bands, bandStr);
 	else {
-		strcat(bands, ", ");
+		strcat(bands, ",");
 		strcat(bands, bandStr);
 	}
 }
@@ -171,7 +171,7 @@ static int find_dataset(char *inDataName, char *dataset)
 	
   hid_t file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
   hid_t group = H5Gopen(file, "Sigma0_Data", H5P_DEFAULT);	
-	herr_t err = H5Gget_num_objs(group, &num_objs);
+	H5Gget_num_objs(group, &num_objs);
 	for (ii=0; ii<num_objs; ii++) {
 		len = H5Gget_objname_by_idx(group, (hsize_t) ii, name, (size_t) MAX_NAME);
 		otype = H5Gget_objtype_by_idx(group, (size_t) ii);
@@ -195,6 +195,72 @@ static int compare_values(const int *a, const int *b)
     return 0;
 }
 
+static void read_smap_pixel(meta_parameters *meta, char *inDataName,
+			    int line, int sample, float *lat, float *lon)
+{
+  hsize_t count[2], pixel[1];
+  hsize_t offset[2];
+  hid_t file, group, dataset, datatype, dataspace, memspace;
+  file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
+  group = H5Gopen(file, "Sigma0_Data", H5P_DEFAULT);
+  offset[0] = line;
+  offset[1] = 0;
+  count[0] = 1;
+  count[1] = meta->general->sample_count;
+  pixel[0] = meta->general->sample_count;
+  memspace = H5Screate_simple(1, pixel, NULL);
+  int ii;
+  int ns = meta->general->sample_count;
+  float *values = (float *) MALLOC(sizeof(float)*ns);
+  dataset = H5Dopen(group, "cell_lat", H5P_DEFAULT);
+  datatype = H5Dget_type(dataset);
+  dataspace = H5Dget_space(dataset);
+  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+  H5Tclose(datatype);
+  H5Dclose(dataset);
+  H5Sclose(dataspace);
+  if (sample == 0) {
+    ii = 0;
+    while (!meta_is_valid_double(values[ii]) && (ii < ns))
+      ii++;
+    *lat = values[ii];
+  }
+  else if (sample == ns-1) {
+    ii = ns - 1;
+    while (!meta_is_valid_double(values[ii]) && (ii >= 0))
+      ii--;
+    *lat = values[ii];
+  }
+  else
+    *lat = values[sample];
+  dataset = H5Dopen(group, "cell_lon", H5P_DEFAULT);
+  datatype = H5Dget_type(dataset);
+  dataspace = H5Dget_space(dataset);
+  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
+  H5Tclose(datatype);
+  H5Dclose(dataset);
+  H5Sclose(dataspace);
+  if (sample == 0) {
+    ii = 0;
+    while (!meta_is_valid_double(values[ii]) && (ii < ns))
+      ii++;
+    *lon = values[ii];
+  }
+  else if (sample == ns-1) {
+    ii = ns - 1;
+    while (!meta_is_valid_double(values[ii]) && (ii >= 0))
+      ii--;
+    *lon = values[ii];
+  }
+  else
+    *lon = values[sample];
+  H5Sclose(memspace);
+  H5Gclose(group);
+  H5Fclose(file);
+}
+
 static void read_smap_bounds(char *inDataName, float latUL, float lonUL,
 			     float latLR, float lonLR, int *line, int *sample,
 			     int *height, int *width)
@@ -202,6 +268,14 @@ static void read_smap_bounds(char *inDataName, float latUL, float lonUL,
   meta_parameters *meta = meta_read(inDataName);
   int ns = meta->general->sample_count;
   int nl = meta->general->line_count;
+  int subset;
+  if (meta_is_valid_double(latUL) && meta_is_valid_double(lonUL) &&
+      meta_is_valid_double(latLR) && meta_is_valid_double(lonLR))
+    subset = TRUE;
+  else if (meta_is_valid_double(latUL) && meta_is_valid_double(latLR))
+  	subset = FALSE;
+  else
+  	asfPrintStatus("Can't determine bounding box!\n");
   float *lats = (float *) MALLOC(sizeof(float)*ns*nl);
   float *lons = (float *) MALLOC(sizeof(float)*ns*nl);
   hid_t file, group, dataset, datatype, dataspace, memspace;
@@ -243,61 +317,164 @@ static void read_smap_bounds(char *inDataName, float latUL, float lonUL,
   float lonUR = lonLR;
   float latLL = latLR;
   float lonLL = lonUL;
-  float lat, lon, diff, minUL, minUR, minLL, minLR;
+  float lat, lon, diff, minUL, minUR, minLL, minLR, minLat, maxLat;
   int lines[4], samples[4];
-  minUL = minUR = minLL = minLR = 9999999;
+  minUL = minUR = minLL = minLR = minLat = maxLat = 9999999;
   int ii, kk;
+
+  // Upper constraints
+  int found = FALSE;
   for (ii=0; ii<nl; ii++) {
     for (kk=0; kk<ns; kk++) {
       lat = lats[ii*ns+kk];
       lon = lons[ii*ns+kk];
-      diff = fabs(lat - latUL) + fabs(lon - lonUL);
-      if (diff < minUL) {
-	minUL = diff;
-	lines[0] = ii;
-	samples[0] = kk;
+      if (subset) {
+      	diff = fabs(lat - latUL) + fabs(lon - lonUL);
+      	if (diff < minUL) {
+					minUL = diff;
+					lines[0] = ii;
+					samples[0] = kk;
+      	}
+      	diff = fabs(lat - latUR) + fabs(lon - lonUR);
+      	if (diff < minUR) {
+					minUR = diff;
+					lines[1] = ii;
+					samples[1] = kk;
+      	}
+      	diff = fabs(lat - latLL) + fabs(lon - lonLL);
+      	if (diff < minLL) {
+					minLL = diff;
+					lines[2] = ii;
+					samples[2] = kk;
+      	}
+      	diff = fabs(lat - latLR) + fabs(lon - lonLR);
+      	if (diff < minLR) {
+					minLR = diff;
+					lines[3] = ii;
+					samples[3] = kk;
+      	}
       }
-      diff = fabs(lat - latUR) + fabs(lon - lonUR);
-      if (diff < minUR) {
-	minUR = diff;
-	lines[1] = ii;
-	samples[1] = kk;
-      }
-      diff = fabs(lat - latLL) + fabs(lon - lonLL);
-      if (diff < minLL) {
-	minLL = diff;
-	lines[2] = ii;
-	samples[2] = kk;
-      }
-      diff = fabs(lat - latLR) + fabs(lon - lonLR);
-      if (diff < minLR) {
-	minLR = diff;
-	lines[3] = ii;
-	samples[3] = kk;
+      else {
+      	diff = lat - latUL;
+      	if (diff < 0 && !found) {
+      		found = TRUE;
+      		lines[0] = ii-1;
+      	}
       }
     }
   }
-  meta_free(meta);
-  qsort(lines, 4, sizeof(int), compare_values);
-  qsort(samples, 4, sizeof(int), compare_values);
-  float latSubUL = lats[lines[0]*ns+samples[0]];
-  float lonSubUL = lons[lines[0]*ns+samples[0]];
-  float latSubLR = lats[lines[3]*ns+samples[3]];
-  float lonSubLR = lons[lines[3]*ns+samples[3]];
-  if (!FLOAT_EQUIVALENT(latUL, latSubUL) || 
-      !FLOAT_EQUIVALENT(lonUL, lonSubUL) ||
-      !FLOAT_EQUIVALENT(latLR, latSubLR) ||
-      !FLOAT_EQUIVALENT(lonLR, lonSubLR)) {
-    asfPrintStatus("Subset exceeded imaged area!\nMaximum subset area:\n");
-    asfPrintStatus("Upper left - Lat: %.4f, Lon: %.4f\n", latSubUL, lonSubUL);
-    asfPrintStatus("Lower right - Lat: %.4f, Lon: %.4f\n", latSubLR, lonSubLR);
+  // Lower constraints
+  found = FALSE;
+  for (ii=nl-1; ii>=0; ii--) {
+  	for (kk=0; kk<ns; kk++) {
+      lat = lats[ii*ns+kk];
+      lon = lons[ii*ns+kk];
+      if (subset) {
+			}
+			else {
+				diff = latLR - lat;
+				if (diff < 0 && !found) {
+					found = TRUE;
+					lines[1] = ii+1;
+				}
+			}  		
+  	}
   }
-  FREE(lats);
-  FREE(lons);
-  *line = lines[0];
-  *sample = samples[0];
-  *height = lines[3] - lines[0];
-  *width = samples[3] - samples[0];
+  meta_free(meta);
+  if (subset) {
+  	qsort(lines, 4, sizeof(int), compare_values);
+  	qsort(samples, 4, sizeof(int), compare_values);
+  	float latSubUL = lats[lines[0]*ns+samples[0]];
+  	float lonSubUL = lons[lines[0]*ns+samples[0]];
+  	float latSubLR = lats[lines[3]*ns+samples[3]];
+  	float lonSubLR = lons[lines[3]*ns+samples[3]];
+  	if (!FLOAT_EQUIVALENT(latUL, latSubUL) || 
+    	  !FLOAT_EQUIVALENT(lonUL, lonSubUL) ||
+      	!FLOAT_EQUIVALENT(latLR, latSubLR) ||
+      	!FLOAT_EQUIVALENT(lonLR, lonSubLR)) {
+    	asfPrintStatus("Subset exceeded imaged area!\nMaximum subset area:\n");
+    	asfPrintStatus("Upper left - Lat: %.4f, Lon: %.4f\n", latSubUL, lonSubUL);
+    	asfPrintStatus("Lower right - Lat: %.4f, Lon: %.4f\n", latSubLR, lonSubLR);
+  	}
+  	FREE(lats);
+  	FREE(lons);
+  	*line = lines[0];
+  	*sample = samples[0];
+  	*height = lines[3] - lines[0];
+  	*width = samples[3] - samples[0];
+  }
+  else {
+  	FREE(lats);
+  	FREE(lons);
+  	*line = lines[0];
+  	*height = (lines[1] - lines[0]);
+  }
+}
+
+static update_geolocation(char *inDataName, char *outDataName) 
+{
+	float lat, lon;
+	meta_parameters *meta = meta_read(outDataName);
+	int startLine = meta->general->start_line;
+	int startSample = meta->general->start_sample;
+	int endLine = startLine + meta->general->line_count - 1;
+	int endSample = startSample + meta->general->sample_count - 1;
+	int centerLine = (endLine - startLine) / 2;
+	int centerSample = (endSample - startSample) / 2;
+
+	// Update center coordinates
+	read_smap_pixel(meta, inDataName, centerLine, centerSample, &lat, &lon);
+	meta->general->center_latitude = (double) lat;
+	meta->general->center_longitude = (double) lon;
+
+	// Update location block
+  if (!meta->location)
+  	meta->location = meta_location_init();
+  read_smap_pixel(meta, inDataName, startLine, startSample, &lat, &lon);
+  meta->location->lat_start_near_range = (double) lat;
+  meta->location->lon_start_near_range = (double) lon;
+  read_smap_pixel(meta, inDataName, startLine, endSample, &lat, &lon);
+  meta->location->lat_start_far_range = (double) lat;
+  meta->location->lon_start_far_range = (double) lon;
+  read_smap_pixel(meta, inDataName, endLine, startSample, &lat, &lon);
+  meta->location->lat_end_near_range = (double) lat;
+  meta->location->lon_end_near_range = (double) lon;
+  read_smap_pixel(meta, inDataName, endLine, endSample, &lat, &lon);
+  meta->location->lat_end_far_range = (double) lat;
+  meta->location->lon_end_far_range = (double) lon;
+  /*
+  if (subset) {
+    meta->location->lat_start_near_range = (double) latUL;
+    meta->location->lon_start_near_range = (double) lonUL;
+    meta->location->lat_start_far_range = (double) latUL;
+    meta->location->lon_start_far_range = (double) lonLR;
+    meta->location->lat_end_near_range = (double) latLR;
+    meta->location->lon_end_near_range = (double) lonUL;
+    meta->location->lat_end_far_range = (double) latLR;
+    meta->location->lon_end_far_range = (double) lonLR;
+  }
+  else {
+    read_smap_pixel(meta, inDataName, 0, 0, &lat, &lon);
+    meta->location->lat_start_near_range = (double) lat;
+    meta->location->lon_start_near_range = (double) lon;
+    read_smap_pixel(meta, inDataName, 0, meta->general->sample_count-1, 
+		    &lat, &lon);
+    meta->location->lat_start_far_range = (double) lat;
+    meta->location->lon_start_far_range = (double) lon;
+    read_smap_pixel(meta, inDataName, meta->general->line_count-1, 0, 
+		    &lat, &lon);
+    meta->location->lat_end_near_range = (double) lat;
+    meta->location->lon_end_near_range = (double) lon;
+    read_smap_pixel(meta, inDataName, 
+		    meta->general->line_count-1, meta->general->sample_count-1,
+		    &lat, &lon);
+    meta->location->lat_end_far_range = (double) lat;
+    meta->location->lon_end_far_range = (double) lon;
+  }
+  */
+  
+  meta_write(meta, outDataName);
+  meta_free(meta);
 }
 
 static void read_smap_subset(char *dataName, int band, 
@@ -395,6 +572,74 @@ static void read_smap_subset(char *dataName, int band,
   meta_free(meta);
 }
 
+static void read_smap_constraint(char *dataName, int band, 
+			     char *inDataName, char *outDataName,
+			     float latLR, float latUL)
+{
+	
+  FILE *fp;
+  meta_parameters *meta = meta_read(inDataName);
+  int ii, kk, line, sample, height, width;
+  float lonUL = MAGIC_UNSET_DOUBLE;
+  float lonLR = MAGIC_UNSET_DOUBLE;
+  read_smap_bounds(inDataName, latUL, lonUL, latLR, lonLR,
+		   &line, &sample, &height, &width);
+  hid_t file, group, dataset, dataspace, memspace;
+  file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
+  group = H5Gopen(file, "Sigma0_Data", H5P_DEFAULT);
+  dataset = H5Dopen(group, dataName, H5P_DEFAULT);
+  dataspace = H5Dget_space(dataset);
+  hsize_t count[2], pixels[1], offset[2];
+  int ns = meta->general->sample_count;
+  int nl = meta->general->line_count;
+  meta_get_latLon(meta, line+height/2, ns/2, 0.0,
+		  &meta->general->center_latitude, 
+		  &meta->general->center_longitude);
+
+  // Latitude
+  offset[0] = line;
+  offset[1] = 0;
+  count[0] = height;
+  count[1] = ns;
+  pixels[0] = ns*height;
+  float *lats = (float *) MALLOC(sizeof(float)*ns*height);
+  memspace = H5Screate_simple(1, pixels, NULL);
+  dataset = H5Dopen(group, "cell_lat", H5P_DEFAULT);
+  dataspace = H5Dget_space(dataset);
+  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, lats);
+  H5Dclose(dataset);
+  H5Sclose(dataspace);
+  
+  // Band
+  dataset = H5Dopen(group, dataName, H5P_DEFAULT);
+  dataspace = H5Dget_space(dataset);
+  float *amp = (float *) MALLOC(sizeof(float)*ns*height);
+  if (band == 0)
+    fp = FOPEN(outDataName, "wb");
+  else
+    fp = FOPEN(outDataName, "ab");
+  asfPrintStatus("   Band: %s\n", dataName);
+  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, amp);
+  for (ii=0; ii<height; ii++) 
+  	for (kk=0; kk<ns; kk++)
+			if (lats[ii*ns+kk] < latLR || lats[ii*ns+kk] > latUL)
+	  		amp[ii*ns+kk] = MAGIC_UNSET_DOUBLE;
+  meta->general->band_count = band+1;
+  meta->general->line_count = height;
+  put_band_float_lines(fp, meta, band, 0, height, amp);
+  H5Dclose(dataset);
+  H5Sclose(dataspace);
+  H5Sclose(memspace);
+  H5Gclose(group);
+  H5Fclose(file);
+  FCLOSE(fp);
+  FREE(lats);
+  FREE(amp);
+  meta_free(meta);
+}
+
 static int read_smap_data(char *dataName, int band, 
 			   char *inDataName, char *outDataName)
 {
@@ -440,72 +685,6 @@ static int read_smap_data(char *dataName, int band,
   return ret;
 }
 
-static void read_smap_pixel(meta_parameters *meta, char *inDataName,
-			    int line, int sample, float *lat, float *lon)
-{
-  hsize_t count[2], pixel[1];
-  hsize_t offset[2];
-  hid_t file, group, dataset, datatype, dataspace, memspace;
-  file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
-  group = H5Gopen(file, "Sigma0_Data", H5P_DEFAULT);
-  offset[0] = line;
-  offset[1] = 0;
-  count[0] = 1;
-  count[1] = meta->general->sample_count;
-  pixel[0] = meta->general->sample_count;
-  memspace = H5Screate_simple(1, pixel, NULL);
-  int ii;
-  int ns = meta->general->sample_count;
-  float *values = (float *) MALLOC(sizeof(float)*ns);
-  dataset = H5Dopen(group, "cell_lat", H5P_DEFAULT);
-  datatype = H5Dget_type(dataset);
-  dataspace = H5Dget_space(dataset);
-  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
-  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
-  H5Tclose(datatype);
-  H5Dclose(dataset);
-  H5Sclose(dataspace);
-  if (sample == 0) {
-    ii = 0;
-    while (!meta_is_valid_double(values[ii]) && (ii < ns))
-      ii++;
-    *lat = values[ii];
-  }
-  else if (sample == ns-1) {
-    ii = ns - 1;
-    while (!meta_is_valid_double(values[ii]) && (ii >= 0))
-      ii--;
-    *lat = values[ii];
-  }
-  else
-    *lat = values[sample];
-  dataset = H5Dopen(group, "cell_lon", H5P_DEFAULT);
-  datatype = H5Dget_type(dataset);
-  dataspace = H5Dget_space(dataset);
-  H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
-  H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, H5P_DEFAULT, values);
-  H5Tclose(datatype);
-  H5Dclose(dataset);
-  H5Sclose(dataspace);
-  if (sample == 0) {
-    ii = 0;
-    while (!meta_is_valid_double(values[ii]) && (ii < ns))
-      ii++;
-    *lon = values[ii];
-  }
-  else if (sample == ns-1) {
-    ii = ns - 1;
-    while (!meta_is_valid_double(values[ii]) && (ii >= 0))
-      ii--;
-    *lon = values[ii];
-  }
-  else
-    *lon = values[sample];
-  H5Sclose(memspace);
-  H5Gclose(group);
-  H5Fclose(file);
-}
-
 void import_smap(const char *inBaseName, const char *outBaseName,
 		 float latUL, float lonUL, float latLR, float lonLR)
 {
@@ -515,7 +694,7 @@ void import_smap(const char *inBaseName, const char *outBaseName,
   hsize_t dims[2];
   hid_t file, group, class, dataset, datatype, dataspace;
   float lat, lon;
-  int subset = FALSE;
+  int subset = FALSE, latConstraint = FALSE;
   
   // Take care of file names
   if (!fileExists(inBaseName))
@@ -532,6 +711,8 @@ void import_smap(const char *inBaseName, const char *outBaseName,
   if (meta_is_valid_double(latUL) && meta_is_valid_double(lonUL) &&
       meta_is_valid_double(latLR) && meta_is_valid_double(lonLR))
     subset = TRUE;
+  else if (meta_is_valid_double(latUL) && meta_is_valid_double(latLR))
+  	latConstraint = TRUE;
 
   // Determine the image dimensions
   file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -557,38 +738,6 @@ void import_smap(const char *inBaseName, const char *outBaseName,
   meta->general->center_longitude = (double) lon;
 	strcpy(meta->general->bands, "");
 	
-  // Determine location block
-  meta->location = meta_location_init();
-  if (subset) {
-    meta->location->lat_start_near_range = (double) latUL;
-    meta->location->lon_start_near_range = (double) lonUL;
-    meta->location->lat_start_far_range = (double) latUL;
-    meta->location->lon_start_far_range = (double) lonLR;
-    meta->location->lat_end_near_range = (double) latLR;
-    meta->location->lon_end_near_range = (double) lonUL;
-    meta->location->lat_end_far_range = (double) latLR;
-    meta->location->lon_end_far_range = (double) lonLR;
-  }
-  else {
-    read_smap_pixel(meta, inDataName, 0, 0, &lat, &lon);
-    meta->location->lat_start_near_range = (double) lat;
-    meta->location->lon_start_near_range = (double) lon;
-    read_smap_pixel(meta, inDataName, 0, meta->general->sample_count-1, 
-		    &lat, &lon);
-    meta->location->lat_start_far_range = (double) lat;
-    meta->location->lon_start_far_range = (double) lon;
-    read_smap_pixel(meta, inDataName, meta->general->line_count-1, 0, 
-		    &lat, &lon);
-    meta->location->lat_end_near_range = (double) lat;
-    meta->location->lon_end_near_range = (double) lon;
-    read_smap_pixel(meta, inDataName, 
-		    meta->general->line_count-1, meta->general->sample_count-1,
-		    &lat, &lon);
-    meta->location->lat_end_far_range = (double) lat;
-    meta->location->lon_end_far_range = (double) lon;
-  }
-  meta_write(meta, inDataName);
-  
   // Read data
   outDataName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+25));
   sprintf(outDataName, "%s.img", outBaseName);
@@ -686,6 +835,31 @@ void import_smap(const char *inBaseName, const char *outBaseName,
     	band++;
     }
   }
+  else if (latConstraint) {
+  	if (find_dataset(inDataName, "cell_sigma0_hh_fore")) {
+    	read_smap_constraint("cell_sigma0_hh_fore", band, inDataName, outDataName,
+		  	latLR, latUL);
+    	appendBand(band, "HH_fore", meta->general->bands);
+    	band++;
+		}
+		if (find_dataset(inDataName, "cell_lat")) {
+	    read_smap_constraint("cell_lat", band, inDataName, outDataName,
+		  	latLR, latUL);
+    	appendBand(band, "lat", meta->general->bands);
+    	band++;
+		}
+		if (find_dataset(inDataName, "cell_lon")) {
+	    read_smap_constraint("cell_lon", band, inDataName, outDataName,
+	    	latLR, latUL);
+    	appendBand(band, "lon", meta->general->bands);
+    	band++;
+		}
+  	int line, sample, height, width;
+	  read_smap_bounds(inDataName, latUL, lonUL, latLR, lonLR,
+		  &line, &sample, &height, &width);
+  	meta->general->line_count = height;
+  	meta->general->start_line = line;
+  }
   else {
     if (find_dataset(inDataName, "cell_sigma0_hh_fore")) {
     	read_smap_data("cell_sigma0_hh_fore", band, inDataName, outDataName);
@@ -767,6 +941,8 @@ void import_smap(const char *inBaseName, const char *outBaseName,
   }
   meta->general->band_count = band;
   meta_write(meta, outDataName);
+  meta_free(meta);
+	update_geolocation(inDataName, outDataName);
 
   // Clean up
   FREE(smap);
@@ -777,5 +953,4 @@ void import_smap(const char *inBaseName, const char *outBaseName,
   H5Sclose(dataspace);
   H5Gclose(group);
   H5Fclose(file);
-  meta_free(meta);
 }
