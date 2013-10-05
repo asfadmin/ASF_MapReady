@@ -104,7 +104,6 @@ void classify_geotiff(GTIF *input_gtif, short *model_type, short *raster_type, s
 char *angular_units_to_string(short angular_units);
 char *linear_units_to_string(short linear_units);
 void get_look_up_table_name(char *citation, char **look_up_table);
-static void GTiffTagExtender(TIFF *tif);
 
 // Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
 // projection data from its metadata file (ERDAS MIF HFA .aux file) into
@@ -127,7 +126,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                          // receive the 'ignore' array and may assume there are MAX_BANDS in
                          // the array, e.g. read_tiff_meta() in the asf_view tool.
 
-  TIFFSetTagExtender(GTiffTagExtender);
+  _XTIFFInitialize();
 
   // Open the input tiff file.
   TIFFErrorHandler oldHandler;
@@ -3712,15 +3711,4 @@ void get_look_up_table_name(char *citation, char **look_up_table)
 {
     *look_up_table = (char *)MALLOC(256 * sizeof(char));
     strcpy(*look_up_table, "UNKNOWN");
-}
-
-static void GTiffTagExtender(TIFF *tif)
-{
-  static const TIFFFieldInfo xtiffFieldInfo[] = {
-        { TIFFTAG_GDAL_NODATA,	    -1,-1, TIFF_ASCII,	FIELD_CUSTOM,
-          TRUE,	FALSE,	(char*) "GDALNoDataValue" }
-  };
-
-  TIFFMergeFieldInfo(tif, xtiffFieldInfo,
-                     sizeof(xtiffFieldInfo) / sizeof(xtiffFieldInfo[0]));
 }
