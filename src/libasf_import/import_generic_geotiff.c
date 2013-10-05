@@ -68,8 +68,6 @@
 #define USER_DEFINED_KEY             32767
 #define BAND_NAME_LENGTH  12
 
-#define TIFFTAG_GDAL_NODATA          42113
-
 #ifdef USHORT_MAX
 #undef USHORT_MAX
 #endif
@@ -106,6 +104,7 @@ void classify_geotiff(GTIF *input_gtif, short *model_type, short *raster_type, s
 char *angular_units_to_string(short angular_units);
 char *linear_units_to_string(short linear_units);
 void get_look_up_table_name(char *citation, char **look_up_table);
+static void GTiffTagExtender(TIFF *tif);
 
 // Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
 // projection data from its metadata file (ERDAS MIF HFA .aux file) into
@@ -127,6 +126,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                          // Do NOT allocate less than MAX_BANDS bands since other tools will
                          // receive the 'ignore' array and may assume there are MAX_BANDS in
                          // the array, e.g. read_tiff_meta() in the asf_view tool.
+
+  TIFFSetTagExtender(GTiffTagExtender);
 
   // Open the input tiff file.
   //TIFFErrorHandler oldHandler = TIFFSetWarningHandler(NULL);
@@ -1658,18 +1659,18 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   get_bands_from_citation(&num_found_bands, &band_str, empty, tmp_citation, num_bands);
   meta_statistics *stats = NULL;
   double mask_value = MAGIC_UNSET_DOUBLE;
+
+  // Look for a non-standard GDAL tag that contains the no data value
+  char* charDummy = NULL;
+  if (TIFFGetField(input_tiff,TIFFTAG_GDAL_NODATA,&charDummy)) {
+    if (strcmp_case( charDummy, "nan" ) != 0) {
+      mg->no_data = (double)atof(charDummy);
+    }
+  }
+
   if (!is_asf_geotiff) {
     asfPrintStatus("\nNo ASF-exported band names found in GeoTIFF citation tag.\n"
         "Band names will be assigned in numerical order.\n");
-
-    // Look for a non-standard GDAL tag that contains the no data value
-    void *data;
-    uint16 *counter;
-    int ret = TIFFGetField(input_tiff, TIFFTAG_GDAL_NODATA, &counter, &data);
-    if (ret)
-      mg->no_data = atof((char *)data);
-    else
-      mg->no_data = MAGIC_UNSET_DOUBLE;
   }
   else {
     // This is an ASF GeoTIFF so we must check to see if any bands are empty (blank)
@@ -3714,3 +3715,13 @@ void get_look_up_table_name(char *citation, char **look_up_table)
     strcpy(*look_up_table, "UNKNOWN");
 }
 
+static void GTiffTagExtender(TIFF *tif)
+{
+  static const TIFFFieldInfo xtiffFieldInfo[] = {
+        { TIFFTAG_GDAL_NODATA,	    -1,-1, TIFF_ASCII,	FIELD_CUSTOM,
+          TRUE,	FALSE,	(char*) "GDALNoDataValue" }
+  };
+
+  TIFFMergeFieldInfo(tif, xtiffFieldInfo,
+                     sizeof(xtiffFieldInfo) / sizeof(xtiffFieldInfo[0]));
+}
