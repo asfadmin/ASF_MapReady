@@ -21,6 +21,7 @@
 #include <libxml/xpathInternals.h>
 
 void set_tiff_warning_handler();
+static void GTiffTagExtender(TIFF *tif);
 void read_tiff_colormap(const char *tiff_file, meta_colormap *mc);
 int read_tiff_rgb_scanline (TIFF *tiff, tiff_format_t format, tiff_data_config_t *data_config,
                             uint32 row, uint32 scanlineSize, int sample_count,
@@ -176,8 +177,6 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client, 
     int is_scanline_format; // False if tiled or strips > 1 TIFF file format
     int is_palette_color_tiff;
     data_type_t data_type;
-
-    set_tiff_warning_handler();
 
     tiff = XTIFFOpen(meta_name, "r");
     if (tiff) {
@@ -579,6 +578,7 @@ int open_tiff_data(const char *data_name, const char *band, ClientInterface *cli
   // ensure any custom tags are installed & recognized by libtiff
   _XTIFFInitialize();
   set_tiff_warning_handler();
+  TIFFSetTagExtender(GTiffTagExtender);
 
   info->tiff = XTIFFOpen(data_name, "r");
   info->gtif = GTIFNew(info->tiff);
@@ -1504,3 +1504,13 @@ void set_tiff_warning_handler()
     TIFFSetWarningHandler(ASF_TIFF_WarningHandler);
 }
 
+static void GTiffTagExtender(TIFF *tif)
+{
+  static const TIFFFieldInfo xtiffFieldInfo[] = {
+        { TIFFTAG_GDAL_NODATA,      -1,-1, TIFF_ASCII,  FIELD_CUSTOM,
+          TRUE, FALSE,  (char*) "GDALNoDataValue" }
+  };
+
+  TIFFMergeFieldInfo(tif, xtiffFieldInfo,
+                     sizeof(xtiffFieldInfo) / sizeof(xtiffFieldInfo[0]));
+}
