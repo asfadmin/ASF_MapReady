@@ -113,7 +113,7 @@ stf_metadata_ext_t get_stf_metadata_name(const char *stfName, char **pMetaName)
     char *pDataName = NULL, MetaName[1024];
     int begin=NO_STF_METADATA+1, end=NUM_STF_METADATA_EXTS;
 
-    asfRequire(NUM_STF_METADATA_EXTS == NUM_STF_DATA_EXTS,
+    asfRequire((int)NUM_STF_METADATA_EXTS == (int)NUM_STF_DATA_EXTS,
                "Programming error: get_stf_names.h has a different number of extensions\n"
                "for metadata and data files for STF data.\n");
 
@@ -155,7 +155,7 @@ stf_metadata_ext_t require_stf_metadata(const char *stfName, char **metaName)
     int begin=NO_STF_METADATA+1, end=NUM_STF_METADATA_EXTS;
     int ii;
 
-    asfRequire(NUM_STF_METADATA_EXTS == NUM_STF_DATA_EXTS,
+    asfRequire((int)NUM_STF_METADATA_EXTS == (int)NUM_STF_DATA_EXTS,
                "Programming error: get_stf_names.h has a different number of extensions\n"
                        "for metadata and data files for STF data.\n");
 

@@ -679,7 +679,10 @@ static void add_outline(GdkPixbuf *pb, ImageInfo *ii)
       //printf("Corner 4: %f %f -> %f %f\n", lat, lon, l4, s4);
     }
  
-    int clr = GREEN + k++; 
+    int clr = GREEN;
+    if (k > 0) clr = 11 + k;
+    k++;
+
     put_line(pb, l1, s1, l2, s2, clr, ii);
     put_line(pb, l2, s2, l3, s3, clr, ii);
     put_line(pb, l3, s3, l4, s4, clr, ii);
