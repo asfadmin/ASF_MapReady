@@ -19,4 +19,6 @@ LIBS  = \
 fit_warp: fit_warp.c
 	$(CC) $(CFLAGS) -o fit_warp fit_warp.c $(LIBS) $(LDFLAGS)
 	mv fit_warp$(BIN_POSTFIX) $(BINDIR)
-	cp fit_warp.1 ../../man/cat1
+
+clean:
+	-rm *.o
