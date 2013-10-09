@@ -154,8 +154,7 @@ BUGS:
 #include "las.h"
 #include "Matrix2D.h"
 #include "remap.h"
-
-float VERSION = 2.3;
+#include "asf_remap.h"
 
 float minFlt=-1, maxFlt=-1,backgroundFill=0.0;
 
@@ -253,10 +252,8 @@ int remap(const char *remap_args)
 	char **argv;
 	char *s = appendStr("remap ",remap_args);
 	split_into_array(s, ' ', &argc, &argv);
-	printf("Args: %d\n", argc);
 	FREE(s);
-	int i;
-	for (i=0; i<argc; ++i) printf("%s ", argv[i]);
+	if (argc<3) usage(argv[0]);
 	int outPixelType,outWidth=0,outHeight=0;
 	int bandNo;
 	struct DDR inDDR,outDDR;
@@ -281,8 +278,6 @@ int remap(const char *remap_args)
 	out=fopenImage(outfile,"r+b");/*Re-Open for append (this lets us read & write).*/
 /*	printf("Remap input image: '%s'.  Output image: '%s'.\n",infile,outfile);*/
 
-	system("date");
-	printf("Program: remap\n\n");
 	logflag=0;
 	
   /*Next, we process the rest of the arguments.*/
@@ -376,18 +371,5 @@ int remap(const char *remap_args)
   	killMap(map);
 	killSamp(samp);
 	return(0);
-}
-
-int main(int argc, char *argv[])
-{
-	if (argc<3) usage(argv[0]);
-	char args[256];
-	strcpy(args,"");
-	int ii;
-	for (ii=1; ii<argc; ++ii) {
-		strcat(args, argv[ii]);
-		if (ii < argc-1) strcat(args, " ");
-	}
-        return remap(args);
 }
 

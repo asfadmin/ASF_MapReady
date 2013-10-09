@@ -20,12 +20,24 @@ OBJS = CLA.o \
 	quadratic.o \
 	mapSamp.o \
 	warpMap.o \
-	writer.o 
+	writer.o \
+	remap.o
 
-all: remap clean
+EXE_OBJS = \
+	remap_main.o
 
-remap: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o remap remap.c $(OBJS) $(LIBS) $(LDFLAGS)
+CFLAGS += -Wall -Werror
+
+all: lib exe clean
+
+lib: $(OBJS)
+	ar r libasf_remap.a $(OBJS)
+	$(RANLIB) libasf_remap.a
+	mv libasf_remap.a $(LIBDIR)
+	cp asf_remap.h $(ASF_INCLUDE_DIR)
+
+exe: $(EXE_OBJS)
+	$(CC) $(CFLAGS) -o remap $(EXE_OBJS) $(LIBS) $(LIBDIR)/libasf_remap.a $(LDFLAGS)
 	mv remap$(BIN_POSTFIX) $(BINDIR)
 	cp remap.1 ../../man/cat1
 
