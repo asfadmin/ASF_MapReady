@@ -64,6 +64,7 @@ MAPREADY_MODULES = \
 	src/plan \
 	src/brs2jpg \
 	src/add_aux_band \
+	src/fit_warp \
 	src/update_state \
 	src/clm \
 	src/populate_meta_field \
