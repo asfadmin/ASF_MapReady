@@ -21,4 +21,4 @@ fit_warp: fit_warp.c
 	mv fit_warp$(BIN_POSTFIX) $(BINDIR)
 
 clean:
-	-rm *.o
+	rm -f *.o

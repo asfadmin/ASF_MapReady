@@ -247,8 +247,16 @@ void update_projection(struct DDR *inDDR, mappingFunction map, struct DDR *outDD
 	outDDR->loright[1]=getProjection(outPt.x,outPt.y,inDDR,1);
 }
 
-int main(int argc, char *argv[])
+int remap(const char *remap_args)
 {
+	int argc;
+	char **argv;
+	char *s = appendStr("remap ",remap_args);
+	split_into_array(s, ' ', &argc, &argv);
+	printf("Args: %d\n", argc);
+	FREE(s);
+	int i;
+	for (i=0; i<argc; ++i) printf("%s ", argv[i]);
 	int outPixelType,outWidth=0,outHeight=0;
 	int bandNo;
 	struct DDR inDDR,outDDR;
@@ -261,7 +269,6 @@ int main(int argc, char *argv[])
   
   /* First, we process the filename arguments.*/
 	char infile[255],outfile[255];
-	if (argc<3) usage(argv[0]);
 	strcpy(infile,argv[argc-2]);
 	strcpy(outfile,argv[argc-1]);
 	if (findExt(infile)!=NULL&&(0==strcmp(".cpx",findExt(infile))))
@@ -339,8 +346,9 @@ int main(int argc, char *argv[])
 	meta->general->sample_count = outDDR.ns;
 	/* TAL - Removed following line because it was introducing bogus projection 
 		 parameters during terrain correction 
-	proj2meta(&outDDR,meta); /* temporary fix to populate the projection fields 
-				    in the metadata file with DDR information */
+	proj2meta(&outDDR,meta); // temporary fix to populate the projection fields 
+				 //   in the metadata file with DDR information
+        */
 	meta_write(meta,outfile);
 	
 /*Now we just call Perform_mapping, which does the actual I/O and the remapping.*/
@@ -370,6 +378,16 @@ int main(int argc, char *argv[])
 	return(0);
 }
 
-
-
+int main(int argc, char *argv[])
+{
+	if (argc<3) usage(argv[0]);
+	char args[256];
+	strcpy(args,"");
+	int ii;
+	for (ii=1; ii<argc; ++ii) {
+		strcat(args, argv[ii]);
+		if (ii < argc-1) strcat(args, " ");
+	}
+        return remap(args);
+}
 
