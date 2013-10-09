@@ -20,7 +20,7 @@ int fit_line(char *inFile, char *outFile);
 int calc_deltas(char *inFile1, char *inFile2, int lineDiff, char *outFile);
 int convert2byte(char *inFile, char *outFile, int nLooks, int nSmooth);
 int fit_plane(char *inFile, char *outFile, double fraction);
-int fit_warp(char *inFile1, char *inFile2, char *outFile);
+//int fit_warp(char *inFile1, char *inFile2, char *outFile);
 int remap(char *inFile, char *outFile, char *options);
 int snaphu(char *snaphu_version, char *phaseFile, char *ampFile, char *pwrFile1, 
 	   char *pwrFile2, char *config, char *outFile, int nAzimuth, int nRange, 
