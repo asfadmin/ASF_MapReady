@@ -3,13 +3,17 @@
 
 include ../../make_support/system_rules
 
+CFLAGS += $(GLIB_CFLAGS)
+
 LIBS  = \
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(XML_LIBS) \
+	$(GLIB_LIBS) \
 	-lm 
 
 fit_warp: fit_warp.c
