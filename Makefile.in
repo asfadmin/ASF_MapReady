@@ -24,6 +24,7 @@ MAPREADY_MODULES = \
 	src/libasf_ardop \
 	src/libasf_terrcorr \
 	src/libasf_insar \
+	src/libasf_remap \
 	src/asf_import \
 	src/asf_export \
 	src/asf_geocode \
@@ -65,6 +66,7 @@ MAPREADY_MODULES = \
 	src/brs2jpg \
 	src/add_aux_band \
 	src/fit_warp \
+	src/remap \
 	src/update_state \
 	src/clm \
 	src/populate_meta_field \
