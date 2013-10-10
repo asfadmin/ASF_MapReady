@@ -154,8 +154,7 @@ BUGS:
 #include "las.h"
 #include "Matrix2D.h"
 #include "remap.h"
-
-float VERSION = 2.3;
+#include "asf_remap.h"
 
 float minFlt=-1, maxFlt=-1,backgroundFill=0.0;
 
@@ -247,8 +246,14 @@ void update_projection(struct DDR *inDDR, mappingFunction map, struct DDR *outDD
 	outDDR->loright[1]=getProjection(outPt.x,outPt.y,inDDR,1);
 }
 
-int main(int argc, char *argv[])
+int remap(const char *remap_args)
 {
+	int argc;
+	char **argv;
+	char *s = appendStr("remap ",remap_args);
+	split_into_array(s, ' ', &argc, &argv);
+	FREE(s);
+	if (argc<3) usage(argv[0]);
 	int outPixelType,outWidth=0,outHeight=0;
 	int bandNo;
 	struct DDR inDDR,outDDR;
@@ -261,7 +266,6 @@ int main(int argc, char *argv[])
   
   /* First, we process the filename arguments.*/
 	char infile[255],outfile[255];
-	if (argc<3) usage(argv[0]);
 	strcpy(infile,argv[argc-2]);
 	strcpy(outfile,argv[argc-1]);
 	if (findExt(infile)!=NULL&&(0==strcmp(".cpx",findExt(infile))))
@@ -274,8 +278,6 @@ int main(int argc, char *argv[])
 	out=fopenImage(outfile,"r+b");/*Re-Open for append (this lets us read & write).*/
 /*	printf("Remap input image: '%s'.  Output image: '%s'.\n",infile,outfile);*/
 
-	system("date");
-	printf("Program: remap\n\n");
 	logflag=0;
 	
   /*Next, we process the rest of the arguments.*/
@@ -339,8 +341,9 @@ int main(int argc, char *argv[])
 	meta->general->sample_count = outDDR.ns;
 	/* TAL - Removed following line because it was introducing bogus projection 
 		 parameters during terrain correction 
-	proj2meta(&outDDR,meta); /* temporary fix to populate the projection fields 
-				    in the metadata file with DDR information */
+	proj2meta(&outDDR,meta); // temporary fix to populate the projection fields 
+				 //   in the metadata file with DDR information
+        */
 	meta_write(meta,outfile);
 	
 /*Now we just call Perform_mapping, which does the actual I/O and the remapping.*/
@@ -369,7 +372,4 @@ int main(int argc, char *argv[])
 	killSamp(samp);
 	return(0);
 }
-
-
-
 

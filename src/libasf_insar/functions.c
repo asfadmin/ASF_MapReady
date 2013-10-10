@@ -79,6 +79,9 @@ int fit_plane(char *inFile, char *outFile, double fraction)
         return ret;
 }       
 
+/*
+   Deprecated: Use the function fit_warp() from libasf_raster instead
+
 int fit_warp(char *inFile1, char *inFile2, char *outFile)
 {
         char command[255];
@@ -96,6 +99,7 @@ int fit_warp(char *inFile1, char *inFile2, char *outFile)
          
         return ret;
 }       
+*/
 
 int remap(char *inFile, char *outFile, char *options)
 {
