@@ -102,6 +102,9 @@ src_subs = [
     "metadata_gui",
     "proj2proj",
     "libasf_metadata",
+    "refine_geolocation",
+    "shift_geolocation",
+    "flip",
     ]
 
 # do the actual building
