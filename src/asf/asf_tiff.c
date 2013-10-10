@@ -2,7 +2,10 @@
 
 static TIFFExtendProc _ParentExtender = NULL;
 static TIFFFieldInfo xtiffFieldInfo[] = {
-    { TIFFTAG_ASF_INSAR_METADATA, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_ASCII, FIELD_CUSTOM, TRUE, FALSE, "ASF Metadata" } 
+    { TIFFTAG_ASF_INSAR_METADATA, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_ASCII,
+      FIELD_CUSTOM, TRUE, FALSE, (char*)"ASF Metadata" },
+    { TIFFTAG_GDAL_NODATA,  -1, -1, TIFF_ASCII, 
+      FIELD_CUSTOM, TRUE, FALSE, (char*)"GDALNoDataValue" } 
   };
 
 static void

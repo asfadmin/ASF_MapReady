@@ -561,6 +561,13 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
     char *citation;
     int citation_length;
 
+    // Set the background value
+    if (meta_is_valid_double(md->general->no_data)) {
+      char nd[64];
+      sprintf(nd, "%.18g", md->general->no_data);
+      TIFFSetField(otif, TIFFTAG_GDAL_NODATA, nd);
+    }
+
     // For now, only support the Hughes ellipsoid for polar stereo
     if (md->projection->datum == HUGHES_DATUM &&
         md->projection->type != POLAR_STEREOGRAPHIC)

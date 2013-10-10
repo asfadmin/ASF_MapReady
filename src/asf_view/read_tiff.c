@@ -178,8 +178,6 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client,
     int is_palette_color_tiff;
     data_type_t data_type;
 
-    set_tiff_warning_handler();
-
     tiff = XTIFFOpen(meta_name, "r");
     if (tiff) {
       get_tiff_data_config(tiff,
@@ -1504,4 +1502,3 @@ void set_tiff_warning_handler()
 {
     TIFFSetWarningHandler(ASF_TIFF_WarningHandler);
 }
-

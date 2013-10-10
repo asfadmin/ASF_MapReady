@@ -8,6 +8,7 @@ main() handles itself.
 1997, ASF SAR Tools.  By Orion Lawlor.
 */
 #include "asf.h"
+#include "asf_license.h"
 #include "ddr.h"
 #include "Matrix2D.h"
 #include "remap.h"
@@ -226,7 +227,7 @@ void usage(char *name)
   "   Works with byte, 2-byte, long, float (4-byte), double (8-byte),\n"
   "   and complex data.\n"
   "\n");
- printf("Version %4.2f, ASF SAR TOOLS\n\n",VERSION);
+ printf("Version %s\n\n",version_string("remap"));
  exit(1);
 }
 

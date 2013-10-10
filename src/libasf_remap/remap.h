@@ -63,6 +63,6 @@ extern float VERSION;
 /*For Pixel Value Scaling/Background:*/
 extern float minFlt, maxFlt, backgroundFill;
 
-
+void usage(char *);
 
 
