@@ -4,6 +4,7 @@
 include ../../make_support/system_rules
 
 LIBS  = \
+	$(LIBDIR)/libasf_remap.a \
 	$(LIBDIR)/asf_meta.a \
         $(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
@@ -20,7 +21,7 @@ CFLAGS += -Wall -Werror
 all: exe clean
 
 exe: $(OBJS)
-	$(CC) $(CFLAGS) -o remap $(OBJS) $(LIBS) $(LIBDIR)/libasf_remap.a $(LDFLAGS)
+	$(CC) $(CFLAGS) -o remap $(OBJS) $(LIBS) $(LDFLAGS)
 	mv remap$(BIN_POSTFIX) $(BINDIR)
 
 clean:
