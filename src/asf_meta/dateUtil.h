@@ -1,6 +1,8 @@
 #ifndef _DATE_UTIL_H_
 #define _DATE_UTIL_H_
 
+#include "asf_meta.h"
+
 /********************************************
 Constants:
 */
@@ -210,6 +212,7 @@ void date_tester(void);
 int date_diff(long date1, long date2);
 
 char *fgdc_date(void);
+char *iso_date(void);
 void ursa2date(const char *inStr, ymd_date *date, hms_time *time);
 
 #endif

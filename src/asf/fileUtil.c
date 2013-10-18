@@ -146,6 +146,7 @@ char *findExt(const char *name)
         strcmp_case(ext, ".NUL") == 0       ||
         strcmp_case(ext, ".VOL") == 0       ||
         strcmp_case(ext, ".CSV") == 0       ||
+        strcmp_case(ext, ".LOG") == 0				||
         strcmp_case(ext, ".BRS") == 0       ||
         strcmp_case(ext, ".AMP") == 0       || // roipac
         strcmp_case(ext, ".COR") == 0       || // roipac

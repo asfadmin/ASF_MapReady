@@ -39,7 +39,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 3.5
+#define META_VERSION 3.6
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
@@ -529,6 +529,18 @@ typedef struct {
 } meta_insar;
 
 /********************************************************************
+ * meta_quality: Parameters that describe the quality of the data.
+ */
+typedef struct {
+	double bit_error_rate;
+	double azimuth_resolution;
+	double range_resolution;
+	double signal_to_noise_ratio;
+	double peak_sidelobe_ratio;
+	double integrated_sidelobe_ratio;
+} meta_quality;
+
+/********************************************************************
  * General ASF metadta structure.  Collection of all above.
  */
 typedef struct {
@@ -551,6 +563,7 @@ typedef struct {
   meta_insar         *insar;           // Can be NULL
   meta_dem           *dem;             // Can be NULL
   meta_latlon        *latlon;          // Can be NULL
+  meta_quality       *quality;         // Can be NULL
     /* Deprecated elements from old metadata format.  */
   meta_state_vectors *stVec;         /* Can be NULL (check!).  */
   geo_parameters  *geo;
@@ -587,6 +600,8 @@ char *image_data_type2str(image_data_type_t image_data_type);
 char *radiometry2str(radiometry_t radiometry);
 void meta_write(meta_parameters *meta,const char *outName);
 void meta_write_xml(meta_parameters *meta, const char *file_name);
+void meta_write_xml_ext(meta_parameters *meta, const char *logFile, int iso,
+	const char *file_name);
 
 /* Write  sprocket style metadata */
 void meta_write_sprocket(const char *sprocketName, meta_parameters *meta,
@@ -615,6 +630,7 @@ meta_insar *meta_insar_init(void);
 meta_uavsar *meta_uavsar_init(void);
 meta_dem *meta_dem_init(void);
 meta_latlon *meta_latlon_init(int line_count, int sample_count);
+meta_quality *meta_quality_init(void);
 meta_parameters *raw_init(void);
 
 /* Create meta struct from a CEOS file */

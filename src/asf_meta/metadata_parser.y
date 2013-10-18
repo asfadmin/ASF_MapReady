@@ -132,6 +132,7 @@ void error_message(const char *err_mes, ...)
 #define MESTIMATE ( (tsx_doppler_t *) current_block)
 #define MINSAR ( (meta_insar *) current_block)
 #define MDEM ( (meta_dem *) current_block)
+#define MQUALITY ( (meta_quality *) current_block)
 
 void select_current_block(char *block_name)
 {
@@ -273,6 +274,13 @@ void select_current_block(char *block_name)
       current_block = MTL->insar;
       goto MATCHED;
   }
+
+	if ( !strcmp(block_name, "quality") ) {
+		if (MTL->quality == NULL)
+		{ MTL->quality = meta_quality_init(); }
+		current_block = MTL->quality;
+		goto MATCHED;
+	}
 
   if ( !strcmp(block_name, "doppler") ) {
     if (MTL->doppler == NULL)
@@ -1215,6 +1223,21 @@ void fill_structure_field(char *field_name, void *valp)
       { strcpy(MDEM->unit_type, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "no_data") )
       { MDEM->no_data = VALP_AS_DOUBLE; return; }
+  }
+  
+  if ( !strcmp(stack_top->block_name, "quality") ) {
+		if ( !strcmp(field_name, "bit_error_rate") )
+			{ MQUALITY->bit_error_rate = VALP_AS_DOUBLE; return; }
+		if ( !strcmp(field_name, "azimuth_resolution") )
+			{ MQUALITY->azimuth_resolution = VALP_AS_DOUBLE; return; }
+		if ( !strcmp(field_name, "range_resolution") )
+			{ MQUALITY->range_resolution = VALP_AS_DOUBLE; return; }
+		if ( !strcmp(field_name, "signal_to_noise_ratio") )
+			{ MQUALITY->signal_to_noise_ratio = VALP_AS_DOUBLE; return; }
+		if ( !strcmp(field_name, "peak_sidelobe_ratio") )
+			{ MQUALITY->peak_sidelobe_ratio = VALP_AS_DOUBLE; return; }
+		if ( !strcmp(field_name, "integrated_sidelobe_ratio") )
+			{ MQUALITY->integrated_sidelobe_ratio = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields which normally go in the statistics block of the metadata file. */
