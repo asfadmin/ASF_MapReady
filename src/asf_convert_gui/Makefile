@@ -105,6 +105,7 @@ CFLAGS += -Werror -Wall \
 	$(JPEG_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GTK_CFLAGS) \
+	$(XML_CFLAGS) \
 	$(shell /usr/bin/pkg-config --cflags libglade-2.0) \
 	$(shell /usr/bin/pkg-config --cflags gthread-2.0)
 
@@ -134,6 +135,7 @@ LDLIBS = \
 	$(HDFEOS5_LIBS) \
 	$(GTK_LIBS) \
 	$(PNG_LIBS) \
+	$(XML_LIBS) \
 	$(shell /usr/bin/pkg-config --libs libglade-2.0) \
 	$(shell /usr/bin/pkg-config --libs gthread-2.0) \
 	-lm -lz

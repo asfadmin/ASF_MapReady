@@ -99,7 +99,12 @@ src_subs = [
     "make_overlay",
     "asf_kml_overlay",
     "sample_plugin",
-    #"metadata_gui",
+    "metadata_gui",
+    "proj2proj",
+    "libasf_metadata",
+    "refine_geolocation",
+    "shift_geolocation",
+    "flip",
     ]
 
 # do the actual building

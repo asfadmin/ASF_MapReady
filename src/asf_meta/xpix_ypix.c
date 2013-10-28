@@ -68,8 +68,8 @@ void xpyp_getVelocities(meta_parameters *meta, float *pp_velocity,
 {
 	int loc[2];
 
-	double azSize, azTime;
-	double t,h,c,dt,sc_vel,earth_rad,sc_rad,cos_earth_ang,swath_nr;
+	//double h,c,azSize, azTime;
+	double t,dt,sc_vel,earth_rad,sc_rad,cos_earth_ang,swath_nr;
 	stateVector scFix,scGEI;
 	vector target1,target2,targVel;
         double tv;
@@ -98,8 +98,8 @@ void xpyp_getVelocities(meta_parameters *meta, float *pp_velocity,
 //		printf("  ASF geolocate azimuth velocity: %.3f m/s\n",tv);
 	
 /* Use getPixSize to doublecheck target velocity */
-	azSize=getPixSize(meta,1,loc,0.0,0.0);
-	azTime=meta->geo->azPixTime;
+	//azSize=getPixSize(meta,1,loc,0.0,0.0);
+	//azTime=meta->geo->azPixTime;
 	//double azVel=azSize/azTime;
 //		printf("  xpix_ypix target azimuth velocity: %.3f m/s = %.3f m / %.6f s\n",azVel,azSize,azTime);
 
@@ -111,8 +111,8 @@ void xpyp_getVelocities(meta_parameters *meta, float *pp_velocity,
 	//	acos(vecCosAng(scGEI.pos,scGEI.vel))*180.0/M_PI);
 #define gxMe 3.986005e14 /*Gravitational constant times mass of Earth (g times Me, o
 r gxMe) */
-	h=vecMagnitude(scGEI.pos);
-	c=gxMe/(h*h); /* acceleration downward, from gMM/r^2 */
+	//h=vecMagnitude(scGEI.pos);
+	//c=gxMe/(h*h); /* acceleration downward, from gMM/r^2 */
 	//double r=vecMagnitude(scGEI.vel)*vecMagnitude(scGEI.vel)/c; /* r = v^2/a for uniform circ. motion */
 	//printf("  Orbit radius of curvature: %.3f m  (vs ht %.3f m)\n",r,h);
 	sc_vel=vecMagnitude(scGEI.vel); /* GEI velocity */
