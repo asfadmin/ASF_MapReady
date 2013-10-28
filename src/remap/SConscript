@@ -1,0 +1,35 @@
+import os.path
+
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#include/",
+        "#src/libasf_remap",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+
+localenv.AppendUnique(LIBS = [
+    "asf",
+    "asf_proj",
+    "asf_meta",
+    "asf_remap",
+])
+
+head_build_dir, tail_build_dir = os.path.split(Dir(".").path)
+
+localenv.AppendUnique(LIBPATH = [
+    "#" + os.path.join(head_build_dir, "asf"),
+    "#" + os.path.join(head_build_dir, "libasf_proj"),
+    "#" + os.path.join(head_build_dir, "asf_meta"),
+    "#" + os.path.join(head_build_dir, "libasf_remap"),
+])
+
+
+bins = localenv.Program("remap", Glob("*.c"))
+docs = localenv.File(["remap.1"])
+
+globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+globalenv.Install(globalenv["inst_dirs"]["docs"], docs)
