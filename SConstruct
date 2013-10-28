@@ -105,6 +105,12 @@ src_subs = [
     "refine_geolocation",
     "shift_geolocation",
     "flip",
+    "write_ppf",
+    "analyze_yaw",
+    "fftMatch",
+    "fit_warp",
+    "libasf_remap",
+    "remap",
     ]
 
 # do the actual building
