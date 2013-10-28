@@ -38,4 +38,5 @@ int calc_deltas(char *inFile1, char *inFile2, int nLines, char *outFile)
   asfPrintStatus("   delu = %f x + %f\n", delt_m_x, delt_b_x);
   asfPrintStatus("   delv = %f y + %f\n\n", delt_m_y, delt_b_y);
 
+  return 0;
 }

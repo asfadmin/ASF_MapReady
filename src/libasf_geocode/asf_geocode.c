@@ -39,7 +39,7 @@ typedef int unproject_arr_t(project_parameters_t *pps, double *x, double *y,
       double *z, double **lat, double **lon,
       double **height, long length, datum_type_t dtm);
 
-void location_minmax(meta_location *loc, double *minLat, double *maxLat,
+static void location_minmax(meta_location *loc, double *minLat, double *maxLat,
 		     double *minLon, double *maxLon)
 {
   int ii;
@@ -736,9 +736,9 @@ int asf_geocode_from_proj_file(const char *projection_file,
 {
   project_parameters_t pp;
   projection_type_t projection_type;
-  datum_type_t tmp_datum = datum;
+  //datum_type_t tmp_datum = datum;
   spheroid_type_t spheroid;
-  double sphere;
+  //double sphere;
   char *err=NULL;
 
   if (!parse_proj_args_file(projection_file, &pp, &projection_type, &datum, 
@@ -1877,8 +1877,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // The pixel size requested by the user better not oversample by
     // the factor of 2.  Specifying --force will skip this check
     // Only apply for metric projections (no geographic)
-    int input_is_latlon = imd->projection &&
-                          imd->projection->type == LAT_LONG_PSEUDO_PROJECTION;
     int output_is_latlon = projection_type == LAT_LONG_PSEUDO_PROJECTION;
     if (!input_is_latlon && !output_is_latlon) {
       if (!force_flag &&
@@ -2858,7 +2856,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     }
   }
 
-  if (resample_method == BICUBIC &&
+  if (resample_method == RESAMPLE_BICUBIC &&
       omd->general->data_type == ASF_BYTE &&
       (out_of_range_negative || out_of_range_positive))
   {

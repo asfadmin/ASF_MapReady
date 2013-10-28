@@ -9,7 +9,12 @@ static const int w=1440;
 static const int h=721;
 static float *geoid_heights = NULL;
 
-static float geoid_height_at(int x, int y)
+#ifdef TEST
+float geoid_height_at(int x, int y);
+#else
+static
+#endif
+float geoid_height_at(int x, int y)
 {
     if (x<0) x=0;
     if (x>=w) x=w-1;
@@ -58,61 +63,26 @@ float get_geoid_height(double lat, double lon)
     double x = lon*4.;
 
     // bilinear interp
-    int y0 = (int)y;
-    int y1 = y0 + 1;
-    double yf = y-y0;
+    int y_0 = (int)y;
+    int y_1 = y_0 + 1;
+    double yf = y-y_0;
 
-    int x0 = (int)x;
-    int x1 = x0 + 1;
-    double xf = x-x0;
+    int x_0 = (int)x;
+    int x_1 = x_0 + 1;
+    double xf = x-x_0;
 
     return
-         xf     * yf     * geoid_height_at(x1,y1) +
-         (1-xf) * yf     * geoid_height_at(x0,y1) +
-         xf     * (1-yf) * geoid_height_at(x1,y0) +
-         (1-xf) * (1-yf) * geoid_height_at(x0,y0);
+         xf     * yf     * geoid_height_at(x_1,y_1) +
+         (1-xf) * yf     * geoid_height_at(x_0,y_1) +
+         xf     * (1-yf) * geoid_height_at(x_1,y_0) +
+         (1-xf) * (1-yf) * geoid_height_at(x_0,y_0);
 }
 
-void test_geoid(void)
-{
-    float f = get_geoid_height(0,0);
-    if (fabs(f - 17.16) > .0001)
-      asfPrintWarning("Unexpected value at 0,0 should be 17.15: %f\n", f);
-
-    int i, j;
-    for (i=0; i<w; ++i) {
-      for (j=0; j<h; ++j) {
-        float a0 = *(geoid_heights + j*w + i);
-        float a1 = geoid_height_at(i,j);
-        if (fabs(a0-a1) > .0001)
-          asfPrintWarning("test_geoid #1 failed: %d %d %f %f\n", i, j, a0, a1);
-
-        if (i<w-1 && j<h-1) {
-          double i1 = i+.5;
-          double j1 = j+.5;
-
-          double lat = 90.0 - j1/4.0;
-          double lon = i1/4.0;
-
-          float b0 = get_geoid_height(lat,lon);
-          float b1 = .25*(geoid_height_at(i,j)+geoid_height_at(i+1,j)+
-                          geoid_height_at(i,j+1)+geoid_height_at(i+1,j+1));
-          if (fabs(b0-b1) > .0001)
-            asfPrintWarning("test_geoid #2 failed: %d %d %f %f\n", i, j, b0, b1);
-
-          i1 = i+.25;
-          j1 = j+.75;
-          lat = 90.0 - j1/4.0;
-          lon = i1/4.0;
-          float c0 = get_geoid_height(lat,lon);
-
-          float u = .75*geoid_height_at(i,j) + .25*geoid_height_at(i+1,j);
-          float v = .75*geoid_height_at(i,j+1) + .25*geoid_height_at(i+1,j+1);
-          float c1 = .25*u + .75*v;  
-          if (fabs(c0-c1) > .0001)
-            asfPrintError("test_geoid #3 failed: %d %d %f %f\n", i, j, c0, c1);
-        }
-      }
-    }
-}
+// These are for the test code -- do not use!
+int geoid_get_width(void);
+int geoid_get_height(void);
+float *geoid_get_height_array(void);
+int geoid_get_width(void) { return w; }
+int geoid_get_height(void) { return h; }
+float *geoid_get_height_array(void) { return geoid_heights; }
 

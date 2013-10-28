@@ -47,7 +47,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
                      float mask_height_cutoff, int doRadiometric,
                      int smooth_dem_holes,
                      char **other_files_to_update_with_offsets,
-                     int no_matching, double range_offset,
+                     int matching_level, double range_offset,
                      double azimuth_offset, int use_gr_dem, int add_speckle,
                      int if_coreg_fails_use_zero_offsets, int save_ground_dem,
                      int save_incid_angles, int use_nearest_neighbor);
@@ -83,5 +83,10 @@ int make_gr_dem(meta_parameters *meta_sar, const char *demBase, const char *outp
 int make_gr_dem_ext(meta_parameters *meta, const char *demImg, const char *demMeta,
                     int pad, double tolerance, const char *output_name,
                     int test_mode);
+
+// These are for the "matching_level" argument to asf_terrcorr_ext
+extern const int MATCHING_NONE;
+extern const int MATCHING_FULL;
+extern const int MATCHING_GRID;
 
 #endif

@@ -25,6 +25,7 @@
 #include "asf.h"
 #include "asf_tiff.h"
 #include "asf_jpeg.h"
+#include "asf_raster.h"
 
 #ifndef linux
 #ifndef darwin
@@ -1792,7 +1793,7 @@ uint8_image_equals (UInt8Image *self, UInt8Image *other)
 void
 uint8_image_flip_y(UInt8Image *self)
 {
-  size_t ii, jj;
+  size_t ii, jj=0;
 
   asfLineMeter(jj, self->size_y);
   for (jj = 0; jj < self->size_y / 2; ++jj) {

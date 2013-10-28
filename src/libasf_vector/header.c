@@ -57,7 +57,7 @@ static void msg(const char *format, ...)
     //gtk_text_buffer_get_end_iter(tb, &end);
     //gtk_text_buffer_insert(tb, &end, buf, -1);
 
-    printf(buf);
+    printf("%s",buf);
 }
 
 static char *my_parse_string(char *p, char *s, int max_len)

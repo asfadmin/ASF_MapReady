@@ -42,7 +42,7 @@ void proj_to_latlon(meta_projection *proj, double x, double y, double z,
       project_eqc_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
       break;
     case SINUSOIDAL:
-      project_sin_inv(&(proj->param), x, y, z, lat, lon, height);
+      project_sin_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
       break;
     case SCANSAR_PROJECTION:
       asfPrintError("'proj_to_latlon' not defined for SCANSAR_PROJECTION.\n"
@@ -543,10 +543,12 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
       project_eqr(&(proj->param), geoc_lat, lon, height, x, y, z, proj->datum);
       break;
     case EQUIDISTANT:
+      // Some special treatment required for PROJ4 limitation
+      geoc_lat = atan(tan(lat)/(1-ecc2(proj->re_minor,proj->re_major)));
       project_eqc(&(proj->param), geoc_lat, lon, height, x, y, z, proj->datum);
       break;
     case SINUSOIDAL:
-      project_sin(&(proj->param), lat, lon, height, x, y, x);
+      project_sin(&(proj->param), lat, lon, height, x, y, x, proj->datum);
       break;
     case LAT_LONG_PSEUDO_PROJECTION:
       *x = lon*R2D;
@@ -968,14 +970,12 @@ void atct_init(meta_projection *proj,stateVector st)
  */
 void atct_init_from_leader(const char *leaderName, meta_projection *proj)
 {
-    struct dataset_sum_rec *dssr = NULL;
     meta_parameters *meta = raw_init();
     stateVector st_start;
     ceos_description *ceos = 
       get_ceos_description_ext(leaderName, REPORT_LEVEL_NONE, FALSE);
 
     // Azimuth time per pixel need to be known for state vector propagation
-    dssr = &ceos->dssr;
     ceos_init_sar_general(ceos, leaderName, meta, TRUE);
 
     ceos_read_stVecs(leaderName, ceos, meta);

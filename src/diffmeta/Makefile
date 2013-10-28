@@ -29,7 +29,7 @@ HEADERS := diffmeta_tolerances.h diffmeta.h
 #
 ###############################################################################
 
-CFLAGS += \
+CFLAGS += -Werror \
 	$(PROJ_CFLAGS) \
 	$(GSL_CFLAGS)
 

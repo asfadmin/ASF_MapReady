@@ -177,10 +177,13 @@ main(int argc, char **argv)
     }
     else
     {
+        // g_thread_init() no longer necessary as of Glib 2.32
+#if ! (GLIB_MAJOR_VERSION > 2 || (GLIB_MINOR_VERSION >= 32))
         // We will want to load thumbnails in other threads.
         if ( !g_thread_supported () ) {
             g_thread_init (NULL);
         }
+#endif
     }
 
     /* allow FOPEN, FREAD, FWRITE to fail without aborting */

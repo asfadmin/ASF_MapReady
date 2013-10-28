@@ -2334,9 +2334,12 @@ meta_parameters *meta_read_only(const char *in_fName)
 }
 
 // Read CEOS metadata for raw data
-meta_parameters *meta_read_raw(const char *inFile)
+meta_parameters *meta_read_raw(const char *inFile_)
 {
-  struct dataset_sum_rec *dssr=NULL;
+  char inFile[1024];
+  if (strlen(inFile_)>1023) asfPrintError("Filename is too long: %s\n", inFile_);
+  strcpy(inFile, inFile_);
+ 
   double re, ht, fs, prf, vel;
   int trash;
   meta_parameters *meta = raw_init();
@@ -2359,6 +2362,9 @@ meta_parameters *meta_read_raw(const char *inFile)
 	meta->sar->earth_radius_pp = pp_er;
   }
 
+  re = meta->sar->earth_radius;
+  ht = meta->sar->satellite_height - meta->sar->earth_radius;
+
   if (ceos->sensor != PALSAR) {
     baseName = get_basename(inFile);
     strcpy(tmpDir, baseName);
@@ -2366,7 +2372,7 @@ meta_parameters *meta_read_raw(const char *inFile)
     strcat(tmpDir, time_stamp_dir());
     create_clean_dir(tmpDir);
     sprintf(outFile, "%s/bogus.meta", tmpDir);
-    s = convertMetadata_ceos((char *)inFile, outFile, &trash, &readNextPulse);
+    s = convertMetadata_ceos(inFile, outFile, &trash, &readNextPulse);
     iqBuf = (iqType*)MALLOC(sizeof(iqType)*2*(s->nSamp));
     FILE *fpOut = FOPEN(outFile, "wb");
     getNextCeosLine(s->binary, s, inFile, outFile);
@@ -2404,11 +2410,8 @@ meta_parameters *meta_read_raw(const char *inFile)
     fs = meta->sar->range_sampling_rate;
     vel = sqrt(9.821*re*re/(ht+re));
   }
-  re = meta->sar->earth_radius;
-  ht = meta->sar->satellite_height - meta->sar->earth_radius;
   meta->general->x_pixel_size = 1.0 / fs * (SPD_LIGHT / 2.0);
   meta->general->y_pixel_size = 1.0 / prf * vel * (re / (re + ht));
-  dssr = &ceos->dssr;
   if (meta->general->center_latitude == 0.0 &&
       meta->general->center_longitude == 0.0)
     meta_get_latLon(meta, meta->general->line_count/2,

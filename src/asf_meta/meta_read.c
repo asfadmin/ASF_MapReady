@@ -57,7 +57,7 @@ meta_parameters *meta_read(const char *inName)
   char              *ddr_name       = appendExt(inName,".ddr");
   meta_parameters   *meta           = raw_init(); /* Allocate and initialize basic structs */
   char **junk=NULL;
-  int junk2, ii;
+  int junk2;
 
   /* Read file with appropriate reader for version.  */
   if ( !fileExists(meta_name) && fileExists(ddr_name)) {
@@ -152,8 +152,7 @@ int meta_is_new_style(const char *file_name)
     }
     // If the given version is greater than or equal to our latest meta
     // version then we've got a new style meta file...
-    if ( strtod(version_string, &end_ptr)
-         >= NEW_FORMAT_VERSION - 0.0002 /* <-- for sloppy float compare */ ) {
+    if (version >= NEW_FORMAT_VERSION - 0.0002 /* <-- for sloppy float compare */ ) {
       return_value = TRUE;
     }
 

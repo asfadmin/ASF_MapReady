@@ -156,9 +156,10 @@ static void get_fields(FILE * fp, ...)
 	   }
 	  
 	  ////Changed to ignore fields that aren't understood
-	  //if (!found)
+	  if (!found) {
 	  //	asfPrintWarning("Unknown key found in projection file: %s\n",
 	  //	buf);
+          }
       }
   }
 }

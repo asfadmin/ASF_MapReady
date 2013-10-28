@@ -7,7 +7,7 @@ OBJS  = asf_convert.o \
 	functions.o \
 	kml_overlay.o
 
-CFLAGS += $(GLIB_CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS)
+CFLAGS += -Wall -Werror $(GLIB_CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS)
 
 all: build_only
 	mv libasf_convert.a $(LIBDIR)

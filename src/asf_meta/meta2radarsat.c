@@ -77,7 +77,7 @@ static int getNumParamsInString (char *str)
 {
   int ii, count=0;
  
-  for (ii>0; ii<strlen(str); ii++) {
+  for (ii=0; ii<strlen(str); ii++) {
     if (str[ii] == ' ')
       count++;
   }

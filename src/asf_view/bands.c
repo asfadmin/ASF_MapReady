@@ -84,7 +84,7 @@ static void populate_combo_csv(const char *widget_name, char *csv, int i)
 
 void setup_bands_tab(meta_parameters *meta)
 {
-    int multilook, multiband;
+    //int multilook, multiband;
 
     if (!meta ||
         meta->general->band_count == 1 || 
@@ -94,7 +94,7 @@ void setup_bands_tab(meta_parameters *meta)
         strcmp(meta->general->bands, MAGIC_UNSET_STRING) == 0)
     {
         single_band(meta->general->bands);
-        multiband = FALSE;
+        //multiband = FALSE;
     }
     else {
         // populate band selectors
@@ -117,15 +117,15 @@ void setup_bands_tab(meta_parameters *meta)
                     !curr->band_cfg.is_rgb);
 
         disable_correct_hbox();
-        multiband = TRUE;
+        //multiband = TRUE;
     }
 
     //set_checked("multilook_checkbutton", FALSE);
     if (!meta->sar || meta->sar->multilook) {
-        multilook = FALSE;
+        //multilook = FALSE;
         enable_widget("multilook_checkbutton", FALSE);
     } else {
-        multilook = TRUE;
+        //multilook = TRUE;
         enable_widget("multilook_checkbutton", TRUE);
     }
 

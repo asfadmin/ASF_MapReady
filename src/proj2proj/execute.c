@@ -196,14 +196,14 @@ static void execute(const char *from, const char *to)
             double x, y, z=0;
             char *p2,*p3,*p4;
             x = strtod(line, &p2);
-            if (errno==EINVAL) {
+            if (x == 0.0 && p2 == line) {
                 snprintf(buf, 255, "Invalid line %d ignored.\n", line_num);
                 append_text(target_tv, buf);
             } 
             else {
                 if (*p2==',' || *p2==';') ++p2;
                 y = strtod(p2, &p3);
-                if (errno==EINVAL || p2==p3) {
+                if (y == 0.0 && p3 == p2) {
                     snprintf(buf, 255, "Invalid line %d ignored.\n", line_num);
                     append_text(target_tv, buf);
                 }

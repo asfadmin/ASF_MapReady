@@ -172,11 +172,8 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
     fp=FOPEN(metaName[ii], "rb");
     total = 0;
     while (1==fread(&bufhdr, 12, 1, fp)) {
-      int itype,subtype[3],rec_seq,length,mallocBytes;
-      subtype[0] = bufhdr.rectyp[0];
+      int itype,rec_seq,length,mallocBytes;
       itype = bufhdr.rectyp[1];
-      subtype[1] = bufhdr.rectyp[2];
-      subtype[2] = bufhdr.rectyp[3];
       rec_seq = bigInt32(bufhdr.recnum);
       length = bigInt32(bufhdr.recsiz);
       if ((itype==CEOS_FACDR && rec_seq==17 && length<=5000) ||
@@ -195,6 +192,10 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
       *buff=(unsigned char *)MALLOC(mallocBytes);
       *(struct HEADER *)*buff=bufhdr;
       /*
+      int subtype[3];
+      subtype[0] = bufhdr.rectyp[0];
+      subtype[1] = bufhdr.rectyp[2];
+      subtype[2] = bufhdr.rectyp[3];
       printf("get_ceos - record type: %d\nsub-record[1]: %d, sub-record[2]: %d"
 	     " sub_record[3]: %d\nsequence: %d, length: %d\n", itype, 
 	     subtype[0], subtype[1], subtype[2], rec_seq, length);

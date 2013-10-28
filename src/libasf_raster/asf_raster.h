@@ -116,7 +116,7 @@ calc_stats_from_file_with_formula(const char *inFile, char *bands,
                                   gsl_histogram **histogram);
 void calc_minmax_median(const char *inFile, char *band, double mask, 
 			double *min, double *max);
-
+void calc_minmax_polsarpro(const char *inFile, double *min, double *max);
 
 /* Prototypes from kernel.c **************************************************/
 float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
@@ -181,6 +181,9 @@ void apply_look_up_table_int(char *lutFile, int *in_buffer,
 			 int pixel_count, unsigned char *rgb_buffer);
 int read_lut(char *lutFile, unsigned char *lut_buffer);
 int is_jasc_palette_lut(const char *name);
+
+// Prototypes from fit_warp.c
+int fit_warp(const char *offsetsFile, const char *imageName, const char *outName);
 
 // Prototypes from diffimage.c
 typedef enum {

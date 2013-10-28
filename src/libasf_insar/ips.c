@@ -337,7 +337,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
         cfg->unwrap->qc);
     asfSystem(cmd);
     sprintf(tmp, "a_amp.img");
-    sprintf(tmp2, cfg->igram_coh->coh);
+    sprintf(tmp2,"%s",cfg->igram_coh->coh);
 
     check_return(asf_elevation("unwrap_phase.img", "unwrap_dem_mask.img",
                    newBase, cfg->refine->seeds,
