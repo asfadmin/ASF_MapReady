@@ -1,5 +1,3 @@
-import os.path
-
 Import("globalenv")
 localenv = globalenv.Clone()
 
@@ -12,27 +10,12 @@ localenv.AppendUnique(CPPPATH = [
         ])
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
-localenv.ParseConfig("pkg-config --cflags --libs gsl")
 localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
-localenv.ParseConfig("pkg-config --cflags --libs libpng")
 
 localenv.AppendUnique(LIBS = [
-        "asf",
-        "asf_meta",
-        "asf_proj",
-        "asf_raster",
-        "asf_fft",
-        ])
-
-head_build_dir, tail_build_dir = os.path.split(Dir(".").path)
-
-localenv.AppendUnique(LIBPATH = [
-        "#" + os.path.join(head_build_dir, "asf"),
-        "#" + os.path.join(head_build_dir, "asf_meta"),
-        "#" + os.path.join(head_build_dir, "libasf_proj"),
-        "#" + os.path.join(head_build_dir, "libasf_raster"),
-        "#" + os.path.join(head_build_dir, "asf_fft"),
-        ])
+    "asf",
+    "asf_raster",
+])
 
 bins = localenv.Program("trim", Glob("*.c"))
 
