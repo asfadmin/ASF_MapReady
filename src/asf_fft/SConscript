@@ -5,7 +5,12 @@ localenv.AppendUnique(CPPPATH = [
         "#include/",
         "#src/asf/",
         ])
-    
+
+localenv.AppendUnique(LIBS = [
+    "m",
+    "asf",
+])
+
 libs = localenv.SharedLibrary("asf_fft", [
         "dxpose.c",
         "fft2d.c",
