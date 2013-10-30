@@ -137,7 +137,7 @@ globalenv.AppendUnique(LIBPATH = lib_build_paths)
 
 # common command line options
 globalenv.AppendUnique(CCFLAGS = ["-Wall", "-g"])
-globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined"] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
+globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined", "-Wl,-rpath=\\$$ORIGIN/../lib"] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
 
 # common include directories
 globalenv.AppendUnique(CPPPATH = ["."])
