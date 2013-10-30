@@ -255,13 +255,10 @@ static int is_alos_avnir(meta_parameters *meta) {
 // functions to use when we need to use a function pointer to perform
 // a generic operation.
 static int
-project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
-       double height, double *x, double *y, double *z,
-             datum_type_t datum)
+project_lat_long_pseudo (project_parameters_t* UNUSED(pps), double lat, 
+	double lon, double height, double *x, double *y, double *z,
+  datum_type_t UNUSED(datum))
 {
-  /* Silence compiler warning about unused argument.  */
-  pps = pps; datum = datum;
-
   *x = lon * R2D;
   *y = lat * R2D;
   if (z) *z = height;
@@ -270,11 +267,10 @@ project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
 }
 
 static int
-project_lat_long_pseudo_arr(project_parameters_t *pps, double *lat, double *lon,
-			    double *height, double **x, double **y, 
-			    double **z, long length, datum_type_t datum)
+project_lat_long_pseudo_arr(project_parameters_t* UNUSED(pps), double *lat, 
+	double *lon, double *height, double **x, double **y, double **z, long length,
+	datum_type_t UNUSED(datum))
 {
-  pps = pps; datum = datum;
   long ii;
   double *pz;
   *x = (double *) MALLOC(sizeof(double) * length);
@@ -295,13 +291,10 @@ project_lat_long_pseudo_arr(project_parameters_t *pps, double *lat, double *lon,
 }
 
 static int
-project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
-           double z, double *lat, double *lon,
-           double *height, datum_type_t datum)
+project_lat_long_pseudo_inv (project_parameters_t* UNUSED(pps), double x, 
+	double y, double z, double *lat, double *lon, double *height, 
+	datum_type_t UNUSED(datum))
 {
-  /* Silence compiler warning about unused argument.  */
-  pps = pps; datum = datum;
-
   *lat = y * D2R;
   *lon = x * D2R;
   if (height) *height = z;
@@ -310,12 +303,10 @@ project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
 }
 
 static int
-project_lat_long_pseudo_inv_arr(project_parameters_t *pps, double *x, double *y,
-				double *z, double **lat, double **lon,
-				double **height, long length, 
-				datum_type_t datum)
+project_lat_long_pseudo_inv_arr(project_parameters_t* UNUSED(pps), double *x, 
+	double *y, double *z, double **lat, double **lon, double **height, 
+	long length, datum_type_t UNUSED(datum))
 {
-  pps = pps; datum = datum;
   long ii;
   *lat = (double *) MALLOC(sizeof(double) * length);
   *lon = (double *) MALLOC(sizeof(double) * length);

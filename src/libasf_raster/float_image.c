@@ -2266,6 +2266,7 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
         ival = float_image_get_pixel(self, jj, ii);
       }
       else {
+      	ival = 0.0;
         asfPrintError("Invalid scale factor.  Scale factor must be 1 or greater.\n");
       }
       unsigned char oval;       // Output value.

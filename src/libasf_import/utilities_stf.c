@@ -265,7 +265,7 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
 bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
             readPulseFunc *readNextPulse)
 {
-  bin_state *s;
+  bin_state *s=NULL;
   char *lzName;
   int ii;
   char *satName;

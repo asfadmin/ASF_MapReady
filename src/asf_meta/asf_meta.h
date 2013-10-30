@@ -102,7 +102,8 @@ typedef enum {
   MASK,
   IMAGE_LAYER_STACK,
   RGB_STACK,
-  MOSAIC
+  MOSAIC,
+  UNKNOWN_IMAGE_DATA_TYPE
 } image_data_type_t;
 
 typedef enum {
@@ -123,7 +124,8 @@ typedef enum {
   ROIPAC,
   SMAP,
   SEASAT_H5,
-  GRIDDED_RGPS
+  GRIDDED_RGPS,
+  UNKNOWN_INPUT_FORMAT
 } input_format_t;
 
 /********************************************************************

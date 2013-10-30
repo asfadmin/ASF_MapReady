@@ -355,9 +355,9 @@ void geocode_options_changed()
         gtk_widget_set_sensitive(geocode_tab_label, TRUE);
 
         datum_type_t datum = WGS84_DATUM;
-	spheroid_type_t spheroid = WGS84_DATUM;
+				spheroid_type_t spheroid = WGS84_SPHEROID;
         int datum_selection = DATUM_WGS84;
-	int spheroid_selection = SPHEROID_WGS84;
+				int spheroid_selection = SPHEROID_WGS84;
         predefined_projection_is_selected =
             0 < gtk_option_menu_get_history(
             GTK_OPTION_MENU(predefined_projection_option_menu));

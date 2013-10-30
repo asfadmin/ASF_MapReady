@@ -302,9 +302,9 @@ make_geotiff_thumb(const char *input_metadata, char *input_data,
     // Now actually scale the data, and convert to bytes.
     // Note that we need 3 values, one for each of the RGB channels.
     for (ii = 0; ii < tsx*tsy; ++ii) {
-        float rval;
-        float gval;
-        float bval;
+        float rval=0.0;
+        float gval=0.0;
+        float bval=0.0;
         if (num_bands <= 2) {
             // If we don't have enough bands to do a 3-color image, just make
             // a grayscale thumbnail

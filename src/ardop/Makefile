@@ -14,11 +14,14 @@ LIBS  = \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(PNG_LIBS) \
+	$(HDF5_LIBS)\
+	$(NETCDF_LIBS) \
+	$(XML_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
 	$(ZLIB_LIBS)
 
-LIBC = $(LIBS) -lm 
+LIBC = $(LIBS) -lm
 
 OBJS = ardop.o parse_cla.o
 

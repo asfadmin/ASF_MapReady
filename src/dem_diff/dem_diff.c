@@ -48,7 +48,6 @@ BUGS:
 *									      *
 ******************************************************************************/
 #include "asf.h"
-#include "cproj.h"
 #include "proj.h"                   
 #include "asf_meta.h"
 #include "libasf_proj.h"                             

@@ -114,8 +114,7 @@ int main (int argc, char *argv[])
            curIFDnum, tiff_hdr.tiff_diroff, tiff_hdr.tiff_diroff);
   }
 
-  /***** Get first IFD (a.k.a. 'Directory') *****//*
-  /*                                            */
+  /***** Get first IFD (a.k.a. 'Directory') *****/
   TIFFPrintDirectory(tiff, stdout, flags);
   printf("\n");
 

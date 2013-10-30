@@ -2571,7 +2571,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
       sprintf(outFile, "%s", cfg->general->out_name);
     
     // Check radiometry
-    radiometry_t radiometry;
+    radiometry_t radiometry=r_AMP;
     if (strcmp_case(cfg->calibrate->radiometry, "SIGMA") == 0)
       radiometry = r_SIGMA;
     else if (strcmp_case(cfg->calibrate->radiometry, "BETA") == 0)
@@ -3736,7 +3736,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     projection_type_t proj_type;
     datum_type_t datum;
     spheroid_type_t spheroid;
-    resample_method_t resample_method;
+    resample_method_t resample_method=RESAMPLE_NEAREST_NEIGHBOR;
     int multiband = 1;
     int band_num = 0;
     char *err=NULL;

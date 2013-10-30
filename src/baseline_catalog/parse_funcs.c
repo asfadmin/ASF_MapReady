@@ -4,6 +4,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include "asf.h"
 
 char *my_parse_string(char *p, char *s, int max_len)
 {

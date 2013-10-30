@@ -80,10 +80,6 @@ BUGS: None known
 #include "asf.h"
 #include "asf_meta.h"
 
-/* For floating point comparisons */
-#define MICRON 0.0000001
-#define FLOAT_EQUIVALENT(a, b) (abs(a - b) < MICRON ? 1 : 0)
-
 #define WINDOW_SIZE_MULTIPLIER 1
 
 #define VERSION 1.0
