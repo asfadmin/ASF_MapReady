@@ -111,6 +111,20 @@ src_subs = lib_subs + [
     "sr2gr",
     "gr2sr",
     "to_sr",
+    "deskew",
+    "metadata",
+    "resample",
+    "fill_holes",
+    "meta2envi",
+    "meta2xml",
+    "mosaic",
+    "llh2ls",
+    "smooth",
+    "farcorr",
+    "geoid_adjust",
+    "update_state",
+    "clm",
+    "populate_meta_field",
     ]
 
 # paths where the libraries will be built
@@ -123,7 +137,7 @@ globalenv.AppendUnique(LIBPATH = lib_build_paths)
 
 # common command line options
 globalenv.AppendUnique(CCFLAGS = ["-Wall", "-g"])
-globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined"] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
+globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined", "-Wl,-rpath=\\$$ORIGIN/../lib"] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
 
 # common include directories
 globalenv.AppendUnique(CPPPATH = ["."])
