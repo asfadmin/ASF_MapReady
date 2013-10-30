@@ -402,7 +402,7 @@ static void update_extents(int lineSAR, int sampSAR,
     if (line_hi > *line_max) *line_max = line_hi;
 }
 
-static void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
+void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
                     char *demFile, char *output_dir)
 {
     asfRequire(metaDEM->projection != NULL, "Requires projected DEM");
@@ -1251,11 +1251,8 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   */
   if (!metaDEM->projection) {
       // not a DEM?
-      if (metaDEM->general->image_data_type == MAGIC_UNSET_INT ||
-          metaDEM->general->image_data_type == 0)
+      if (metaDEM->general->image_data_type == UNKNOWN_IMAGE_DATA_TYPE)
       {
-          // MAGIC_UNSET_INT -- probably came directly from a .ddr
-          // write a metadata file with the proper image_data_type.
           metaDEM->general->image_data_type = DEM;
           meta_write(metaDEM, demFile);
       } else {

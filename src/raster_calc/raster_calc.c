@@ -79,6 +79,7 @@ BUGS:
 
 #include "asf.h"
 #include "asf_meta.h"
+#include "asf_raster.h"
 #include "expression.h"
 
 #define MAXIMGS 20

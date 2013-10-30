@@ -782,7 +782,7 @@ void shape_csv_init(char *inFile, csv_meta_column_t *meta_column_info,
 		    int num_meta_cols, int num_data_cols)
 {
   DBFHandle dbase;
-  SHPHandle shape;
+  SHPHandle shape=NULL;
 
   // Initialize output
   char *dbaseFile = appendExt(inFile, ".dbf");

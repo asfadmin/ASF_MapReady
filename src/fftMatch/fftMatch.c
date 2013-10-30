@@ -87,7 +87,7 @@ void usage(char *name);
 
 int main(int argc,char **argv)
 {
-  char *corrFile=NULL,*descFile=NULL,*inFile1,*inFile2;
+  char *corrFile=NULL,*descFile=NULL,*inFile1=NULL,*inFile2=NULL;
   extern int optind;            /* argv index of the next argument */
   extern char *optarg;          /* current argv[] */
   int c;                        /* option letter from getopt() */

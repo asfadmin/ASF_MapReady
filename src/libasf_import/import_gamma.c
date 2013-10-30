@@ -679,7 +679,7 @@ void import_gamma(char *dataName, char *metaName, char *slaveName,
                   char *igramName, char *cohName, char *baselineName, 
 		  int complexGammaFlag, char *outBaseName)
 {
-  meta_parameters *metaIn, *metaOut;
+  meta_parameters *metaIn, *metaOut=NULL;
   FILE *fpIn, *fpOut;
   float *floatBuf, *floatAmpBuf, *floatPhaseBuf, amp;
   complexFloat *floatCpxBuf;

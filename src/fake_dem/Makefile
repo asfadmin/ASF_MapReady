@@ -11,6 +11,7 @@ LIBS  = \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	$(GLIB_LIBS) \
 	$(JPEG_LIBS) \
 	$(PNG_LIBS) \

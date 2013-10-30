@@ -39,13 +39,7 @@ clean:
 # DO NOT DELETE
 
 Eci.o: Eci.h CoordGeodetic.h Globals.h Util.h Vector.h Julian.h Timespan.h
-Julian.o: Globals.h Julian.h Timespan.h Util.h /usr/include/sys/time.h
-Julian.o: /usr/include/features.h /usr/include/sys/cdefs.h
-Julian.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
-Julian.o: /usr/include/gnu/stubs-64.h /usr/include/bits/types.h
-Julian.o: /usr/include/bits/typesizes.h /usr/include/time.h
-Julian.o: /usr/include/bits/time.h /usr/include/sys/select.h
-Julian.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+Julian.o: Globals.h Julian.h Timespan.h Util.h
 Observer.o: Observer.h CoordGeodetic.h Globals.h Util.h CoordTopographic.h
 Observer.o: Julian.h Timespan.h Eci.h Vector.h
 OrbitalElements.o: OrbitalElements.h Tle.h Globals.h Util.h Julian.h

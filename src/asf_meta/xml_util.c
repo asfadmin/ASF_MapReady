@@ -307,7 +307,7 @@ int xml_get_children_count(xmlDoc *doc, char *format, ...)
 {
   va_list ap;
   char str[100000];
-  int count;
+  int count=0;
   
   va_start(ap, format);
   vsnprintf(str, 99999, format, ap);
