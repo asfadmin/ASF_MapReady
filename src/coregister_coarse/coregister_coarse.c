@@ -114,7 +114,7 @@ void WriteFicoControl(char *,int,int);
 
 int main(int argc, char **argv)
 {
-	int multiLook;
+	int multiLook=0;
 	char img1[BUFFER],img2[BUFFER];
 	char szBaseFile[BUFFER], szCtrlFile[BUFFER];
 	char metaFile[BUFFER],meta1[BUFFER],meta2[BUFFER];
@@ -184,7 +184,7 @@ void execute(char *cmd)
 
 	/* Report (& log) the command line */
 	sprintf(report,"\nExecuting: %s\n",cmd);
-	printf(report);
+	printf("%s", report);
 	fflush(NULL);
 	if (logflag) {
 		printLog(report);
@@ -232,7 +232,7 @@ void cpx_2_amp_byte(char *img, int multiLook)
 
 void CreateFicoControl(char *ctrl,char *img1,char *img2, int multiLook)
 {
-	float offX,offY;
+	float offX=0.0, offY=0.0;
 	char cmd[SIZEOF_CMD];
 	char tmp_cmd[SIZEOF_CMD];
 	char *offsetF="res_offsets";

@@ -38,6 +38,7 @@
 #include <asf.h>
 #include <asf_meta.h>
 #include <asf_raster.h>
+#include <asf_geocode.h>
 #include <asf_license.h>
 #include <asf_contact.h>
 

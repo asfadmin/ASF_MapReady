@@ -56,10 +56,8 @@ void estdop(FILE *fp, int sl, int nl, double *t1, double *t2, double *t3, double
   double line[fft_len];
   double sumi[sum_lines];
   double tsum=0.0;
-  double cnt = 0.0;
-  int   fftlen;
   int   len = 13680;
-  int   k,i,kk, start, end;
+  int   k,i,kk;
   FILE  *fpout;
   complexFloat *a, *b;
   fftwf_plan plonga, phalfa, plongb, phalfb;

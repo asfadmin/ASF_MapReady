@@ -44,7 +44,6 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
     char  d_temp[DDSTCT][DDSYLN];   /* temporary for squeezed strings        */
     char *junk_temp,hostddr[1024];
     unsigned char *dbuf;            /* pointer to area where data is stuffed */
-    int ii;                         /* Index for corresponding metadata      */
 
     /* Ensure that required parameters were specified.
     --------------------------------------------------*/

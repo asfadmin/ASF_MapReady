@@ -11,7 +11,7 @@ char **extract_band_names(char *bands, int band_count)
   char *t_bands;
   char *t_channel;
   char *ptrptr;
-  char **band_ary;
+  char **band_ary=NULL;
   int i;
 
   // First do the obvious for single-band images.

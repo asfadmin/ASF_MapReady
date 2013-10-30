@@ -558,7 +558,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     unsigned long pro_zone; // UTM zone (UTM only)
     short proj_coords_trans = UNKNOWN_PROJECTION_TYPE;
     short pcs;
-    short geokey_datum;
+    short geokey_datum=0;
     double false_easting = MAGIC_UNSET_DOUBLE;
     double false_northing = MAGIC_UNSET_DOUBLE;
     double lonOrigin = MAGIC_UNSET_DOUBLE;
@@ -2822,7 +2822,7 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
                   orientation == ORIENTATION_LEFTBOT  ? "LEFT BOTTOM" : "UNKNOWN");
   }
   // Check for valid row number
-  if (row < 0 || row >= height) {
+  if (row >= height) {
     asfPrintError("Invalid row number (%d) found.  Valid range is 0 through %d\n",
                   row, height - 1);
   }
@@ -2999,7 +2999,7 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, unsigned long row, i
                   orientation == ORIENTATION_LEFTBOT  ? "LEFT BOTTOM" : "UNKNOWN");
   }
   // Check for valid row number
-  if (row < 0 || row >= height) {
+  if (row >= height) {
     asfPrintError("Invalid row number (%d) found.  Valid range is 0 through %d\n",
                   row, height - 1);
   }

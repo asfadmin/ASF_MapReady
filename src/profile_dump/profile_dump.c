@@ -59,7 +59,7 @@ main(int argc, char *argv[])
   buffer = (float *) MALLOC (sizeof(float) * inMeta->general->sample_count  * 1 );
 //  printf(" created memory buffer \n");
   in = fopenImage(infile, "rb");
-  if (argv[3]="x")
+  if (strcmp_case(argv[3],"x") == 0)
   {
 	 
 	  blockSize = get_float_line(in,inMeta,tline,buffer);

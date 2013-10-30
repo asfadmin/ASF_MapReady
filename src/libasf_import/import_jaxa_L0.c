@@ -1267,7 +1267,7 @@ void validate_avnir_SOI_and_get_frame_time (FILE *in, unsigned char *buf, int *i
 int read_write_avnir_jpeg_frame(FILE *in, unsigned char *hdr_buf, unsigned char *buf, int *idx,
                                  int band_no, int *valid, int first_vcdu, int *last_vcdu_ctr, FILE *jpeg)
 {
-    int i, num_read, success = 1;
+    int i, num_read=0, success = 1;
     unsigned char c, mID;
     unsigned int payload_length;
 
