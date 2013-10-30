@@ -17,7 +17,7 @@ localenv.AppendUnique(LIBS = [
 
 bins = localenv.Program("sample_plugin", ["sample_plugin.c"])
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
 
 # run the unit test, and set its dependencies
 test_result = localenv.UnitTest(

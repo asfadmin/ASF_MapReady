@@ -30,11 +30,11 @@ bins = localenv.Program("proj2proj", [
     "new.c",
 ])
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
 
 shares = localenv.File([
     "proj2proj.glade",
     "proj2proj_icon.ico",
 ])
 
-globalenv.Install(globalenv["inst_dirs"]["shares"], shares)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)

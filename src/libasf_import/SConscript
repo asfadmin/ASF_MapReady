@@ -77,5 +77,5 @@ libs = localenv.SharedLibrary("libasf_import", [
         "import_seasat_h5.c",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
 

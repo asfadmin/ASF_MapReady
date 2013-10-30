@@ -45,6 +45,6 @@ docs = localenv.File([
     "metadata.man",
 ])
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
-globalenv.Install(globalenv["inst_dirs"]["shares"], shares)
-globalenv.Install(globalenv["inst_dirs"]["docs"], docs)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
+localenv.Install(globalenv["inst_dirs"]["docs"], docs)

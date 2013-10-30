@@ -17,11 +17,11 @@ localenv.AppendUnique(LIBS = [
 
 bins = localenv.Program("mdv", Glob("*.c"))
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
 
 shares = localenv.File([
     "mdv.glade",
     "mdv.ico",
 ])
 
-globalenv.Install(globalenv["inst_dirs"]["shares"], shares)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
