@@ -20,5 +20,5 @@ localenv.AppendUnique(LIBS = [
 bins = localenv.Program("fit_warp", Glob("*.c"))
 docs = localenv.File(["fit_warp.1"])
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
-globalenv.Install(globalenv["inst_dirs"]["docs"], docs)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["docs"], docs)

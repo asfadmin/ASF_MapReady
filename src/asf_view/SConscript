@@ -20,7 +20,7 @@ localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs libpng15")
 localenv.ParseConfig("pkg-config --cflags --libs libtiff-4")
 localenv.ParseConfig("pkg-config --cflags --libs shapelib")
-
+localenv.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
 
 localenv.AppendUnique(LIBS = [
     "m",
@@ -74,18 +74,17 @@ bins = localenv.Program("asf_view", [
         "read_seasat_h5.c",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
 
 shares = localenv.File([
         "startup.jpg",
         "asf_view.glade",
         "asf_view_icon.ico",
-        "#src/metadata_gui/mdv.ico",
         "#src/asf/pixmaps/google_earth_button.gif",
         "#src/asf/pixmaps/save_as.png",
         "#src/asf/pixmaps/folder_s.png",
         "#src/asf/pixmaps/save_as.png",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["shares"], shares)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
 

@@ -17,4 +17,4 @@ localenv.AppendUnique(LIBS = [
 
 bins = localenv.Program("llh2ls", Glob("*.c"))
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
