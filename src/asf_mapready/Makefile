@@ -36,13 +36,13 @@ LIBS  = \
 
 CFLAGS += -Wall -Werror
 
-OBJS  = asf_convert.o
+OBJS  = asf_mapready.o
 
-all:    asf_convert clean
+all:    asf_mapready clean
 
 asf_convert: $(OBJS)
-	$(CC) $(CFLAGS) -o asf_convert $(OBJS) $(LIBS) $(LDFLAGS)
-	mv asf_convert$(BIN_POSTFIX) $(BINDIR)/$(DEST_TARGET)$(BIN_POSTFIX)
+	$(CC) $(CFLAGS) -o asf_mapready $(OBJS) $(LIBS) $(LDFLAGS)
+	mv asf_mapready$(BIN_POSTFIX) $(BINDIR)/$(DEST_TARGET)$(BIN_POSTFIX)
 
 clean:
 	rm -f core $(OBJS) *.o *~

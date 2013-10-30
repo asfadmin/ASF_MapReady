@@ -12,7 +12,7 @@
 //
 // This program just adds a given offset to all pixels in an image, producing
 // an output image.  To add this to the GUI, you would need to modify the
-// "plugins.cfg" file in the MapReady directory (asf_convert_gui).  Add
+// "plugins.cfg" file in the MapReady directory (mapready).  Add
 // lines like the following:
 //
 // Name=Sample
