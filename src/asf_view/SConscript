@@ -20,7 +20,7 @@ localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs libpng15")
 localenv.ParseConfig("pkg-config --cflags --libs libtiff-4")
 localenv.ParseConfig("pkg-config --cflags --libs shapelib")
-
+localenv.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
 
 localenv.AppendUnique(LIBS = [
     "m",
