@@ -14,6 +14,22 @@ localenv.AppendUnique(CPPPATH = [
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libpng")
+localenv.ParseConfig("pkg-config --cflags --libs libtiff-4")
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+localenv.ParseConfig("pkg-config --cflags --libs netcdf")
+
+localenv.AppendUnique(LIBS = [
+    "m",
+    "hdf5",
+    "hdf5_hl",
+    "jpeg",
+    "asf",
+    "asf_meta",
+    "asf_raster",
+    "asf_proj",
+    "asf_geocode",
+])
 
 libs = localenv.SharedLibrary("libasf_export", [
         "asf_export.c",

@@ -6,19 +6,15 @@ localenv.AppendUnique(CPPPATH = [
         "#include/",
         "#src/asf_meta/",
         "#src/libasf_proj/",
-        "#src/libasf_raster/",
         ])
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
-localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 
 localenv.AppendUnique(LIBS = [
     "asf",
-    "asf_raster",
+    "asf_meta",
 ])
 
-bins = localenv.Program("fit_warp", Glob("*.c"))
-docs = localenv.File(["fit_warp.1"])
+bins = localenv.Program("meta2xml", Glob("*.c"))
 
 globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
-globalenv.Install(globalenv["inst_dirs"]["docs"], docs)

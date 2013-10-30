@@ -1,5 +1,3 @@
-import os.path
-
 Import("globalenv")
 localenv = globalenv.Clone()
 
@@ -13,13 +11,10 @@ localenv.AppendUnique(CPPPATH = [
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 
 localenv.AppendUnique(LIBS = [
+    "m",
+    "asf",
+    "asf_meta",
 ])
-
-head_build_dir, tail_build_dir = os.path.split(Dir(".").path)
-
-localenv.AppendUnique(LIBPATH = [
-])
-
 
 libs = localenv.SharedLibrary("libasf_remap", Glob("*.c"))
 

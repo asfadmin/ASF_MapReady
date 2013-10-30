@@ -54,15 +54,29 @@ f.write("#define ASF_BIN_DIR \"" + inst_dirs["bins"] + "\"\n")
 f.write("#define ASF_DOC_DIR \"" + inst_dirs["docs"] + "\"\n")
 f.close()
 
-# common command line options
-globalenv.AppendUnique(CCFLAGS = ["-Wall", "-g"])
-
-# common include directories
-globalenv.AppendUnique(CPPPATH = ["."])
-
 # get all the subdirectories under the source root directory, and make these the default targets
 #src_subs = os.walk(source_root).next()[1]
-src_subs = [
+lib_subs = [
+    "libasf_import",
+    "libasf_terrcorr",
+    "libasf_ardop",
+    "libasf_raster",
+    "plan",
+    "asf",
+    "libasf_sar",
+    "libasf_geocode",
+    "libasf_proj",
+    "asf_fft",
+    "libasf_vector",
+    "libasf_convert",
+    "asf_meta",
+    "sgpsdp",
+    "libasf_export",
+    "libasf_metadata",
+    "libasf_remap",
+]
+
+src_subs = lib_subs + [
     "add_aux_band",
     "asf_view",
     "asf_convert_gui",
@@ -80,28 +94,12 @@ src_subs = [
     "brs2jpg",
     "diffimage",
     "diffmeta",
-    "libasf_import",
-    "libasf_terrcorr",
-    "libasf_ardop",
-    "libasf_raster",
-    "plan",
-    "asf",
-    "libasf_sar",
-    "libasf_geocode",
-    "libasf_proj",
-    "asf_fft",
-    "libasf_vector",
-    "libasf_convert",
-    "asf_meta",
-    "sgpsdp",
-    "libasf_export",
     "trim",
     "make_overlay",
     "asf_kml_overlay",
     "sample_plugin",
     "metadata_gui",
     "proj2proj",
-    "libasf_metadata",
     "refine_geolocation",
     "shift_geolocation",
     "flip",
@@ -109,9 +107,40 @@ src_subs = [
     "analyze_yaw",
     "fftMatch",
     "fit_warp",
-    "libasf_remap",
     "remap",
+    "sr2gr",
+    "gr2sr",
+    "to_sr",
+    "deskew",
+    "metadata",
+    "resample",
+    "fill_holes",
+    "meta2envi",
+    "meta2xml",
+    "mosaic",
+    "llh2ls",
+    "smooth",
+    "farcorr",
+    "geoid_adjust",
+    "update_state",
+    "clm",
+    "populate_meta_field",
     ]
+
+# paths where the libraries will be built
+rpath_link_paths = [os.path.join(build_base_dir, platform + "." + build_type, lib_sub) for lib_sub in lib_subs]
+
+lib_build_paths = [os.path.join("#", rpath_link_path) for rpath_link_path in rpath_link_paths]
+
+# tell the linker where to find the libraries during the link operation
+globalenv.AppendUnique(LIBPATH = lib_build_paths)
+
+# common command line options
+globalenv.AppendUnique(CCFLAGS = ["-Wall", "-g"])
+globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined", "-Wl,-rpath=\\$$ORIGIN/../lib"] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
+
+# common include directories
+globalenv.AppendUnique(CPPPATH = ["."])
 
 # do the actual building
 for src_sub in src_subs:
