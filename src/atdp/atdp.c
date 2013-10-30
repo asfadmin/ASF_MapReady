@@ -90,7 +90,7 @@ int main (int argc, char *argv [])
   struct ARDOP_PARAMS params;
   meta_parameters *meta;
   complexFloat *image_in, *image_out, impulse_response, sum;
-  double lines, samples;
+  double lines=0.0, samples=0.0;
   double time, range_time, azimuth_time, beam_center_time, pulse_duration;
   double pulse_envelope, antenna_beam_pattern, wavelength, chirp_slope;
   double slant_range, pulse_repetition_frequency, range_sampling_rate;

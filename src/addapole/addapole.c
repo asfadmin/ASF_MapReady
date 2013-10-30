@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     for (l = 0; l < nl; ++l) {
         get_float_line(inDEM, meta, l, demLine);
         for (i = 0; i < ns; ++i) {
-            double x;
+            double x=0.0;
 
             // sinc and pole use circular posts, real distance
             // pyr uses distance measured along the gridlines

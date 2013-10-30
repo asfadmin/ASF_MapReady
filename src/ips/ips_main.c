@@ -152,7 +152,7 @@ int checkForOption(char* key, int argc, char* argv[])
 
 int main(int argc, char *argv[])
 {
-  dem_config *cfg;
+  dem_config *cfg=NULL;
   int createFlag = FLAG_NOT_SET;
   char configFile[255];
 

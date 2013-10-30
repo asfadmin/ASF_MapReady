@@ -1237,7 +1237,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     strcpy(in_file, out_file);
     sprintf(out_file, "%s%c%s_resample", tmp_folder, DIR_SEPARATOR, get_basename(file));
     meta_parameters *meta = meta_read(in_file);
-    double xsf, ysf;
+    double xsf=0.0, ysf=0.0;
     size_t isf;
     if (scale_factor > 0.0) {
         isf = scale_factor >= 0.5 ? (size_t)(scale_factor + 0.5) : 1.0;
@@ -1404,7 +1404,7 @@ int is_stf_level0(const char *file)
             inDataName = (char *)MALLOC(sizeof(char)*2048);
             sprintf(inDataName, "%s%s", dir, filename);
             if (fileExists(inDataName)) {
-                char *s, *t, *u;
+                char *s=NULL, *t=NULL, *u=NULL;
                 inMetaName = (char *)MALLOC(sizeof(char)*2048);
 
                 // Try basename.XXX.par

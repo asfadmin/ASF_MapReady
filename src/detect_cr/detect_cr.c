@@ -399,8 +399,8 @@ int main(int argc, char *argv[])
     else {
       sprintf(tmp, "   WARNING: Corner reflector %s outside the image boundaries!\n",
 	      crID);
-      printf(tmp);
-      fprintf(fpOut, tmp);
+      printf("%s", tmp);
+      fprintf(fpOut, "%s", tmp);
     }
   }
   FCLOSE(fpIn);

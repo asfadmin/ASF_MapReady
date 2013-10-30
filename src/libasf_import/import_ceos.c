@@ -1020,7 +1020,7 @@ static void status_data_type(meta_parameters *meta, data_type_t data_type,
   if (data_type >= COMPLEX_BYTE)
     asfPrintStatus("   Input data type: single look complex\n");
   else if (meta->projection != NULL &&
-       meta->projection->type != MAGIC_UNSET_CHAR) {
+       meta->projection->type != UNKNOWN_PROJECTION) {
     // This must be ScanSAR
     if (meta->projection->type != SCANSAR_PROJECTION &&
     strncmp(meta->general->sensor, "RSAT", 4) == 0 &&

@@ -240,7 +240,7 @@ int get_basic_info(const char *inFile, char *sensor, char *mode,
 static void write_file_list(struct srf_file srf, char *outputDir, int *tracks)
 {
   FILE *fp;
-  int minOrbit, maxOrbit, nTracks, track, orbit;
+  int minOrbit=0, maxOrbit, nTracks=0, track;
   char list[255], phase[5];
   
   // Set the number of tracks according to the sensor

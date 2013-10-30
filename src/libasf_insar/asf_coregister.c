@@ -430,7 +430,7 @@ int asf_coregister(int datatype, char *coregType, char *baseName, int deskew,
   FILE *fp;
   char tmp[255], masterPatch[255], slavePatch[255], coregSlave[255];
   char baseFile[255], *dopFile;
-  int delta, nOffX, nOffY;
+  int delta, nOffX=0, nOffY=0;
   struct INPUT_ARDOP_PARAMS *ardop_params;
 
   // level zero data - requires processing first
