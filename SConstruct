@@ -111,6 +111,20 @@ src_subs = lib_subs + [
     "sr2gr",
     "gr2sr",
     "to_sr",
+    "deskew",
+    "metadata",
+    "resample",
+    "fill_holes",
+    "meta2envi",
+    "meta2xml",
+    "mosaic",
+    "llh2ls",
+    "smooth",
+    "farcorr",
+    "geoid_adjust",
+    "update_state",
+    "clm",
+    "populate_meta_field",
     ]
 
 # paths where the libraries will be built
