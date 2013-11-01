@@ -449,7 +449,7 @@ int main(int argc, char *argv[])
     char *uavsar_type=NULL;
     char *prcPath=NULL;
     char format_type_str[256]="";
-    input_format_t format_type;
+    input_format_t format_type=UNKNOWN_INPUT_FORMAT;
     char band_id[256]="";
     char data_type[256]="";
     char image_data_type[256]="";

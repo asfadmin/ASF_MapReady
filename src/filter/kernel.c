@@ -53,7 +53,7 @@ double calc_std_dev(float *inbuf, int nSamples, int xSample, int kernel_size,
 float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples, 
 	     int xSample, int kernel_size)
 {                    
-  float sum = 0.0, mean, standard_deviation, value;         
+  float sum = 0.0, mean, standard_deviation, value=MAGIC_UNSET_DOUBLE;         
   int half = (kernel_size-1)/2, base = (xSample-half), total = 0;
   double ci, cu, cmax, center, a, b, d, rf;
   register int i, j;

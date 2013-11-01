@@ -1,0 +1,30 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#include/",
+        "#src/asf_meta/",
+        "#src/libasf_proj/",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+
+localenv.AppendUnique(LIBS = [
+    "asf",
+    "asf_meta",
+])
+
+bins = [
+    localenv.Program("meta2envi", [
+        "meta2envi.c",
+        "meta2envi_help.c",
+    ]),
+
+    localenv.Program("envi2meta", [
+        "envi2meta.c",
+        "envi2meta_help.c",
+    ]),
+]
+
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)

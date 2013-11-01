@@ -39,6 +39,8 @@ BUGS:
 #include <math.h>
 #include <asf_meta.h>
 #include <asf_license.h>
+#include "dateUtil.h"
+#include "asf_raster.h"
 #include "seasat.h"
 
 #define CPX_PIX 6840
@@ -102,6 +104,7 @@ hms_time   	s_time;			// start time of this segment
 void give_usage(int argc, char *argv[]);
 int get_values(FILE *fp,SEASAT_header_ext *s);	// read values from a header file
 int read_hdrfile(char *infile);			// read correct values from header file
+int get_median(int *hist, int size);
 int read_roi_infile(char *infile);		// read the ROI input file values
 void byteswap(void *buf,int len);		// just what it says
 int sr2gr_pixsiz(const char *infile, const char *outfile, float srPixSize);
@@ -119,7 +122,7 @@ double C = 299792458.0;
 
 int    USE_CLOCK_DRIFT = 0;   // switch to control application of clock drift
 
-main(int argc, char *argv[]) 
+int main(int argc, char *argv[]) 
 {
   FILE *fpin, *fpout;
   
@@ -131,13 +134,12 @@ main(int argc, char *argv[])
   int cla,nl;
   int i,j,k,line;
   int olines, osamps;
-  int oline, osamp;
+  int oline;
   double t;
   char basefile[256], infile[256], outbasefile[256], outfile[256], roifile[256];
   char *hdrfile;
   
   ymd_date date;
-  hms_time time;
   meta_parameters *meta;
 
   char *mon[13]={"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep",
@@ -209,7 +211,7 @@ main(int argc, char *argv[])
     int cnt;
     int year, month, day, hour, min;
     double sec, thisSec;
-    FILE *fpvec, *fpo;
+    FILE *fpvec;
     char tmp[256];
   
     sprintf(tmp,"/home/talogan/Seasat_State_Vectors/%3i.ebf",start_date);
@@ -311,13 +313,9 @@ main(int argc, char *argv[])
   zdot = midVec.vel.z;
   
   double geocentric_lat_nadir = asin(z / sqrt (x*x+y*y+z*z));
-  double lon_nadir = atan2(x,y)*180/M_PI;
   double RE_nadir = (RE * RP) / sqrt((RP*cos(geocentric_lat_nadir)*RP*cos(geocentric_lat_nadir)) +
   				     (RE*sin(geocentric_lat_nadir)*RE*sin(geocentric_lat_nadir)));
   double Rsc = sqrt(x*x+y*y+z*z);
-  double geodetic_lat_nadir = atan(tan(geocentric_lat_nadir)/(1-r_e2wgs84));
-  double lat_nadir = geodetic_lat_nadir*180/M_PI;
-  double gamma = geodetic_lat_nadir - geocentric_lat_nadir;
     
   printf("Filling in meta->general parameters\n");
   
@@ -664,7 +662,7 @@ int read_hdrfile(char *infile)
   FILE *fp = fopen(infile,"r");
   
   int val, i, end_line;
-  double dtmp, t, t1;
+  double dtmp;
   
   int clock_drift_hist[MAX_CLOCK_DRIFT];
   int clock_drift_median;
@@ -700,7 +698,7 @@ int read_hdrfile(char *infile)
     
     printf("APPLYING CLOCK DRIFT TO IMAGE TIMING.\n");
     clock_drift_median = get_median(clock_drift_hist,MAX_CLOCK_DRIFT);
-    printf("\tclock_drift_median     = %li \n",clock_drift_median);
+    printf("\tclock_drift_median     = %i \n",clock_drift_median);
     
     clock_shift = (double) clock_drift_median / 1000.0;
     start_sec += clock_shift;
@@ -713,7 +711,7 @@ int read_hdrfile(char *infile)
 
   printf("Found start time: %i %i %lf\n",start_year, start_date, start_sec);
   fclose(fp);
-
+	return 0;
 }
 
 int get_values(FILE *fp,SEASAT_header_ext *s)

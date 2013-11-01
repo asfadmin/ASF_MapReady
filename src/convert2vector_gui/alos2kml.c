@@ -41,7 +41,7 @@ static void msg(const char *format, ...)
     //gtk_text_buffer_get_end_iter(tb, &end);
     //gtk_text_buffer_insert(tb, &end, buf, -1);
 
-    printf(buf);
+    printf("%s", buf);
 }
 
 static void add_to_kml(FILE *fp, AlosCsvInfo *info, char *header_line)

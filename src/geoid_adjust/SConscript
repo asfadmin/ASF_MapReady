@@ -1,0 +1,21 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#include/",
+        "#src/asf_meta/",
+        "#src/libasf_proj/",
+        "#src/libasf_geocode/",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+
+localenv.AppendUnique(LIBS = [
+    "asf",
+    "asf_geocode",
+])
+
+bins = localenv.Program("geoid_adjust", Glob("*.c"))
+
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)

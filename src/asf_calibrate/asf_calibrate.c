@@ -93,7 +93,7 @@ main (int argc, char *argv[])
   int NUM_ARGS = 3;
   int dbFlag = FALSE;
   int wh_scaleFlag = FALSE;
-  radiometry_t radiometry;
+  radiometry_t radiometry=r_AMP;
   char *inFile, *outFile, *radio;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);

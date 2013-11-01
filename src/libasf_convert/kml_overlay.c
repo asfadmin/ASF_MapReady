@@ -135,7 +135,7 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
 		    char *polsarpro, char *band, int zip)
 {
   meta_parameters *meta=NULL;
-  double pixel_size;
+  double pixel_size=0.0;
   int is_insar = isInSAR(inFile);
   if (is_insar)
     printf("InSAR file\n");

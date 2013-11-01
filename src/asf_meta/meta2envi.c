@@ -530,7 +530,7 @@ meta_parameters* envi2meta(envi_header *envi)
     meta->projection->re_major = envi->semimajor_axis;
     meta->projection->re_minor = envi->semiminor_axis;
     if (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
-      double re_major, re_minor;
+      double re_major=MAGIC_UNSET_DOUBLE, re_minor=MAGIC_UNSET_DOUBLE;
       if (meta->projection->datum == WGS72_DATUM)
 	datum2earth_radius(5, &re_major, &re_minor);
       else if (meta->projection->datum == WGS84_DATUM)

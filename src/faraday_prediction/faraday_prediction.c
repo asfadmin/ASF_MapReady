@@ -83,8 +83,8 @@ double interpolate(double x, double x_hi, double y_hi, double x_lo, double y_lo)
 double lookup_tec(char *codg_file, int hour, double clat, double clon)
 {
   double lat, lon1, lon2, dlat=2.5, dlon, lon, value;
-  double lo_lat, hi_lat, lo_lon, hi_lon;
-  double lo_lo_tec, lo_hi_tec, hi_lo_tec, hi_hi_tec;
+  double lo_lat=0.0, hi_lat, lo_lon, hi_lon;
+  double lo_lo_tec=0.0, lo_hi_tec=0.0, hi_lo_tec, hi_hi_tec;
   char line[255];
 
   // Get the high values

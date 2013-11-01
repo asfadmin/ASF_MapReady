@@ -78,7 +78,6 @@ BUGS:
 
 #include "asf_sar.h"
 #include "asf_meta.h"
-#include "cproj.h"
 #include "proj.h"
 
 #define VERSION 1.7
