@@ -423,7 +423,7 @@ main(int argc, char *argv[])
   meta->sar->multilook = 1;
   meta->sar->pitch = 0;
   meta->sar->roll = 0;
-  meta->sar->yaw = 0;
+  meta->sar->yaw = meta_yaw(meta, meta->general->line_count/2, meta->general->sample_count/2);
 ///  meta->sar->incid_a[0-5] = ???
 
   printf("Creating the meta->location block\n");
