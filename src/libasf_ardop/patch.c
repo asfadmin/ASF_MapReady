@@ -427,7 +427,7 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,
   if (s->imageType.gamma) {
     metaGamma=meta_copy(metaAmp);
     metaGamma->general->image_data_type = AMPLITUDE_IMAGE;
-    metaGamma->general->image_data_type = r_GAMMA;
+    metaGamma->general->radiometry = r_GAMMA;
     meta_write(metaGamma, f->out_gam);
     fp_gam=fopenImage(f->out_gam,openMode);
   }
