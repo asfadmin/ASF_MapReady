@@ -87,7 +87,6 @@ int main(int argc, char **argv)
   projection_type_t proj_type;
   datum_type_t datum;
   spheroid_type_t spheroid;
-  meta_projection *meta_proj;
   double lat, lon, projX, projY;
   int listFlag = FALSE;
   extern int currArg; /* from cla.h in asf.h... initialized to 1 */

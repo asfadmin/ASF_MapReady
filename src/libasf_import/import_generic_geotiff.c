@@ -68,8 +68,6 @@
 #define USER_DEFINED_KEY             32767
 #define BAND_NAME_LENGTH  12
 
-#define TIFFTAG_GDAL_NODATA          42113
-
 #ifdef USHORT_MAX
 #undef USHORT_MAX
 #endif
@@ -127,6 +125,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                          // Do NOT allocate less than MAX_BANDS bands since other tools will
                          // receive the 'ignore' array and may assume there are MAX_BANDS in
                          // the array, e.g. read_tiff_meta() in the asf_view tool.
+
+  _XTIFFInitialize();
 
   // Open the input tiff file.
   //TIFFErrorHandler oldHandler = TIFFSetWarningHandler(NULL);
@@ -558,7 +558,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     unsigned long pro_zone; // UTM zone (UTM only)
     short proj_coords_trans = UNKNOWN_PROJECTION_TYPE;
     short pcs;
-    short geokey_datum;
+    short geokey_datum=0;
     double false_easting = MAGIC_UNSET_DOUBLE;
     double false_northing = MAGIC_UNSET_DOUBLE;
     double lonOrigin = MAGIC_UNSET_DOUBLE;
@@ -1658,18 +1658,18 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   get_bands_from_citation(&num_found_bands, &band_str, empty, tmp_citation, num_bands);
   meta_statistics *stats = NULL;
   double mask_value = MAGIC_UNSET_DOUBLE;
+
+  // Look for a non-standard GDAL tag that contains the no data value
+  char* charDummy = NULL;
+  if (TIFFGetField(input_tiff,TIFFTAG_GDAL_NODATA,&charDummy)) {
+    if (strcmp_case( charDummy, "nan" ) != 0) {
+      mg->no_data = (double)atof(charDummy);
+    }
+  }
+
   if (!is_asf_geotiff) {
     asfPrintStatus("\nNo ASF-exported band names found in GeoTIFF citation tag.\n"
         "Band names will be assigned in numerical order.\n");
-
-    // Look for a non-standard GDAL tag that contains the no data value
-    void *data;
-    uint16 *counter;
-    int ret = TIFFGetField(input_tiff, TIFFTAG_GDAL_NODATA, &counter, &data);
-    if (ret)
-      mg->no_data = atof((char *)data);
-    else
-      mg->no_data = MAGIC_UNSET_DOUBLE;
   }
   else {
     // This is an ASF GeoTIFF so we must check to see if any bands are empty (blank)
@@ -2822,7 +2822,7 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
                   orientation == ORIENTATION_LEFTBOT  ? "LEFT BOTTOM" : "UNKNOWN");
   }
   // Check for valid row number
-  if (row < 0 || row >= height) {
+  if (row >= height) {
     asfPrintError("Invalid row number (%d) found.  Valid range is 0 through %d\n",
                   row, height - 1);
   }
@@ -2999,7 +2999,7 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, unsigned long row, i
                   orientation == ORIENTATION_LEFTBOT  ? "LEFT BOTTOM" : "UNKNOWN");
   }
   // Check for valid row number
-  if (row < 0 || row >= height) {
+  if (row >= height) {
     asfPrintError("Invalid row number (%d) found.  Valid range is 0 through %d\n",
                   row, height - 1);
   }
@@ -3713,4 +3713,3 @@ void get_look_up_table_name(char *citation, char **look_up_table)
     *look_up_table = (char *)MALLOC(256 * sizeof(char));
     strcpy(*look_up_table, "UNKNOWN");
 }
-

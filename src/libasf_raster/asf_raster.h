@@ -182,6 +182,9 @@ void apply_look_up_table_int(char *lutFile, int *in_buffer,
 int read_lut(char *lutFile, unsigned char *lut_buffer);
 int is_jasc_palette_lut(const char *name);
 
+// Prototypes from fit_warp.c
+int fit_warp(const char *offsetsFile, const char *imageName, const char *outName);
+
 // Prototypes from diffimage.c
 typedef enum {
   UNKNOWN_GRAPHICS_TYPE=0,

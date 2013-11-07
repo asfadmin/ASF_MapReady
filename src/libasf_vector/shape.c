@@ -724,7 +724,7 @@ static void write_dbase_field_to_csv(DBFHandle dbase, int record,
                                      int field, char *line)
 {
   DBFFieldType dbaseType;
-  char fieldName[25], *str;
+  char fieldName[25], *str=NULL;
   int nWidth, nDecimals, nValue;
   double fValue;
   const char *sValue;

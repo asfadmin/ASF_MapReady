@@ -399,7 +399,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
 
   // Azimuth time per pixel needs to be known for state vector propagation
   char **dataName;
-  double firstTime, centerTime;
+  double firstTime=0, centerTime;
   if (ceos->facility == CSTARS || ceos->facility == ESA ||
       ceos->facility == DPAF || ceos->facility == IPAF ||
       ceos->facility == DERA) {

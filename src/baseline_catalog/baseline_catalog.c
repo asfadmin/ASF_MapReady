@@ -8,14 +8,11 @@ void baseline_catalog(char *sensor, char *beam_mode, char *input_dir,
   struct dirent *dp;
   DIR *dir;
   FILE *fpTxt, *fpKml, *fpShape, *fpDB;
-  int i, track, nOrbits, nFrames, nPairs, nTracks, orbit;
+  int track, nOrbits, nFrames, nPairs, nTracks, orbit=0;
   report_level_t report = REPORT_LEVEL_STATUS;
   struct base_pair *base_pairs=NULL;
   struct srf_orbit *srf_orbit=NULL;
   char cmd[255], tmp_dir[1024], track_list[1024];
-  char m_sensor[10], s_sensor[10];
-  char phases[] = { 'A', 'B', 'C', 'D', 'F', 'G' };
-  int tracks[] = { 43, 43, 501, 43, 1784, 501 };
 
   // Some more error checking on beam modes
   if (strcmp_case(sensor, "R1") == 0) {

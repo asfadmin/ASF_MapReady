@@ -5,7 +5,12 @@ localenv.AppendUnique(CPPPATH = [
         "#include/",
         "#src/asf/",
         ])
-    
+
+localenv.AppendUnique(LIBS = [
+    "m",
+    "asf",
+])
+
 libs = localenv.SharedLibrary("asf_fft", [
         "dxpose.c",
         "fft2d.c",
@@ -14,10 +19,10 @@ libs = localenv.SharedLibrary("asf_fft", [
         "fftext.c",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
 
 mans = localenv.File([
         "asf_fft.man",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["mans"], mans)
+localenv.Install(globalenv["inst_dirs"]["mans"], mans)

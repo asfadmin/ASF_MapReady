@@ -21,7 +21,7 @@ int isspace(int c);
  * floating-point number. */
 double lzDouble(char *lzN,char *desiredParam,int *err)
 {
-    double ret;
+    double ret=MAGIC_UNSET_DOUBLE;
     char *str;// = NULL;
 
     str = lzStr(lzN,desiredParam,err);
