@@ -388,7 +388,7 @@ int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMslant,
 {
 	float *grDEMline,*srDEMline,*outAmpLine,*inMaskLine;
 	register int line,nl;
-	FILE *inDEM,*outDEMsr,*outDEMgr,*outAmp,*inMask=NULL;
+	FILE *inDEM,*outDEMsr,*outDEMgr=NULL,*outAmp,*inMask=NULL;
 	meta_parameters *metaIn, *metaDEM, *metaInMask=NULL, *metaGR=NULL;
 
 /* Get metadata */

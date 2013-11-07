@@ -184,7 +184,7 @@ static int find_dataset(char *inDataName, char *dataset)
 	return ret;
 }
 
-static int compare_values(const int *a, const int *b)
+static int compare_values(const void *av, const void *bv)
 {
   int *a = (int*)av;
   int *b = (int*)bv;

@@ -383,7 +383,8 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
 	ssize_t in_y
 	  = (chunk_y[current_chunk_pixel] - ipb->startY) / ipb->perY;
 
-	float_image_sample_method_t sample_method;
+	float_image_sample_method_t 
+          sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
 	if (resample_method == RESAMPLE_NEAREST_NEIGHBOR)
 		sample_method = FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
 	else if (resample_method == RESAMPLE_BILINEAR)
