@@ -19,4 +19,4 @@ localenv.AppendUnique(LIBS = [
 
 bins = localenv.Program("write_ppf", Glob("*.c"))
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)

@@ -45,5 +45,5 @@ libs = localenv.SharedLibrary("libasf_raster", [
         "fit_warp.c",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
 

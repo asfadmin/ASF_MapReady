@@ -47,5 +47,5 @@ libs = localenv.SharedLibrary("libasf_sar", [
         "c2p.c",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
 

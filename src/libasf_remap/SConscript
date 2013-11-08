@@ -18,4 +18,4 @@ localenv.AppendUnique(LIBS = [
 
 libs = localenv.SharedLibrary("libasf_remap", Glob("*.c"))
 
-globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)

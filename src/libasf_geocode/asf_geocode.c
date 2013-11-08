@@ -274,7 +274,7 @@ project_lat_long_pseudo_arr(project_parameters_t* UNUSED(pps), double *lat,
 	datum_type_t UNUSED(datum))
 {
   long ii;
-  double *pz;
+  double *pz=NULL;
   *x = (double *) MALLOC(sizeof(double) * length);
   *y = (double *) MALLOC(sizeof(double) * length);
   if (z) {
@@ -1684,8 +1684,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   }
 
   // NOTE: If we ever allow the user to provide a spheroid
-  // selection on the command line (asf_convert, asf_geocode)
-  // or via the GUI (asf_convert_gui) then this will need
+  // selection on the command line (asf_mapready, asf_geocode)
+  // or via the GUI (mapready) then this will need
   // to change, but for now, associate a spheroid with
   // the datum based on standard use.
 

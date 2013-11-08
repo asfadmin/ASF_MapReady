@@ -27,4 +27,4 @@ bins = [
     ]),
 ]
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
