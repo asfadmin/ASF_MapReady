@@ -21,11 +21,11 @@ void shape_smap_init(char *inFile)
     asfPrintError("Could not create database file '%s'\n", dbaseFile);
 
   // Add fields to database
-  if (DBFAddField(dbase, "GRANULE", FTString, 255, 0) == -1)
+  if (DBFAddField(dbase, "GRANULE", FTString, 100, 0) == -1)
     asfPrintError("Could not add GRANULE field to database file\n");
   if (DBFAddField(dbase, "START_TIME", FTString, 30, 0) == -1)
     asfPrintError("Could not add START_TIME field to database file\n");
-  if (DBFAddField(dbase, "STOP_TIME", FTString, 30, 0) == -1)
+  if (DBFAddField(dbase, "END_TIME", FTString, 30, 0) == -1)
     asfPrintError("Could not add STOP_TIME field to database file\n");
   if (DBFAddField(dbase, "ORBIT_DIR", FTString, 15, 0) == -1)
     asfPrintError("Could not add ORBIT_DIR field to database file\n");

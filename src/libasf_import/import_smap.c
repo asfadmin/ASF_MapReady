@@ -72,6 +72,7 @@ static int get_float_attr(hid_t object, char *name)
   return value;
 }
 
+/*
 static int get_int_attr(hid_t object, char *name)
 {
   int value=MAGIC_UNSET_INT;
@@ -86,6 +87,7 @@ static int get_int_attr(hid_t object, char *name)
 
   return value;
 }
+*/
 
 static char *get_string_attr(hid_t object, char *name)
 {
@@ -184,7 +186,7 @@ static int find_dataset(char *inDataName, char *dataset)
 	return ret;
 }
 
-static int compare_values(const int *a, const int *b)
+static int compare_values(const void *av, const void *bv)
 {
   int *a = (int*)av;
   int *b = (int*)bv;
@@ -414,7 +416,7 @@ static void read_smap_bounds(char *inDataName, float latUL, float lonUL,
   }
 }
 
-static update_geolocation(char *inDataName, char *outDataName) 
+static void update_geolocation(char *inDataName, char *outDataName) 
 {
 	float lat, lon;
 	meta_parameters *meta = meta_read(outDataName);
@@ -595,7 +597,6 @@ static void read_smap_constraint(char *dataName, int band,
   dataspace = H5Dget_space(dataset);
   hsize_t count[2], pixels[1], offset[2];
   int ns = meta->general->sample_count;
-  int nl = meta->general->line_count;
   meta_get_latLon(meta, line+height/2, ns/2, 0.0,
 		  &meta->general->center_latitude, 
 		  &meta->general->center_longitude);
@@ -648,7 +649,7 @@ static int read_smap_data(char *dataName, int band,
 			   char *inDataName, char *outDataName)
 {
 	int ret = FALSE;
-  FILE *fp;
+  FILE *fp=NULL;
   meta_parameters *meta = meta_read(inDataName);
   hid_t file, group, dataset, dataspace, memspace;
   file = H5Fopen(inDataName, H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -741,123 +742,132 @@ void import_smap(const char *inBaseName, const char *outBaseName,
   meta->general->center_latitude = (double) lat;
   meta->general->center_longitude = (double) lon;
 	strcpy(meta->general->bands, "");
-	
-  // Read data
+	int band = 0;
+  if (find_dataset(inDataName, "cell_sigma0_hh_fore")) {
+    appendBand(band, "HH_fore", meta->general->bands);
+    band++;
+  }
+  if (find_dataset(inDataName, "cell_sigma0_hh_aft")) {
+    appendBand(band, "HH_aft", meta->general->bands);    
+    band++;
+  }
+  if (find_dataset(inDataName, "cell_sigma0_xy_fore")) {
+    appendBand(band, "HV_fore", meta->general->bands);
+    band++;
+  }
+  if (find_dataset(inDataName, "cell_sigma0_xy_aft")) {
+    appendBand(band, "HV_aft", meta->general->bands);
+    band++;
+  }
+  if (find_dataset(inDataName, "cell_sigma0_xpol_fore")) {
+    appendBand(band, "HV_fore", meta->general->bands);
+    band++;
+  }
+  if (find_dataset(inDataName, "cell_sigma0_xpol_aft")) {
+    appendBand(band, "HV_aft", meta->general->bands);
+    band++;
+  }
+  if (find_dataset(inDataName, "cell_sigma0_vv_fore")) {
+    appendBand(band, "VV_fore", meta->general->bands);
+    band++;
+  }
+  if (find_dataset(inDataName, "cell_sigma0_vv_aft")) {
+    appendBand(band, "VV_aft", meta->general->bands);
+    band++;
+  }
+  if (find_dataset(inDataName, "faraday_rotation_angle")) {
+    appendBand(band, "faraday", meta->general->bands);
+    band++;
+  }
+  if (find_dataset(inDataName, "cell_lat")) {
+    appendBand(band, "lat", meta->general->bands);
+    band++;
+  }
+  if (find_dataset(inDataName, "cell_lon")) {
+    appendBand(band, "lon", meta->general->bands);
+    band++;
+  }
+  if (find_dataset(inDataName, "cylindrical_grid_row_index")) {
+    appendBand(band, "cyl_row", meta->general->bands);
+    band++;
+  }
+  if (find_dataset(inDataName, "cylindrical_grid_column_index")) {
+    appendBand(band, "cyl_col", meta->general->bands);
+    band++;
+  }
+  if (find_dataset(inDataName, "polar_grid_row_index")) {
+    appendBand(band, "pol_row", meta->general->bands);
+    band++;
+  }
+  if (find_dataset(inDataName, "polar_grid_column_index")) {
+    appendBand(band, "pol_col", meta->general->bands);
+    band++;
+  }
+  meta->general->band_count = band;
+  meta->general->no_data = -9999;
+  meta_write(meta, inDataName);
   outDataName = (char *) MALLOC(sizeof(char)*(strlen(outBaseName)+25));
   sprintf(outDataName, "%s.img", outBaseName);
-	int band = 0;
-
+  meta_write(meta, outDataName);
+  meta_free(meta);
+	
   if (subset) {
-  	if (find_dataset(inDataName, "cell_sigma0_hh_fore")) {
+  	if (find_dataset(inDataName, "cell_sigma0_hh_fore"))
     	read_smap_subset("cell_sigma0_hh_fore", band, inDataName, outDataName,
 		  	latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "HH_fore", meta->general->bands);
-    	band++;
-		}
-		if (find_dataset(inDataName, "cell_sigma0_hh_aft")) {
+		if (find_dataset(inDataName, "cell_sigma0_hh_aft"))
 	    read_smap_subset("cell_sigma0_hh_aft", band, inDataName, outDataName,
 		  	latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "HH_aft", meta->general->bands);
-    	band++;
-		}
-		if (find_dataset(inDataName, "cell_sigma0_xy_fore")) {
+		if (find_dataset(inDataName, "cell_sigma0_xy_fore"))
 	    read_smap_subset("cell_sigma0_xy_fore", band, inDataName, outDataName,
 	    	latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "HV_fore", meta->general->bands);
-    	band++;
-	  }
-	  if (find_dataset(inDataName, "cell_sigma0_xy_aft")) {
+	  if (find_dataset(inDataName, "cell_sigma0_xy_aft"))
 	    read_smap_subset("cell_sigma0_xy_aft", band, inDataName, outDataName,
 		  	latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "HV_aft", meta->general->bands);
-    	band++;
-	  }
-		if (find_dataset(inDataName, "cell_sigma0_xpol_fore")) {
+		if (find_dataset(inDataName, "cell_sigma0_xpol_fore"))
 	    read_smap_subset("cell_sigma0_xpol_fore", band, inDataName, outDataName,
 	    	latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "HV_fore", meta->general->bands);
-    	band++;
-	  }
-	  if (find_dataset(inDataName, "cell_sigma0_xpol_aft")) {
+	  if (find_dataset(inDataName, "cell_sigma0_xpol_aft"))
 	    read_smap_subset("cell_sigma0_xpol_aft", band, inDataName, outDataName,
 		  	latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "HV_aft", meta->general->bands);
-    	band++;
-	  }
-	  if (find_dataset(inDataName, "cell_sigma0_vv_fore")) {
+	  if (find_dataset(inDataName, "cell_sigma0_vv_fore"))
 	    read_smap_subset("cell_sigma0_vv_fore", band, inDataName, outDataName,
 		  	latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "VV_fore", meta->general->bands);
-    	band++;
-		}
-		if (find_dataset(inDataName, "cell_sigma0_vv_aft")) {
+		if (find_dataset(inDataName, "cell_sigma0_vv_aft"))
 	    read_smap_subset("cell_sigma0_vv_aft", band, inDataName, outDataName,
 		  	latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "VV_aft", meta->general->bands);
-    	band++;
-		}
-    if (find_dataset(inDataName, "faraday_rotation_angle")) {
+    if (find_dataset(inDataName, "faraday_rotation_angle"))
     	read_smap_subset("faraday_rotation_angle", band, inDataName, outDataName,
     		latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "faraday", meta->general->bands);
-    	band++;
-    }
-		if (find_dataset(inDataName, "cell_lat")) {
+		if (find_dataset(inDataName, "cell_lat"))
 	    read_smap_subset("cell_lat", band, inDataName, outDataName,
 		  	latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "lat", meta->general->bands);
-    	band++;
-		}
-		if (find_dataset(inDataName, "cell_lon")) {
+		if (find_dataset(inDataName, "cell_lon"))
 	    read_smap_subset("cell_lon", band, inDataName, outDataName,
 		  	latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "lon", meta->general->bands);
-    	band++;
-		}
-		if (find_dataset(inDataName, "cylindrical_grid_row_index")) {
+		if (find_dataset(inDataName, "cylindrical_grid_row_index"))
     	read_smap_subset("cylindrical_grid_row_index", band, inDataName, 
 		  	outDataName, latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "cyl_row", meta->general->bands);
-    	band++;
-		}
-		if (find_dataset(inDataName, "cylindrical_grid_column_index")) {
+		if (find_dataset(inDataName, "cylindrical_grid_column_index"))
 	    read_smap_subset("cylindrical_grid_column_index", band, inDataName, 
 		  	outDataName, latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "lon", meta->general->bands);
-    	band++;
-		}		  	
-    if (find_dataset(inDataName, "polar_grid_row_index")) {
+    if (find_dataset(inDataName, "polar_grid_row_index"))
     	read_smap_subset("polar_grid_row_index", band, inDataName, outDataName,
     		latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "pol_row", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "polar_grid_column_index")) {
+    if (find_dataset(inDataName, "polar_grid_column_index"))
     	read_smap_subset("polar_grid_column_index", band, inDataName, outDataName,
     		latUL, lonUL, latLR, lonLR);
-    	appendBand(band, "pol_col", meta->general->bands);
-    	band++;
-    }
   }
   else if (latConstraint) {
-  	if (find_dataset(inDataName, "cell_sigma0_hh_fore")) {
+  	if (find_dataset(inDataName, "cell_sigma0_hh_fore"))
     	read_smap_constraint("cell_sigma0_hh_fore", band, inDataName, outDataName,
 		  	latLR, latUL);
-    	appendBand(band, "HH_fore", meta->general->bands);
-    	band++;
-		}
-		if (find_dataset(inDataName, "cell_lat")) {
+		if (find_dataset(inDataName, "cell_lat"))
 	    read_smap_constraint("cell_lat", band, inDataName, outDataName,
 		  	latLR, latUL);
-    	appendBand(band, "lat", meta->general->bands);
-    	band++;
-		}
-		if (find_dataset(inDataName, "cell_lon")) {
+		if (find_dataset(inDataName, "cell_lon"))
 	    read_smap_constraint("cell_lon", band, inDataName, outDataName,
 	    	latLR, latUL);
-    	appendBand(band, "lon", meta->general->bands);
-    	band++;
-		}
   	int line, sample, height, width;
 	  read_smap_bounds(inDataName, latUL, lonUL, latLR, lonLR,
 		  &line, &sample, &height, &width);
@@ -865,87 +875,39 @@ void import_smap(const char *inBaseName, const char *outBaseName,
   	meta->general->start_line = line;
   }
   else {
-    if (find_dataset(inDataName, "cell_sigma0_hh_fore")) {
+    if (find_dataset(inDataName, "cell_sigma0_hh_fore"))
     	read_smap_data("cell_sigma0_hh_fore", band, inDataName, outDataName);
-    	appendBand(band, "HH_fore", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "cell_sigma0_hh_aft")) {
+    if (find_dataset(inDataName, "cell_sigma0_hh_aft"))
     	read_smap_data("cell_sigma0_hh_aft", band, inDataName, outDataName);
-    	appendBand(band, "HH_aft", meta->general->bands);    
-    	band++;
-    }
-    if (find_dataset(inDataName, "cell_sigma0_xy_fore")) {
+    if (find_dataset(inDataName, "cell_sigma0_xy_fore"))
     	read_smap_data("cell_sigma0_xy_fore", band, inDataName, outDataName);
-    	appendBand(band, "HV_fore", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "cell_sigma0_xy_aft")) {
+    if (find_dataset(inDataName, "cell_sigma0_xy_aft"))
     	read_smap_data("cell_sigma0_xy_aft", band, inDataName, outDataName);
-    	appendBand(band, "HV_aft", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "cell_sigma0_xpol_fore")) {
+    if (find_dataset(inDataName, "cell_sigma0_xpol_fore"))
     	read_smap_data("cell_sigma0_xpol_fore", band, inDataName, outDataName);
-    	appendBand(band, "HV_fore", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "cell_sigma0_xpol_aft")) {
+    if (find_dataset(inDataName, "cell_sigma0_xpol_aft"))
     	read_smap_data("cell_sigma0_xpol_aft", band, inDataName, outDataName);
-    	appendBand(band, "HV_aft", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "cell_sigma0_vv_fore")) {
+    if (find_dataset(inDataName, "cell_sigma0_vv_fore"))
     	read_smap_data("cell_sigma0_vv_fore", band, inDataName, outDataName);
-    	appendBand(band, "VV_fore", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "cell_sigma0_vv_aft")) {
+    if (find_dataset(inDataName, "cell_sigma0_vv_aft"))
     	read_smap_data("cell_sigma0_vv_aft", band, inDataName, outDataName);
-    	appendBand(band, "VV_aft", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "faraday_rotation_angle")) {
+    if (find_dataset(inDataName, "faraday_rotation_angle"))
     	read_smap_data("faraday_rotation_angle", band, inDataName, outDataName);
-    	appendBand(band, "faraday", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "cell_lat")) {
+    if (find_dataset(inDataName, "cell_lat"))
     	read_smap_data("cell_lat", band, inDataName, outDataName);
-    	appendBand(band, "lat", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "cell_lon")) {
+    if (find_dataset(inDataName, "cell_lon"))
     	read_smap_data("cell_lon", band, inDataName, outDataName);
-    	appendBand(band, "lon", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "cylindrical_grid_row_index")) {
+    if (find_dataset(inDataName, "cylindrical_grid_row_index"))
     	read_smap_data("cylindrical_grid_row_index", band, inDataName, 
-    	outDataName);
-    	appendBand(band, "cyl_row", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "cylindrical_grid_column_index")) {
+	    	outDataName);
+    if (find_dataset(inDataName, "cylindrical_grid_column_index"))
     	read_smap_data("cylindrical_grid_column_index", band, inDataName, 
     	outDataName);
-    	appendBand(band, "cyl_col", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "polar_grid_row_index")) {
+    if (find_dataset(inDataName, "polar_grid_row_index"))
     	read_smap_data("polar_grid_row_index", band, inDataName, outDataName);
-    	appendBand(band, "pol_row", meta->general->bands);
-    	band++;
-    }
-    if (find_dataset(inDataName, "polar_grid_column_index")) {
+    if (find_dataset(inDataName, "polar_grid_column_index"))
     	read_smap_data("polar_grid_column_index", band, inDataName, outDataName);
-    	appendBand(band, "pol_col", meta->general->bands);
-    	band++;
-    }
   }
-  meta->general->band_count = band;
-  meta_write(meta, outDataName);
-  meta_free(meta);
 	update_geolocation(inDataName, outDataName);
 
   // Clean up

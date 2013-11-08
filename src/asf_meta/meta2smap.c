@@ -24,7 +24,7 @@ meta_parameters* smap2meta(smap_meta *smap)
   // meta->general->processor
   meta->general->data_type = REAL32;
   meta->general->image_data_type = AMPLITUDE_IMAGE;
-  meta->general->radiometry = r_SIGMA_DB;
+  meta->general->radiometry = r_AMP;
   sscanf(smap->orbit_start_date_time, "%4d-%2d-%2dT%2d:%2d:%lfZ", 
 		&imgStartDate.year, &imgStartDate.month, &imgStartDate.day,
   	&imgStartTime.hour, &imgStartTime.min, &imgStartTime.sec);
@@ -52,7 +52,7 @@ meta_parameters* smap2meta(smap_meta *smap)
 
   // SAR block
   meta->sar = meta_sar_init();
-  meta->sar->image_type = 'P'; // geographic but nevertheless
+  meta->sar->image_type = 'R';
   meta->sar->look_direction = 'R';
   // No constant look count information - rotating antenna
   meta->sar->deskewed = 1; // assumption
