@@ -40,7 +40,7 @@ OBJS  = asf_mapready.o
 
 all:    asf_mapready clean
 
-asf_convert: $(OBJS)
+asf_mapready: $(OBJS)
 	$(CC) $(CFLAGS) -o asf_mapready $(OBJS) $(LIBS) $(LDFLAGS)
 	mv asf_mapready$(BIN_POSTFIX) $(BINDIR)/$(DEST_TARGET)$(BIN_POSTFIX)
 
