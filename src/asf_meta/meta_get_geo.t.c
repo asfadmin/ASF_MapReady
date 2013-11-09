@@ -109,10 +109,48 @@ static void corner_test(const char *filename)
   meta_free(meta);
 }
 
+static void smap_test(const char *filename)
+{
+	double lat, lon, line, sample;
+	meta_parameters *meta = meta_read(filename);
+	meta_get_latLon(meta, 5, 5, 0, &lat, &lon);
+	CU_ASSERT(within_tol(lat, 77.44812, 0.0001));
+	CU_ASSERT(within_tol(lon, 124.95065, 0.0001));
+	meta_get_lineSamp(meta, lat, lon, 0, &line, &sample);
+	CU_ASSERT(within_tol(line, 5, 0.1));
+	CU_ASSERT(within_tol(sample, 5, 0.1));	
+	meta_get_latLon(meta, 0.5, 0.5, 0, &lat, &lon);
+	CU_ASSERT(within_tol(lat, 77.40792, 0.0001));
+	CU_ASSERT(within_tol(lon, 125.13726, 0.0001));
+	meta_get_lineSamp(meta, lat, lon, 0, &line, &sample);
+	CU_ASSERT(within_tol(line, 0.5, 0.1));
+	CU_ASSERT(within_tol(sample, 0.5, 0.1));	
+	meta_get_latLon(meta, -0.5, 0.5, 0, &lat, &lon);
+	CU_ASSERT(within_tol(lat, 77.40975, 0.0001));
+	CU_ASSERT(within_tol(lon, 125.17841, 0.0001));
+	meta_get_lineSamp(meta, lat, lon, 0, &line, &sample);
+	CU_ASSERT(within_tol(line, -0.5, 0.15));
+	CU_ASSERT(within_tol(sample, 0.5, 0.15));	
+	meta_get_latLon(meta, 0.5, -0.5, 0, &lat, &lon);
+	CU_ASSERT(within_tol(lat, 77.39893, 0.00001));
+	CU_ASSERT(within_tol(lon, 125.13744, 0.00001));
+	meta_get_lineSamp(meta, lat, lon, 0, &line, &sample);
+	CU_ASSERT(within_tol(line, 0.5, 0.15));
+	CU_ASSERT(within_tol(sample, -0.5, 0.15));
+	meta_get_latLon(meta, -0.5, -0.5, 0, &lat, &lon);
+	CU_ASSERT(within_tol(lat, 77.39896, 0.00001));
+	CU_ASSERT(within_tol(lon, 125.17856, 0.00001));
+	meta_get_lineSamp(meta, lat, lon, 0, &line, &sample);
+	CU_ASSERT(within_tol(line, -0.5, 0.15));
+	CU_ASSERT(within_tol(sample, -0.5, 0.15));
+	meta_free(meta);
+}
+
 void test_meta_get_latLon()
 {
   corner_test("test_input/ers1.meta");
   corner_test("test_input/palsar_fbd.meta");
+  smap_test("test_input/smap.meta");
 }
 
 
