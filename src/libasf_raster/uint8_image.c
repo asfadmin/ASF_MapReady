@@ -25,6 +25,7 @@
 #include "asf.h"
 #include "asf_tiff.h"
 #include "asf_jpeg.h"
+#include "asf_raster.h"
 
 #ifndef linux
 #ifndef darwin
@@ -490,15 +491,12 @@ uint_image_new_with_value (ssize_t size_x, ssize_t size_y, uint8_t value)
 }
 
 UInt8Image *
-uint8_image_new_from_memory (ssize_t size_x, ssize_t size_y, uint8_t *buffer)
+uint8_image_new_from_memory (ssize_t size_x, ssize_t size_y, 
+	uint8_t* UNUSED(buffer))
 {
   g_assert (size_x > 0 && size_y > 0);
 
   g_assert_not_reached ();      // Stubbed out for now.
-  // Compiler reassurance.
-  size_x = size_x;
-  size_y = size_y;
-  buffer = buffer;
   return NULL;
 }
 
@@ -1209,11 +1207,11 @@ uint8_image_get_region (UInt8Image *self, ssize_t x, ssize_t y, ssize_t size_x,
 }
 
 void
-uint8_image_set_region (UInt8Image *self, size_t x, size_t y, size_t size_x,
-                        size_t size_y, uint8_t *buffer)
+uint8_image_set_region (UInt8Image* UNUSED(self), size_t UNUSED(x), 
+	size_t UNUSED(y), size_t UNUSED(size_x), size_t UNUSED(size_y), 
+	uint8_t* UNUSED(buffer))
 {
   g_assert_not_reached ();      // Stubbed out for now.
-  self = self; x = x; y = y; size_x = size_x, size_y = size_y; buffer = buffer;
 }
 
 void
@@ -1792,7 +1790,7 @@ uint8_image_equals (UInt8Image *self, UInt8Image *other)
 void
 uint8_image_flip_y(UInt8Image *self)
 {
-  size_t ii, jj;
+  size_t ii, jj=0;
 
   asfLineMeter(jj, self->size_y);
   for (jj = 0; jj < self->size_y / 2; ++jj) {
@@ -2122,20 +2120,16 @@ uint8_image_export_as_jpeg (UInt8Image *self, const char *file,
 }
 
 size_t
-uint8_image_get_cache_size (UInt8Image *self)
+uint8_image_get_cache_size (UInt8Image* UNUSED(self))
 {
   g_assert_not_reached ();      // Stubbed out for now.
-  // Compiler reassurance.
-  self = self;
   return 0;
 }
 
 void
-uint8_image_set_cache_size (UInt8Image *self, size_t size)
+uint8_image_set_cache_size (UInt8Image* UNUSED(self), size_t UNUSED(size))
 {
   g_assert_not_reached ();      // Stubbed out for now.
-  // Compiler reassurance.
-  self = self; size = size;
 }
 
 void

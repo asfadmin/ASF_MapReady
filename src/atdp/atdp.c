@@ -31,8 +31,8 @@ SYNOPSIS:     atdp ifile ofile
 
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
 #define FLOAT_MICRON 0.000000001
-#define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
-                                (a, b, FLOAT_MICRON))
+#define FLOAT_EQUIV(a, b) (FLOAT_COMPARE_TOLERANCE \
+                           (a, b, FLOAT_MICRON))
 #define SQR(a) (a*a)
 
 
@@ -73,7 +73,7 @@ double rect(double range_time, double pulse_duration)
   double ratio = range_time / pulse_duration;
   if (ratio > 0.5)
     return 0.0;
-  else if (FLOAT_EQUIVALENT(ratio, 0.5))
+  else if (FLOAT_EQUIV(ratio, 0.5))
     return 0.5;
   else /*if (ratio < 0.5)*/
     return 1.0;
@@ -90,7 +90,7 @@ int main (int argc, char *argv [])
   struct ARDOP_PARAMS params;
   meta_parameters *meta;
   complexFloat *image_in, *image_out, impulse_response, sum;
-  double lines, samples;
+  double lines=0.0, samples=0.0;
   double time, range_time, azimuth_time, beam_center_time, pulse_duration;
   double pulse_envelope, antenna_beam_pattern, wavelength, chirp_slope;
   double slant_range, pulse_repetition_frequency, range_sampling_rate;

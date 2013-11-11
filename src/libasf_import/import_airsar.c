@@ -547,6 +547,7 @@ meta_parameters *import_airsar_meta(const char *dataName,
   FREE(params);
   if (dem)
     FREE(dem);
+  FREE(cal);
 
   return ret;
 }
@@ -673,14 +674,6 @@ int ingest_insar_data(const char *inBaseName, const char *outBaseName,
   return ret;
 }
 
-static int sign(char byteBuf)
-{
-  if (byteBuf < 0)
-    return -1;
-  else
-    return 1;
-}
-
 int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
 		       radiometry_t radiometry, char band)
 {
@@ -691,7 +684,6 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   float *power, *shh_amp, *shh_phase, *shv_amp, *shv_phase, *svh_amp;
   float *svh_phase, *svv_amp, *svv_phase;
   float total_power, ysca, amp, phase;
-  float m11, m12, m13, m14, m22, m23, m24, m33, m34, m44;
   complexFloat cpx;
 
   // Allocate memory
@@ -745,7 +737,8 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     for (ii=0; ii<meta->general->line_count; ii++) {
       for (kk=0; kk<meta->general->sample_count; kk++) {
 	FREAD(byteBuf, sizeof(char), 10, fpIn);
-	// Scale is always 1.0 according to Bruce Chapman
+/*
+        float m11, m12, m13, m14, m22, m23, m24, m33, m34, m44;
 	m11 = ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
 	m12 = (float)byteBuf[2] * m11 / 127.0;
 	m13 = sign(byteBuf[3]) * SQR((float)byteBuf[3] / 127.0) * m11;
@@ -756,6 +749,9 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
 	m34 = (float)byteBuf[8] * m11 / 127.0;
 	m44 = (float)byteBuf[9] * m11 / 127.0;
 	m22 = 1 - m33 -m44;
+*/
+
+	// Scale is always 1.0 according to Bruce Chapman
 	total_power =
 	  ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
 	ysca = 2.0 * sqrt(total_power);
@@ -929,6 +925,7 @@ void import_airsar(const char *inBaseName, radiometry_t radiometry,
   FREE(general);
 }
 
+/*
 // The purpose of this code is to refine the values of the along
 // and cross track offsets, so that the meta_get_latLon() value
 // returned at the corners of the image matches what the correct
@@ -999,7 +996,6 @@ getObjective(const gsl_vector *x, void *params, gsl_vector *f)
 
   return GSL_SUCCESS;
 }
-/*
 static void coarse_search(double c0_extent_min, double c0_extent_max,
                           double s0_extent_min, double s0_extent_max,
                           double *c0_min, double *s0_min,
@@ -1218,9 +1214,7 @@ void read_meta_airsar(char *inBaseName, char *outBaseName)
   airsar_general *general = read_airsar_general(inBaseName);
   char *inFile = (char *) MALLOC(sizeof(char)*255);
   char *outFile = (char *) MALLOC(sizeof(char)*255);
-  airsar_header *header;
   meta_parameters *meta;
-  int line_offset;
   
   if (general->c_cross_data) {
     sprintf(inFile, "%s_c.demi2", inBaseName);

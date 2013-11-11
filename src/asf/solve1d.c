@@ -81,29 +81,4 @@ int solve1d(solve1d_fn *f, void *params, int min_x, int max_x, double acc,
 }
 
 /* Simple test program, that also illustrates how the thing is used */
-typedef struct test_params
-{
-    double d;
-} test_params_t;
-
-static double test_fn(void *params, double x)
-{
-  test_params_t *p = (test_params_t*)params;
-  return x*x*x - p->d;
-}
-
-void test_solve1d()
-{
-  int i;
-  for (i=0; i<100; ++i) {
-    test_params_t p;
-    p.d = (double)i;
-    double x;
-    if (solve1d(test_fn, (void*)(&p), 0, 200, 0.000005, &x)) {
-      printf("%d %.5f %.5f %.8f\n", i, x, pow(i,1./3.),x-pow(i,1./3.));
-    }
-    else {
-      printf("%d -- failed\n", i);
-    }
-  }
-}
+/* Test program is now in solve1d.t.c */

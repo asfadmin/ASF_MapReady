@@ -17,3 +17,6 @@
 *.out
 *.app
 
+# scons stuff
+.sconsign.dblite
+

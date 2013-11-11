@@ -1,6 +1,8 @@
 /* TODO: Deal with empty fields... fill with -2147483648, NaN, ?, or ??? */
 %{
 
+#define YY_NO_UNPUT
+
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>

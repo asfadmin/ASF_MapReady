@@ -171,7 +171,8 @@ const char *spheroid_toString(spheroid_type_t spheroid)
   }
 }
 
-datum_type_t getDatum(char datum_str)
+/*
+static datum_type_t getDatum(char *datum_str)
 {
   // Earth Gravity Model 1996 (spheroid: WGS84)
   if (strcmp_case(datum_str, "EGM96") == 0)
@@ -217,3 +218,4 @@ datum_type_t getDatum(char datum_str)
   else if (strcmp_case(datum_str, "SAD69") == 0)
     return SAD69_DATUM;
 }
+*/

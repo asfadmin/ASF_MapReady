@@ -177,12 +177,12 @@ main (int argc, char *argv[])
 
 void update_state(const char *inFile, const char *outFile, int num, double spacing)
 {
-  char *in_meta_file = appendExt(inFile, ".meta");
   char *out_meta_file = appendExt(outFile, ".meta");
 
-  meta_parameters *in_meta = meta_read(in_meta_file);
+  meta_parameters *in_meta;
+  in_meta = meta_read(inFile);
   if (!in_meta) {
-   asfPrintError("Could not read metadata file %s\n", in_meta);
+   asfPrintError("Could not read metadata file %s\n", inFile);
   }
 
   if (!in_meta->sar || !in_meta->state_vectors) {
@@ -217,7 +217,6 @@ void update_state(const char *inFile, const char *outFile, int num, double spaci
   meta_write(out_meta, out_meta_file);
   meta_free(in_meta);
   meta_free(out_meta);
-  FREE(in_meta_file);
   FREE(out_meta_file);
 }
 

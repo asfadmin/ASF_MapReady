@@ -619,7 +619,7 @@ int put_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
 
 int put_band_complexFloat_line(FILE *file, meta_parameters *meta, 
 			       int band_number, int line_number, 
-			       const float *source)
+			       const complexFloat *source)
 {
   return put_data_lines(file, meta, band_number, line_number, 1, source, 
 			COMPLEX_REAL32);

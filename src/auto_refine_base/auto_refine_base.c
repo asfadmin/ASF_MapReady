@@ -103,7 +103,8 @@ int* auto_test_base(char *basefile, char *matfile, char *vecfile, int iter_count
 
   if(difs == NULL || sorted_difs == NULL)
   {
-    printf("\nFATAL ERROR: unable to allocate %d bytes!\n\n", sizeof(double) * clip_points);
+    printf("\nFATAL ERROR: unable to allocate %lu bytes!\n\n", 
+    	sizeof(double) * clip_points);
     exit(0);
   }
 
@@ -209,7 +210,8 @@ int* auto_test_base(char *basefile, char *matfile, char *vecfile, int iter_count
   clip_list = (int*)malloc(sizeof(int) * m);
   if(clip_list == NULL)
   {
-    printf("\nFATAL ERROR: Unable to allocate %d bytes!\n\n", sizeof(int) * clip_points);
+    printf("\nFATAL ERROR: Unable to allocate %lu bytes!\n\n", 
+    	sizeof(int) * clip_points);
     exit(0);
   }
   {

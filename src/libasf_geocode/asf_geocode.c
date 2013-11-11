@@ -39,7 +39,7 @@ typedef int unproject_arr_t(project_parameters_t *pps, double *x, double *y,
       double *z, double **lat, double **lon,
       double **height, long length, datum_type_t dtm);
 
-void location_minmax(meta_location *loc, double *minLat, double *maxLat,
+static void location_minmax(meta_location *loc, double *minLat, double *maxLat,
 		     double *minLon, double *maxLon)
 {
   int ii;
@@ -255,13 +255,10 @@ static int is_alos_avnir(meta_parameters *meta) {
 // functions to use when we need to use a function pointer to perform
 // a generic operation.
 static int
-project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
-       double height, double *x, double *y, double *z,
-             datum_type_t datum)
+project_lat_long_pseudo (project_parameters_t* UNUSED(pps), double lat, 
+	double lon, double height, double *x, double *y, double *z,
+  datum_type_t UNUSED(datum))
 {
-  /* Silence compiler warning about unused argument.  */
-  pps = pps; datum = datum;
-
   *x = lon * R2D;
   *y = lat * R2D;
   if (z) *z = height;
@@ -270,11 +267,10 @@ project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
 }
 
 static int
-project_lat_long_pseudo_arr(project_parameters_t *pps, double *lat, double *lon,
-			    double *height, double **x, double **y, 
-			    double **z, long length, datum_type_t datum)
+project_lat_long_pseudo_arr(project_parameters_t* UNUSED(pps), double *lat, 
+	double *lon, double *height, double **x, double **y, double **z, long length,
+	datum_type_t UNUSED(datum))
 {
-  pps = pps; datum = datum;
   long ii;
   double *pz;
   *x = (double *) MALLOC(sizeof(double) * length);
@@ -295,13 +291,10 @@ project_lat_long_pseudo_arr(project_parameters_t *pps, double *lat, double *lon,
 }
 
 static int
-project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
-           double z, double *lat, double *lon,
-           double *height, datum_type_t datum)
+project_lat_long_pseudo_inv (project_parameters_t* UNUSED(pps), double x, 
+	double y, double z, double *lat, double *lon, double *height, 
+	datum_type_t UNUSED(datum))
 {
-  /* Silence compiler warning about unused argument.  */
-  pps = pps; datum = datum;
-
   *lat = y * D2R;
   *lon = x * D2R;
   if (height) *height = z;
@@ -310,12 +303,10 @@ project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
 }
 
 static int
-project_lat_long_pseudo_inv_arr(project_parameters_t *pps, double *x, double *y,
-				double *z, double **lat, double **lon,
-				double **height, long length, 
-				datum_type_t datum)
+project_lat_long_pseudo_inv_arr(project_parameters_t* UNUSED(pps), double *x, 
+	double *y, double *z, double **lat, double **lon, double **height, 
+	long length, datum_type_t UNUSED(datum))
 {
-  pps = pps; datum = datum;
   long ii;
   *lat = (double *) MALLOC(sizeof(double) * length);
   *lon = (double *) MALLOC(sizeof(double) * length);
@@ -736,9 +727,9 @@ int asf_geocode_from_proj_file(const char *projection_file,
 {
   project_parameters_t pp;
   projection_type_t projection_type;
-  datum_type_t tmp_datum = datum;
+  //datum_type_t tmp_datum = datum;
   spheroid_type_t spheroid;
-  double sphere;
+  //double sphere;
   char *err=NULL;
 
   if (!parse_proj_args_file(projection_file, &pp, &projection_type, &datum, 
@@ -1692,8 +1683,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   }
 
   // NOTE: If we ever allow the user to provide a spheroid
-  // selection on the command line (asf_convert, asf_geocode)
-  // or via the GUI (asf_convert_gui) then this will need
+  // selection on the command line (asf_mapready, asf_geocode)
+  // or via the GUI (mapready) then this will need
   // to change, but for now, associate a spheroid with
   // the datum based on standard use.
 
@@ -1877,8 +1868,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // The pixel size requested by the user better not oversample by
     // the factor of 2.  Specifying --force will skip this check
     // Only apply for metric projections (no geographic)
-    int input_is_latlon = imd->projection &&
-                          imd->projection->type == LAT_LONG_PSEUDO_PROJECTION;
     int output_is_latlon = projection_type == LAT_LONG_PSEUDO_PROJECTION;
     if (!input_is_latlon && !output_is_latlon) {
       if (!force_flag &&
@@ -2858,7 +2847,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     }
   }
 
-  if (resample_method == BICUBIC &&
+  if (resample_method == RESAMPLE_BICUBIC &&
       omd->general->data_type == ASF_BYTE &&
       (out_of_range_negative || out_of_range_positive))
   {

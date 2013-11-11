@@ -142,7 +142,7 @@ meta_parameters* open_png(const char *data_name, ClientInterface *client)
     png_structp png_ptr;
     png_infop info_ptr;
     png_uint_32  width, height;
-    int bit_depth, color_type, nbands, interlace_type, compression_type,
+    int bit_depth, color_type, interlace_type, compression_type,
       filter_type;
 
     // We set up all the png infrastructure here, but don't actually
@@ -184,7 +184,7 @@ meta_parameters* open_png(const char *data_name, ClientInterface *client)
     png_read_info(png_ptr, info_ptr);
     png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
                  &interlace_type, &compression_type, &filter_type);
-    nbands = (int)png_get_channels(png_ptr, info_ptr);
+    //int nbands = (int)png_get_channels(png_ptr, info_ptr);
 
     // Preliminary error checking on returned values
     // (make sure results are valid)

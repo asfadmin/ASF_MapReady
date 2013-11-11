@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef DOUBLE
+#undef DOUBLE
+#endif
+
 #define DOUBLE __double
 #include "asf.h"
 

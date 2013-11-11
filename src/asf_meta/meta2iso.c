@@ -60,7 +60,7 @@ static void dateTime2str(iso_dateTime timeUTC, char *str)
 
 iso_meta *meta2iso(meta_parameters *meta)
 {
-  int ii, kk, numAnnotations, numLayers, numAuxRasterFiles;
+  int ii, kk, numAnnotations=0, numLayers=0, numAuxRasterFiles=0;
   iso_polLayer_t *polLayer;
   char **beamID, errorMessage[1024];
   int line_count = meta->general->line_count;
@@ -213,7 +213,7 @@ iso_meta *meta2iso(meta_parameters *meta)
     info->productVariant = STD_PRODUCT;
   if (meta->sar->image_type == 'S')
     info->projection = SLANTRANGE_PROJ;
-  else if (meta->sar->image_type == 'G');
+  else if (meta->sar->image_type == 'G')
     info->projection = GROUNDRANGE_PROJ;
   info->mapProjection = UNDEF_MAP;
   info->resolutionVariant = UNDEF_RES;
@@ -709,7 +709,7 @@ static char *polLayer2str(iso_polLayer_t pol)
 
 meta_parameters *iso2meta(iso_meta *iso)
 {
-  int ii, kk;
+  int ii;
   meta_parameters *meta = raw_init();
   char str[30];
 
@@ -786,8 +786,8 @@ meta_parameters *iso2meta(iso_meta *iso)
     sprintf(str, ", %s", polLayer2str(comps->imageData[ii].polLayer));
     strcat(meta->general->bands, str);
   }
-  int line_count = meta->general->line_count = info->numberOfRows;
-  int sample_count = meta->general->sample_count = info->numberOfColumns;
+  meta->general->line_count = info->numberOfRows;
+  meta->general->sample_count = info->numberOfColumns;
   meta->general->start_line = info->startRow;
   meta->general->start_sample = info->startColumn;
   meta->general->x_pixel_size = info->groundRangeResolution;
@@ -896,6 +896,13 @@ meta_parameters *iso2meta(iso_meta *iso)
     meta->sar->time_shift = 0.0;
   else
     meta->sar->time_shift = meta->state_vectors->vecs[numVectors-1].time;
+
+  if (meta->sar->yaw == 0 ||
+      !meta_is_valid_double(meta->sar->yaw))
+  {
+    meta->sar->yaw = meta_yaw(meta, meta->general->line_count/2.0,
+                                    meta->general->sample_count/2.0);
+  }
   /*
   // few calculations need state vectors
   meta->sar->earth_radius = 
@@ -908,6 +915,8 @@ meta_parameters *iso2meta(iso_meta *iso)
   */
 
   // Location block
+  meta_get_corner_coords(meta);
+/*
   meta->location = meta_location_init();
   for (ii=0; ii<4; ii++) {
     if (info->sceneCornerCoord[ii].refRow == 0 &&
@@ -931,6 +940,6 @@ meta_parameters *iso2meta(iso_meta *iso)
       meta->location->lon_end_far_range = info->sceneCornerCoord[ii].lon;
     }
   }
-
+*/
   return meta;
 }

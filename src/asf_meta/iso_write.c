@@ -5,6 +5,7 @@
 #include "asf_nan.h"
 #include "xml_util.h"
 
+/*
 static void date2str(iso_dateTime dateUTC, char *str)
 {
   int year = dateUTC.year;
@@ -17,6 +18,7 @@ static void date2str(iso_dateTime dateUTC, char *str)
   else
     sprintf(str, "%4d-%02d-%02d", year, month, day);
 }
+*/
 
 static void dateTime2str(iso_dateTime timeUTC, char *str)
 {
@@ -1480,7 +1482,7 @@ void iso_meta_write(iso_meta *iso, const char *gapFile, const char *outFile)
   	      node = xmlNewChild(parent, NULL, BAD_CAST "gap", NULL);
    	      sprintf(num, "%ld", kk+1);
 	      xmlNewProp(node, BAD_CAST "num", BAD_CAST num);
-	      sprintf(str, "%ld", lines[kk]);
+	      sprintf(str, "%d", lines[kk]);
 	      xmlNewChild(node, NULL, BAD_CAST "start", BAD_CAST str);
 	      sprintf(str, "%d", gaps[kk]);
 	      xmlNewChild(node, NULL, BAD_CAST "length", BAD_CAST str);
@@ -1640,7 +1642,7 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
   iso_setup *setup = iso->setup;
   iso_productQuality *quality = iso->productQuality;
   iso_processing *proc = iso->processing;
-  iso_instrument *inst = iso->instrument;
+  //iso_instrument *inst = iso->instrument;
   iso_productSpecific *spec = iso->productSpecific;
   
   // Set up 
@@ -1662,8 +1664,8 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
 			BAD_CAST "gco"); 
   //xmlNs *srv = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/srv", 
   //			BAD_CAST "srv");
-  xmlNs *xs = xmlNewNs(root, BAD_CAST "http://www.w3.org/2001/XMLSchema", 
-		       BAD_CAST "xs");
+  //xmlNs *xs = xmlNewNs(root, BAD_CAST "http://www.w3.org/2001/XMLSchema", 
+  //		       BAD_CAST "xs");
   //xmlNs *gsr = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gsr", 
   //			BAD_CAST "gsr");
   //xmlNs *gss = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gss", 
@@ -1674,11 +1676,11 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
   //			BAD_CAST "gmx");
   xmlNs *eos = xmlNewNs(root, BAD_CAST "http://earthdata.nasa.gov/schema/eos", 
 			BAD_CAST "eos");
-  xmlNs *echo = xmlNewNs(root, 
-			 BAD_CAST "http://www.echo.nasa.gov/ingest/schemas/operatations",
-			 BAD_CAST "echo");
-  xmlNs *xlink = xmlNewNs(root, BAD_CAST "http://www.w3.org/1999/xlink", 
-			  BAD_CAST "xlink"); 
+  //xmlNs *echo = xmlNewNs(root, 
+  //			 BAD_CAST "http://www.echo.nasa.gov/ingest/schemas/operatations",
+  //			 BAD_CAST "echo");
+  //xmlNs *xlink = xmlNewNs(root, BAD_CAST "http://www.w3.org/1999/xlink", 
+  //                        BAD_CAST "xlink"); 
   xmlNs *gml = xmlNewNs(root, BAD_CAST "http://www.opengis.net/gml/3.2", 
 			BAD_CAST "gml"); 
   xmlNs *gmi = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gmi", 
@@ -1687,7 +1689,6 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
   
   xmlNodePtr parent, section, node, node2, node3, node4, node5, node6, node7;
   xmlNodePtr node8, node9, node10, node11, node12, node13, node14, node15;
-  xmlNodePtr node16, node17;
   xmlNodePtr composedOf = xmlNewChild(root, gmd, BAD_CAST "composedOf", NULL);
   xmlNodePtr ds_dataSet = 
     xmlNewChild(composedOf, gmd, BAD_CAST "DS_DataSet", NULL);

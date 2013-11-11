@@ -22,14 +22,17 @@ void import_seasat_h5(const char *inBaseName, const char *outBaseName)
   meta_parameters *meta = iso2meta(iso);
   iso_meta_free(iso);
 
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+
+  meta->sar->original_line_count = nl;
+  meta->sar->original_sample_count = ns;
+
   asfPrintStatus("Writing %s\n", out_meta_filename);
   meta_write(meta, outBaseName);
 
   FREE(in_xml_filename);
   FREE(out_meta_filename);
-
-  int nl = meta->general->line_count;
-  int ns = meta->general->sample_count;
 
   char *h5_filename = appendExt(inBaseName, ".h5");
   char *img_filename = appendExt(outBaseName, ".img");

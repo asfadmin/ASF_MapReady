@@ -5,6 +5,7 @@ TARGET = update_state
 CFLAGS += $(GLIBS_CFLAGS)
 
 LIBS  = \
+	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf_fft.a \

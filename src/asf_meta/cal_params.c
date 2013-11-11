@@ -316,7 +316,7 @@ void create_cal_params(const char *inSAR, meta_parameters *meta,
 	asf->a2 = rdr.a[2];
       }
       
-      if (ceos->product == SLC && ceos->sensor == ERS &&
+      if (ceos->product == SLC && ceos->satellite == ERS &&
 	  meta->general->radiometry > r_AMP &&
 	  meta->general->radiometry < r_POWER) {
 	asfPrintStatus("Applying calibration adjustment of x1.3 for SLC data."
@@ -741,14 +741,14 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
     double index = (double)orig_sample*256./(double)(p->sample_count);
     if (index < 0) index = 0;
     if (index > p->sample_count-2) index = p->sample_count-2;
+
+/*
+    // Determine the noise value
+    double *noise = p->noise;
     int base = (int) index;
     double frac = index - base;
-    double *noise = p->noise;
-
-    // Determine the noise value
-
     double noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
-
+*/
     // Convert (amplitude) data number to scaled
     // Removed the noise floor removal
     //scaledPower =
@@ -766,11 +766,11 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
     else if (radiometry == r_BETA || radiometry == r_BETA_DB)
       invIncAngle = 1/sin(incidence_angle);
 
+/*    
     double look = 25.0; // FIXME: hack to get things compiled
     double index = (look-16.3)*10.0;
-    double noiseValue;
     double *noise = p->noise;
-
+    double noiseValue;
     if (index <= 0)
       noiseValue = noise[0];
     else if (index >= 255)
@@ -782,7 +782,7 @@ float get_cal_dn(meta_parameters *meta, float incidence_angle, int sample,
 
       noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
     }
-
+*/
     // Convert (amplitude) data number to scaled
     // Remove the noise floor removal
     //scaledPower =
@@ -946,6 +946,9 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
   if (meta->calibration->type == asf_cal) { // ASF style data (PP and SSP)
 
     asf_cal_params *p = meta->calibration->asf;
+
+/*
+    // Determine the noise value
     double scaling = (double)meta->sar->original_sample_count/meta->general->sample_count;
     int orig_sample = meta->general->start_sample + scaling*sample;
     double index = (double)orig_sample*256./(double)(p->sample_count);
@@ -954,36 +957,34 @@ float get_rad_cal_dn(meta_parameters *meta, int line, int sample, char *bandExt,
     int base = (int) index;
     double frac = index - base;
     double *noise = p->noise;
-
-    // Determine the noise value
     double noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
-
     // Convert (amplitude) data number to scaled
     // No removal of noise floor anymore
-    //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-    //calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1 + p->a0*noiseValue);
+    scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1 + p->a0*noiseValue);
     //calValue = sqrt(((sigma * radCorr) - p->a2)/p->a1);
+*/
     calValue = sqrt((sigma - p->a2)/p->a1) * radCorr;
   }
   else if (meta->calibration->type == asf_scansar_cal) { // ASF style ScanSar
 
     invIncAngle = 1.0;
     asf_scansar_cal_params *p = meta->calibration->asf_scansar;
-    double look = 25.0; // FIXME: hack to get things compiled
-    double index = (look-16.3)*10.0;
-    double noiseValue;
-    double *noise = p->noise;
 
-    if (index <= 0)
-      noiseValue = noise[0];
-    else if (index >= 255)
-      noiseValue = noise[255];
-    else {
-      // Use linear interpolation on noise array
-      int base = (int)index;
-      double frac = index - base;
-      noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
-    }
+    //double look = 25.0; // FIXME: hack to get things compiled
+    //double index = (look-16.3)*10.0;
+    //double noiseValue;
+    //double *noise = p->noise;
+    //if (index <= 0)
+    //  noiseValue = noise[0];
+    //else if (index >= 255)
+    //  noiseValue = noise[255];
+    //else {
+    //  // Use linear interpolation on noise array
+    //  int base = (int)index;
+    //  double frac = index - base;
+    //  noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
+    //}
 
     // Convert (amplitude) data number to scaled
     // No removal of noise floor anymore
@@ -1088,6 +1089,8 @@ float cal2amp(meta_parameters *meta, float incid, int sample, char *bandExt,
       invIncAngle = 1/sin(incid);
 
     asf_cal_params *p = meta->calibration->asf;
+
+/* No noise floor removal anymore
     double index = (double)sample*256./(double)(p->sample_count);
     int base = (int) index;
     double frac = index - base;
@@ -1095,9 +1098,9 @@ float cal2amp(meta_parameters *meta, float incid, int sample, char *bandExt,
     double noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
 
     // Convert (amplitude) data number to scaled
-    // No noise floor removal anymore
-    //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-    //ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1 + p->a0*noiseValue);
+    scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+    ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1 + p->a0*noiseValue);
+*/
     ampValue = sqrt((scaledPower/invIncAngle - p->a2)/p->a1);
   }
   else if (meta->calibration->type == asf_scansar_cal) { // ASF style ScanSar
@@ -1111,21 +1114,21 @@ float cal2amp(meta_parameters *meta, float incid, int sample, char *bandExt,
     else if (radiometry == r_BETA || radiometry == r_BETA_DB)
       invIncAngle = 1/sin(incid);
 
-    double look = 25.0; // FIXME: hack to get things compiled
-    double index = (look-16.3)*10.0;
-    double noiseValue;
-    double *noise = p->noise;
+    //double look = 25.0; // FIXME: hack to get things compiled
+    //double index = (look-16.3)*10.0;
+    //double noiseValue;
+    //double *noise = p->noise;
 
-    if (index <= 0)
-      noiseValue = noise[0];
-    else if (index >= 255)
-      noiseValue = noise[255];
-    else {
-      // Use linear interpolation on noise array
-      int base = (int)index;
-      double frac = index - base;
-      noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
-    }
+    //if (index <= 0)
+    //  noiseValue = noise[0];
+    //else if (index >= 255)
+    //  noiseValue = noise[255];
+    //else {
+    //  // Use linear interpolation on noise array
+    //  int base = (int)index;
+    //  double frac = index - base;
+    //  noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
+    //}
 
     // Convert (amplitude) data number to scaled, noise-removed power
     //scaledPower = (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;

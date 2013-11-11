@@ -341,7 +341,7 @@ ceos_metadata_ext_t require_ceos_metadata(const char *ceosName, char ***metaName
             "****************************************************************\n",
             ceosName, extensionList);
     if (logflag)   {printLog(logbuf);}
-    printf(logbuf);
+    printf("%s",logbuf);
     exit(EXIT_FAILURE);
   }
 
@@ -598,7 +598,7 @@ ceos_data_ext_t require_ceos_data(const char *ceosName,char ***dataName,
            "****************************************************************\n",
            ceosName, extensionList);
     if (logflag)   {printLog(logbuf);}
-    printf(logbuf);
+    printf("%s",logbuf);
     exit(EXIT_FAILURE);
   }
 
@@ -717,7 +717,7 @@ ceos_file_pairs_t require_ceos_pair(const char *ceosName, char ***dataName,
       "****************************************************************\n",
       ceosName, extensionList);
     if (logflag)   {printLog(logbuf);}
-    printf(logbuf);
+    printf("%s",logbuf);
     exit(EXIT_FAILURE);
   }
 }

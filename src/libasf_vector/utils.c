@@ -13,7 +13,7 @@
 
 #define FILENAME_LINE_MAX   (1024)
 #define FILENAME_LEN        (256)
-#define LINE_MAX            (1024)
+#define LINE_MAX_LEN        (1024)
 
 // Convert metadata to text
 // NOTE: inFile will either be a leader data file, a geotiff,
@@ -101,8 +101,8 @@ int ismetadata(char *inFile)
     }
     if (fp) {
         int line_count = 0;
-        line = (char*)MALLOC(sizeof(char)*LINE_MAX);
-        while (fgets(line, LINE_MAX, fp)) {
+        line = (char*)MALLOC(sizeof(char)*(1+LINE_MAX_LEN));
+        while (fgets(line, LINE_MAX_LEN, fp)) {
             line[strlen(line)-1] = '\0';
             s=line;
             while(isspace((int)(*s))) ++s;
@@ -140,8 +140,8 @@ int isparfile(char *file)
   fp = fopen(inFile, "r");
   if (fp) {
     int line_count = 0;
-    line = (char*)MALLOC(sizeof(char)*LINE_MAX);
-    while (fgets(line, LINE_MAX, fp)) {
+    line = (char*)MALLOC(sizeof(char)*(1+LINE_MAX_LEN));
+    while (fgets(line, LINE_MAX_LEN, fp)) {
       line[strlen(line)-1] = '\0';
       s=line;
       while(isspace((int)(*s))) ++s;
@@ -197,9 +197,9 @@ int ispoint(char *inFile)
         FREE(basename);
     }
     if (fp) {
-        line = (char*)MALLOC(sizeof(char)*LINE_MAX);
+        line = (char*)MALLOC(sizeof(char)*(1+LINE_MAX_LEN));
         int line_count=0;
-        while (fgets(line, LINE_MAX, fp)) {
+        while (fgets(line, LINE_MAX_LEN, fp)) {
             line[strlen(line)-1] = '\0';
             s=line;
             while(isspace((int)(*s))) ++s;
@@ -250,9 +250,9 @@ int ispolygon(char *inFile)
         FREE(basename);
     }
     if (fp) {
-        line = (char*)MALLOC(sizeof(char)*LINE_MAX);
+        line = (char*)MALLOC(sizeof(char)*(1+LINE_MAX_LEN));
         int line_count=0;
-        while (fgets(line, LINE_MAX, fp)) {
+        while (fgets(line, LINE_MAX_LEN, fp)) {
             line[strlen(line)-1] = '\0';
             s=line;
             while(isspace((int)(*s))) ++s;

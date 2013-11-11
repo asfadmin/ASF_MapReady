@@ -246,7 +246,6 @@ static void close_stack(FILE *fp, datapool_type_t *datapool)
 
 static void add_to_stack_kml(FILE *fp, datapool_type_t *datapool, int nCols)
 {
-  int ii;
   ymd_date startDate, endDate, centerDate;
   hms_time startTime, endTime, centerTime;
   char mon[][5]= 

@@ -100,7 +100,7 @@ int asf_phase_unwrap(char *algorithm, char *interferogram, char *metaFile,
   check_return(deramp(interferogram, baseline, "igramd", 0),
 	       "deramping interferogram (deramp)");
   asfPrintStatus("\n   Multilooking the interferogram ...\n\n");
-  check_return(multilook("igramd", "ml", "a_cpx.meta", NULL),
+  check_return(asf_insar_multilook("igramd", "ml", "a_cpx.meta", NULL),
 	       "multilooking interferogram (multilook)");
 
   // Remove known topographic phase
