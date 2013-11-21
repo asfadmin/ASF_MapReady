@@ -11,10 +11,11 @@ LIBS = \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
-        $(LIBDIR)/asf.a \
+  $(LIBDIR)/asf.a \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
+	$(XML_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS)
 

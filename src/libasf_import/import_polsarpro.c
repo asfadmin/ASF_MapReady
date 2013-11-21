@@ -791,7 +791,7 @@ void import_polsarpro(char *s, char *ceosName, char *colormapName,
   int line_count = envi->lines;
   int sample_count = envi->samples;
 
-  int band, band_count;
+  int band, band_count=0;
   char **bands;
   if (strcmp_case(image_data_type, "POLARIMETRIC_MATRIX") == 0) {
     if (strcmp(matrixType, "T3") == 0) {

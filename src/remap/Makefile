@@ -4,6 +4,7 @@
 include ../../make_support/system_rules
 
 LIBS  = \
+	$(LIBDIR)/libasf_remap.a \
 	$(LIBDIR)/asf_meta.a \
         $(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
@@ -12,22 +13,16 @@ LIBS  = \
 	$(XML_LIBS) \
 	-lm
 
-OBJS = CLA.o \
-	Matrix2D.o \
-	mapping.o \
-	fetcher.o \
-	poly.o \
-	quadratic.o \
-	mapSamp.o \
-	warpMap.o \
-	writer.o 
+OBJS = \
+	remap_main.o
 
-all: remap clean
+CFLAGS += -Wall -Werror
 
-remap: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o remap remap.c $(OBJS) $(LIBS) $(LDFLAGS)
+all: exe clean
+
+exe: $(OBJS)
+	$(CC) $(CFLAGS) -o remap $(OBJS) $(LIBS) $(LDFLAGS)
 	mv remap$(BIN_POSTFIX) $(BINDIR)
-	cp remap.1 ../../man/cat1
 
 clean:
 	rm -f *.o

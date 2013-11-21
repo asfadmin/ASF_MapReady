@@ -1,6 +1,10 @@
 Import("globalenv")
 localenv = globalenv.Clone()
 
+localenv.AppendUnique(LIBS = [
+    "m",
+])
+
 libs = localenv.SharedLibrary("libasf_sgpsdp", [
         "math.c",
         "obs.c",
@@ -10,5 +14,5 @@ libs = localenv.SharedLibrary("libasf_sgpsdp", [
         "sgpsdp.c",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
 

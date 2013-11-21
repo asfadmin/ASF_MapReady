@@ -236,7 +236,7 @@ static char **read_aster_dem(unzFile *file, int file_count,
 
 static int check_jpl_srtm_lat_lon(char *szFileName, int *lat, int *lon)
 {
-  int sign;
+  int sign=0;
 
   // Check for JPL SRTM naming scheme - S10W068.hgt
   if ((szFileName[0] == 'N' || szFileName[0] == 'S') &&
@@ -339,7 +339,7 @@ static char **read_jpl_srtm_dem(const char *infile, const char *tmp_dir,
 
 static int check_usgs_ned_lat_lon(char *szFileName, int *lat, int *lon)
 {
-  int sign;
+  int sign=0;
 
   // Check for USGS NED tiles naming scheme - n64W144
   if ((szFileName[0] == 'N' || szFileName[0] == 'S') &&
@@ -461,7 +461,7 @@ void import_dem(const char *inBaseName, int list, const char *outBaseName,
 		const char *dem_type, const char *tmp_dir,
 		char ***pImportFiles, int *nFiles)
 {
-  int nn, file_count, zip = FALSE, jpl = FALSE;
+  int nn, file_count=0, zip = FALSE, jpl = FALSE;
   char **dem_files, **import_files, tiles[25]="";
 
   // DEM type
