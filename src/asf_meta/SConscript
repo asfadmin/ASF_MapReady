@@ -9,6 +9,14 @@ localenv.AppendUnique(CPPPATH = [
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+
+localenv.AppendUnique(LIBS = [
+    "m",
+    "proj",
+    "asf",
+    "asf_proj",
+])
 
 localenv.AppendUnique(YACCFLAGS = ["-y", "-d", "-p meta_yy"])
 localenv.AppendUnique(LEXFLAGS = ["-Pmeta_yy", "-s", "-t"])

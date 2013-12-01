@@ -1,0 +1,19 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#include/",
+        "#src/libasf_remap",
+        ])
+
+localenv.AppendUnique(LIBS = [
+    "asf",
+    "asf_remap",
+])
+
+bins = localenv.Program("remap", Glob("*.c"))
+docs = localenv.File(["remap.1"])
+
+globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+globalenv.Install(globalenv["inst_dirs"]["docs"], docs)

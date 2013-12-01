@@ -76,7 +76,7 @@ main(int argc, char *argv[])
   meta_parameters *inMeta, *outMeta;
   char infile[BUF];
   char outfile[BUF];
-  char  *maskbuffer;
+  float *maskbuffer;
   float *floatbuffer;
   float arga,argb;
    if (argc<5) usage();

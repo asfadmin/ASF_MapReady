@@ -156,4 +156,6 @@ int isPolsarproDecomposition(char *dataFile, char **decompositionType,
 int isPolsarproSegmentation(const char *dataFile, char **error);
 int isPolsarproParameter(char *dataFile, char **error);
 
+int init_fgdc_config(char *configFile, char *type);
+
 #endif

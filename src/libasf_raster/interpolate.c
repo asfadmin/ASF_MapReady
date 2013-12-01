@@ -212,6 +212,8 @@ float interpolate(interpolate_type_t interpolation, FloatImage *inbuf, float yLi
       }
       break;
     case SINC:
+    	value = 0.0;
+    	asfPrintError("SINC option not implemented yet!");
       break;
     default:
       assert (FALSE);

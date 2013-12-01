@@ -211,7 +211,7 @@ c2v_config *read_c2v_config(char *configFile)
   char *test;
 
   strcpy(params, "");
-  cfg = init_fill_c2v_config(configFile);
+  cfg = init_fill_c2v_config();
   if (cfg == NULL) check_return(1, "Creating configuration structure.\n");
   fConfig = fopen(configFile, "r");
   if (!fConfig) return NULL;

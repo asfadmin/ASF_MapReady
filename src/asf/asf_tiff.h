@@ -16,6 +16,7 @@
 
 #define TIFFTAG_ASF_INSAR_METADATA  42112
 #define TIFFTAG_ASF_DEM_METADATA  42112
+#define TIFFTAG_GDAL_NODATA 42113
 #define N(a)  (sizeof (a) / sizeof (a[0]))
 
 #ifdef win32
