@@ -19,5 +19,5 @@ localenv.AppendUnique(LIBS = [
 
 bins = localenv.Program("asf_gamma_import", Glob("*.c"))
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
 

@@ -93,8 +93,8 @@ PROGRAMS
 #	ait { }
 	ardop { BINS calc_deltas spectra }
 	asf_check_geolocation { }
-	asf_convert { }
-#	asf_convert_gui { } -- see bottom of this list
+	asf_mapready { }
+#	mapready { } -- see bottom of this list
 	asf_elevation { }
 	asf_export { }
 	asf_geocode { }
@@ -207,7 +207,7 @@ PROGRAMS
 
 # put GUIs at the bottom of the list since they can hose the build
 #	ait { } -- don't include this GUI for now... :(
-	asf_convert_gui { }
+	mapready { }
 	asf_view { BINS asf_planner }
 	convert2vector { }
 	metadata_gui { }
@@ -247,8 +247,8 @@ CATEGORIES
 # MapReady package
 	mapready_package
 	{
-		asf_convert_gui
-		asf_convert
+		mapready
+		asf_mapready
 		asf_export
 		asf_import
 		asf_geocode

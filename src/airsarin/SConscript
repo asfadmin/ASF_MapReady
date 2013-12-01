@@ -35,9 +35,9 @@ bins = localenv.Program("airsarin", [
         "airsar_io.c",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
 
 mans = localenv.File(["airsarin.1"])
 
-globalenv.Install(globalenv["inst_dirs"]["mans"], mans)
+localenv.Install(globalenv["inst_dirs"]["mans"], mans)
 

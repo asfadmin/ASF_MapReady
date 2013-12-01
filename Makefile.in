@@ -35,7 +35,7 @@ MAPREADY_MODULES = \
 	src/asf_airsar_import \
 	src/asf_polsarpro_import \
 	src/libasf_convert \
-	src/asf_convert \
+	src/asf_mapready \
 	src/refine_geolocation \
 	src/shift_geolocation \
 	src/flip \
@@ -247,7 +247,6 @@ ALL_MODULES = \
 	$(AP_MODULES) \
 	$(REQ_MODULES) \
 	$(C2V_MODULES) \
-	$(JPL_MODULES) \
 	$(CREATE_THUMBS_MODULES) \
 	$(DATA_QC_MODULES)
 

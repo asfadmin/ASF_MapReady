@@ -24,5 +24,5 @@ bins = [
 
 docs = localenv.File("fftMatch.man")
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
-globalenv.Install(globalenv["inst_dirs"]["docs"], docs)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["docs"], docs)

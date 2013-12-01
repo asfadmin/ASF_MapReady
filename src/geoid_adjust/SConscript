@@ -18,4 +18,4 @@ localenv.AppendUnique(LIBS = [
 
 bins = localenv.Program("geoid_adjust", Glob("*.c"))
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)

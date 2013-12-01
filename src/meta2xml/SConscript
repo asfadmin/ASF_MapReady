@@ -17,4 +17,4 @@ localenv.AppendUnique(LIBS = [
 
 bins = localenv.Program("meta2xml", Glob("*.c"))
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)

@@ -20,4 +20,4 @@ localenv.AppendUnique(LIBS = [
 
 bins = localenv.Program("asf_kml_overlay", Glob("*.c"))
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)

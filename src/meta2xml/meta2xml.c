@@ -44,17 +44,23 @@
 #include "time.h"
 #include <string.h>
 
+#define ASF_NAME_STRING "meta2xml"
 #define VERSION 1.0
 
 void usage(char *name)
 {
   printf("\n"
 	 "USAGE:\n"
-	 "   %s [ -log <logFile> ] <meta_name> <xml_name>\n",name);
+	 "   %s [ -log <logFile> ] [ -logfile <processing log> | -iso ] <meta_name> <xml_name>\n",name);
   printf("\n"
 	 "REQUIRED ARGUMENTS:\n"
 	 "   meta_name   Base name of the meta data file.\n"
-	 "   esri_name   Base name of the XML file.");
+	 "   esri_name   Base name of the XML file.\n"
+	 "OPTIONAL ARGUMENTS:\n"
+	 "   -logfile    Adds time information from the processing log. This option\n"
+	 "               implies choosing -iso at the same time.\n"
+	 "   -iso        Adds an iso section to the metadata, needed to generated an\n"
+	 "               ISO compliant metadata file.");
   printf("\n"
 	 "DESCRIPTION:\n"
 	 "   %s converts an ASF .meta file to an ASF .xml file.\n",
@@ -65,29 +71,68 @@ void usage(char *name)
   exit(EXIT_FAILURE);
 }
 
+int strmatches(const char *key, ...)
+{
+    va_list ap;
+    char *arg = NULL;
+    int found = FALSE;
+
+    va_start(ap, key);
+    do {
+        arg = va_arg(ap, char *);
+        if (arg) {
+            if (strcmp(key, arg) == 0) {
+                found = TRUE;
+                break;
+            }
+        }
+    } while (arg);
+
+    return found;
+}
+
 int main(int argc, char **argv)
 {
-  char meta_name[1024], xml_name[1024];
+  char meta_name[1024], xml_name[1024], *logFileName=NULL;
   meta_parameters *meta=NULL;
-  extern int currArg; /* from cla.h in asf.h... initialized to 1 */
-  logflag = 0;
+  int isoFlag = FALSE;
+  int currArg = 1;
+  int NUM_ARGS = 2;
 
-  // Parse command line args
-  while (currArg < (argc-2))
-    {
-      char *key=argv[currArg++];
-      if (strmatch(key,"-log")) {
-    sprintf(logFile, "%s", argv[currArg]);
-    logflag = 1;
-      }
-      else {
-    printf("\n   ***Invalid option:  %s\n\n",
-           argv[currArg-1]);
-    usage(argv[0]);
-      }
+  if (argc<=1)
+      usage(ASF_NAME_STRING);
+
+  while (currArg < (argc-NUM_ARGS)) {
+    char *key = argv[currArg++];
+    if (strmatches(key,"-log","--log",NULL)) {
+      CHECK_ARG(1);
+      strcpy(logFile,GET_ARG(1));
+      fLog = FOPEN(logFile, "a");
+      logflag = TRUE;
     }
-  if ((argc-currArg) < 2) {
+    else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
+      quietflag = TRUE;
+    }
+    else if (strmatches(key,"-iso","--iso",NULL)) {
+    	isoFlag = TRUE;
+    }
+    else if (strmatches(key,"-logfile","--logfile",NULL)) {
+    	CHECK_ARG(1);
+    	logFileName = (char *) MALLOC(sizeof(char)*50);
+    	strcpy(logFileName, GET_ARG(1));
+    	isoFlag = TRUE;
+    }
+    else {
+      --currArg;
+      break;
+    }
+  }
+
+  if ((argc-currArg) < NUM_ARGS) {
     printf("Insufficient arguments.\n");
+    usage(argv[0]);
+  } else if ((argc-currArg) > NUM_ARGS) {
+    printf("Unknown argument: %s\n", argv[currArg]);
     usage(argv[0]);
   }
 
@@ -97,10 +142,12 @@ int main(int argc, char **argv)
   asfSplashScreen(argc, argv);
 
   meta = meta_read(meta_name);
-  meta_write_xml(meta, xml_name);
+  meta_write_xml_ext(meta, logFileName, isoFlag, xml_name);
 
   // Clean and report
   meta_free(meta);
+  if (logFileName)
+  	FREE(logFileName);
   asfPrintStatus("   Converted metadata file (%s) to XML file (%s)\n\n",
 		 meta_name, xml_name);
 
