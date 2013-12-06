@@ -13,13 +13,13 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   char metaFile[25], *newBase=NULL;
   int datatype=0;
   float avg;
-  resample_method_t resample_method;
+  resample_method_t resample_method=RESAMPLE_NEAREST_NEIGHBOR;
   datum_type_t datum=WGS84_DATUM;
   int geocode_force_flag=1;
   double average_height=0.0;
   float background_value=0;
-  input_format_t in_format;
-  output_format_t out_format;
+  input_format_t in_format=UNKNOWN_INPUT_FORMAT;
+  output_format_t out_format=UNKNOWN_OUTPUT_FORMAT;
   scale_t sample_mapping=SIGMA;
   radiometry_t radiometry=r_AMP;
   int db_flag=0;

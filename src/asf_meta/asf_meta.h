@@ -102,7 +102,8 @@ typedef enum {
   MASK,
   IMAGE_LAYER_STACK,
   RGB_STACK,
-  MOSAIC
+  MOSAIC,
+  UNKNOWN_IMAGE_DATA_TYPE
 } image_data_type_t;
 
 typedef enum {
@@ -124,7 +125,8 @@ typedef enum {
   ROIPAC,
   SMAP,
   SEASAT_H5,
-  GRIDDED_RGPS
+  GRIDDED_RGPS,
+  UNKNOWN_INPUT_FORMAT
 } input_format_t;
 
 /********************************************************************
@@ -997,9 +999,9 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
 			 spheroid_type_t *spheroid, char **err);
 
 typedef enum {
-  RESAMPLE_NEAREST_NEIGHBOR = 0, // Must be zero (0) ...asf_convert_gui depends on this
-  RESAMPLE_BILINEAR = 1, // Must be one (1) ...asf_convert_gui depends on this
-  RESAMPLE_BICUBIC = 2 // Must be two (2) ...asf_convert_gui depends on this
+  RESAMPLE_NEAREST_NEIGHBOR = 0, // Must be zero (0) ...mapready depends on this
+  RESAMPLE_BILINEAR = 1, // Must be one (1) ...mapready depends on this
+  RESAMPLE_BICUBIC = 2 // Must be two (2) ...mapready depends on this
 } resample_method_t;
 
 // Prototype for distortions.c

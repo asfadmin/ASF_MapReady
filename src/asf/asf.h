@@ -403,4 +403,17 @@ void die_function (const char *file, int line, const char *message, ...)
 #endif
 ; /* <--- semicolon for die_function */
 
+// Can now specify unused arguments to functions with:
+//  int function(int x, int *y)
+// like this:
+//  int function(int UNUSED(x), int* UNUSED(x))
+#ifdef UNUSED
+#elif defined(__GNUC__) 
+# define UNUSED(x) UNUSED_ ## x __attribute__((unused)) 
+#elif defined(__LCLINT__) 
+# define UNUSED(x) /*@unused@*/ x 
+#else 
+# define UNUSED(x) x 
+#endif
+
 #endif

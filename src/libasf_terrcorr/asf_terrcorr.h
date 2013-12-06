@@ -84,6 +84,9 @@ int make_gr_dem_ext(meta_parameters *meta, const char *demImg, const char *demMe
                     int pad, double tolerance, const char *output_name,
                     int test_mode);
 
+void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
+                    char *demFile, char *output_dir);
+
 // These are for the "matching_level" argument to asf_terrcorr_ext
 extern const int MATCHING_NONE;
 extern const int MATCHING_FULL;

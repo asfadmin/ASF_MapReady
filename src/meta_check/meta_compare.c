@@ -396,13 +396,13 @@ void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
 /* Start of main progam */
 int main(int argc, char *argv[])
 {
-  FILE *fpReference, *fpTest, *fpMeta;
+  FILE *fpReference, *fpTest;
   char szMetaReference[255], szMetaTarget[255], szListMetaReference[255];
-  char szListMetaTarget[255], line[1024], *metaFile[255];
+  char szListMetaTarget[255], line[1024];
   char **testFile, **testSensor, **testMode;
   meta_parameters *metaRef, *metaTest;
   int currArg=1;
-  int logFlag=FALSE, listFlag=FALSE, found=FALSE;
+  int listFlag=FALSE, found=FALSE;
   int ii, targets=0, *testOrbit, *testFrame;
   
   while (currArg < (argc-NUM_ARGS)) {

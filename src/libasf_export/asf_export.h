@@ -58,7 +58,8 @@ typedef enum {
   KML,                          // JPEG with GoogleEarth overlay file
   POLSARPRO_HDR,                // PolsarPro with ENVI header
   HDF,                          // HDF5 - NASA Earth Observation standard
-  NC                            // netCDF - modeler oriented format
+  NC,                           // netCDF - modeler oriented format
+  UNKNOWN_OUTPUT_FORMAT
 } output_format_t;
 
 /* Ellipsoid used for the data.  */

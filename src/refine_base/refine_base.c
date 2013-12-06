@@ -123,7 +123,7 @@ int main(int argc,char *argv[])
 {
   int iter=0, keepIter=0;
   char cmd[255], phase_file[255], tp_file[255], ctrlpt_file[255];
-  char meta_file[255], oldbase_file[255], newbase_file[255], matrix_file[255], vec_file[255];
+  char oldbase_file[255], newbase_file[255], matrix_file[255], vec_file[255];
 
   /* Parse command line arguments */
   logflag=quietflag=FALSE;

@@ -2637,7 +2637,7 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
 int meta2kml(char *inFile, char *outFile, format_type_t inFormat, 
 	     c2v_config *cfg)
 {
-  meta_parameters *meta;
+  meta_parameters *meta=NULL;
   FILE *fpIn, *fpOut;
   char *line = (char *) MALLOC(sizeof(char)*1024);
   if (cfg->list) {

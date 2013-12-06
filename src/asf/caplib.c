@@ -398,9 +398,6 @@ size_t FREAD_CHECKED(void *ptr, size_t size, size_t nitems, FILE *stream, int sh
     if (size < 1) {
         asfPrintError("Programmer error: Invalid data size (%d) passed to FREAD_CHECKED\n", size);
     }
-    if (nitems < 0) {
-        asfPrintError("Programmer error: Invalid number of items (%d) to FREAD_CHECKED\n", nitems);
-    }
 
     ret = fread(ptr, size, nitems, stream);
 
