@@ -917,7 +917,10 @@ int main(int argc, char *argv[])
       format_type = POLSARPRO;
     else if (strncmp_case(format_type_str, "GAMMA", 5) == 0)
       format_type = GAMMA;
+    // Old type is "roipac" new type is "roi_pac" what could be simpler!!
     else if (strncmp_case(format_type_str, "ROIPAC", 6) == 0)
+      format_type = ROIPAC_DEPRECATED;
+    else if (strncmp_case(format_type_str, "ROI_PAC", 7) == 0)
       format_type = ROIPAC;
     else if (strncmp_case(format_type_str, "SMAP", 4) == 0)
       format_type = SMAP;
