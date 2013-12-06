@@ -59,7 +59,7 @@ static void use(const char *msg)
   exit(1);
 }
 
-void clm(const char *func, meta_parameters *meta, double *args, int nArgs)
+void clm_call(const char *func, meta_parameters *meta, double *args, int nArgs)
 {
   if (strcmp_case(func, "meta_get_slant") == 0) {
     if (nArgs != 2) use("meta_get_slant: <line> <sample>\n");
@@ -235,32 +235,43 @@ main (int argc, char *argv[])
     usage(argv[0]);
   }
 
-  int nArgs = argc - (currArg+2);
-  func = argv[currArg];
-  meta_file = argv[currArg+1];
+  op = argv[currArg];
 
-  double *args = MALLOC(sizeof(double)*nArgs);
-  meta_parameters *meta = meta_read(meta_file);
+  if (strcmp_case(op, "call") == 0)
+  {
+    func = argv[currArg+1];
+    meta_file = argv[currArg+2];
+    int nArgs = argc - (currArg+3);
+    double *args = MALLOC(sizeof(double)*nArgs);
+    meta_parameters *meta = meta_read(meta_file);
 
-  int ii,jj;
-  for (jj=0, ii=currArg+2; ii<argc; ++ii, ++jj) {
-    if (strcmp_case(argv[ii], "CL") == 0) {
-      args[jj] = meta->general->line_count/2.0;
-    } else if (strcmp_case(argv[ii], "CS") == 0) {
-      args[jj] = meta->general->sample_count/2.0;
-    } else if (strcmp_case(argv[ii], "EL") == 0) {
-      args[jj] = meta->general->line_count;
-    } else if (strcmp_case(argv[ii], "ES") == 0) {
-      args[jj] = meta->general->sample_count;
-    } else {
-      args[jj] = atof(argv[ii]);
+    int ii,jj;
+    for (jj=0, ii=currArg+2; ii<argc; ++ii, ++jj) {
+      if (strcmp_case(argv[ii], "CL") == 0) {
+        args[jj] = meta->general->line_count/2.0;
+      } else if (strcmp_case(argv[ii], "CS") == 0) {
+        args[jj] = meta->general->sample_count/2.0;
+      } else if (strcmp_case(argv[ii], "EL") == 0) {
+        args[jj] = meta->general->line_count;
+      } else if (strcmp_case(argv[ii], "ES") == 0) {
+        args[jj] = meta->general->sample_count;
+      } else {
+        args[jj] = atof(argv[ii]);
+      }
     }
+
+    clm_call(func, meta, args, nArgs);
+
+    FREE(args);
+    meta_free(meta);
+  }
+  else if (strcmp_case(op, "get") == 0) {
+
+  }
+  else if (strcmp_case(op, "set") == 0) {
+
   }
 
-  clm(func, meta, args, nArgs);
-
-  FREE(args);
-  meta_free(meta);
   return EXIT_SUCCESS;
 }
 

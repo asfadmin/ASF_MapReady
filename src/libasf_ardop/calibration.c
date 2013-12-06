@@ -143,7 +143,7 @@ double lookUpGain(meta_parameters *meta,int line, int sample, const satellite *s
  
   static int ind;		/* The WHILE loop index for finding the right table entry */
   double lookAngle;		/* Calculated look angle for each pixel */  	
-  double gainThisPixel;		/* Antenna gain for this pixel */
+  double gainThisPixel=0;		/* Antenna gain for this pixel */
   int old_ind;			/* Just to make sure we are not caught in an infinite loop*/
   
   /* Calculate the look angle for this pixel and check to see if it is valid */

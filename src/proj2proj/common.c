@@ -4,12 +4,9 @@ typedef int unproject_t(project_parameters_t *pps, double x, double y,
       double z, double *lat, double *lon, double *height, datum_type_t dtm);
 
 static int
-project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
-       double height, double *x, double *y, double *z, datum_type_t datum)
+project_lat_long_pseudo (project_parameters_t * UNUSED(pps), double lat, double lon,
+       double height, double *x, double *y, double *z, datum_type_t UNUSED(datum))
 {
-  /* Silence compiler warning about unused argument.  */
-  pps = pps; datum = datum;
-
   *y = lon * R2D;
   *x = lat * R2D;
   if (z) *z = height;
@@ -18,13 +15,10 @@ project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
 }
 
 static int
-project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
+project_lat_long_pseudo_inv (project_parameters_t * UNUSED(pps), double x, double y,
            double z, double *lat, double *lon,
-           double *height, datum_type_t datum)
+           double *height, datum_type_t UNUSED(datum))
 {
-  /* Silence compiler warning about unused argument.  */
-  pps = pps; datum = datum;
-
   *lon = y * D2R;
   *lat = x * D2R;
   if (height) *height = z;
