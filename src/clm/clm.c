@@ -131,7 +131,7 @@ void clm_call(const char *func, meta_parameters *meta, double *args, int nArgs)
   else if (strcmp_case(func, "meta_get_stVec") == 0 ||
            strncmp_case(func, "meta_get_state", 14) == 0)
   {
-    double t;
+    double t=0;
     if (nArgs == 1) {
       t = args[0];
     } else if (nArgs == 2) {
@@ -235,7 +235,7 @@ main (int argc, char *argv[])
     usage(argv[0]);
   }
 
-  op = argv[currArg];
+  char *op = argv[currArg];
 
   if (strcmp_case(op, "call") == 0)
   {
