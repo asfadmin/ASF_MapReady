@@ -19,6 +19,80 @@ void meta_put_char  (FILE *meta_file,char *name,char   value,char *comment);
 void meta_put_double_lf(FILE *meta_file,char *name,double value,int decimals,
                         char *comment);
 
+// To avoid having to change link flags around or link against glib we
+// have this compatability function.
+static char *
+static_strdup (const char *s)
+{
+  char *result = malloc (sizeof (char) * (strlen (s) + 1));
+
+  int idx = 0;
+  while ( s[idx] != '\0') {
+    result[idx] = s[idx];
+    idx++;
+  }
+  result[idx] = '\0';
+
+  return result;
+}
+
+// To avoid having to change link flags around or link against glib we
+// have this function.  Its like strcasecmp but only returns true or
+// false (true if strings are not equal disregarding case, false
+// otherwise).
+static int
+static_strcaseneq (const char *s1, const char *s2)
+{
+  return !!strcmp_case(s1,s2);
+}
+
+static void readline(FILE *f, char *buffer, size_t n)
+{
+  char *p;
+  p = fgets(buffer, n, f);
+  
+  if (!p)
+    strcpy(buffer, "");
+  else {
+    p = buffer + strlen(buffer) - 1;
+    while(isspace(*p)) *p-- = '\0';
+  }
+}
+
+//static int parse_val(char *inbuf, char *key, char **val)
+static void parse_val(char *inbuf, char *key, char **val)
+{
+  char * p, * eq, * buf;
+  //int match = FALSE;
+  
+  buf = static_strdup(inbuf);
+  
+  p = eq = strchr(buf, '=');
+  if (!eq) {
+    free(buf);
+    //return FALSE;
+  }
+ 
+  *eq = '\0';
+  --p;
+  
+  while (isspace((int)(*p)))
+    *p-- = '\0';
+  
+  if (static_strcaseneq(buf, key) == 0) {
+    p = eq + 1;
+    while (isspace((int)(*p)))
+			++p;
+		if (*p) {
+			*val = p;
+			//match = TRUE;
+		}
+	}
+      
+  free(buf);
+  //return match;
+}
+
 char *data_type2str(data_type_t data_type)
 {
   char *str = (char *) MALLOC(sizeof(char)*256);
@@ -1501,62 +1575,7 @@ void meta_put_double_lf(FILE *meta_file,char *name,double value,int decimals,
   meta_put_string(meta_file,name,param,comment);
 }
 
-static void meta2iso_date(meta_parameters *meta, 
-	char *begin, char *center, char *end)
-{
-  julian_date julian;
-  hms_time time;
-  ymd_date date;
-  double begin_time, center_time, end_time;
-
-  julian.year = meta->state_vectors->year;
-  julian.jd = meta->state_vectors->julDay;
-	date_jd2ymd(&julian, &date);
-	// ALOS Palsar is different
-	if (strcmp_case(meta->general->sensor, "ALOS") != 0) {
-  	begin_time = 
-  		meta->state_vectors->second + meta->state_vectors->vecs[0].time;
-  	date_sec2hms(begin_time, &time);
-  	sprintf(begin, "%4d-%02d-%02dT%02d:%02d:%02.6lf", 
-  		date.year, date.month, date.day, time.hour, time.min, time.sec);
-  	center_time = 
-  		meta->state_vectors->second + meta->state_vectors->vecs[1].time;
-  	date_sec2hms(center_time, &time);
-  	sprintf(center, "%4d-%02d-%02dT%02d:%02d:%02.6lf", 
-  		date.year, date.month, date.day, time.hour, time.min, time.sec);
-  	end_time = 
-  		meta->state_vectors->second + meta->state_vectors->vecs[2].time;
-  	date_sec2hms(end_time, &time);
-  	sprintf(end, "%4d-%02d-%02dT%02d:%02d:%02.6lf", 
-  		date.year, date.month, date.day, time.hour, time.min, time.sec);
-  }
-}
-
-static void line2iso_date(char *line, char *time)
-{
-  char buf[100];
-#define subStr(start,len,dest) strncpy(buf,&line[start],len);buf[len]=0;sscanf(buf,"%d",dest);
-	int year, month, day, hour, min, sec; 
-	subStr(0,2,&month);
-	subStr(3,2,&day);
-	subStr(6,4,&year);
-	subStr(11,2,&hour);
-	subStr(14,2,&min);
-	subStr(17,2,&sec);
-	strncpy(buf, &line[20], 2);
-	if (strncmp_case(buf, "PM", 2) == 0)
-		hour += 12;
-	sprintf(time, "%4d-%02d-%02dT%02d:%02d:%02d.000000Z", 
-		year, month, day, hour, min, sec);
-}
-
 void meta_write_xml(meta_parameters *meta, const char *file_name)
-{
-	meta_write_xml_ext(meta, NULL, FALSE, file_name);
-}
-
-void meta_write_xml_ext(meta_parameters *meta, const char *logFile, int iso,
-	const char *file_name)
 {
   FILE *fp = FOPEN(file_name, "w");
   int ii, kk;
@@ -2224,130 +2243,13 @@ void meta_write_xml_ext(meta_parameters *meta, const char *logFile, int iso,
 			"\n", mq->azimuth_resolution);
 		fprintf(fp, "    <range_resolution units=\"m\">%g</range_resolution>\n",
 			mq->range_resolution);
-		fprintf(fp, "    <signal_to_noise_ratio>%g</signal_to_noise_ratio>\n",
+		fprintf(fp, "    <signal_to_noise_ratio units=\"dB\">%g</signal_to_noise_ratio>\n",
 			mq->signal_to_noise_ratio);
-		fprintf(fp, "    <peak_sidelobe_ratio>%g</peak_sidelobe_ratio>\n",
+		fprintf(fp, "    <peak_sidelobe_ratio units=\"dB\">%g</peak_sidelobe_ratio>\n",
 			mq->peak_sidelobe_ratio);
-		fprintf(fp, "    <integrated_sidelobe_ratio>%g</integrated_sidelobe_ratio>"
+		fprintf(fp, "    <integrated_sidelobe_ratio units=\"dB\">%g</integrated_sidelobe_ratio>"
 			"\n", mq->integrated_sidelobe_ratio);
   	fprintf(fp, "  </quality>\n");
-  }
-  
-  // Include some information in a way that can easily be passed to ISO metadata
-  if (iso) {
-  	char granule[50];
-  	if (meta->general->image_data_type == RAW_IMAGE)
-  		sprintf(granule, "%s", get_basename(get_basename(meta->general->basename)));
-  	else
-  		sprintf(granule, "%s", get_basename(meta->general->basename));
-  	char *begin = (char *) MALLOC(sizeof(char)*30);
-  	char *center = (char *) MALLOC(sizeof(char)*30);
-  	char *end = (char *) MALLOC(sizeof(char)*30);
-  	fprintf(fp, "  <iso>\n");
-  	fprintf(fp, "    <granule>%s</granule>\n", granule);
-  	fprintf(fp, "    <metadata_creation>%s</metadata_creation>\n", iso_date());
-  	meta2iso_date(meta, begin, center, end);
-  	fprintf(fp, "    <time>\n");
-  	fprintf(fp, "      <begin>%s</begin>\n", begin); 	
-  	fprintf(fp, "      <center>%s</center>\n", center);
-  	fprintf(fp, "      <end>%s</end>\n", end);
-  	fprintf(fp, "    </time>\n");
-  	fprintf(fp, "    <files>\n");
-  	if (logFile)
-  		fprintf(fp, "      <source>%s.down</source>\n", stripExt(logFile));
-  	if (strncmp_case(meta->general->sensor, "ERS", 3) == 0 &&
-  			meta->general->image_data_type != RAW_IMAGE) {
-  		fprintf(fp, "      <ceos_data_file>%s.D</ceos_data_file>\n", granule);
-  		fprintf(fp, "      <ceos_leader_file>%s.L</ceos_leader_file>\n", 
-  			granule);
-  		fprintf(fp, "      <ceos_parameter_file>%s.P</ceos_parameter_file>\n", 
-  			granule);
-  		fprintf(fp, "      <ceos_leader_text>%s.D.txt</ceos_leader_text>\n", 
-  			granule);
-  		fprintf(fp, "      <browse_image>%s.jpg</browse_image>\n", granule);
-  		fprintf(fp, "      <kml_file>%s.kml</kml_file>\n", granule);
-  	}
-  	else if (strncmp_case(meta->general->sensor, "ERS", 3) == 0) {
-  		fprintf(fp, "      <ceos_data_file>%s.000.raw</ceos_data_file>\n", 
-  			granule);
-  		fprintf(fp, "      <ceos_leader_file>%s.000.ldr</ceos_leader_file>\n", 
-  			granule);
-  		fprintf(fp, "      <ceos_volume_file>%s.000.vol</ceos_volume_file>\n",
-  			granule);
-  		fprintf(fp, "      <ceos_null_file>%s.000.nul</ceos_null_file>\n",
-  			granule);
-  		fprintf(fp, "      <ceos_pi_file>%s.000.pi<ceos_pi_file>\n", granule);
-  		fprintf(fp, "      <ceos_meta_file>%.000.meta<ceos_meta_file\n", granule);
-  	}  	
-  	fprintf(fp, "    </files>\n");
-  	if (logFile) {
-  		fprintf(fp, "    <logs>\n");
-  		char line[1024], *p;
-  		char *time = (char *) MALLOC(sizeof(char)*30);
-  		FILE *fpLog = FOPEN(logFile, "rt");
-  		while (fgets(line, 1024, fpLog) != NULL) {
-  			if (strstr(line, "Running SyncPrep")) {
-  				line2iso_date(line, time);
-  				fprintf(fp, "      <syncPrep>%s</syncPrep>\n", time);
-  			}
-  			if (p = strstr(line, "zip -q -r")) {
-  				if (strstr(p, granule)) {
-  					line2iso_date(line, time);
-  					fprintf(fp, "      <superCeos>%s</superCeos>\n", time);
-  				}
-  			}
-  			if (p = strstr(line, "bin/rds")) { 
-  				if (strstr(p , granule)) {
-						line2iso_date(line, time);
-						fprintf(fp, "      <rds>%s</rds>\n", time);
-					}
-				}
-  			if (p = strstr(line, "run.pp_ceos completed")) { 
-  				if (strstr(p , granule)) {
-						line2iso_date(line, time);
-						fprintf(fp, "      <precision_processor>%s</precision_processor>\n",
-							time);
-					}
-				}
-  			if (p = strstr(line, "convert2vector")) { 
-  				if (strstr(p , granule)) {
-						line2iso_date(line, time);
-						fprintf(fp, "      <convert2vector>%s</convert2vector>\n", time);
-					}
-				}
-  			if (p = strstr(line, "metadata")) { 
-  				if (strstr(p , granule)) {
-						line2iso_date(line, time);
-						fprintf(fp, "      <metadata>%s</metadata>\n", time);
-					}
-				}
-  			if (p = strstr(line, "create_thumbs")) { 
-  				if (strstr(p , granule)) {
-						line2iso_date(line, time);
-						fprintf(fp, "      <create_thumbs>%s</create_thumbs>\n", time);
-					}
-				}
-			}
-  		FCLOSE(fpLog);
-  		FREE(time);
-  		fprintf(fp, "    </logs>\n");
-  	}
-  	if (meta->sar) {
-  		fprintf(fp, "    <polarization>\n");
-  		if (strcmp_case(meta->sar->polarization, "HH") == 0) {
-  			fprintf(fp, "      <transmitted>horizontal</transmitted>\n");
-  			fprintf(fp, "      <received>horizontal</received>\n");
-  		}
-  		if (strcmp_case(meta->sar->polarization, "VV") == 0) {
-  			fprintf(fp, "      <transmitted>vertical</transmitted>\n");
-  			fprintf(fp, "      <received>vertical</received>\n");
-  		}
-  		fprintf(fp, "    </polarization>\n");
-  	}
-  	fprintf(fp, "  </iso>\n");
-  	FREE(begin);
-  	FREE(center);
-  	FREE(end);
   }
 
   fprintf(fp, "</metadata>\n");

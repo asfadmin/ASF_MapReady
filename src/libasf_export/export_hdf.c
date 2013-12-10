@@ -27,6 +27,18 @@
 #include <typlim.h>
 #include <hdf5.h>
 #include <hdf5_hl.h>
+#include <libxml/xmlmemory.h>
+#include <libxml/debugXML.h>
+#include <libxml/HTMLtree.h>
+#include <libxml/xmlIO.h>
+#include <libxml/DOCBparser.h>
+#include <libxml/xinclude.h>
+#include <libxml/catalog.h>
+#include <libxslt/xslt.h>
+#include <libxslt/xsltInternals.h>
+#include <libxslt/transform.h>
+#include <libxslt/xsltutils.h>
+#include <xml_util.h>
 
 #define RES 16
 #define MAX_PTS 256
@@ -71,7 +83,7 @@ void h5_att_float2(hid_t data, char *name, float *value)
   H5Aclose(attr);
 }
 
-void h5_att_str(hid_t data, char *name, char *value)
+void h5_att_str(hid_t data, char *name, const char *value)
 {
   hid_t space = H5Screate(H5S_SCALAR);
   hid_t str = H5Tcopy(H5T_C_S1);
@@ -90,7 +102,8 @@ void h5_value_double(hid_t file, char *group, char *name,
   hid_t h5_data = H5Dcreate(file, meta, H5T_NATIVE_DOUBLE, h5_space,
 			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   H5Dwrite(h5_data, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
-  h5_att_str(h5_data, "long_name", long_name);
+  if (long_name && strlen(long_name) > 0)
+    h5_att_str(h5_data, "long_name", long_name);
   if (units && strlen(units) > 0) 
     h5_att_str(h5_data, "units", units);
   H5Dclose(h5_data);
@@ -107,7 +120,8 @@ void h5_value_double_array(hid_t file, char *group, char *name, double *value,
   hid_t h5_data = H5Dcreate(file, meta, H5T_NATIVE_DOUBLE, h5_space,
 			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   H5Dwrite(h5_data, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, value);
-  h5_att_str(h5_data, "long_name", long_name);
+  if (long_name && strlen(long_name) > 0)
+    h5_att_str(h5_data, "long_name", long_name);
   if (units && strlen(units) > 0) 
     h5_att_str(h5_data, "units", units);
   H5Dclose(h5_data);
@@ -123,7 +137,8 @@ void h5_value_float(hid_t file, char *group, char *name,
   hid_t h5_data = H5Dcreate(file, meta, H5T_NATIVE_FLOAT, h5_space,
 			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   H5Dwrite(h5_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
-  h5_att_str(h5_data, "long_name", long_name);
+  if (long_name && strlen(long_name) > 0)
+    h5_att_str(h5_data, "long_name", long_name);
   if (units && strlen(units) > 0)
     h5_att_str(h5_data, "units", units);
   H5Dclose(h5_data);
@@ -140,7 +155,8 @@ void h5_value_float_array(hid_t file, char *group, char *name, float *value,
   hid_t h5_data = H5Dcreate(file, meta, H5T_NATIVE_FLOAT, h5_space,
 			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   H5Dwrite(h5_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, value);
-  h5_att_str(h5_data, "long_name", long_name);
+  if (long_name && strlen(long_name) > 0)
+    h5_att_str(h5_data, "long_name", long_name);
   if (units && strlen(units) > 0)
     h5_att_str(h5_data, "units", units);
   H5Dclose(h5_data);
@@ -163,7 +179,8 @@ void h5_value_boolean(hid_t file, char *group, char *name,
   hid_t h5_data = H5Dcreate(file, meta, h5_str, h5_space,
 			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   H5Dwrite(h5_data, h5_str, H5S_ALL, H5S_ALL, H5P_DEFAULT, str);
-  h5_att_str(h5_data, "long_name", long_name);
+  if (long_name && strlen(long_name) > 0)
+    h5_att_str(h5_data, "long_name", long_name);
   if (units && strlen(units) > 0)
     h5_att_str(h5_data, "units", units);
   H5Dclose(h5_data);
@@ -180,7 +197,8 @@ void h5_value_int(hid_t file, char *group, char *name,
   hid_t h5_data = H5Dcreate(file, meta, H5T_NATIVE_INT, h5_space,
 			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   H5Dwrite(h5_data, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
-  h5_att_str(h5_data, "long_name", long_name);
+  if (long_name && strlen(long_name) > 0)
+    h5_att_str(h5_data, "long_name", long_name);
   if (units && strlen(units) > 0)
     h5_att_str(h5_data, "units", units);
   H5Dclose(h5_data);
@@ -197,7 +215,8 @@ void h5_value_int_array(hid_t file, char *group, char *name, int *value,
   hid_t h5_data = H5Dcreate(file, meta, H5T_NATIVE_INT, h5_space,
 			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   H5Dwrite(h5_data, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, value);
-  h5_att_str(h5_data, "long_name", long_name);
+  if (long_name && strlen(long_name) > 0)
+    h5_att_str(h5_data, "long_name", long_name);
   if (units && strlen(units) > 0)
     h5_att_str(h5_data, "units", units);
   H5Dclose(h5_data);
@@ -213,7 +232,8 @@ void h5_value_long(hid_t file, char *group, char *name,
   hid_t h5_data = H5Dcreate(file, meta, H5T_NATIVE_LONG, h5_space,
 			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   H5Dwrite(h5_data, H5T_NATIVE_LONG, H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
-  h5_att_str(h5_data, "long_name", long_name);
+  if (long_name && strlen(long_name) > 0)
+    h5_att_str(h5_data, "long_name", long_name);
   if (units && strlen(units) > 0)
     h5_att_str(h5_data, "units", units);
   H5Dclose(h5_data);
@@ -230,7 +250,8 @@ void h5_value_long_array(hid_t file, char *group, char *name, long *value,
   hid_t h5_data = H5Dcreate(file, meta, H5T_NATIVE_LONG, h5_space,
 			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   H5Dwrite(h5_data, H5T_NATIVE_LONG, H5S_ALL, H5S_ALL, H5P_DEFAULT, value);
-  h5_att_str(h5_data, "long_name", long_name);
+  if (long_name && strlen(long_name) > 0)
+    h5_att_str(h5_data, "long_name", long_name);
   if (units && strlen(units) > 0)
     h5_att_str(h5_data, "units", units);
   H5Dclose(h5_data);
@@ -248,7 +269,8 @@ void h5_value_str(hid_t file, char *group, char *name,
   hid_t h5_data = H5Dcreate(file, meta, h5_str, h5_space,
 			 H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   H5Dwrite(h5_data, h5_str, H5S_ALL, H5S_ALL, H5P_DEFAULT, value);
-  h5_att_str(h5_data, "long_name", long_name);
+  if (long_name && strlen(long_name) > 0)
+    h5_att_str(h5_data, "long_name", long_name);
   if (units && strlen(units) > 0)
     h5_att_str(h5_data, "units", units);
   H5Dclose(h5_data);
@@ -272,13 +294,16 @@ void h5_value_str_array(hid_t file, char *group, char *name, char **values,
   hid_t h5_data = H5Dcreate(file, meta, h5_str, h5_space,
 			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   H5Dwrite(h5_data, h5_str, H5S_ALL, H5S_ALL, H5P_DEFAULT, *values);
-  h5_att_str(h5_data, "long_name", long_name);
+  if (long_name && strlen(long_name) > 0)
+    h5_att_str(h5_data, "long_name", long_name);
   if (units && strlen(units) > 0)
     h5_att_str(h5_data, "units", units);
   H5Dclose(h5_data);
   H5Sclose(h5_space);
 }
 
+// FIXME: Leave the code in for the moment. Needed for refactoring Seasat data
+/*
 static h5_t *initialize_h5_file_meta(const char *output_file_name, 
 				     meta_parameters *md)
 {
@@ -1279,12 +1304,12 @@ static h5_t *initialize_h5_file_iso(const char *output_file_name,
     h5_att_str(h5_data, "units", "1");
     h5_att_str(h5_data, "units_description",
 	       "unitless normalized radar cross-section");
-    /* FIXME: where is the radiometry going to be stored?
-       if (mg->radiometry >= r_SIGMA && mg->radiometry <= r_GAMMA)
-       strcat(str_attr, " stored as powerscale");
-       else if (mg->radiometry >= r_SIGMA_DB && mg->radiometry <= r_GAMMA_DB)
-       strcat(str_attr, " stored as dB=10*log10(*)");
-    */
+    // FIXME: where is the radiometry going to be stored?
+    //   if (mg->radiometry >= r_SIGMA && mg->radiometry <= r_GAMMA)
+    //   strcat(str_attr, " stored as powerscale");
+    //   else if (mg->radiometry >= r_SIGMA_DB && mg->radiometry <= r_GAMMA_DB)
+    //   strcat(str_attr, " stored as dB=10*log10(*)");
+    
     h5_att_float(h5_data, "_FillValue", -999);
     h5_att_str(h5_data, "coordinates", "longitude latitude");
     if (projected)
@@ -2879,71 +2904,270 @@ H5P_DEFAULT);
   return h5;
 
 }
+*/
 
-void finalize_h5_file(h5_t *hdf)
+static xmlNode *findNode(xmlNode *node, char *name)
 {
-  H5Fclose(hdf->file);
-  
-  // Clean up
-  FREE(hdf->var);
-  FREE(hdf);
+  xmlNode *cur = node->xmlChildrenNode;
+  while (cur != NULL) {
+    if (!xmlStrcmp(cur->name, (const xmlChar *)name))
+      return cur;
+    cur = cur->next;
+  }
+  return NULL;
 }
 
-void export_hdf(const char *metadata_file_name, 
-		const char *image_data_file_name,
-		char *output_file_name, char **band_name,
-		int *noutputs,char ***output_names)
+static xmlNode *findXmlPtr(xmlDoc *doc, char *str)
 {
-  int ii, jj, kk, channel;
-  meta_parameters *md = NULL;
-  iso_meta *iso = NULL;
-  h5_t *h5 = NULL;
-
-  append_ext_if_needed(output_file_name, ".h5", NULL);
-  char *ext = findExt(metadata_file_name);
-  if (strcmp_case(ext, ".XML") == 0) {
-    md = meta_read(metadata_file_name);
-    iso = iso_meta_read(metadata_file_name);
-    h5 = initialize_h5_file_iso(output_file_name, md, iso);
+  int ii, n;
+  char **array;
+  xmlNode *cur, *next;
+  split_into_array(str, '.', &n, &array);
+  cur = xmlDocGetRootElement(doc);
+  for (ii=1; ii<n; ii++) {
+    next = findNode(cur, array[ii]);
+    cur = next;
   }
-  else if (strcmp_case(ext, ".META") == 0) {
-    md = meta_read (metadata_file_name); 
-    h5 = initialize_h5_file_meta(output_file_name, md);
-  }
-  else
-    asfPrintError("Metadata format (%s) not supported!\n", ext);
-  int band_count = md->general->band_count;
-  int sample_count = md->general->sample_count;
-  int line_count = md->general->line_count;
-  float *hdf = (float *) MALLOC(sizeof(float)*line_count*sample_count);
-  FILE *fp = FOPEN(image_data_file_name, "rb");
-  float *float_line = (float *) MALLOC(sizeof(float)*sample_count);
-  if (!band_name)
-    band_name = extract_band_names(md->general->bands, band_count);
+  free_char_array(&array, n);
+  return cur;
+}
 
-  for (kk=0; kk<band_count; kk++) {
-    for (ii=0; ii<line_count; ii++ ) {
-      channel = get_band_number(md->general->bands, band_count, band_name[kk]);
-      get_float_line(fp, md, ii+channel*line_count, float_line);
-      for (jj=0; jj<sample_count; jj++)
-	hdf[ii*sample_count+jj] = float_line[jj];
-      asfLineMeter(ii, line_count);
+static void xml_get_children(xmlNode *node, char **children)
+{
+  int ii=0;
+  xmlNode *cur = node->xmlChildrenNode;
+  for (cur = node; cur; cur = cur->next) {
+    if (cur->type == XML_ELEMENT_NODE) {
+      sprintf(children[ii], "%s", (char *)cur->name);
+      ii++;
     }
-    asfPrintStatus("Storing band '%s' ...\n", band_name[kk]);
-    char dataset[50];
-    sprintf(dataset, "/data/%s", band_name[kk]);
-    hid_t h5_data = H5Dopen(h5->file, dataset, H5P_DEFAULT);
+  }
+}
+
+static void xml_meta2hdf(xmlDoc *doc, xmlNode *node, char *group, char *xmlStr, 
+  hid_t h5)
+{
+  char str[512], element[50], value[50], type[25], definition[255], units[25];
+  xmlNode *cur = NULL;
+  cur = node->xmlChildrenNode;
+  for (cur = node; cur; cur = cur->next) {
+    if (cur->type == XML_ELEMENT_NODE) {
+      sprintf(element, "%s", (char *)cur->name);
+      sprintf(str, "%s.%s", xmlStr, element);
+      sprintf(value, "%s", xml_get_string_value(doc, str));
+      sprintf(str, "%s.%s.type", xmlStr, element);
+      sprintf(type, "%s", xml_get_string_attribute(doc, str));
+      sprintf(str, "%s.%s.definition", xmlStr, element);
+      sprintf(definition, "%s", xml_get_string_attribute(doc, str));
+      if (strcmp(definition, MAGIC_UNSET_STRING) == 0)
+        strcpy(definition, "");
+      sprintf(str, "%s.%s.units", xmlStr, element);
+      sprintf(units, "%s", xml_get_string_attribute(doc, str));
+      if (strcmp(units, MAGIC_UNSET_STRING) == 0)
+        strcpy(units, "");
+
+      if (strcmp_case(type, "STRING") == 0)
+        h5_value_str(h5, group, element, value, definition, units);
+      else if (strcmp_case(type, "INT") == 0)
+        h5_value_int(h5, group, element, atoi(value), definition, units);
+      else if (strcmp_case(type, "DOUBLE") == 0)
+        h5_value_double(h5, group, element, atof(value), definition, units);
+      else {
+        asfPrintWarning("Unknown type (%s) for element (%s)!\nWriting element"
+          "as string!\n", type, element);
+        h5_value_str(h5, group, element, value, definition, units);
+      }
+    }
+  }
+}
+
+static void xml_data2hdf(xmlDoc *doc, char *dataFile, char *group, 
+  char *dataXml, h5_t *h5)
+{
+  char str[512], imgFile[512], metaFile[512], dataset[512];
+  sprintf(str, "%s.%s", dataXml, dataFile);
+  sprintf(imgFile, "%s.img", xml_get_string_value(doc, str));
+  sprintf(metaFile, "%s.meta", xml_get_string_value(doc, str));
+  sprintf(dataset, "%s/%s", group, dataFile);
+  int found = TRUE;
+  if (!fileExists(imgFile)) {
+    asfPrintWarning("Image file (%s) does not exist! Skipping export to HDF5!"
+      "\n", imgFile);
+    found = FALSE;
+  }
+  if (!fileExists(metaFile)) {
+    asfPrintWarning("Metadata file (%s) does not exist! Skipping export to "
+      "HDF5!\n", metaFile);
+    found = FALSE;
+  }
+  if (found) {
+    meta_parameters *meta = meta_read(metaFile);
+    int lines = meta->general->line_count;
+    int samples = meta->general->sample_count;
+    float *hdf = (float *) MALLOC(sizeof(float)*lines*samples);
+    FILE *fp = FOPEN(imgFile, "rb");
+    get_float_lines(fp, meta, 0, lines, hdf);
+    FCLOSE(fp);
+    
+    // Write the data to the HDF5 file
+    hsize_t dims[2] = { lines, samples };
+    hsize_t cdims[2] = { 100, samples };
+    hid_t h5_array = H5Screate_simple(2, dims, NULL);
+    h5->space = h5_array;
+    hid_t h5_plist = H5Pcreate(H5P_DATASET_CREATE);
+    H5Pset_chunk(h5_plist, 2, cdims);
+    H5Pset_deflate(h5_plist, 6);
+    hid_t h5_data = H5Dcreate(h5->file, dataset, H5T_NATIVE_FLOAT, h5_array,
+      H5P_DEFAULT, h5_plist, H5P_DEFAULT);
     H5Dwrite(h5_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, hdf);
     H5Dclose(h5_data);
+    FREE(hdf);
+    meta_free(meta);
   }
+}
 
-  finalize_h5_file(h5);
-  FREE(hdf);
-  FREE(float_line);
-  meta_free(md);
+static void xml_datameta2hdf(xmlDoc *doc, xmlNode *node, char *group, 
+  char *metaXml, char *parameter, hid_t h5)
+{
+  char str[512], element[512], value[100], units[25], valueStr[512];
+  xmlNode *cur = NULL;
+  cur = node->xmlChildrenNode;
+  for (cur = node; cur; cur = cur->next) {
+    if (cur->type == XML_ELEMENT_NODE) {
+      sprintf(element, "%s", (char *)cur->name);
+      sprintf(str, "%s.%s", metaXml, element);
+      sprintf(value, "%s", xml_get_string_value(doc, str));
+      sprintf(str, "%s.%s.units", metaXml, element);
+      sprintf(units, "%s", xml_get_string_attribute(doc, str));
+      if (strcmp(units, MAGIC_UNSET_STRING) == 0)
+        sprintf(valueStr, "%s", value);
+      else
+        sprintf(valueStr, "%s [%s]", value, units);
+      hid_t h5_data = H5Dopen(h5, group, H5P_DEFAULT);
+      h5_att_str(h5_data, element, valueStr);
+      H5Dclose(h5_data);
+    }
+  }
+}
+
+void export_hdf(const char *in_base_name, char *output_file_name,
+								int *noutputs,char ***output_names)
+{
+  int ii, kk, dataCount, metaCount;
+  char group[512], granule[100], xmlStr[512], datagroup[512];
+  char **data_sets=NULL, **meta_params=NULL;
+
+  // Read XML file
+  xmlDoc *doc = xmlReadFile(in_base_name, NULL, 0);
+
+  // Generate HDF5 file
+  append_ext_if_needed(output_file_name, ".h5", NULL);
+  h5_t *h5 = (h5_t *) MALLOC(sizeof(h5_t));
+  hid_t h5_file = 
+    H5Fcreate(output_file_name, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  h5->file = h5_file;
+  
+  // Create a granule group
+  strcpy(granule, xml_get_string_value(doc, "hdf5.granule"));
+  if (strcmp_case(granule, MAGIC_UNSET_STRING) == 0)
+    asfPrintError("Granule parameter (hdf5.granule) needs to be defined!\n");
+  sprintf(group, "/%s", granule);
+  hid_t h5_granule = H5Gcreate(h5_file, group, H5P_DEFAULT, H5P_DEFAULT, 
+			   H5P_DEFAULT);
+  
+  // Work through the metadata
+  sprintf(group, "/%s/metadata", granule);
+  hid_t h5_metagroup = H5Gcreate(h5_granule, group, H5P_DEFAULT, H5P_DEFAULT, 
+			   H5P_DEFAULT);
+  metaCount = xml_get_children_count(doc, "hdf5.metadata");
+  if (metaCount == 0)
+    asfPrintError("Metadata section (hdf.metadata) does not exist or does not "
+      "have any children!\n");
+  meta_params = (char **) MALLOC(sizeof(char *)*metaCount);
+  for (ii=0; ii<metaCount; ii++)
+    meta_params[ii] = (char *) MALLOC(sizeof(char)*50);
+  xmlNode *node = findXmlPtr(doc, "hdf5.metadata");
+  xml_get_children(node->children, meta_params);
+  for (ii=0; ii<metaCount; ii++) {
+    sprintf(xmlStr, "hdf5.metadata.%s", meta_params[ii]);
+    node = findXmlPtr(doc, xmlStr);
+    sprintf(group, "/%s/metadata/%s", granule, meta_params[ii]);
+    hid_t h5_product = 
+      H5Gcreate(h5_metagroup, group, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    xml_meta2hdf(doc, node->children, group, xmlStr, h5_file);
+    H5Gclose(h5_product);
+  }
+  for (ii=0; ii<metaCount; ii++)
+    FREE(meta_params[ii]);
+  FREE(meta_params);
+  H5Gclose(h5_metagroup);
+
+  // Add data products
+  sprintf(group, "/%s/data", granule);
+  hid_t h5_datagroup = H5Gcreate(h5_granule, group, H5P_DEFAULT, H5P_DEFAULT, 
+			   H5P_DEFAULT);
+  dataCount = xml_get_children_count(doc, "hdf5.data");
+  if (dataCount == 0)
+    asfPrintError("Data section (hdf.data) does not exist or does not have any "
+      "children!\n");
+  data_sets = (char **) MALLOC(sizeof(char *)*dataCount);
+  for (ii=0; ii<dataCount; ii++)
+    data_sets[ii] = (char *) MALLOC(sizeof(char)*50);
+  node = findXmlPtr(doc, "hdf5.data");
+  xml_get_children(node->children, data_sets);
+  for (ii=0; ii<dataCount; ii++) {
+    xml_data2hdf(doc, data_sets[ii], group, "hdf5.data", h5);
+    sprintf(datagroup, "/%s/data/%s", granule, data_sets[ii]);
+    
+    metaCount = xml_get_children_count(doc, "hdf5.metadata");
+    meta_params = (char **) MALLOC(sizeof(char *)*metaCount);
+    for (kk=0; kk<metaCount; kk++)
+      meta_params[kk] = (char *) MALLOC(sizeof(char)*50);
+    node = findXmlPtr(doc, "hdf5.metadata");
+    xml_get_children(node->children, meta_params);
+    for (kk=0; kk<metaCount; kk++) {
+      sprintf(xmlStr, "hdf5.metadata.%s", meta_params[kk]);
+      node = findXmlPtr(doc, xmlStr);
+      if (strcmp_case(data_sets[ii], meta_params[kk]) == 0)
+        xml_datameta2hdf(doc, node->children, datagroup, xmlStr, meta_params[kk],
+          h5_file);
+      FREE(meta_params[kk]);
+    }
+    FREE(meta_params);
+    
+    FREE(data_sets[ii]);
+  }
+  FREE(data_sets);
+  H5Gclose(h5_datagroup);
+
+  H5Gclose(h5_granule);
+
+  // Adding global attributes
+  metaCount = xml_get_children_count(doc, "hdf5.root");
+  if (metaCount == 0)
+    asfPrintError("No metadata for the root level (hdf5.root) defined!\n");
+  hid_t h5_global = H5Gopen(h5_file, "/", H5P_DEFAULT);
+  h5_att_str(h5_global, "institution", 
+    xml_get_string_value(doc, "hdf5.root.institution"));
+  h5_att_str(h5_global, "title",
+    xml_get_string_value(doc, "hdf5.root.title"));
+  h5_att_str(h5_global, "source",
+    xml_get_string_value(doc, "hdf5.root.source"));
+  h5_att_str(h5_global, "original_file",
+    xml_get_string_value(doc, "hdf5.root.original_file"));
+  h5_att_str(h5_global, "comment",
+    xml_get_string_value(doc, "hdf5.root.comment")); 
+  h5_att_str(h5_global, "reference",
+	  xml_get_string_value(doc, "hdf5.root.institution"));
+  h5_att_str(h5_global, "history",
+    xml_get_string_value(doc, "hdf5.root.history")); 
+  H5Gclose(h5_global);
+  
+  H5Fclose(h5->file);
+  FREE(h5);
 
   *noutputs = 1;
   char **outs = MALLOC(sizeof(char*));
   outs[0] = STRDUP(output_file_name);
-  *output_names = outs;  
+  *output_names = outs;
 }
