@@ -902,7 +902,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   unsigned long out_of_range_negative = 0;
   unsigned long out_of_range_positive = 0;
   overlap_method_t overlap=OVERLAY_OVERLAP;
-  double pixel_size_x, pixel_size_y;
+  double pixel_size_x=0, pixel_size_y=0;
   int input_is_latlon = FALSE;
 
   if (pixel_size == 0.0)
@@ -1380,6 +1380,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     else if (pixel_size < 0) {
       pixel_size_x = imd->general->x_pixel_size;
       pixel_size_y = imd->general->y_pixel_size;
+    }
+    else if (pixel_size > 0) {
+      pixel_size_x = pixel_size_y = pixel_size;
     }
 
     // If all input metadata is byte, we will store everything as bytes,
