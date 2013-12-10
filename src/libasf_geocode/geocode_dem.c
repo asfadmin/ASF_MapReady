@@ -390,6 +390,10 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
 		sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
 	else if (resample_method == RESAMPLE_BICUBIC)
 		sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;
+	else {
+		asfPrintError("Invalid sample method %d\n", (int)resample_method);
+		sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
+	}
 	if ( in_image (z_coords, in_x, in_y) ) {
 	  // FIXME: something needs to be done somewhere about
 	  // propogating no data values.

@@ -272,7 +272,7 @@ project_lat_long_pseudo_arr(project_parameters_t* UNUSED(pps), double *lat,
 	datum_type_t UNUSED(datum))
 {
   long ii;
-  double *pz;
+  double *pz = NULL;
   *x = (double *) MALLOC(sizeof(double) * length);
   *y = (double *) MALLOC(sizeof(double) * length);
   if (z) {
