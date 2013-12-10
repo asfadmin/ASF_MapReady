@@ -51,16 +51,11 @@ void usage(char *name)
 {
   printf("\n"
 	 "USAGE:\n"
-	 "   %s [ -log <logFile> ] [ -logfile <processing log> | -iso ] <meta_name> <xml_name>\n",name);
+	 "   %s [ -log <logFile> ] <meta_name> <xml_name>\n", name);
   printf("\n"
 	 "REQUIRED ARGUMENTS:\n"
 	 "   meta_name   Base name of the meta data file.\n"
-	 "   esri_name   Base name of the XML file.\n"
-	 "OPTIONAL ARGUMENTS:\n"
-	 "   -logfile    Adds time information from the processing log. This option\n"
-	 "               implies choosing -iso at the same time.\n"
-	 "   -iso        Adds an iso section to the metadata, needed to generated an\n"
-	 "               ISO compliant metadata file.");
+	 "   xml_name   Base name of the XML file.\n");
   printf("\n"
 	 "DESCRIPTION:\n"
 	 "   %s converts an ASF .meta file to an ASF .xml file.\n",
@@ -95,7 +90,6 @@ int main(int argc, char **argv)
 {
   char meta_name[1024], xml_name[1024], *logFileName=NULL;
   meta_parameters *meta=NULL;
-  int isoFlag = FALSE;
   int currArg = 1;
   int NUM_ARGS = 2;
 
@@ -112,15 +106,6 @@ int main(int argc, char **argv)
     }
     else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
       quietflag = TRUE;
-    }
-    else if (strmatches(key,"-iso","--iso",NULL)) {
-    	isoFlag = TRUE;
-    }
-    else if (strmatches(key,"-logfile","--logfile",NULL)) {
-    	CHECK_ARG(1);
-    	logFileName = (char *) MALLOC(sizeof(char)*50);
-    	strcpy(logFileName, GET_ARG(1));
-    	isoFlag = TRUE;
     }
     else {
       --currArg;
@@ -142,7 +127,7 @@ int main(int argc, char **argv)
   asfSplashScreen(argc, argv);
 
   meta = meta_read(meta_name);
-  meta_write_xml_ext(meta, logFileName, isoFlag, xml_name);
+  meta_write_xml(meta, xml_name);
 
   // Clean and report
   meta_free(meta);
