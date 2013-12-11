@@ -356,6 +356,28 @@ Size1 = string
 Download2 = string
 Size2 = string
 
+[GRANULE]
+Stack ID = integer
+Granule = string
+Satellite = string
+Beam Mode = string
+Off Nadir = double
+Orbit = integer
+Frame = integer
+Acq Date = string
+Direction = string
+Path = integer
+Terrain = integer
+InSAR = integer
+Lat1 = double
+Lon1 = double
+Lat2 = double
+Lon2 = double
+Lat3 = double
+Lon3 = double
+Lat4 = double
+Lon4 = double
+
 [TEST]
 string = string
 double = double
