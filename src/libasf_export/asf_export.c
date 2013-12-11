@@ -29,7 +29,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   asfPrintStatus("Exporting ...\n");
 
   meta_parameters *md = NULL;
-  int i, nouts = 0, is_polsarpro, is_matrix;
+  int i, nouts = 0, is_polsarpro = 0, is_matrix = 0;
   char **outs = NULL;
 
   if (format != HDF) {
