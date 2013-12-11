@@ -649,7 +649,7 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
   int ii;
 
   // Read radiometry
-  radiometry_t radiometry;
+  radiometry_t radiometry = r_AMP;
   if (strncmp_case(cfg->import->radiometry, "AMPLITUDE_IMAGE", 15) == 0)
     radiometry = r_AMP;
   else if (strncmp_case(cfg->import->radiometry, "POWER_IMAGE", 11) == 0)
@@ -1006,7 +1006,7 @@ extern char *g_status_file;
 static void save_intermediate(convert_config *cfg, char *tag, char *filename)
 {
   // the "tag" that is passed in needs to match what is looked for
-  // in the GUI: asf_convert_gui/file_list.c:move_to_completed_files_list()
+  // in the GUI: mapready/file_list.c:move_to_completed_files_list()
 
   
 
@@ -1014,7 +1014,7 @@ static void save_intermediate(convert_config *cfg, char *tag, char *filename)
   {
     if (!intermediates_file) {
       // the name of the intermediates file needs to match what the GUI
-      // will look for in asf_convert_gui/execute.c:do_convert()
+      // will look for in mapready/execute.c:do_convert()
       char *status_file = STRDUP(g_status_file);
       char *ext = strstr(status_file, ".status");
       if (ext) *ext = '\0';
@@ -2571,7 +2571,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
       sprintf(outFile, "%s", cfg->general->out_name);
     
     // Check radiometry
-    radiometry_t radiometry;
+    radiometry_t radiometry=r_AMP;
     if (strcmp_case(cfg->calibrate->radiometry, "SIGMA") == 0)
       radiometry = r_SIGMA;
     else if (strcmp_case(cfg->calibrate->radiometry, "BETA") == 0)
@@ -3422,7 +3422,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   }
   
   // Don't change this message unless you also change the code in
-  // asf_convert_gui/execute.c to look for a different successful
+  // mapready/execute.c to look for a different successful
   // completion string.  GUI currently detects successful processing
   // by looking for this message in the log file.... (yeah, I know.)
   asfPrintStatus("\nSuccessful completion!\n\n");
@@ -3736,7 +3736,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     projection_type_t proj_type;
     datum_type_t datum;
     spheroid_type_t spheroid;
-    resample_method_t resample_method;
+    resample_method_t resample_method=RESAMPLE_NEAREST_NEIGHBOR;
     int multiband = 1;
     int band_num = 0;
     char *err=NULL;

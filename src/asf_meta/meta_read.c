@@ -533,7 +533,7 @@ void ddr2meta(struct DDR *ddr, meta_parameters *meta)
     } /* End if ((ddr->valid[ii]==VALID) && (ii!=DDINCV)) */
   } /* End for (ii=0; ii<DDNVAL; ii++) */
     /* Make some guesses */
-  if (meta->projection && (meta->projection->type != MAGIC_UNSET_CHAR) &&
+  if (meta->projection && (meta->projection->type != UNKNOWN_PROJECTION) &&
             meta->sar)
     meta->sar->image_type = 'P';
 }

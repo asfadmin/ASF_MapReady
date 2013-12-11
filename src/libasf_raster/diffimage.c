@@ -4916,7 +4916,6 @@ int ppm_pgm_image_band_statistics_from_file(char *inFile, char *outfile,
       pgm.width <= 0 ||
       pgm.height <= 0 ||
       pgm.max_val <= 0 ||
-      pgm.img_offset < 0 ||
       pgm.bit_depth != 8 ||
       pgm.data_type != ASF_BYTE ||
       pgm.num_bands <= 0) {
@@ -5042,7 +5041,6 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2,
       pgm1.width <= 0 ||
       pgm1.height <= 0 ||
       pgm1.max_val <= 0 ||
-      pgm1.img_offset < 0 ||
       pgm1.bit_depth != 8 ||
       pgm1.data_type != ASF_BYTE ||
       pgm1.num_bands <= 0) {
@@ -5058,7 +5056,6 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2,
       pgm2.width <= 0 ||
       pgm2.height <= 0 ||
       pgm2.max_val <= 0 ||
-      pgm2.img_offset < 0 ||
       pgm2.bit_depth != 8 ||
       pgm2.data_type != ASF_BYTE ||
       pgm2.num_bands <= 0) {
@@ -6000,7 +5997,6 @@ void export_ppm_pgm_to_asf_img(char *inFile, char *outfile,
       pgm.width <= 0 ||
       pgm.height <= 0 ||
       pgm.max_val <= 0 ||
-      pgm.img_offset < 0 ||
       pgm.bit_depth != 8 ||
       pgm.data_type != ASF_BYTE ||
       pgm.num_bands <= 0)

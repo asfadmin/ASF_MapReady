@@ -58,7 +58,8 @@ typedef enum {
   KML,                          // JPEG with GoogleEarth overlay file
   POLSARPRO_HDR,                // PolsarPro with ENVI header
   HDF,                          // HDF5 - NASA Earth Observation standard
-  NC                            // netCDF - modeler oriented format
+  NC,                           // netCDF - modeler oriented format
+  UNKNOWN_OUTPUT_FORMAT
 } output_format_t;
 
 /* Ellipsoid used for the data.  */
@@ -213,10 +214,8 @@ void export_netcdf(const char *metadata_file_name,
 		   int *noutputs,char ***output_names);
 
 // Prototypes from export_hdf.c
-void export_hdf(const char *metadata_file_name, 
-		const char *image_data_file_name,
-		char *output_file_name, char **band_name,
-		int *noutputs,char ***output_names);
+void export_hdf(const char *in_base_name, char *output_file_name,
+  int *noutputs,char ***output_names);
 
 // Prototypes from export_polsarpro.c
 void initialize_polsarpro_file(const char *output_file_name,

@@ -255,13 +255,10 @@ static int is_alos_avnir(meta_parameters *meta) {
 // functions to use when we need to use a function pointer to perform
 // a generic operation.
 static int
-project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
-       double height, double *x, double *y, double *z,
-             datum_type_t datum)
+project_lat_long_pseudo (project_parameters_t* UNUSED(pps), double lat, 
+	double lon, double height, double *x, double *y, double *z,
+  datum_type_t UNUSED(datum))
 {
-  /* Silence compiler warning about unused argument.  */
-  pps = pps; datum = datum;
-
   *x = lon * R2D;
   *y = lat * R2D;
   if (z) *z = height;
@@ -270,13 +267,12 @@ project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
 }
 
 static int
-project_lat_long_pseudo_arr(project_parameters_t *pps, double *lat, double *lon,
-			    double *height, double **x, double **y, 
-			    double **z, long length, datum_type_t datum)
+project_lat_long_pseudo_arr(project_parameters_t* UNUSED(pps), double *lat, 
+	double *lon, double *height, double **x, double **y, double **z, long length,
+	datum_type_t UNUSED(datum))
 {
-  pps = pps; datum = datum;
   long ii;
-  double *pz;
+  double *pz = NULL;
   *x = (double *) MALLOC(sizeof(double) * length);
   *y = (double *) MALLOC(sizeof(double) * length);
   if (z) {
@@ -295,13 +291,10 @@ project_lat_long_pseudo_arr(project_parameters_t *pps, double *lat, double *lon,
 }
 
 static int
-project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
-           double z, double *lat, double *lon,
-           double *height, datum_type_t datum)
+project_lat_long_pseudo_inv (project_parameters_t* UNUSED(pps), double x, 
+	double y, double z, double *lat, double *lon, double *height, 
+	datum_type_t UNUSED(datum))
 {
-  /* Silence compiler warning about unused argument.  */
-  pps = pps; datum = datum;
-
   *lat = y * D2R;
   *lon = x * D2R;
   if (height) *height = z;
@@ -310,12 +303,10 @@ project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
 }
 
 static int
-project_lat_long_pseudo_inv_arr(project_parameters_t *pps, double *x, double *y,
-				double *z, double **lat, double **lon,
-				double **height, long length, 
-				datum_type_t datum)
+project_lat_long_pseudo_inv_arr(project_parameters_t* UNUSED(pps), double *x, 
+	double *y, double *z, double **lat, double **lon, double **height, 
+	long length, datum_type_t UNUSED(datum))
 {
-  pps = pps; datum = datum;
   long ii;
   *lat = (double *) MALLOC(sizeof(double) * length);
   *lon = (double *) MALLOC(sizeof(double) * length);
@@ -911,7 +902,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   unsigned long out_of_range_negative = 0;
   unsigned long out_of_range_positive = 0;
   overlap_method_t overlap=OVERLAY_OVERLAP;
-  double pixel_size_x, pixel_size_y;
+  double pixel_size_x = 0.0, pixel_size_y = 0.0;
   int input_is_latlon = FALSE;
 
   if (pixel_size == 0.0)
@@ -1390,6 +1381,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       pixel_size_x = imd->general->x_pixel_size;
       pixel_size_y = imd->general->y_pixel_size;
     }
+    else if (pixel_size > 0) {
+      pixel_size_x = pixel_size_y = pixel_size;
+    }
 
     // If all input metadata is byte, we will store everything as bytes,
     // in order to save memory.  (But the math will use floating point.)
@@ -1692,8 +1686,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   }
 
   // NOTE: If we ever allow the user to provide a spheroid
-  // selection on the command line (asf_convert, asf_geocode)
-  // or via the GUI (asf_convert_gui) then this will need
+  // selection on the command line (asf_mapready, asf_geocode)
+  // or via the GUI (mapready) then this will need
   // to change, but for now, associate a spheroid with
   // the datum based on standard use.
 

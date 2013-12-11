@@ -553,14 +553,15 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
   meta->general->band_count = import_single_band ? 1 : meta->general->band_count;
   struct dataset_sum_rec dssr;
   get_dssr(inMetaName, &dssr);
-  if (dssr.sensor_id && strlen(dssr.sensor_id) && nBands == 1) {
+  if (dssr.sensor_id && strlen(dssr.sensor_id) && 
+  	strncmp_case(dssr.mission_id, "ALOS", 4) != 0 && nBands == 1) {
     // HACK ALERT!!!  There must be a better way to get the polarizations and band names...
     char *s = dssr.sensor_id + strlen(dssr.sensor_id) - 1;
     while (isspace((int)*s)) s--;
     s -= 1;
     strcpy(meta->general->bands, s);
   }
-  else {
+  else if (strcmp_case(meta->general->sensor_name, "SAR") != 0) {
     sprintf(meta->general->bands, "%s",
             (meta->general->band_count == 1) ? "01" :
             (meta->general->band_count == 2) ? "01,02" :
@@ -585,7 +586,10 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
           meta->sar->roll = facdr.scroll;
       }
       strcpy(meta->sar->polarization, meta->general->bands);
-      meta->sar->prf = s->prf;
+		  if (strncmp(s->satName, "ALOS", 4) == 0)
+  			meta->sar->prf = dssr.prf / 1000.0;
+  		else
+      	meta->sar->prf = s->prf;
       meta->sar->slant_range_first_pixel = s->range_gate*speedOfLight/2.0;
       meta->sar->multilook = 0;
   }
@@ -1020,7 +1024,7 @@ static void status_data_type(meta_parameters *meta, data_type_t data_type,
   if (data_type >= COMPLEX_BYTE)
     asfPrintStatus("   Input data type: single look complex\n");
   else if (meta->projection != NULL &&
-       meta->projection->type != MAGIC_UNSET_CHAR) {
+       meta->projection->type != UNKNOWN_PROJECTION) {
     // This must be ScanSAR
     if (meta->projection->type != SCANSAR_PROJECTION &&
     strncmp(meta->general->sensor, "RSAT", 4) == 0 &&

@@ -327,7 +327,7 @@ void initialize_png_file_ext(const char *output_file_name,
 
     int width = meta->general->sample_count;
     int height = meta->general->line_count;
-    png_byte color_type;
+    png_byte color_type = '\0';
     if (alpha == 0)
       color_type = rgb ? PNG_COLOR_TYPE_RGB : PNG_COLOR_TYPE_GRAY;
     else if (alpha == 1) {
@@ -2293,7 +2293,7 @@ export_band_image (const char *metadata_file_name,
         else if (md->general->image_data_type == POLARIMETRIC_DECOMPOSITION &&
           md->general->band_count != 1) {
             int ll, found_band = FALSE;
-            int band_count;
+            int band_count=0;
             if (strcmp(decomposition, "Freeman2_Vol") == 0)
               band_count = 2;
             else if (strcmp(decomposition, "Freeman_Vol") == 0)

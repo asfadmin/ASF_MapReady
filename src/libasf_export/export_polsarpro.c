@@ -371,7 +371,7 @@ void export_polsarpro(const char *metadata_file_name,
     }
     else if (md->general->image_data_type == POLARIMETRIC_DECOMPOSITION) {
       int ll, found_band = FALSE;
-      int bands;
+      int bands=0;
       if (strcmp(decomposition, "Freeman2_Vol") == 0)
 	bands = 2;
       else if (strcmp(decomposition, "Freeman_Vol") == 0)

@@ -269,6 +269,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   struct dataset_sum_rec *dssr=NULL;/* Data set summary record               */
   struct IOF_VFDR *iof=NULL;        /* Image File Descriptor Record          */
   struct VMPDREC *mpdr=NULL;        /* Map Projection Data Record            */
+  struct qual_sum_rec *dqsr=NULL;   // Data quality summary record
   int dataSize;
   int nBands=1;
   ymd_date date;
@@ -291,6 +292,11 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   if (get_mpdr(in_fName, mpdr) == -1) {
     FREE(mpdr);
     mpdr = NULL;
+  }
+  dqsr = (struct qual_sum_rec*) MALLOC(sizeof(struct qual_sum_rec));
+  if (get_dqsr(in_fName, dqsr) == -1) {
+  	FREE(dqsr);
+  	dqsr = NULL;
   }
 
   // Fill meta->general structure
@@ -399,7 +405,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
 
   // Azimuth time per pixel needs to be known for state vector propagation
   char **dataName;
-  double firstTime, centerTime;
+  double firstTime=0, centerTime;
   if (ceos->facility == CSTARS || ceos->facility == ESA ||
       ceos->facility == DPAF || ceos->facility == IPAF ||
       ceos->facility == DERA) {
@@ -458,11 +464,23 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   meta->sar->multilook = 1;
   meta->sar->incid_a[0] = dssr->incident_ang;
 
+	if (dqsr) {
+		meta->quality = meta_quality_init();
+		meta->quality->bit_error_rate = dqsr->ber;
+		meta->quality->azimuth_resolution = dqsr->azi_res;
+		meta->quality->range_resolution = dqsr->rng_res;
+		meta->quality->signal_to_noise_ratio = dqsr->snr;
+		meta->quality->peak_sidelobe_ratio = dqsr->pslr;
+		meta->quality->integrated_sidelobe_ratio = dqsr->islr;
+	}
+
   /* FREE(dssr); Don't free dssr; it points to the ceos struct (ceos->dssr) */
   if (iof)
     FREE(iof);
   if (mpdr)
     FREE(mpdr);
+  if (dqsr)
+  	FREE(dqsr);
 }
 
 ////////////////////////////////////////

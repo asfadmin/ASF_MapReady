@@ -25,6 +25,8 @@ static void ROI_PAC_HDR2polynom(const char *hdr_data_points_file, double Date,
 // end of the roipac prototypes -- actual code is at the end of the file
 /*-----------------------------------------------------------------*/
 
+static double avg_look = 0;
+
 // in: hdr file
 // sv_file: state vector file
 meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
@@ -52,6 +54,9 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
   int nl, ns, yr, mo, da, hr, mn, sc, ms=0, tm_val=0;
   double utc1=0, utc2=0, utc3=0;
   double prf=0, dop0=0, dop1=0, dop2=0;
+  double x0=0,y0=0,xs=0,ys=0;
+  avg_look=0;
+  int n_lookrefs=0;
   char line[1024];
   while (fgets(line, 1024, ifp)) {
     char *field, *value;
@@ -160,8 +165,58 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
       utc2 = atof(value);
     else if (strcmp_case(field, "LAST_LINE_UTC")==0)
       utc3 = atof(value);
+    else if (strncmp_case(field, "LOOK_REF", 8)==0) {
+      avg_look += atof(value);
+      n_lookrefs++;
+    }
+
+    // These we will see for projected data
+    else if (strcmp_case(field, "X_FIRST")==0)
+      x0 = atof(value);
+    else if (strcmp_case(field, "Y_FIRST")==0)
+      y0 = atof(value);
+    else if (strcmp_case(field, "X_STEP")==0)
+      xs = atof(value);
+    else if (strcmp_case(field, "Y_STEP")==0)
+      ys = atof(value);
+    else if (strcmp_case(field, "X_UNIT")==0 ||
+             strcmp_case(field, "Y_UNIT")==0) {
+      if (strcmp_case(value, "degrees") != 0) {
+        asfPrintError("Unexpected projection units: %s\n", value);
+      }
+    }
+
     free(field);
     free(value);
+  }
+
+  avg_look /= (double)n_lookrefs;
+
+  if (xs != 0 || ys != 0) {
+    if (xs == 0)
+      asfPrintError("Found a Y_STEP but not an X_STEP");
+    if (ys == 0)
+      asfPrintError("Found an X_STEP but not a Y_STEP");
+
+    meta_projection *mp = meta_projection_init();
+    mp->type = LAT_LONG_PSEUDO_PROJECTION;
+    mp->startX = x0;
+    mp->startY = y0;
+    mp->perX = xs;
+    mp->perY = ys;
+    strcpy(mp->units, "degrees");
+
+    meta->general->center_latitude = y0+nl*ys/2.0;
+    meta->general->center_longitude = x0+ns*xs/2.0;
+
+    meta->general->start_line = 0;
+    meta->general->start_sample = 0;
+    meta->general->x_pixel_size = xs;
+    meta->general->y_pixel_size = ys;
+
+    mp->hem = meta->general->center_latitude > 0 ? 'N' : 'S';
+
+    meta->projection = mp;
   }
 
   if (tm_val == 6) {
@@ -234,7 +289,7 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
       asfPrintStatus("Not all time values found in %s\n", in);
   }
   else
-    asfPrintStatus("Incomplete time information in %s", in);
+    asfPrintStatus("Incomplete time information in %s\n", in);
 
   FCLOSE(ifp);
 
@@ -254,10 +309,49 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
   return meta;
 }
 
+static void ingest_roipac_dem(const char *inFile, FILE *fpOut,
+                              meta_parameters *meta, int band)
+{
+  printf("Ingesting %s as ROI_PAC Int16.\n", inFile);
+
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+
+  //meta->general->data_type = INTEGER16;
+
+  FILE *fpIn = FOPEN(inFile, "rb");
+  short *in_buf = MALLOC(sizeof(short)*ns);
+  float *out_buf = MALLOC(sizeof(float)*ns);
+
+  int ii,jj,num_padded=0;
+  for (ii=0; ii<nl; ++ii) {
+    int n = FREADZ(in_buf, sizeof(short), ns, fpIn);
+    for (jj=0; jj<ns; ++jj) {
+      out_buf[jj] = in_buf[jj];
+    }
+
+    if (n<ns)
+      num_padded += ns-n;
+    put_band_float_line(fpOut, meta, band, ii, out_buf);
+
+    asfLineMeter(ii, nl);
+  }
+
+  if (num_padded>0)
+   asfPrintWarning("Had to pad the file with %d zero pixels.\n(About %d lines)\n",
+                   num_padded, num_padded/nl);
+
+  FCLOSE(fpIn);
+  FREE(in_buf);
+  FREE(out_buf);
+}
+
 static void ingest_roipac_rmg(const char *inFile, FILE *fpOut,
                               meta_parameters *inMeta, meta_parameters *outMeta,
                               int amp_band, int phase_band)
 {
+  printf("Ingesting %s as ROI_PAC 4-byte real BIL.\n", inFile);
+
   // ROI_PAC rmg files are alternating lines of amplitude and phase
 
   int inl = inMeta->general->line_count;
@@ -274,18 +368,20 @@ static void ingest_roipac_rmg(const char *inFile, FILE *fpOut,
 
   float *buf = MALLOC(sizeof(float)*ins);
 
-  int ii;
+  int ii,num_padded=0;
   for (ii=0; ii<onl; ++ii) {
     // amplitude line
-    FREAD(buf, sizeof(float), ins, fpIn);
+    int n = FREADZ(buf, sizeof(float), ins, fpIn);
     //for (jj=0; jj<ins; ++jj)
     //  big32(buf[jj]);
 
+    if (n<ins)
+      num_padded += ins-n;
     if (amp_band >= 0)
       put_band_float_line(fpOut, outMeta, amp_band, ii, buf);
 
     // phase line
-    FREAD(buf, sizeof(float), ins, fpIn);
+    FREADZ(buf, sizeof(float), ins, fpIn);
     //for (jj=0; jj<ins; ++jj)
     //  big32(buf[jj]);
 
@@ -294,6 +390,10 @@ static void ingest_roipac_rmg(const char *inFile, FILE *fpOut,
 
     asfLineMeter(ii, onl);
   }
+
+  if (num_padded>0)
+   asfPrintWarning("Had to pad the file with %d zero pixels.\n(About %d lines)\n",
+                   num_padded,num_padded/onl);
 
   FCLOSE(fpIn);
   FREE(buf);
@@ -304,6 +404,8 @@ void ingest_roipac_cpx(const char *inFile, FILE *fpOut,
                        meta_parameters *inMeta, meta_parameters *outMeta,
                        int amp_band, int phase_band)
 {
+  asfPrintStatus("Ingesting %s as ROI_PAC 8-byte complex\n", inFile);
+
   // ROI_PAC cpx files are alternating real and imaginery pixel values
 
   int onl = outMeta->general->line_count;
@@ -322,9 +424,12 @@ void ingest_roipac_cpx(const char *inFile, FILE *fpOut,
   float *amp = MALLOC(sizeof(float)*ins);
   float *phase = MALLOC(sizeof(float)*ins);
 
-  int ii, jj;
+  int ii, jj, num_padded=0;
   for (ii=0; ii<onl; ++ii) {
-    FREAD(buf, sizeof(float), ins*2, fpIn);
+    int n = FREADZ(buf, sizeof(float), ins*2, fpIn);
+    if (n<ins*2)
+      num_padded += (ins*2-n)/2;
+
     for (jj=0; jj<ons; ++jj) {
       float re = buf[jj*2];
       float im = buf[jj*2+1];
@@ -342,6 +447,10 @@ void ingest_roipac_cpx(const char *inFile, FILE *fpOut,
     if (phase_band >= 0)
       put_band_float_line(fpOut, outMeta, phase_band, ii, phase);
   }
+
+  if (num_padded>0)
+   asfPrintWarning("Had to pad the file with %d zero pixels.\n(About %d lines)\n",
+                   num_padded,num_padded/onl);
 
   FCLOSE(fpIn);
 
@@ -454,7 +563,11 @@ static void populate_baseline(meta_parameters *meta,
     meta->insar = meta_insar_init();
 
   strcpy(meta->insar->processor, "ROI_PAC");
-  double look = meta_look(meta, nl/2, ns/2);
+  double look;
+  if (meta->projection)
+     look = avg_look;
+  else
+    look = meta_look(meta, nl/2, ns/2);
   meta->insar->center_look_angle = look*r2d;
   meta->insar->doppler = meta->sar->range_doppler_coefficients[0];
   meta->insar->doppler_rate = meta->sar->range_doppler_coefficients[1];
@@ -468,14 +581,19 @@ static void populate_baseline(meta_parameters *meta,
   meta->insar->baseline_perpendicular_rate = base_dc*cos_look + base_dn*sin_look;
   meta->insar->baseline_temporal = temporal;
 
-  // Calculate critical baseline
-  double range = meta_get_slant(meta, nl/2, ns/2);
-  double wavelength = meta->sar->wavelength;
-  //double bandwidth = meta->sar->chirp_rate;
-  double bandwidth = meta->sar->range_sampling_rate;
-  double tan_incid = tan(meta_incid(meta, nl/2, ns/2));
-  meta->insar->baseline_critical =
+  if (!meta->projection) {
+    // Calculate critical baseline
+    double range = meta_get_slant(meta, nl/2, ns/2);
+    double wavelength = meta->sar->wavelength;
+    //double bandwidth = meta->sar->chirp_rate;
+    double bandwidth = meta->sar->range_sampling_rate;
+    double tan_incid = tan(meta_incid(meta, nl/2, ns/2));
+    meta->insar->baseline_critical =
       fabs(wavelength * range * bandwidth * tan_incid / SPD_LIGHT);
+  }
+  else {
+    meta->insar->baseline_critical = 0;
+  }
 }
 
 static int min2(int a, int b) {
@@ -483,6 +601,110 @@ static int min2(int a, int b) {
 }
 static int min3(int a, int b, int c) {
   return min2(min2(a,b),c);
+}
+
+void import_roipac_new(const char *inFile, const char *outFile,
+                       const char *sv_file, const char *rsc_baseline_file)
+{
+  if (!fileExists(inFile))
+    asfPrintError("File not found: %s\n", inFile);
+
+  char *rscFile = MALLOC(sizeof(char)*(strlen(inFile)+10));
+  sprintf(rscFile, "%s.rsc", inFile);
+  if (!fileExists(rscFile))
+    asfPrintError("File not found: %s\n", rscFile);
+
+  if (sv_file && strlen(sv_file)==0)
+    sv_file = NULL;
+  if (sv_file && !fileExists(sv_file))
+    asfPrintError("File not found: %s\n", sv_file);
+
+  if (rsc_baseline_file && strlen(rsc_baseline_file)==0)
+    rsc_baseline_file = NULL;
+  if (rsc_baseline_file && !fileExists(rsc_baseline_file))
+    asfPrintError("File not found: %s\n", rsc_baseline_file);
+
+  meta_parameters *meta = meta_read_roipac(rscFile, sv_file);
+
+  strcpy(meta->general->basename, inFile);
+  meta->general->data_type = REAL32;
+  meta->general->band_count = 2;
+  strcpy(meta->general->bands, "AMPLITUDE,PHASE");
+
+  if (rsc_baseline_file)
+    populate_baseline(meta, rsc_baseline_file, rscFile);
+
+  meta_get_corner_coords(meta);
+
+  char *meta_out_name = MALLOC(sizeof(char)*(strlen(outFile)+10));
+  sprintf(meta_out_name, "%s.meta", outFile);
+
+  char *img_out_name = MALLOC(sizeof(char)*(strlen(outFile)+10));
+  sprintf(img_out_name, "%s.img", outFile);
+
+  char *ext = strrchr(inFile, '.');
+  if (!ext)
+    asfPrintError("Could not figure out what kind of ROI_PAC data is in %s\n", inFile);
+
+  const int ROIPAC_RMG = 1;
+  const int ROIPAC_CPX = 2;
+  const int ROIPAC_DEM = 3;
+  int type = 0; // RMG or CPX
+
+  if (strcmp(ext, ".amp")==0) {
+    type = ROIPAC_CPX;
+    meta->general->image_data_type = AMPLITUDE_IMAGE;
+  }
+  else if (strcmp(ext, ".int")==0) {
+    type = ROIPAC_CPX;
+    meta->general->image_data_type = INTERFEROGRAM;
+  }
+  else if (strcmp(ext, ".slc")==0) {
+    type = ROIPAC_CPX;
+    meta->general->image_data_type = AMPLITUDE_IMAGE;
+  }
+  else if (strcmp(ext, ".cor")==0) {
+    type = ROIPAC_RMG;
+    meta->general->image_data_type = COHERENCE_IMAGE;
+  }
+  else if (strcmp(ext, ".unw")==0) {
+    type = ROIPAC_RMG;
+    meta->general->image_data_type = UNWRAPPED_PHASE;
+  }
+  else if (strcmp(ext, ".hgt")==0) {
+    type = ROIPAC_RMG;
+    meta->general->image_data_type = DEM;
+  }
+  else if (strcmp(ext, ".inc")==0) {
+    type = ROIPAC_RMG;
+    meta->general->image_data_type = INCIDENCE_ANGLE;
+  }
+  else if (strcmp(ext, ".dem")==0) {
+    type = ROIPAC_DEM;
+    meta->general->image_data_type = DEM;
+  }
+
+  if (type == 0)
+    asfPrintError("Could not figure out what kind of ROI_PAC data is in %s\n", inFile);
+
+  FILE *fpOut = FOPEN(img_out_name, "wb");
+  if (type==ROIPAC_RMG) {
+    ingest_roipac_rmg(inFile, fpOut, meta, meta, 0, 1);
+  } else if (type==ROIPAC_CPX) {
+    ingest_roipac_cpx(inFile, fpOut, meta, meta, 0, 1);
+  } else if (type==ROIPAC_DEM) {
+    ingest_roipac_dem(inFile, fpOut, meta, 0);
+  } else {
+    asfPrintError("Not possible");
+  }
+  fclose(fpOut);
+
+  meta_write(meta, meta_out_name);
+
+  FREE(meta_out_name);
+  FREE(img_out_name);
+  FREE(rscFile);
+  meta_free(meta);
 }
 
 void import_roipac(const char *basename_in, const char *outFile)

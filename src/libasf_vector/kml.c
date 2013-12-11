@@ -2911,7 +2911,7 @@ int kml2ursa(char *inFile, char *outFile, int listFlag)
 {
   FILE *ifp, *ofp;
   char *format, *p, *q, *data_set;
-  int ii, nLines, nVertices, length;
+  int ii=0, nLines, nVertices, length;
   char in_line[4096];
 
   // Figure out the format and number of vertices

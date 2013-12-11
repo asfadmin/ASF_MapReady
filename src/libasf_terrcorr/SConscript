@@ -16,6 +16,18 @@ localenv.AppendUnique(CPPPATH = [
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+
+localenv.AppendUnique(LIBS = [
+    "m",
+    "asf",
+    "asf_meta",
+    "asf_proj",
+    "asf_raster",
+    "asf_sar",
+    "asf_geocode",
+    "asf_vector",
+])
 
 libs = localenv.SharedLibrary("libasf_terrcorr", [
         "seedsquares.c",
@@ -26,5 +38,5 @@ libs = localenv.SharedLibrary("libasf_terrcorr", [
         "uavsar_rtc.c",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
 

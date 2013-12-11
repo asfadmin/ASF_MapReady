@@ -60,7 +60,7 @@ static void dateTime2str(iso_dateTime timeUTC, char *str)
 
 iso_meta *meta2iso(meta_parameters *meta)
 {
-  int ii, kk, numAnnotations, numLayers, numAuxRasterFiles;
+  int ii, kk, numAnnotations=0, numLayers=0, numAuxRasterFiles=0;
   iso_polLayer_t *polLayer;
   char **beamID, errorMessage[1024];
   int line_count = meta->general->line_count;
@@ -213,7 +213,7 @@ iso_meta *meta2iso(meta_parameters *meta)
     info->productVariant = STD_PRODUCT;
   if (meta->sar->image_type == 'S')
     info->projection = SLANTRANGE_PROJ;
-  else if (meta->sar->image_type == 'G');
+  else if (meta->sar->image_type == 'G')
     info->projection = GROUNDRANGE_PROJ;
   info->mapProjection = UNDEF_MAP;
   info->resolutionVariant = UNDEF_RES;

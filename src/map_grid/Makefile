@@ -21,6 +21,7 @@ LIBS =  \
 	$(JPEG_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	$(GLIB_LIBS) \
 	$(LDFLAGS) \
 	-lm -lz

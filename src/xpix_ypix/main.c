@@ -66,7 +66,6 @@ BUGS:
 
 #include "asf.h"
 #include "ddr.h"
-#include "cproj.h"
 #include "proj.h"
 #include "asf_meta.h"
 

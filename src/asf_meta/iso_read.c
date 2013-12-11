@@ -80,7 +80,7 @@ void validateXML(const char *xmlFile, const char *schemaFile)
 
 iso_meta *iso_meta_read(const char *xmlFile)
 {
-  int ii, kk, numAnnotations, numLayers, numAuxRasterFiles;
+  int ii, kk, numAnnotations=0, numLayers=0, numAuxRasterFiles=0;
   iso_polLayer_t *polLayer;
   char **beamID;
   char str[1024], element[1024];

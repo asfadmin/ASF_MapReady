@@ -41,6 +41,7 @@ CFLAGS += \
 	$(JPEG_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
+	$(XML_CFLAGS) \
 	$(GSL_CFLAGS) -Wall
 
 
@@ -55,9 +56,9 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
+	$(XML_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
-	$(HDFEOS5_LIBS) \
 	$(ZLIB_LIBS) \
 	-lm
 
@@ -77,6 +78,7 @@ OBJS := $(patsubst %.c, %.o, $(SOURCES))
 all: build_only
 	mv libasf_export.a $(LIBDIR)
 	cp asf_export.h $(ASF_INCLUDE_DIR)
+#	cp -R iso $(SHAREDIR)
 
 build_only: $(OBJS)
 	rm -f libasf_export.a

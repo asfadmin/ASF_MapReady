@@ -39,7 +39,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 3.5
+#define META_VERSION 3.6
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
@@ -102,7 +102,8 @@ typedef enum {
   MASK,
   IMAGE_LAYER_STACK,
   RGB_STACK,
-  MOSAIC
+  MOSAIC,
+  UNKNOWN_IMAGE_DATA_TYPE
 } image_data_type_t;
 
 typedef enum {
@@ -120,10 +121,12 @@ typedef enum {
   RADARSAT2,
   POLSARPRO,
   GAMMA,
+  ROIPAC_DEPRECATED,
   ROIPAC,
   SMAP,
   SEASAT_H5,
-  GRIDDED_RGPS
+  GRIDDED_RGPS,
+  UNKNOWN_INPUT_FORMAT
 } input_format_t;
 
 /********************************************************************
@@ -529,6 +532,18 @@ typedef struct {
 } meta_insar;
 
 /********************************************************************
+ * meta_quality: Parameters that describe the quality of the data.
+ */
+typedef struct {
+	double bit_error_rate;
+	double azimuth_resolution;
+	double range_resolution;
+	double signal_to_noise_ratio;
+	double peak_sidelobe_ratio;
+	double integrated_sidelobe_ratio;
+} meta_quality;
+
+/********************************************************************
  * General ASF metadta structure.  Collection of all above.
  */
 typedef struct {
@@ -551,6 +566,7 @@ typedef struct {
   meta_insar         *insar;           // Can be NULL
   meta_dem           *dem;             // Can be NULL
   meta_latlon        *latlon;          // Can be NULL
+  meta_quality       *quality;         // Can be NULL
     /* Deprecated elements from old metadata format.  */
   meta_state_vectors *stVec;         /* Can be NULL (check!).  */
   geo_parameters  *geo;
@@ -587,6 +603,8 @@ char *image_data_type2str(image_data_type_t image_data_type);
 char *radiometry2str(radiometry_t radiometry);
 void meta_write(meta_parameters *meta,const char *outName);
 void meta_write_xml(meta_parameters *meta, const char *file_name);
+void meta_write_xml_ext(meta_parameters *meta, const char *logFile, int iso,
+	const char *file_name);
 
 /* Write  sprocket style metadata */
 void meta_write_sprocket(const char *sprocketName, meta_parameters *meta,
@@ -615,6 +633,7 @@ meta_insar *meta_insar_init(void);
 meta_uavsar *meta_uavsar_init(void);
 meta_dem *meta_dem_init(void);
 meta_latlon *meta_latlon_init(int line_count, int sample_count);
+meta_quality *meta_quality_init(void);
 meta_parameters *raw_init(void);
 
 /* Create meta struct from a CEOS file */
@@ -996,9 +1015,9 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
 			 spheroid_type_t *spheroid, char **err);
 
 typedef enum {
-  RESAMPLE_NEAREST_NEIGHBOR = 0, // Must be zero (0) ...asf_convert_gui depends on this
-  RESAMPLE_BILINEAR = 1, // Must be one (1) ...asf_convert_gui depends on this
-  RESAMPLE_BICUBIC = 2 // Must be two (2) ...asf_convert_gui depends on this
+  RESAMPLE_NEAREST_NEIGHBOR = 0, // Must be zero (0) ...mapready depends on this
+  RESAMPLE_BILINEAR = 1, // Must be one (1) ...mapready depends on this
+  RESAMPLE_BICUBIC = 2 // Must be two (2) ...mapready depends on this
 } resample_method_t;
 
 // Prototype for distortions.c

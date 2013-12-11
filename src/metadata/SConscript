@@ -1,0 +1,50 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#include/",
+        "#src/asf_meta/",
+        "#src/libasf_proj/",
+        "#src/libasf_metadata",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+
+localenv.AppendUnique(LIBS = [
+    "asf",
+    "asf_meta",
+    "asf_metadata",
+])
+
+bins = [
+    localenv.Program("metadata", [
+        "metadata_main.c",
+        "help.c",
+    ]),
+    
+    localenv.Program("dumpCeosRecords", [
+        "dumpCeosRecords.c",
+    ]),
+
+    localenv.Program("dumpLineHeader", [
+        "dumpLineHeader.c",
+    ]),
+]
+
+shares = localenv.File([
+    "alos_processed_data.rec",
+    "alos_signal_data.rec",
+    "asf_processed_data.rec",
+    "asf_signal_data.rec",
+    "rsat_processed_data.rec",
+    "rsat_signal_data.rec",
+])
+
+docs = localenv.File([
+    "metadata.man",
+])
+
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
+localenv.Install(globalenv["inst_dirs"]["docs"], docs)

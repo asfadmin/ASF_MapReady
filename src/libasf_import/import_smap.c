@@ -50,7 +50,7 @@ smap_meta *smap_meta_init(void)
 
 static int get_float_attr(hid_t object, char *name)
 {
-  float value;
+  float value=MAGIC_UNSET_DOUBLE;
   hid_t attr = H5Aopen(object, name, H5P_DEFAULT);
   hid_t type = H5Aget_type(attr);
   hid_t space = H5Aget_space(attr);
@@ -65,7 +65,7 @@ static int get_float_attr(hid_t object, char *name)
 
 static int get_int_attr(hid_t object, char *name)
 {
-  int value;
+  int value=MAGIC_UNSET_INT;
   hid_t attr = H5Aopen(object, name, H5P_DEFAULT);
   hid_t type = H5Aget_type(attr);
   hid_t space = H5Aget_space(attr);

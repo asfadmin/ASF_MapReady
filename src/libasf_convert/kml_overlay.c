@@ -135,7 +135,7 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
 		    char *polsarpro, char *band, int zip)
 {
   meta_parameters *meta=NULL;
-  double pixel_size;
+  double pixel_size=0.0;
   int is_insar = isInSAR(inFile);
   if (is_insar)
     printf("InSAR file\n");
@@ -169,7 +169,7 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
     else {
       pixel_size = meta->projection->perX;
       if (meta->general->line_count > 1024)
-	pixel_size *= reduction;
+    	pixel_size *= reduction;
       FREE(envi);
     }
 
@@ -189,7 +189,7 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
     // Check if PolSARPro decomposition is chosen. Needs to have the bands in
     // the RGB option defined as well.
     if (polsarpro && strcmp_case(polsarpro, "DECOMPOSITION") == 0 && 
-	rgb && strlen(rgb))
+	    rgb && strlen(rgb))
       asfPrintStatus("PolSARPro decomposition stored as RGB (%s)\n", rgb);
     else if (rgb && strlen(rgb))
       asfPrintError("For PolSARPro decomposition the RGB channels need to be "
@@ -255,13 +255,13 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
       fprintf(fp, "polsarpro colormap = %s\n", colormap);
     if (polsarpro && strlen(polsarpro)) {
       if (strcmp_case(polsarpro, "SEGMENTATION") == 0)
-	fprintf(fp, "image data type = POLARIMETRIC_SEGMENTATION\n");
+      	fprintf(fp, "image data type = POLARIMETRIC_SEGMENTATION\n");
       else if (strcmp_case(polsarpro, "DECOMPOSITION") == 0) {
-	fprintf(fp, "image data type = POLARIMETRIC_DECOMPOSITION\n");
-	fprintf(fp, "output db = 1\n");
+      	fprintf(fp, "image data type = POLARIMETRIC_DECOMPOSITION\n");
+      	fprintf(fp, "output db = 1\n");
       }
       else if (strcmp_case(polsarpro, "PARAMETER") == 0)
-	fprintf(fp, "image data type = POLARIMETRIC_PARAMETER\n");
+	      fprintf(fp, "image data type = POLARIMETRIC_PARAMETER\n");
     }
     fprintf(fp, "\n");
   }

@@ -209,7 +209,7 @@ int main(int argc, char **argv)
   // Parse command line
   if ((argc-currArg)<4) {
     printf("Insufficient arguments.\n"); 
-    usage(argv[0]);
+    usage();
   }
   strcpy(granule_table, argv[currArg]);
   strcpy(satellite, argv[currArg+1]);
@@ -223,7 +223,7 @@ int main(int argc, char **argv)
   SHPHandle shape;
   char outFile[255], csvFile[255], granuleFile[255];
   int ii, kk, ll, mm, orbit, track, track_count, frame_count, max_frame_count;
-  int inc, stack_id, beam_mode_count;
+  int inc, stack_id, beam_mode_count=0;
   long nn;
   double lat[5], lon[5], off_nadir;
 

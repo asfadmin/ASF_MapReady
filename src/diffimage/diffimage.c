@@ -141,6 +141,8 @@ int main(int argc, char **argv)
     }
     FREE(outputFile);
     usage(argv[0]);
+    // not reached
+    return 0;
   }
   else {
     // Grab the file names

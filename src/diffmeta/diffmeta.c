@@ -96,7 +96,7 @@ static char* image_data_type2str_w(int image_data_type);
 
 int main(int argc, char **argv)
 {
-  char *inFile1,*inFile2;
+  char *inFile1=NULL, *inFile2=NULL;
   char *metafile1, *metafile2;
   char *outputFile;
   extern int optind;            /* argv index of the next argument */

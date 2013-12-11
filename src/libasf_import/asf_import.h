@@ -142,6 +142,8 @@ void import_gamma(char *dataName, char *metaName, char *slaveName,
 		  int complex_gamma, char *outBaseName);
 meta_parameters *meta_read_roipac(const char *in, const char *sv_file);
 void import_roipac(const char *baseName, const char *outName);
+void import_roipac_new(const char *baseName, const char *outName,
+                       const char *sv_file, const char *rsc_baseline_file);
 
 void import_smap(const char *inBaseName, const char *outBaseName,
 		 float latUL, float lonUL, float latLR, float lonLR);
@@ -155,5 +157,7 @@ int isPolsarproDecomposition(char *dataFile, char **decompositionType,
 			     char **error);
 int isPolsarproSegmentation(const char *dataFile, char **error);
 int isPolsarproParameter(char *dataFile, char **error);
+
+int init_fgdc_config(char *configFile, char *type);
 
 #endif

@@ -7,6 +7,7 @@
 #include "caplib.h"
 #include "err_die.h"
 #include "envi.h"
+#include "dateUtil.h"
 
 // Global flag for writing ENVI header files for all viewable images
 int dump_envi_header = 0;
@@ -17,6 +18,80 @@ void meta_put_int   (FILE *meta_file,char *name,int    value,char *comment);
 void meta_put_char  (FILE *meta_file,char *name,char   value,char *comment);
 void meta_put_double_lf(FILE *meta_file,char *name,double value,int decimals,
                         char *comment);
+
+// To avoid having to change link flags around or link against glib we
+// have this compatability function.
+static char *
+static_strdup (const char *s)
+{
+  char *result = malloc (sizeof (char) * (strlen (s) + 1));
+
+  int idx = 0;
+  while ( s[idx] != '\0') {
+    result[idx] = s[idx];
+    idx++;
+  }
+  result[idx] = '\0';
+
+  return result;
+}
+
+// To avoid having to change link flags around or link against glib we
+// have this function.  Its like strcasecmp but only returns true or
+// false (true if strings are not equal disregarding case, false
+// otherwise).
+static int
+static_strcaseneq (const char *s1, const char *s2)
+{
+  return !!strcmp_case(s1,s2);
+}
+
+static void readline(FILE *f, char *buffer, size_t n)
+{
+  char *p;
+  p = fgets(buffer, n, f);
+  
+  if (!p)
+    strcpy(buffer, "");
+  else {
+    p = buffer + strlen(buffer) - 1;
+    while(isspace(*p)) *p-- = '\0';
+  }
+}
+
+//static int parse_val(char *inbuf, char *key, char **val)
+static void parse_val(char *inbuf, char *key, char **val)
+{
+  char * p, * eq, * buf;
+  //int match = FALSE;
+  
+  buf = static_strdup(inbuf);
+  
+  p = eq = strchr(buf, '=');
+  if (!eq) {
+    free(buf);
+    //return FALSE;
+  }
+ 
+  *eq = '\0';
+  --p;
+  
+  while (isspace((int)(*p)))
+    *p-- = '\0';
+  
+  if (static_strcaseneq(buf, key) == 0) {
+    p = eq + 1;
+    while (isspace((int)(*p)))
+			++p;
+		if (*p) {
+			*val = p;
+			//match = TRUE;
+		}
+	}
+      
+  free(buf);
+  //return match;
+}
 
 char *data_type2str(data_type_t data_type)
 {
@@ -1170,6 +1245,24 @@ void meta_write(meta_parameters *meta, const char *file_name)
 		       "Critical baseline [m]");
     meta_put_string(fp,"}","","End insar");
   }
+  
+  if (meta->quality) {
+  	meta_put_string(fp,"quality {","","Block containing data quality parameters");
+  	meta_put_double(fp, "bit_error_rate:", meta->quality->bit_error_rate,
+  		"Bit error rate");
+		meta_put_double(fp, "azimuth_resolution:", meta->quality->azimuth_resolution,
+			"Nominal azimuth resolution [m]");
+		meta_put_double(fp, "range_resolution:", meta->quality->range_resolution,
+			"Nominal range resolution [m]");
+		meta_put_double(fp, "signal_to_noise_ratio:", 
+			meta->quality->signal_to_noise_ratio, "Signal to noise ratio [dB]");
+		meta_put_double(fp, "peak_sidelobe_ratio:", 
+			meta->quality->peak_sidelobe_ratio, "Peak to sidelobe ratio");
+		meta_put_double(fp, "integrated_sidelobe_ratio:", 
+			meta->quality->integrated_sidelobe_ratio, "Integrated sidelobe ratio");
+
+  	meta_put_string(fp,"}","","End quality");
+  }
 
   FCLOSE(fp);
 
@@ -1493,7 +1586,11 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
   fprintf(fp, "  <general>\n");
   fprintf(fp, "    <name>%s</name>\n", mg->basename);
   fprintf(fp, "    <sensor>%s</sensor>\n", mg->sensor);
-  fprintf(fp, "    <sensor_name>%s</sensor_name>\n", mg->sensor_name);
+  if (strcmp_case(mg->sensor, "ALOS") == 0 && 
+  		strcmp_case(mg->sensor_name, "SAR") == 0)
+  	fprintf(fp, "    <sensor_name>PALSAR</sensor_name>\n");
+  else
+  	fprintf(fp, "    <sensor_name>%s</sensor_name>\n", mg->sensor_name);
   fprintf(fp, "    <mode>%s</mode>\n", mg->mode);
   fprintf(fp, "    <processor>%s</processor>\n", mg->processor);
   char *data_type = data_type2str(mg->data_type);
@@ -2135,6 +2232,24 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     fprintf(fp, "    <baseline_critical units=\"m\">%.1f</baseline_critical>"
 	    "\n", mi->baseline_critical);
     fprintf(fp, "  </insar>\n");
+  }
+  
+  if (meta->quality) {
+  	meta_quality *mq = meta->quality;
+  	fprintf(fp, "  <quality>\n");
+  	fprintf(fp, "    <bit_error_rate>%g</bit_error_rate>\n", 
+  		mq->bit_error_rate);
+		fprintf(fp, "    <azimuth_resolution units=\"m\">%g</azimuth_resolution>"
+			"\n", mq->azimuth_resolution);
+		fprintf(fp, "    <range_resolution units=\"m\">%g</range_resolution>\n",
+			mq->range_resolution);
+		fprintf(fp, "    <signal_to_noise_ratio units=\"dB\">%g</signal_to_noise_ratio>\n",
+			mq->signal_to_noise_ratio);
+		fprintf(fp, "    <peak_sidelobe_ratio units=\"dB\">%g</peak_sidelobe_ratio>\n",
+			mq->peak_sidelobe_ratio);
+		fprintf(fp, "    <integrated_sidelobe_ratio units=\"dB\">%g</integrated_sidelobe_ratio>"
+			"\n", mq->integrated_sidelobe_ratio);
+  	fprintf(fp, "  </quality>\n");
   }
 
   fprintf(fp, "</metadata>\n");

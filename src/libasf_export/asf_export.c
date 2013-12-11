@@ -28,20 +28,23 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
 
   asfPrintStatus("Exporting ...\n");
 
-  int i, nouts = 0;
+  meta_parameters *md = NULL;
+  int i, nouts = 0, is_polsarpro = 0, is_matrix = 0;
   char **outs = NULL;
 
-  in_data_name = appendExt(in_base_name, ".img");
-  in_meta_name = appendExt(in_base_name, ".meta");
-  meta_parameters *md = meta_read(in_meta_name);
-  int is_polsarpro = 
-    (md->general->image_data_type == POLARIMETRIC_SEGMENTATION) ? 1 : 0;
-  int is_matrix =
-    ((md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
-      md->general->image_data_type <= POLARIMETRIC_STOKES_MATRIX) ||
-     md->general->image_data_type == POLARIMETRIC_DECOMPOSITION) ? 1 : 0;
-  if (md->general->image_data_type == RGB_STACK)
-    rgb = TRUE;
+  if (format != HDF) {
+    in_data_name = appendExt(in_base_name, ".img");
+    in_meta_name = appendExt(in_base_name, ".meta");
+    md = meta_read(in_meta_name);
+    is_polsarpro = 
+      (md->general->image_data_type == POLARIMETRIC_SEGMENTATION) ? 1 : 0;
+    is_matrix =
+      ((md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
+        md->general->image_data_type <= POLARIMETRIC_STOKES_MATRIX) ||
+        md->general->image_data_type == POLARIMETRIC_DECOMPOSITION) ? 1 : 0;
+    if (md->general->image_data_type == RGB_STACK)
+      rgb = TRUE;
+  }
 
   // Do that exporting magic!
   if ( format == ENVI ) {
@@ -168,8 +171,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   else if ( format == HDF ) {
     out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
     strcpy(out_name, output_name);
-    export_hdf(in_meta_name, in_data_name, out_name, band_name, 
-	       &nouts, &outs);
+    export_hdf(in_base_name, out_name, &nouts, &outs);
   }
   else if ( format == NC ) {
     out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
@@ -178,28 +180,30 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
 		  &nouts, &outs);
   }
 
-  if (should_write_insar_rgb(md->general->bands)) {
-      write_insar_rgb(format, in_meta_name, in_data_name, out_name);
-  }
+  if (format != HDF) {
+    if (should_write_insar_rgb(md->general->bands)) {
+        write_insar_rgb(format, in_meta_name, in_data_name, out_name);
+    }
 
-  if (should_write_insar_xml_meta(md)) {
-    char *xml_meta = get_insar_xml_string(md, FALSE);
-      char *xml_output_file_name = 
-          (char *) MALLOC(sizeof(char)*(strlen(out_name)+10));
+    if (should_write_insar_xml_meta(md)) {
+      char *xml_meta = get_insar_xml_string(md, FALSE);
+        char *xml_output_file_name = 
+            (char *) MALLOC(sizeof(char)*(strlen(out_name)+10));
+        sprintf(xml_output_file_name, "%s.xml", stripExt(out_name));
+
+        write_insar_xml_to_file(xml_output_file_name, xml_meta);
+        FREE(xml_meta);
+        FREE(xml_output_file_name);
+    }
+    else if (should_write_dem_xml_meta(md)) {
+      char *xml_meta = get_dem_xml_string(md, FALSE);
+      char *xml_output_file_name =
+        (char *) MALLOC(sizeof(char)*(strlen(out_name)+10));
       sprintf(xml_output_file_name, "%s.xml", stripExt(out_name));
-
-      write_insar_xml_to_file(xml_output_file_name, xml_meta);
+      write_dem_xml_to_file(xml_output_file_name, xml_meta);
       FREE(xml_meta);
       FREE(xml_output_file_name);
-  }
-  else if (should_write_dem_xml_meta(md)) {
-    char *xml_meta = get_dem_xml_string(md, FALSE);
-    char *xml_output_file_name =
-      (char *) MALLOC(sizeof(char)*(strlen(out_name)+10));
-    sprintf(xml_output_file_name, "%s.xml", stripExt(out_name));
-    write_dem_xml_to_file(xml_output_file_name, xml_meta);
-    FREE(xml_meta);
-    FREE(xml_output_file_name);
+    }
   }
 
   if (noutputs && output_names) {
@@ -218,10 +222,14 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
     FREE(outs);
   }
 
-  FREE(in_data_name);
-  FREE(in_meta_name);
-  FREE(out_name);
-  meta_free(md);
+  if (in_data_name)
+    FREE(in_data_name);
+  if (in_meta_name)
+    FREE(in_meta_name);
+  if (out_name)
+    FREE(out_name);
+  if (md)
+    meta_free(md);
 
   asfPrintStatus("Export successful!\n\n");
   return (EXIT_SUCCESS);

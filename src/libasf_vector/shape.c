@@ -243,6 +243,32 @@ void shape_init(char *inFile, format_type_t format)
     if (DBFAddField(dbase, "F_END_LON", FTDouble, 10, 4) == -1)
       asfPrintError("Could not add F_END_LON field to database file\n");
   }
+  else if (format == GRANULE) {
+    if (DBFAddField(dbase, "STACK_ID", FTInteger, 5, 0) == -1)
+      asfPrintError("Could not add 'STACK_ID' field to database file\n");
+    if (DBFAddField(dbase, "GRANULE", FTString, 20, 0) == -1)
+      asfPrintError("Could not add 'GRANULE' field to database file\n");
+    if (DBFAddField(dbase, "SATELLITE", FTString, 5, 0) == -1)
+      asfPrintError("Could not add 'SATELLITE' field to database file\n");
+    if (DBFAddField(dbase, "BEAM_MODE", FTString, 5, 0) == -1)
+      asfPrintError("Could not add 'BEAM_MODE' field to database file\n");
+    if (DBFAddField(dbase, "OFF_NADIR", FTDouble, 5, 1) == -1)
+      asfPrintError("Could not add 'OFF_NADIR' field to database file\n");
+    if (DBFAddField(dbase, "ORBIT", FTInteger, 5, 0) == -1)
+      asfPrintError("Could not add 'ORBIT' field to database file\n");
+    if (DBFAddField(dbase, "FRAME", FTInteger, 4, 0) == -1)
+      asfPrintError("Could not add 'FRAME' field to database file\n");
+    if (DBFAddField(dbase, "ACQ_DATE", FTString, 25, 0) == -1)
+      asfPrintError("Could not add 'ACQ_DATE' field to database file\n");
+    if (DBFAddField(dbase, "ORBIT_DIR", FTString, 15, 0) == -1)
+      asfPrintError("Could not add 'ORBIT_DIR' field to database file\n");
+    if (DBFAddField(dbase, "PATH", FTInteger, 5, 0) == -1)
+      asfPrintError("Could not add 'PATH' field to database file\n");
+    if (DBFAddField(dbase, "TERRAIN", FTInteger, 2, 0) == -1)
+      asfPrintError("Could not add 'TERRAIN' field to database file\n");
+    if (DBFAddField(dbase, "INSAR", FTInteger, 2, 0) == -1)
+      asfPrintError("Could not add 'INSAR' field to database file\n");
+  }
 
   // Close the database for initialization
   DBFClose(dbase);
@@ -724,7 +750,7 @@ static void write_dbase_field_to_csv(DBFHandle dbase, int record,
                                      int field, char *line)
 {
   DBFFieldType dbaseType;
-  char fieldName[25], *str;
+  char fieldName[25], *str=NULL;
   int nWidth, nDecimals, nValue;
   double fValue;
   const char *sValue;

@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 
   // Figure multilooking values if necessary
   if (!stepFlag) {
-    stepLine = inMeta->sar->look_count;
+    stepLine = inMeta->sar->azimuth_look_count;
     stepSample = 1;
   }
   if (!lookFlag) {
@@ -144,8 +144,9 @@ int main(int argc, char *argv[])
   }
 
   // Call the library function to get the work done
+  float average;
   asf_igram_coh(lookLine, lookSample, stepLine, stepSample, 
-		masterFile, slaveFile, outFile);
+		masterFile, slaveFile, outFile, &average);
 
   return(0);
 }

@@ -1,5 +1,3 @@
-import os.path
-
 Import("globalenv")
 localenv = globalenv.Clone()
 
@@ -16,45 +14,27 @@ localenv.AppendUnique(CPPPATH = [
         "#src/plan/",
         ])
 
+localenv.ParseConfig("pkg-config --cflags --libs gtk+-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs libglade-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
-localenv.ParseConfig("pkg-config --cflags --libs gsl")
 localenv.ParseConfig("pkg-config --cflags --libs libpng15")
 localenv.ParseConfig("pkg-config --cflags --libs libtiff-4")
+localenv.ParseConfig("pkg-config --cflags --libs shapelib")
 localenv.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
-localenv.ParseConfig("pkg-config --cflags --libs gdal")
 
-localenv.AppendUnique(LIBS = ["m",
-                         "asf",
-                         "asf_meta",
-                         "jpeg",
-                         "asf_raster",
-                         "asf_proj",
-                         "asf_import",
-                         "asf_geocode",
-                         "asf_vector",
-                         "asf_plan",
-                         "asf_sgpsdp",
-                         "asf_fft",
-                         "asf_sar",
-                         "hdf5",
-                         ])
-
-head_build_dir, tail_build_dir = os.path.split(Dir(".").path)
-
-localenv.AppendUnique(LIBPATH = [
-        "#" + os.path.join(head_build_dir, "asf"),
-        "#" + os.path.join(head_build_dir, "asf_meta"),
-        "#" + os.path.join(head_build_dir, "libasf_raster"),
-        "#" + os.path.join(head_build_dir, "libasf_proj"),
-        "#" + os.path.join(head_build_dir, "libasf_geocode"),
-        "#" + os.path.join(head_build_dir, "libasf_vector"),
-        "#" + os.path.join(head_build_dir, "plan"),
-        "#" + os.path.join(head_build_dir, "sgpsdp"),
-        "#" + os.path.join(head_build_dir, "asf_fft"),
-        "#" + os.path.join(head_build_dir, "libasf_sar"),
-        "#" + os.path.join(head_build_dir, "libasf_import"),
-        ])
+localenv.AppendUnique(LIBS = [
+    "m",
+    "jpeg",
+    "hdf5",
+    "asf",
+    "asf_meta",
+    "asf_raster",
+    "asf_proj",
+    "asf_import",
+    "asf_geocode",
+    "asf_vector",
+    "asf_plan",
+])
 
 bins = localenv.Program("asf_view", [
         "asf_view.c",
@@ -94,18 +74,17 @@ bins = localenv.Program("asf_view", [
         "read_seasat_h5.c",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
 
 shares = localenv.File([
         "startup.jpg",
         "asf_view.glade",
         "asf_view_icon.ico",
-        "#src/metadata_gui/mdv.ico",
         "#src/asf/pixmaps/google_earth_button.gif",
         "#src/asf/pixmaps/save_as.png",
         "#src/asf/pixmaps/folder_s.png",
         "#src/asf/pixmaps/save_as.png",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["shares"], shares)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
 
