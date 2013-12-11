@@ -321,7 +321,7 @@ void read_filenames(const char * file, files_t **files, char *type)
 
 int main(int argc, char **argv)
 {
-  char file_list[1024], xml_name[1024], *logFileName=NULL;
+  char file_list[1024], file_name[512], xml_name[1024], *logFileName=NULL;
   int currArg = 1;
   int NUM_ARGS = 2;
 
@@ -391,19 +391,26 @@ int main(int argc, char **argv)
     if (files->slave_metadata && !fileExists(files->slave_metadata))
       asfPrintError("Slave metadata file (%s) is missing!\n", 
         files->slave_metadata);
-    if (files->wrapped_interferogram && 
-        !fileExists(files->wrapped_interferogram))
-      asfPrintError("Wrapped interferogram (%s) is missing!\n",
-        files->wrapped_interferogram);
-    if (files->unwrapped_interferogram && 
-        !fileExists(files->unwrapped_interferogram))
-      asfPrintError("Unwrapped interferogram (%s) is missing!\n", 
-        files->unwrapped_interferogram);
-    if (files->correlation && !fileExists(files->correlation))
-      asfPrintError("Correlation file (%s) is missing!\n", files->correlation);
-    if (files->incidence_angle && !fileExists(files->incidence_angle))
-      asfPrintError("Incidence angle map (%s) is missing!\n",
-        files->incidence_angle);
+    if (files->wrapped_interferogram) {    
+      sprintf(file_name, "%.rsc", files->wrapped_interferogram);
+      if (!fileExists(file_name))
+        asfPrintError("Wrapped interferogram (%s) is missing!\n", file_name);
+    }
+    if (files->unwrapped_interferogram) {
+      sprintf(file_name, "%s.rsc", files->unwrapped_interferogram);
+      if (!fileExists(file_name))
+        asfPrintError("Unwrapped interferogram (%s) is missing!\n", file_name);
+    }
+    if (files->correlation) {
+      sprintf(file_name, "%s.rsc", files->correlation);
+      if (!fileExists(file_name)) {
+        asfPrintError("Correlation file (%s) is missing!\n", file_name);
+    }
+    if (files->incidence_angle) {
+      sprintf(file_name, "%s.rsc", files->incidence_angle);
+      if (!fileExists(file_name))
+        asfPrintError("Incidence angle map (%s) is missing!\n", file_name);
+    }
 
     meta_parameters *meta = NULL;
     FILE *fp = FOPEN(xml_name, "wt");
