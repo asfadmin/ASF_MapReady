@@ -193,8 +193,8 @@ int calc_number_looks(char *inFile, int imageFlag, int chipSize, char *gis)
   float *data = (float *) MALLOC(sizeof(float)*size);  
 
   // Initialize GIS file
-  DBFHandle dbase;
-  SHPHandle shape;
+  DBFHandle dbase=NULL;
+  SHPHandle shape=NULL;
   char gisFile[1024];
   long n = 0;
   create_name(gisFile, inFile, ".shp");
