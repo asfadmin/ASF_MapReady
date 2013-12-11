@@ -27,12 +27,6 @@
 #include <typlim.h>
 #include <hdf5.h>
 #include <hdf5_hl.h>
-#include <libxml/xmlmemory.h>
-#include <libxml/debugXML.h>
-#include <libxml/HTMLtree.h>
-#include <libxml/xmlIO.h>
-#include <libxml/xinclude.h>
-#include <libxml/catalog.h>
 #include <xml_util.h>
 
 #define RES 16

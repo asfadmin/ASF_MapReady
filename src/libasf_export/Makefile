@@ -41,6 +41,7 @@ CFLAGS += \
 	$(JPEG_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
+	$(XML_CFLAGS) \
 	$(GSL_CFLAGS) -Wall
 
 
