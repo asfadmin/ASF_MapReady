@@ -206,8 +206,13 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
     mp->perY = ys;
     strcpy(mp->units, "degrees");
 
-    meta->general->center_latitude = x0+ns*xs/2.0;
-    meta->general->center_longitude = y0+nl*ys/2.0;
+    meta->general->center_latitude = y0+nl*ys/2.0;
+    meta->general->center_longitude = x0+ns*xs/2.0;
+
+    meta->general->start_line = 0;
+    meta->general->start_sample = 0;
+    meta->general->x_pixel_size = xs;
+    meta->general->y_pixel_size = ys;
 
     mp->hem = meta->general->center_latitude > 0 ? 'N' : 'S';
 
@@ -302,6 +307,43 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
   meta->sar->azimuth_doppler_coefficients[2] = 0;
 
   return meta;
+}
+
+static void ingest_roipac_dem(const char *inFile, FILE *fpOut,
+                              meta_parameters *meta, int band)
+{
+  printf("Ingesting %s as ROI_PAC Int16.\n", inFile);
+
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+
+  //meta->general->data_type = INTEGER16;
+
+  FILE *fpIn = FOPEN(inFile, "rb");
+  short *in_buf = MALLOC(sizeof(short)*ns);
+  float *out_buf = MALLOC(sizeof(float)*ns);
+
+  int ii,jj,num_padded=0;
+  for (ii=0; ii<nl; ++ii) {
+    int n = FREADZ(in_buf, sizeof(short), ns, fpIn);
+    for (jj=0; jj<ns; ++jj) {
+      out_buf[jj] = in_buf[jj];
+    }
+
+    if (n<ns)
+      num_padded += ns-n;
+    put_band_float_line(fpOut, meta, band, ii, out_buf);
+
+    asfLineMeter(ii, nl);
+  }
+
+  if (num_padded>0)
+   asfPrintWarning("Had to pad the file with %d zero pixels.\n(About %d lines)\n",
+                   num_padded, num_padded/nl);
+
+  FCLOSE(fpIn);
+  FREE(in_buf);
+  FREE(out_buf);
 }
 
 static void ingest_roipac_rmg(const char *inFile, FILE *fpOut,
@@ -606,19 +648,40 @@ void import_roipac_new(const char *inFile, const char *outFile,
 
   const int ROIPAC_RMG = 1;
   const int ROIPAC_CPX = 2;
+  const int ROIPAC_DEM = 3;
   int type = 0; // RMG or CPX
 
-  if (strcmp(ext, ".amp")==0 ||
-      strcmp(ext, ".int")==0 ||
-      strcmp(ext, ".slc")==0)
-  {
+  if (strcmp(ext, ".amp")==0) {
     type = ROIPAC_CPX;
+    meta->general->image_data_type = AMPLITUDE_IMAGE;
   }
-  else if (strcmp(ext, ".cor")==0 ||
-           strcmp(ext, ".unw")==0 ||
-           strcmp(ext, ".hgt")==0)
-  {
+  else if (strcmp(ext, ".int")==0) {
+    type = ROIPAC_CPX;
+    meta->general->image_data_type = INTERFEROGRAM;
+  }
+  else if (strcmp(ext, ".slc")==0) {
+    type = ROIPAC_CPX;
+    meta->general->image_data_type = AMPLITUDE_IMAGE;
+  }
+  else if (strcmp(ext, ".cor")==0) {
     type = ROIPAC_RMG;
+    meta->general->image_data_type = COHERENCE_IMAGE;
+  }
+  else if (strcmp(ext, ".unw")==0) {
+    type = ROIPAC_RMG;
+    meta->general->image_data_type = UNWRAPPED_PHASE;
+  }
+  else if (strcmp(ext, ".hgt")==0) {
+    type = ROIPAC_RMG;
+    meta->general->image_data_type = DEM;
+  }
+  else if (strcmp(ext, ".inc")==0) {
+    type = ROIPAC_RMG;
+    meta->general->image_data_type = INCIDENCE_ANGLE;
+  }
+  else if (strcmp(ext, ".dem")==0) {
+    type = ROIPAC_DEM;
+    meta->general->image_data_type = DEM;
   }
 
   if (type == 0)
@@ -629,6 +692,8 @@ void import_roipac_new(const char *inFile, const char *outFile,
     ingest_roipac_rmg(inFile, fpOut, meta, meta, 0, 1);
   } else if (type==ROIPAC_CPX) {
     ingest_roipac_cpx(inFile, fpOut, meta, meta, 0, 1);
+  } else if (type==ROIPAC_DEM) {
+    ingest_roipac_dem(inFile, fpOut, meta, 0);
   } else {
     asfPrintError("Not possible");
   }

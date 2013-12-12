@@ -1381,6 +1381,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       pixel_size_x = imd->general->x_pixel_size;
       pixel_size_y = imd->general->y_pixel_size;
     }
+    else if (pixel_size > 0) {
+      pixel_size_x = pixel_size_y = pixel_size;
+    }
 
     // If all input metadata is byte, we will store everything as bytes,
     // in order to save memory.  (But the math will use floating point.)
