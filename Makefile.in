@@ -69,6 +69,8 @@ MAPREADY_MODULES = \
 	src/remap \
 	src/update_state \
 	src/clm \
+	src/byteswap \
+	src/write_hdf5_xml \
 	src/populate_meta_field \
 	src/make_overlay \
 	src/asf_kml_overlay \

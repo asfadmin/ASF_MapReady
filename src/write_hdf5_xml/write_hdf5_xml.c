@@ -392,7 +392,7 @@ int main(int argc, char **argv)
       asfPrintError("Slave metadata file (%s) is missing!\n", 
         files->slave_metadata);
     if (files->wrapped_interferogram) {    
-      sprintf(file_name, "%.rsc", files->wrapped_interferogram);
+      sprintf(file_name, "%s.rsc", files->wrapped_interferogram);
       if (!fileExists(file_name))
         asfPrintError("Wrapped interferogram (%s) is missing!\n", file_name);
     }
@@ -403,7 +403,7 @@ int main(int argc, char **argv)
     }
     if (files->correlation) {
       sprintf(file_name, "%s.rsc", files->correlation);
-      if (!fileExists(file_name)) {
+      if (!fileExists(file_name))
         asfPrintError("Correlation file (%s) is missing!\n", file_name);
     }
     if (files->incidence_angle) {
