@@ -48,7 +48,7 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
   meta->sar->deskewed = 1;
   meta->sar->line_increment = 1;
   meta->sar->sample_increment = 1;
-  strcpy(meta->general->processor, "");
+  strcpy(meta->general->processor, "ROI_PAC");
 
   FILE *ifp = FOPEN(in, "r");
   int nl, ns, yr, mo, da, hr, mn, sc, ms=0, tm_val=0;
