@@ -213,6 +213,7 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
     meta->general->start_sample = 0;
     meta->general->x_pixel_size = fabs(xs);
     meta->general->y_pixel_size = fabs(ys);
+    meta->general->no_data = 0;
 
     mp->hem = meta->general->center_latitude > 0 ? 'N' : 'S';
 
