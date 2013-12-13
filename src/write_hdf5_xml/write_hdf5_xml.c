@@ -953,7 +953,7 @@ int main(int argc, char **argv)
     fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
       "projection of the data\">geographic</map_projection>\n");
     while (NULL != fgets(line, 255, fpFiles)) {
-      sprintf(str, "%s", line+15);
+      sprintf(str, "%s", line+13);
       if (strncmp_case(line, "WIDTH", 5) == 0)
         fprintf(fp, "      <width type=\"int\" definition=\"width of the "
           "image\">%s</width>\n", trim_spaces(str));
