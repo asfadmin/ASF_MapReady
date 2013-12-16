@@ -993,7 +993,7 @@ int main(int argc, char **argv)
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
         "data\">OpenTopo</source>\n");				
       while (NULL != fgets(line, 255, fpFiles)) {
-        sprintf(str, "%s", line+15);
+        sprintf(str, "%s", line+13);
         if (strncmp_case(line, "PROJECTION", 10) == 0) {
           sprintf(map_projection, "%s", trim_spaces(str));
           if (strcmp_case(map_projection, "LATLON") == 0)
