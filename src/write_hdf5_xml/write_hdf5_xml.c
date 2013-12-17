@@ -401,6 +401,7 @@ int main(int argc, char **argv)
   char directory[25], filename[30], creation[30], map_projection[50];
   char *type = (char *) MALLOC(sizeof(char)*10);
   double seconds;
+  int browse = FALSE;
   hms_time hms, midnight;
   ymd_date ymd, start;
   midnight.hour = 0;
@@ -448,18 +449,25 @@ int main(int argc, char **argv)
       if (!fileExists(file_name))
         asfPrintError("Incidence angle map (%s) is missing!\n", file_name);
     }
-    if (files->browse_amplitude && fileExists(files->browse_amplitude))
+    if ((files->browse_amplitude && fileExists(files->browse_amplitude)) || 
+        (files->browse_wrapped_interferogram && 
+          fileExists(files->browse_wrapped_interferogram)) || 
+        (files->browse_unwrapped_interferogram &&
+          fileExists(files->browse_unwrapped_interferogram)) || 
+        (files->browse_correlation && fileExists(files->browse_correlation)))
+      browse = TRUE;
+    if (files->browse_amplitude && !fileExists(files->browse_amplitude))
       asfPrintError("Browse image of amplitude (%s) is missing!\n",
         files->browse_amplitude);
     if (files->browse_wrapped_interferogram && 
-          fileExists(files->browse_wrapped_interferogram))
+          !fileExists(files->browse_wrapped_interferogram))
       asfPrintError("Browse image of wrapped interferogram (%s) is missing!\n",
         files->browse_wrapped_interferogram);
     if (files->browse_unwrapped_interferogram &&
-          fileExists(files->browse_unwrapped_interferogram))
+          !fileExists(files->browse_unwrapped_interferogram))
       asfPrintError("Browse image of unwrapped interferogram (%s) is missing!"
         "\n", files->browse_unwrapped_interferogram);
-    if (files->browse_correlation && fileExists(files->browse_correlation))
+    if (files->browse_correlation && !fileExists(files->browse_correlation))
       asfPrintError("Browse image of correlation (%s) is missing!\n",
         files->browse_correlation);
 
