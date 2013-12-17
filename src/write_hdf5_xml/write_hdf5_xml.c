@@ -61,12 +61,15 @@ typedef struct {
 	char *wrapped_interferogram;
 	char *unwrapped_interferogram;
 	char *correlation;
+	char *browse_amplitude;
 	char *browse_wrapped_interferogram;
 	char *browse_unwrapped_interferogram;
 	char *browse_correlation;
 	char *incidence_angle;
 	char *digital_elevation_model;
 	char *troposphere;
+        double master_faraday_rotation;
+	double slave_faraday_rotation;
 } files_t;
 
 void usage(char *name)
@@ -205,6 +208,12 @@ files_t *files_init(char *type) {
 	files->incidence_angle = NULL;
 	files->digital_elevation_model = NULL;
 	files->troposphere = NULL;
+	files->browse_amplitude = NULL;
+	files->browse_wrapped_interferogram = NULL;
+	files->browse_unwrapped_interferogram = NULL;
+	files->browse_correlation = NULL;
+	files->master_faraday_rotation = MAGIC_UNSET_DOUBLE;
+	files->slave_faraday_rotation = MAGIC_UNSET_DOUBLE;
 	
 	return files;
 }
@@ -238,6 +247,14 @@ void files_free(files_t *files) {
 		FREE(files->digital_elevation_model);
 	if (files->troposphere)
 		FREE(files->troposphere);
+	if (files->browse_amplitude)
+		FREE(files->browse_amplitude);
+	if (files->browse_wrapped_interferogram)
+		FREE(files->browse_wrapped_interferogram);
+	if (files->browse_unwrapped_interferogram)
+		FREE(files->browse_unwrapped_interferogram);
+	if (files->browse_correlation)
+		FREE(files->correlation);
 	FREE(files);
 }
 
@@ -312,6 +329,26 @@ void read_filenames(const char * file, files_t **files, char *type)
 				list->troposphere = (char *) MALLOC(sizeof(char)*50);
 				sprintf(list->troposphere, "%s", trim_spaces(value));
 			}
+			if (strncmp_case(line, "browse amplitude", 16) == 0) {
+				list->browse_amplitude = (char *) MALLOC(sizeof(char)*50);
+				sprintf(list->browse_amplitude, "%", trim_spaces(value));
+			}
+			if (strncmp_case(line, "browse wrapped interferogram", 28) == 0) {
+				list->browse_wrapped_interferogram = (char *) MALLOC(sizeof(char)*50);
+				sprintf(list->browse_wrapped_interferogram, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "browse unwrapped interferogram", 30) == 0) {
+				list->browse_unwrapped_interferogram = (char *) MALLOC(sizeof(char)*50);
+				sprintf(list->browse_unwrapped_interferogram, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "browse correlation", 18) == 0) {
+				list->browse_correlation = (char *) MALLOC(sizeof(char)*50);
+				sprintf(list->browse_correlation, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "master faraday rotation", 23) == 0)
+				list->master_faraday_rotation = atof(trim_spaces(value));
+			if (strncmp_case(line, "slave faraday rotation", 22) == 0)
+				list->slave_faraday_rotation = atof(trim_spaces(value));
 		}
   }
   *files = list;
@@ -411,6 +448,20 @@ int main(int argc, char **argv)
       if (!fileExists(file_name))
         asfPrintError("Incidence angle map (%s) is missing!\n", file_name);
     }
+    if (files->browse_amplitude && fileExists(files->browse_amplitude))
+      asfPrintError("Browse image of amplitude (%s) is missing!\n",
+        files->browse_amplitude);
+    if (files->browse_wrapped_interferogram && 
+          fileExists(files->browse_wrapped_interferogram))
+      asfPrintError("Browse image of wrapped interferogram (%s) is missing!\n",
+        files->browse_wrapped_interferogram);
+    if (files->browse_unwrapped_interferogram &&
+          fileExists(files->browse_unwrapped_interferogram))
+      asfPrintError("Browse image of unwrapped interferogram (%s) is missing!"
+        "\n", files->browse_unwrapped_interferogram);
+    if (files->browse_correlation && fileExists(files->browse_correlation))
+      asfPrintError("Browse image of correlation (%s) is missing!\n",
+        files->browse_correlation);
 
     meta_parameters *meta = NULL;
     FILE *fp = FOPEN(xml_name, "wt");
@@ -544,6 +595,9 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);
     fprintf(fp, "      <data_source type=\"string\" definition=\"source "
       "providing the data\">Alaska Satellite Facility</data_source>\n");
+    if (meta_is_valid_double(files->master_faraday_rotation))
+      fprintf(fp, "      <faraday_rotation>%g</faraday_rotation>\n",
+        files->master_faraday_rotation);
     fprintf(fp, "    </master_image>\n");
     fprintf(fp, "    <slave_image>\n");
 
@@ -648,6 +702,9 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);
     fprintf(fp, "      <data_source type=\"string\" definition=\"source "
       "providing the data\">Alaska Satellite Facility</data_source>\n");
+    if (meta_is_valid_double(files->slave_faraday_rotation))
+      fprintf(fp, "      <faraday_rotation>%g</faraday_rotation>\n",
+        files->slave_faraday_rotation);
     fprintf(fp, "    </slave_image>\n");
     
     // Read Doppler information
@@ -993,7 +1050,7 @@ int main(int argc, char **argv)
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
         "data\">OpenTopo</source>\n");				
       while (NULL != fgets(line, 255, fpFiles)) {
-        sprintf(str, "%s", line+15);
+        sprintf(str, "%s", line+13);
         if (strncmp_case(line, "PROJECTION", 10) == 0) {
           sprintf(map_projection, "%s", trim_spaces(str));
           if (strcmp_case(map_projection, "LATLON") == 0)
@@ -1072,6 +1129,24 @@ int main(int argc, char **argv)
       FCLOSE(fpFiles);
     }
     fprintf(fp, "  </metadata>\n");
+
+    // Browse image information
+    if (browse) {
+      fprintf(fp, "  <browse>\n");
+      if (files->browse_amplitude && fileExists(files->browse_amplitude))
+        fprintf(fp, "    <amplitude>%s</amplitude>\n", files->browse_amplitude);
+      if (files->browse_wrapped_interferogram && 
+        fileExists(files->browse_wrapped_interferogram))
+        fprintf(fp, "    <wrapped_interferogram>%s</wrapped_interferogram>\n",
+          files->browse_wrapped_interferogram);
+      if (files->browse_unwrapped_interferogram &&
+        fileExists(files->browse_unwrapped_interferogram))
+        fprintf(fp, "    <unwrapped_interferogram>%s</unwrapped_interferogram>"
+          "\n", files->browse_unwrapped_interferogram);
+      if (files->correlation && fileExists(files->correlation))
+        fprintf(fp, "    <correlation>%s</correlation>\n", files->correlation);
+      fprintf(fp, "  </browse>\n");
+    }
 
     // Working the various log files
     fprintf(fp, "  <processing>\n");
