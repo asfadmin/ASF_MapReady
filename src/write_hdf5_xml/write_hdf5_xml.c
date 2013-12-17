@@ -604,8 +604,9 @@ int main(int argc, char **argv)
     fprintf(fp, "      <data_source type=\"string\" definition=\"source "
       "providing the data\">Alaska Satellite Facility</data_source>\n");
     if (meta_is_valid_double(files->master_faraday_rotation))
-      fprintf(fp, "      <faraday_rotation>%g</faraday_rotation>\n",
-        files->master_faraday_rotation);
+      fprintf(fp, "      <faraday_rotation type=\"double\" definition=\""
+        "Faraday rotation [degrees]\" units=\"degrees\">%g</faraday_rotation>"
+        "\n", files->master_faraday_rotation);
     fprintf(fp, "    </master_image>\n");
     fprintf(fp, "    <slave_image>\n");
 
@@ -711,8 +712,9 @@ int main(int argc, char **argv)
     fprintf(fp, "      <data_source type=\"string\" definition=\"source "
       "providing the data\">Alaska Satellite Facility</data_source>\n");
     if (meta_is_valid_double(files->slave_faraday_rotation))
-      fprintf(fp, "      <faraday_rotation>%g</faraday_rotation>\n",
-        files->slave_faraday_rotation);
+      fprintf(fp, "      <faraday_rotation type=\"double\" definition=\""
+        "Faraday rotation [degrees]\" units=\"degrees\" >%g</faraday_rotation>"
+        "\n", files->slave_faraday_rotation);
     fprintf(fp, "    </slave_image>\n");
     
     // Read Doppler information
