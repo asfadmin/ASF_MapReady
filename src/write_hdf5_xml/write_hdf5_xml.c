@@ -456,6 +456,20 @@ int main(int argc, char **argv)
           fileExists(files->browse_unwrapped_interferogram)) || 
         (files->browse_correlation && fileExists(files->browse_correlation)))
       browse = TRUE;
+    if (files->browse_amplitude && !fileExists(files->browse_amplitude))
+      asfPrintError("Browse image of amplitude (%s) is missing!\n",
+        files->browse_amplitude);
+    if (files->browse_wrapped_interferogram && 
+          !fileExists(files->browse_wrapped_interferogram))
+      asfPrintError("Browse image of wrapped interferogram (%s) is missing!\n",
+        files->browse_wrapped_interferogram);
+    if (files->browse_unwrapped_interferogram &&
+          !fileExists(files->browse_unwrapped_interferogram))
+      asfPrintError("Browse image of unwrapped interferogram (%s) is missing!"
+        "\n", files->browse_unwrapped_interferogram);
+    if (files->browse_correlation && !fileExists(files->browse_correlation))
+      asfPrintError("Browse image of correlation (%s) is missing!\n",
+        files->browse_correlation);
 
     meta_parameters *meta = NULL;
     FILE *fp = FOPEN(xml_name, "wt");
@@ -589,6 +603,10 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);
     fprintf(fp, "      <data_source type=\"string\" definition=\"source "
       "providing the data\">Alaska Satellite Facility</data_source>\n");
+    if (meta_is_valid_double(files->master_faraday_rotation))
+      fprintf(fp, "      <faraday_rotation type=\"double\" definition=\""
+        "Faraday rotation [degrees]\" units=\"degrees\">%g</faraday_rotation>"
+        "\n", files->master_faraday_rotation);
     fprintf(fp, "    </master_image>\n");
     fprintf(fp, "    <slave_image>\n");
 
@@ -693,6 +711,10 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);
     fprintf(fp, "      <data_source type=\"string\" definition=\"source "
       "providing the data\">Alaska Satellite Facility</data_source>\n");
+    if (meta_is_valid_double(files->slave_faraday_rotation))
+      fprintf(fp, "      <faraday_rotation type=\"double\" definition=\""
+        "Faraday rotation [degrees]\" units=\"degrees\" >%g</faraday_rotation>"
+        "\n", files->slave_faraday_rotation);
     fprintf(fp, "    </slave_image>\n");
     
     // Read Doppler information
