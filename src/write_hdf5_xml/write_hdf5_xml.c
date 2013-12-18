@@ -331,7 +331,7 @@ void read_filenames(const char * file, files_t **files, char *type)
 			}
 			if (strncmp_case(line, "browse amplitude", 16) == 0) {
 				list->browse_amplitude = (char *) MALLOC(sizeof(char)*50);
-				sprintf(list->browse_amplitude, "%", trim_spaces(value));
+				sprintf(list->browse_amplitude, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "browse wrapped interferogram", 28) == 0) {
 				list->browse_wrapped_interferogram = (char *) MALLOC(sizeof(char)*50);
