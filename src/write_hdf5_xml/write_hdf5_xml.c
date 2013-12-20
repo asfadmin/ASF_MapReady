@@ -178,6 +178,22 @@ static void ymd_hms2iso_date(ymd_date *date, hms_time *time, char *isoStr)
   	date->year, date->month, date->day, time->hour, time->min, time->sec);
 }
 
+static char *xml_encode(char *xml_str)
+{
+    char *a = asf_strReplace(xml_str, "&", "&amp;");
+    char *b = asf_strReplace(a, "<", "&lt;");
+    char *c = asf_strReplace(b, ">", "&gt;");
+    char *d = asf_strReplace(c, "\"", "&quot;");
+    char *e = asf_strReplace(d, "'", "&apos;");
+    FREE(a); FREE(b); FREE(c); FREE(d);
+
+    static char buf[1024];
+    strcpy(buf, e);
+    FREE(e);
+
+    return buf;
+}
+
 static void roi2iso_date(char *line, char *time)
 {
   char buf[100];
@@ -1176,7 +1192,7 @@ int main(int argc, char **argv)
         }
       }
       fprintf(fp, "      <url type=\"string\" definition=\"URL used to download"
-        " digital elevation model\">%s</url>\n", params->dem_url);
+        " digital elevation model\">%s</url>\n", xml_encode(params->dem_url));
       fprintf(fp, "    </digital_elevation_model>\n");
       FCLOSE(fpFiles);
     }
@@ -1239,7 +1255,7 @@ int main(int argc, char **argv)
         }
       }
       fprintf(fp, "      <url type=\"string\" definition=\"URL used to download"
-        " tropospheric correction\">%s</url>\n", params->troposphere_url);
+        " tropospheric correction\">%s</url>\n", xml_encode(params->troposphere_url));
       fprintf(fp, "    </troposphere>\n");
       FCLOSE(fpFiles);
     }
@@ -1400,7 +1416,7 @@ int main(int argc, char **argv)
         roi2iso_date(line, str);
         fprintf(fp, "    <remove_topography>%s</remove_topography>\n", str);
       }
-      if (strstr(line, "unwrap.pl")) {
+      if (strstr(line, "unwrap.pl") || strstr(line, "snaphu.pl")) {
         roi2iso_date(line, str);
         fprintf(fp, "    <phase_unwrapping>%s</phase_unwrapping>\n", str);
       }
