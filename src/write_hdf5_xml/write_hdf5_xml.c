@@ -1416,7 +1416,7 @@ int main(int argc, char **argv)
         roi2iso_date(line, str);
         fprintf(fp, "    <remove_topography>%s</remove_topography>\n", str);
       }
-      if (strstr(line, "unwrap.pl")) {
+      if (strstr(line, "unwrap.pl") || strstr(line, "snaphu.pl")) {
         roi2iso_date(line, str);
         fprintf(fp, "    <phase_unwrapping>%s</phase_unwrapping>\n", str);
       }
