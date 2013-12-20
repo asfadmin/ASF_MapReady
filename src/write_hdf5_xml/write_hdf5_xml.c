@@ -67,20 +67,22 @@ typedef struct {
 	char *browse_correlation;
 	char *incidence_angle;
 	char *digital_elevation_model;
+	char *dem_url;
 	char *troposphere;
+	char *troposphere_url;
   double master_faraday_rotation;
 	double slave_faraday_rotation;
-} files_t;
+} params_t;
 
 void usage(char *name)
 {
   printf("\n"
 	 "USAGE:\n"
-	 "   %s [ -log <logFile> ] <meta_name> <xml_name>\n", name);
+	 "   %s [ -log <logFile> ] <parameter_list> <xml_name>\n", name);
   printf("\n"
 	 "REQUIRED ARGUMENTS:\n"
-	 "   file_list  Name of the file list.\n"
-	 "   xml_name   Base name of the XML file.\n");
+	 "   parameter_list  List of parameters.\n"
+	 "   xml_name        Base name of the XML file.\n");
   printf("\n"
 	 "DESCRIPTION:\n"
 	 "   %s converts a file list to an .xml file for HDF5 exporting.\n",
@@ -191,158 +193,173 @@ static void roi2iso_date(char *line, char *time)
 		year, month, day, hour, min, sec);
 }
 
-files_t *files_init(char *type) {
+params_t *params_init(char *type) {
 
-	files_t *files = (files_t *) MALLOC(sizeof(files_t));
-	files->granule = NULL;
-	files->master_meta_file = NULL;
-	files->slave_meta_file = NULL;
-	files->master_metadata = NULL;
-	files->slave_metadata = NULL;
-	files->doppler = NULL;
-	files->processing_log = NULL;
-	files->baseline = NULL;
-	files->wrapped_interferogram = NULL;
-	files->unwrapped_interferogram = NULL;
-	files->correlation = NULL;
-	files->incidence_angle = NULL;
-	files->digital_elevation_model = NULL;
-	files->troposphere = NULL;
-	files->browse_amplitude = NULL;
-	files->browse_wrapped_interferogram = NULL;
-	files->browse_unwrapped_interferogram = NULL;
-	files->browse_correlation = NULL;
-	files->master_faraday_rotation = MAGIC_UNSET_DOUBLE;
-	files->slave_faraday_rotation = MAGIC_UNSET_DOUBLE;
+	params_t *params = (params_t *) MALLOC(sizeof(params_t));
+	params->granule = NULL;
+	params->master_meta_file = NULL;
+	params->slave_meta_file = NULL;
+	params->master_metadata = NULL;
+	params->slave_metadata = NULL;
+	params->doppler = NULL;
+	params->processing_log = NULL;
+	params->baseline = NULL;
+	params->wrapped_interferogram = NULL;
+	params->unwrapped_interferogram = NULL;
+	params->correlation = NULL;
+	params->incidence_angle = NULL;
+	params->digital_elevation_model = NULL;
+	params->dem_url = NULL;
+	params->troposphere = NULL;
+	params->troposphere_url = NULL;
+	params->browse_amplitude = NULL;
+	params->browse_wrapped_interferogram = NULL;
+	params->browse_unwrapped_interferogram = NULL;
+	params->browse_correlation = NULL;
+	params->master_faraday_rotation = MAGIC_UNSET_DOUBLE;
+	params->slave_faraday_rotation = MAGIC_UNSET_DOUBLE;
 	
-	return files;
+	return params;
 }
 
-void files_free(files_t *files) {
-	if (files->granule)
-		FREE(files->granule);
-	if (files->master_meta_file)
-		FREE(files->master_meta_file);
-	if (files->slave_meta_file)
-		FREE(files->slave_meta_file);
-	if (files->master_metadata)
-		FREE(files->master_metadata);
-	if (files->slave_metadata)
-		FREE(files->slave_metadata);
-	if (files->doppler)
-		FREE(files->doppler);
-	if (files->processing_log)
-		FREE(files->processing_log);
-	if (files->baseline)
-		FREE(files->baseline);
-	if (files->wrapped_interferogram)
-		FREE(files->wrapped_interferogram);
-	if (files->unwrapped_interferogram)
-		FREE(files->unwrapped_interferogram);
-	if (files->correlation)
-		FREE(files->correlation);
-	if (files->incidence_angle)
-		FREE(files->incidence_angle);
-	if (files->digital_elevation_model)
-		FREE(files->digital_elevation_model);
-	if (files->troposphere)
-		FREE(files->troposphere);
-	if (files->browse_amplitude)
-		FREE(files->browse_amplitude);
-	if (files->browse_wrapped_interferogram)
-		FREE(files->browse_wrapped_interferogram);
-	if (files->browse_unwrapped_interferogram)
-		FREE(files->browse_unwrapped_interferogram);
-	if (files->browse_correlation)
-		FREE(files->browse_correlation);
-	FREE(files);
+void params_free(params_t *params) {
+	if (params->granule)
+		FREE(params->granule);
+	if (params->master_meta_file)
+		FREE(params->master_meta_file);
+	if (params->slave_meta_file)
+		FREE(params->slave_meta_file);
+	if (params->master_metadata)
+		FREE(params->master_metadata);
+	if (params->slave_metadata)
+		FREE(params->slave_metadata);
+	if (params->doppler)
+		FREE(params->doppler);
+	if (params->processing_log)
+		FREE(params->processing_log);
+	if (params->baseline)
+		FREE(params->baseline);
+	if (params->wrapped_interferogram)
+		FREE(params->wrapped_interferogram);
+	if (params->unwrapped_interferogram)
+		FREE(params->unwrapped_interferogram);
+	if (params->correlation)
+		FREE(params->correlation);
+	if (params->incidence_angle)
+		FREE(params->incidence_angle);
+	if (params->digital_elevation_model)
+		FREE(params->digital_elevation_model);
+	if (params->dem_url)
+	  FREE(params->dem_url);
+	if (params->troposphere)
+		FREE(params->troposphere);
+	if (params->troposphere_url)
+	  FREE(params->troposphere_url);
+	if (params->browse_amplitude)
+		FREE(params->browse_amplitude);
+	if (params->browse_wrapped_interferogram)
+		FREE(params->browse_wrapped_interferogram);
+	if (params->browse_unwrapped_interferogram)
+		FREE(params->browse_unwrapped_interferogram);
+	if (params->browse_correlation)
+		FREE(params->browse_correlation);
+	FREE(params);
 }
 
-void read_filenames(const char * file, files_t **files, char *type)
+void read_filenames(const char * file, params_t **params, char *type)
 {
-  char line[255], *p, value[50];
-  files_t *list = NULL;
+  int n = 512;
+  char line[n], *p, value[n];
+  params_t *list = NULL;
   sprintf(type, "%s", MAGIC_UNSET_STRING);
   FILE *fp = FOPEN(file, "rt");
   if (!fp)
     asfPrintError("Couldn't open file list: %s\n", file);
-  fgets(line, 255, fp);
+  fgets(line, n, fp);
   if (strncmp_case(line, "[InSAR]", 7) == 0) {
-  	list = files_init("INSAR");
+  	list = params_init("INSAR");
   	sprintf(type, "InSAR");
-		while (NULL != fgets(line, 255, fp)) {
+		while (NULL != fgets(line, n, fp)) {
 			p = strchr(line, '=');
 			sprintf(value, "%s", p+1);
 			if (strncmp_case(line, "granule", 7) == 0) {
-				list->granule = (char *) MALLOC(sizeof(char)*50);
+				list->granule = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->granule, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "master meta file", 16) == 0) {
-				list->master_meta_file = (char *) MALLOC(sizeof(char)*50);
+				list->master_meta_file = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->master_meta_file, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "slave meta file", 15) == 0) {
-				list->slave_meta_file = (char *) MALLOC(sizeof(char)*50);
+				list->slave_meta_file = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->slave_meta_file, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "master metadata", 15) == 0) {
-				list->master_metadata = (char *) MALLOC(sizeof(char)*50);
+				list->master_metadata = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->master_metadata, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "slave metadata", 14) == 0) {
-				list->slave_metadata = (char *) MALLOC(sizeof(char)*50);
+				list->slave_metadata = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->slave_metadata, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "doppler", 7) == 0) {
-				list->doppler = (char *) MALLOC(sizeof(char)*50);
+				list->doppler = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->doppler, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "processing log", 14) == 0) {
-				list->processing_log = (char *) MALLOC(sizeof(char)*50);
+				list->processing_log = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->processing_log, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "baseline", 8) == 0) {
-				list->baseline = (char *) MALLOC(sizeof(char)*50);
+				list->baseline = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->baseline, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "wrapped interferogram", 21) == 0) {
-				list->wrapped_interferogram = (char *) MALLOC(sizeof(char)*50);
+				list->wrapped_interferogram = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->wrapped_interferogram, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "unwrapped interferogram", 23) == 0) {
-				list->unwrapped_interferogram = (char *) MALLOC(sizeof(char)*50);
+				list->unwrapped_interferogram = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->unwrapped_interferogram, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "correlation", 11) == 0) {
-				list->correlation = (char *) MALLOC(sizeof(char)*50);
+				list->correlation = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->correlation, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "incidence angle", 15) == 0) {
-				list->incidence_angle = (char *) MALLOC(sizeof(char)*50);
+				list->incidence_angle = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->incidence_angle, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "digital elevation model", 23) == 0) {
-				list->digital_elevation_model = (char *) MALLOC(sizeof(char)*50);
+				list->digital_elevation_model = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->digital_elevation_model, "%s", trim_spaces(value));
 			}
-			if (strncmp_case(line, "troposphere", 11) == 0) {
-				list->troposphere = (char *) MALLOC(sizeof(char)*50);
+			if (strncmp_case(line, "dem url", 7) == 0) {
+				list->dem_url = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->dem_url, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "troposphere file", 16) == 0) {
+				list->troposphere = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->troposphere, "%s", trim_spaces(value));
 			}
+			if (strncmp_case(line, "troposphere url", 15) == 0) {
+				list->troposphere_url = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->troposphere_url, "%s", trim_spaces(value));
+			}
 			if (strncmp_case(line, "browse amplitude", 16) == 0) {
-				list->browse_amplitude = (char *) MALLOC(sizeof(char)*50);
+				list->browse_amplitude = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->browse_amplitude, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "browse wrapped interferogram", 28) == 0) {
-				list->browse_wrapped_interferogram = (char *) MALLOC(sizeof(char)*50);
+				list->browse_wrapped_interferogram = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->browse_wrapped_interferogram, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "browse unwrapped interferogram", 30) == 0) {
-				list->browse_unwrapped_interferogram = (char *) MALLOC(sizeof(char)*50);
+				list->browse_unwrapped_interferogram = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->browse_unwrapped_interferogram, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "browse correlation", 18) == 0) {
-				list->browse_correlation = (char *) MALLOC(sizeof(char)*50);
+				list->browse_correlation = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->browse_correlation, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "master faraday rotation", 23) == 0)
@@ -351,7 +368,7 @@ void read_filenames(const char * file, files_t **files, char *type)
 				list->slave_faraday_rotation = atof(trim_spaces(value));
 		}
   }
-  *files = list;
+  *params = list;
   
   FCLOSE(fp);
 }
@@ -396,12 +413,12 @@ int main(int argc, char **argv)
   asfSplashScreen(argc, argv);
 
   FILE *fpFiles = NULL;
-  files_t *files = NULL;
-  char line[255], str[50], isoStr[50], rscFile[50], logFile[50];
+  params_t *params = NULL;
+  char line[255], str[50], isoStr[50], rscFile[512], logFile[512];
   char directory[25], filename[30], creation[30], map_projection[50];
   char *type = (char *) MALLOC(sizeof(char)*10);
   double seconds;
-  int browse = FALSE;
+  int browse = FALSE, dem = FALSE, tropo = FALSE;
   hms_time hms, midnight;
   ymd_date ymd, start;
   midnight.hour = 0;
@@ -410,92 +427,92 @@ int main(int argc, char **argv)
 
   // Read file list information
   sprintf(creation, "%s", iso_date());
-  read_filenames(file_list, &files, type);
+  read_filenames(file_list, &params, type);
   if (strcmp_case(type, "INSAR") == 0) {
 
     // Let's check the files first
     // The only ones we require are master/slave metadata and the geocoded
     // products. All other missing files would lead to incomplete records,
     // but should not generate errors in the process.
-    if (files->master_meta_file && !fileExists(files->master_meta_file))
+    if (params->master_meta_file && !fileExists(params->master_meta_file))
       asfPrintError("Master metadata file (%s) is missing!\n", 
-        files->master_meta_file);
-    if (files->slave_meta_file && !fileExists(files->slave_meta_file))
+        params->master_meta_file);
+    if (params->slave_meta_file && !fileExists(params->slave_meta_file))
       asfPrintError("Slave metadata file (%s) is missing!\n", 
-        files->slave_meta_file);
-    if (files->master_metadata && !fileExists(files->master_metadata))
+        params->slave_meta_file);
+    if (params->master_metadata && !fileExists(params->master_metadata))
       asfPrintError("Master metadata file (%s) is missing!\n", 
-        files->master_metadata);
-    if (files->slave_metadata && !fileExists(files->slave_metadata))
+        params->master_metadata);
+    if (params->slave_metadata && !fileExists(params->slave_metadata))
       asfPrintError("Slave metadata file (%s) is missing!\n", 
-        files->slave_metadata);
-    if (files->wrapped_interferogram) {    
-      sprintf(file_name, "%s.rsc", files->wrapped_interferogram);
+        params->slave_metadata);
+    if (params->wrapped_interferogram) {    
+      sprintf(file_name, "%s.rsc", params->wrapped_interferogram);
       if (!fileExists(file_name))
         asfPrintError("Wrapped interferogram (%s) is missing!\n", file_name);
     }
-    if (files->unwrapped_interferogram) {
-      sprintf(file_name, "%s.rsc", files->unwrapped_interferogram);
+    if (params->unwrapped_interferogram) {
+      sprintf(file_name, "%s.rsc", params->unwrapped_interferogram);
       if (!fileExists(file_name))
         asfPrintError("Unwrapped interferogram (%s) is missing!\n", file_name);
     }
-    if (files->correlation) {
-      sprintf(file_name, "%s.rsc", files->correlation);
+    if (params->correlation) {
+      sprintf(file_name, "%s.rsc", params->correlation);
       if (!fileExists(file_name))
         asfPrintError("Correlation file (%s) is missing!\n", file_name);
     }
-    if (files->incidence_angle) {
-      sprintf(file_name, "%s.rsc", files->incidence_angle);
+    if (params->incidence_angle) {
+      sprintf(file_name, "%s.rsc", params->incidence_angle);
       if (!fileExists(file_name))
         asfPrintError("Incidence angle map (%s) is missing!\n", file_name);
     }
-    if ((files->browse_amplitude && fileExists(files->browse_amplitude)) || 
-        (files->browse_wrapped_interferogram && 
-          fileExists(files->browse_wrapped_interferogram)) || 
-        (files->browse_unwrapped_interferogram &&
-          fileExists(files->browse_unwrapped_interferogram)) || 
-        (files->browse_correlation && fileExists(files->browse_correlation)))
+    if ((params->browse_amplitude && fileExists(params->browse_amplitude)) || 
+        (params->browse_wrapped_interferogram && 
+          fileExists(params->browse_wrapped_interferogram)) || 
+        (params->browse_unwrapped_interferogram &&
+          fileExists(params->browse_unwrapped_interferogram)) || 
+        (params->browse_correlation && fileExists(params->browse_correlation)))
       browse = TRUE;
-    if (files->browse_amplitude && !fileExists(files->browse_amplitude))
+    if (params->browse_amplitude && !fileExists(params->browse_amplitude))
       asfPrintError("Browse image of amplitude (%s) is missing!\n",
-        files->browse_amplitude);
-    if (files->browse_wrapped_interferogram && 
-          !fileExists(files->browse_wrapped_interferogram))
+        params->browse_amplitude);
+    if (params->browse_wrapped_interferogram && 
+          !fileExists(params->browse_wrapped_interferogram))
       asfPrintError("Browse image of wrapped interferogram (%s) is missing!\n",
-        files->browse_wrapped_interferogram);
-    if (files->browse_unwrapped_interferogram &&
-          !fileExists(files->browse_unwrapped_interferogram))
+        params->browse_wrapped_interferogram);
+    if (params->browse_unwrapped_interferogram &&
+          !fileExists(params->browse_unwrapped_interferogram))
       asfPrintError("Browse image of unwrapped interferogram (%s) is missing!"
-        "\n", files->browse_unwrapped_interferogram);
-    if (files->browse_correlation && !fileExists(files->browse_correlation))
+        "\n", params->browse_unwrapped_interferogram);
+    if (params->browse_correlation && !fileExists(params->browse_correlation))
       asfPrintError("Browse image of correlation (%s) is missing!\n",
-        files->browse_correlation);
+        params->browse_correlation);
 
     meta_parameters *meta = NULL;
     FILE *fp = FOPEN(xml_name, "wt");
     fprintf(fp, "<hdf5>\n");
-    fprintf(fp, "  <granule>%s</granule>\n", files->granule);
+    fprintf(fp, "  <granule>%s</granule>\n", params->granule);
     fprintf(fp, "  <metadata_creation>%s</metadata_creation>\n", creation);
     
     // Fill in the data section
     fprintf(fp, "  <data>\n");
     fprintf(fp, "    <wrapped_interferogram>%s</wrapped_interferogram>\n",
-      files->wrapped_interferogram);
+      params->wrapped_interferogram);
     fprintf(fp, "    <unwrapped_interferogram>%s</unwrapped_interferogram>\n", 
-      files->unwrapped_interferogram);
-    fprintf(fp, "    <correlation>%s</correlation>\n", files->correlation);
+      params->unwrapped_interferogram);
+    fprintf(fp, "    <correlation>%s</correlation>\n", params->correlation);
     fprintf(fp, "    <incidence_angle>%s</incidence_angle>\n", 
-      files->incidence_angle);
-    if (files->digital_elevation_model) {
-      sprintf(file_name, "%s.img", files->digital_elevation_model);
+      params->incidence_angle);
+    if (params->digital_elevation_model) {
+      sprintf(file_name, "%s.img", params->digital_elevation_model);
       if (fileExists(file_name))
         fprintf(fp, "    <digital_elevation_model>%s</digital_elevation_model>\n",
-          files->digital_elevation_model);
+          params->digital_elevation_model);
     }
-    if (files->troposphere) {
-      sprintf(file_name, "%s.img", files->troposphere);
+    if (params->troposphere) {
+      sprintf(file_name, "%s.img", params->troposphere);
       if (fileExists(file_name))
-        fprintf(fp, "    <troposphere>%s</troposphere>\n", files->troposphere);
+        fprintf(fp, "    <troposphere>%s</troposphere>\n", params->troposphere);
     }
     fprintf(fp, "  </data>\n");
     
@@ -503,11 +520,18 @@ int main(int argc, char **argv)
     fprintf(fp, "    <master_image>\n");
 
     // Read ASF master metadata
-    meta = meta_read(files->master_meta_file);
+    meta = meta_read(params->master_meta_file);
     fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
       "master image\">%s</file>\n", meta->general->basename);
     fprintf(fp, "      <platform type=\"string\" definition=\"name of the "
       "platform\">%s</platform>\n", meta->general->sensor);
+    if (strcmp_case(meta->general->sensor, "ALOS") == 0 && 
+    strcmp_case(meta->general->sensor_name, "SAR") == 0)
+      fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
+        "sensor\">PALSAR</sensor>\n");
+    else
+      fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
+        "sensor\">%s</sensor>\n", meta->general->sensor_name);
     fprintf(fp, "      <wavelength type=\"double\" definition=\"wavelength of "
       "the sensor\" units=\"m\">%g</wavelength>\n", meta->sar->wavelength);
     fprintf(fp, "      <beam_mode type=\"string\" definition=\"beam mode of the"
@@ -534,7 +558,7 @@ int main(int argc, char **argv)
     meta_free(meta);
 
     // Read ROI_PAC master metadata
-    fpFiles = FOPEN(files->master_metadata, "rt");
+    fpFiles = FOPEN(params->master_metadata, "rt");
     while (NULL != fgets(line, 255, fpFiles)) {
       sprintf(str, "%s", line+40);
       if (strncmp_case(line, "FIRST_LINE_YEAR", 15) == 0)
@@ -603,19 +627,26 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);
     fprintf(fp, "      <data_source type=\"string\" definition=\"source "
       "providing the data\">Alaska Satellite Facility</data_source>\n");
-    if (meta_is_valid_double(files->master_faraday_rotation))
+    if (meta_is_valid_double(params->master_faraday_rotation))
       fprintf(fp, "      <faraday_rotation type=\"double\" definition=\""
         "Faraday rotation [degrees]\" units=\"degrees\">%g</faraday_rotation>"
-        "\n", files->master_faraday_rotation);
+        "\n", params->master_faraday_rotation);
     fprintf(fp, "    </master_image>\n");
     fprintf(fp, "    <slave_image>\n");
 
     // Read ASF master metadata
-    meta = meta_read(files->slave_meta_file);
+    meta = meta_read(params->slave_meta_file);
     fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
-      "master image\">%s</file>\n", meta->general->basename);
+      "slave image\">%s</file>\n", meta->general->basename);
     fprintf(fp, "      <platform type=\"string\" definition=\"name of the "
       "platform\">%s</platform>\n", meta->general->sensor);
+    if (strcmp_case(meta->general->sensor, "ALOS") == 0 && 
+    strcmp_case(meta->general->sensor_name, "SAR") == 0)
+      fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
+        "sensor\">PALSAR</sensor>\n");
+    else
+      fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
+        "sensor\">%s</sensor>\n", meta->general->sensor_name);
     fprintf(fp, "      <wavelength type=\"double\" definition=\"wavelength of "
       "the sensor\" units=\"m\">%g</wavelength>\n", meta->sar->wavelength);
     fprintf(fp, "      <beam_mode type=\"string\" definition=\"beam mode of the"
@@ -642,7 +673,7 @@ int main(int argc, char **argv)
     meta_free(meta);
 
     // Read ROI_PAC slave metadata
-    fpFiles = FOPEN(files->slave_metadata, "rt");
+    fpFiles = FOPEN(params->slave_metadata, "rt");
     while (NULL != fgets(line, 255, fpFiles)) {
       sprintf(str, "%s", line+40);
       if (strncmp_case(line, "FIRST_LINE_YEAR", 15) == 0)
@@ -711,16 +742,16 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);
     fprintf(fp, "      <data_source type=\"string\" definition=\"source "
       "providing the data\">Alaska Satellite Facility</data_source>\n");
-    if (meta_is_valid_double(files->slave_faraday_rotation))
+    if (meta_is_valid_double(params->slave_faraday_rotation))
       fprintf(fp, "      <faraday_rotation type=\"double\" definition=\""
         "Faraday rotation [degrees]\" units=\"degrees\">%g</faraday_rotation>"
-        "\n", files->slave_faraday_rotation);
+        "\n", params->slave_faraday_rotation);
     fprintf(fp, "    </slave_image>\n");
     
     // Read Doppler information
     double doppler0, doppler1, doppler2, slant_range_azimuth_resolution;
-    if (files->doppler) {
-      fpFiles = FOPEN(files->doppler, "rt");
+    if (params->doppler) {
+      fpFiles = FOPEN(params->doppler, "rt");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "DOPPLER_RANGE0", 14) == 0)
@@ -739,8 +770,8 @@ int main(int argc, char **argv)
     double vertical_baseline, horizontal_baseline, vertical_baseline_rate;
     double horizontal_baseline_rate, vertical_baseline_acceleration;
     double horizontal_baseline_acceleration;
-    if (files->baseline) {
-      fpFiles = FOPEN(files->baseline, "rt");
+    if (params->baseline) {
+      fpFiles = FOPEN(params->baseline, "rt");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "V_BASELINE_TOP_SIM", 18) == 0)
@@ -759,12 +790,25 @@ int main(int argc, char **argv)
       FCLOSE(fpFiles);
     }
 
+    // Determine orbit type
+    char orbit_type[25], *p = NULL;
+    split_dir_and_file(params->master_metadata, directory, filename);
+    sprintf(logFile, "%s%clog", directory, DIR_SEPARATOR);
+    fpFiles = FOPEN(logFile, "rt");
+    while (NULL != fgets(line, 255, fpFiles)) {
+      p = strstr(line, "roi_prep.pl");
+      if (p) {
+        sprintf(str, "roi_prep.pl %s", directory);
+        sprintf(orbit_type, "%s", trim_spaces(p+strlen(str)));
+      }
+    }
+    FCLOSE(fpFiles);    
+
     // Read information for wrapped interferogram
-    // Conditional only until generated on a regular basis
-    sprintf(rscFile, "%s.rsc", files->wrapped_interferogram);
+    sprintf(rscFile, "%s.rsc", params->wrapped_interferogram);
     fpFiles = FOPEN(rscFile, "rt");
     fprintf(fp, "    <wrapped_interferogram>\n");
-    split_dir_and_file(files->wrapped_interferogram, directory, filename);
+    split_dir_and_file(params->wrapped_interferogram, directory, filename);
     fprintf(fp, "      <file type=\"string\" definition=\"file name of "
       "wrapped interferogram\">%s</file>\n", filename);
     fprintf(fp, "      <source type=\"string\" definition=\"source of the "
@@ -798,7 +842,7 @@ int main(int argc, char **argv)
       // range looks
       // azimuth looks
     }
-    if (files->baseline) {
+    if (params->baseline) {
       fprintf(fp, "      <vertical_baseline type=\"double\" definition=\""
         "vertical baseline component [m]\" units=\"m\">%g"
         "</vertical_baseline>\n", vertical_baseline);
@@ -820,7 +864,7 @@ int main(int argc, char **argv)
         "m/m^2\">%g</horizontal_baseline_acceleration>\n", 
         horizontal_baseline_acceleration);
     }
-    if (files->doppler) {
+    if (params->doppler) {
       fprintf(fp, "      <doppler0 type=\"double\" definition=\"constant "
         "Doppler term [Hz/PRF]\" units=\"Hz/PRF\">%g</doppler0>\n", 
         doppler0);
@@ -835,20 +879,25 @@ int main(int argc, char **argv)
         "%g</slant_range_azimuth_resolution>\n", 
         slant_range_azimuth_resolution);
     }
-    // baseline_method
-    // orbit_type
+    fprintf(fp, "      <baseline_method type=\"string\" definition=\"baseline "
+      "refinement using unwrapped phase and topography\">topo</baseline_method>"
+      "\n");
+    fprintf(fp, "      <orbit_type type=\"string\" definition=\"orbit type: "
+      "HDR (header information) or PRC (precision state vectors)\">%s"
+      "</orbit_type>\n", orbit_type);
     // filter
     // filter_strength
     fprintf(fp, "    </wrapped_interferogram>\n");
     FCLOSE(fpFiles);
 
     // Read information for unwrapped interferogram
-    int width = 0, height = 0;
-    double start_lat = -99, start_lon = -99, spacing_lat = -99, spacing_lon = -99;
-    sprintf(rscFile, "%s.rsc", files->unwrapped_interferogram);
+    int insar_width = 0, insar_height = 0;
+    double insar_start_lat = -99, insar_start_lon = -199;
+    double insar_spacing_lat = -99, insar_spacing_lon = -199;
+    sprintf(rscFile, "%s.rsc", params->unwrapped_interferogram);
     fpFiles = FOPEN(rscFile, "rt");
     fprintf(fp, "    <unwrapped_interferogram>\n");
-    split_dir_and_file(files->unwrapped_interferogram, directory, filename);
+    split_dir_and_file(params->unwrapped_interferogram, directory, filename);
     fprintf(fp, "      <file type=\"string\" definition=\"file name of "
       "unwrapped interferogram\">%s</file>\n", filename);
     fprintf(fp, "      <source type=\"string\" definition=\"source of the "
@@ -858,43 +907,43 @@ int main(int argc, char **argv)
     while (NULL != fgets(line, 255, fpFiles)) {
       sprintf(str, "%s", line+40);
       if (strncmp_case(line, "WIDTH", 5) == 0) {
-        width = atoi(trim_spaces(str));
+        insar_width = atoi(trim_spaces(str));
         fprintf(fp, "      <width type=\"int\" definition=\"width of the "
-          "image\">%d</width>\n", width);
+          "image\">%d</width>\n", insar_width);
       }
       if (strncmp_case(line, "FILE_LENGTH", 11) == 0) {
-        height = atoi(trim_spaces(str));
+        insar_height = atoi(trim_spaces(str));
         fprintf(fp, "      <height type=\"int\" definition=\"height of the "
-          "image\">%d</height>\n", height);
+          "image\">%d</height>\n", insar_height);
       }
       if (strncmp_case(line, "Y_FIRST", 7) == 0) {
-        start_lat = atof(trim_spaces(str));
+        insar_start_lat = atof(trim_spaces(str));
         fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
           "latitude of the image [degrees]\" units=\"degrees_north\">%g"
-          "</start_lat>\n", start_lat);
+          "</start_lat>\n", insar_start_lat);
       }
       if (strncmp_case(line, "X_FIRST", 7) == 0) {
-        start_lon = atof(trim_spaces(str));
+        insar_start_lon = atof(trim_spaces(str));
         fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
           "longitude of the image [degrees]\" units=\"degrees_east\">%g"
-          "</start_lon>\n", start_lon);
+          "</start_lon>\n", insar_start_lon);
       }
       if (strncmp_case(line, "Y_STEP", 6) == 0) {
-        spacing_lat = atof(trim_spaces(str));
+        insar_spacing_lat = atof(trim_spaces(str));
         fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
           "spacing in latitude direction [degrees]\" units=\"degrees_north\""
-          ">%g</spacing_lat>\n", spacing_lat);
+          ">%g</spacing_lat>\n", insar_spacing_lat);
       }
       if (strncmp_case(line, "X_STEP", 6) == 0) {
-        spacing_lon = atof(trim_spaces(str));
+        insar_spacing_lon = atof(trim_spaces(str));
         fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
           "spacing in longitude direction [degrees]\" units=\"degrees_east\""
-          ">%g</spacing_lon>\n", spacing_lon);
+          ">%g</spacing_lon>\n", insar_spacing_lon);
       }
       // range looks
       // azimuth looks
     }
-    if (files->baseline) {
+    if (params->baseline) {
       fprintf(fp, "      <vertical_baseline type=\"double\" definition=\""
         "vertical baseline component [m]\" units=\"m\">%g"
         "</vertical_baseline>\n", vertical_baseline);
@@ -916,7 +965,7 @@ int main(int argc, char **argv)
         "m/m^2\">%g</horizontal_baseline_acceleration>\n", 
         horizontal_baseline_acceleration);
     }
-    if (files->doppler) {
+    if (params->doppler) {
       fprintf(fp, "      <doppler0 type=\"double\" definition=\"constant "
         "Doppler term [Hz/PRF]\" units=\"Hz/PRF\">%g</doppler0>\n", 
         doppler0);
@@ -931,8 +980,12 @@ int main(int argc, char **argv)
         "%g</slant_range_azimuth_resolution>\n", 
         slant_range_azimuth_resolution);
     }
-    // baseline_method
-    // orbit_type
+    fprintf(fp, "      <baseline_method type=\"string\" definition=\"baseline "
+      "refinement using unwrapped phase and topography\">topo</baseline_method>"
+      "\n");
+    fprintf(fp, "      <orbit_type type=\"string\" definition=\"orbit type: "
+      "HDR (header information) or PRC (precision state vectors)\">%s"
+      "</orbit_type>\n", orbit_type);
     // filter
     // filter_strength
     // unwrapped_method
@@ -941,10 +994,10 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);
 
     // Read information for coherence image
-    sprintf(rscFile, "%s.rsc", files->correlation);
+    sprintf(rscFile, "%s.rsc", params->correlation);
     fpFiles = FOPEN(rscFile, "rt");
     fprintf(fp, "    <correlation>\n");
-    split_dir_and_file(files->correlation, directory, filename);
+    split_dir_and_file(params->correlation, directory, filename);
     fprintf(fp, "      <file type=\"string\" definition=\"file name of "
       "correlation image\">%s</file>\n", filename);
     fprintf(fp, "      <source type=\"string\" definition=\"source of the "
@@ -978,7 +1031,7 @@ int main(int argc, char **argv)
       // range looks
       // azimuth looks
     }
-    if (files->baseline) {
+    if (params->baseline) {
       fprintf(fp, "      <vertical_baseline type=\"double\" definition=\""
         "vertical baseline component [m]\" units=\"m\">%g"
         "</vertical_baseline>\n", vertical_baseline);
@@ -1000,7 +1053,7 @@ int main(int argc, char **argv)
         "m/m^2\">%g</horizontal_baseline_acceleration>\n", 
         horizontal_baseline_acceleration);
     }
-    if (files->doppler) {
+    if (params->doppler) {
       fprintf(fp, "      <doppler0 type=\"double\" definition=\"constant "
         "Doppler term [Hz/PRF]\" units=\"Hz/PRF\">%g</doppler0>\n", 
         doppler0);
@@ -1015,17 +1068,20 @@ int main(int argc, char **argv)
         "%g</slant_range_azimuth_resolution>\n", 
         slant_range_azimuth_resolution);
     }
-    // baseline_method
-    // orbit_type
+    fprintf(fp, "      <baseline_method type=\"string\" definition=\"baseline "
+      "refinement using unwrapped phase and topography\">topo</baseline_method>"
+      "\n");
+    fprintf(fp, "      <orbit_type type=\"string\" definition=\"orbit type: "
+      "HDR (header information) or PRC (precision state vectors)\">%s"
+      "</orbit_type>\n", orbit_type);
     fprintf(fp, "    </correlation>\n");
     FCLOSE(fpFiles);
 
     // Read information for incidence angle map
-    // Conditional only until generated on a regular basis
-    sprintf(rscFile, "%s.rsc", files->incidence_angle);
+    sprintf(rscFile, "%s.rsc", params->incidence_angle);
     fpFiles = FOPEN(rscFile, "rt");
     fprintf(fp, "    <incidence_angle>\n");
-    split_dir_and_file(files->incidence_angle, directory, filename);
+    split_dir_and_file(params->incidence_angle, directory, filename);
     fprintf(fp, "      <file type=\"string\" definition=\"file name of "
       "incidence angle map\">%s</file>\n", filename);
     fprintf(fp, "      <source type=\"string\" definition=\"source of the "
@@ -1061,11 +1117,15 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);
 
     // Read information for digital elevation model
-    sprintf(rscFile, "%s.rsc", files->digital_elevation_model);
+    int dem_width = 0, dem_height = 0;
+    double dem_start_lat = -99, dem_start_lon = -199;
+    double dem_spacing_lat = -99, dem_spacing_lon = -199;
+    sprintf(rscFile, "%s.rsc", params->digital_elevation_model);
     if (fileExists(rscFile)) {
+      dem = TRUE;
       fpFiles = FOPEN(rscFile, "rt");
       fprintf(fp, "    <digital_elevation_model>\n");
-      split_dir_and_file(files->digital_elevation_model, directory, filename);
+      split_dir_and_file(params->digital_elevation_model, directory, filename);
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "digital elevation model\">%s</file>\n", filename);
       fprintf(fp, "      <height_units type=\"string\" definition=\"units of "
@@ -1080,39 +1140,57 @@ int main(int argc, char **argv)
             fprintf(fp, "      <map_projection type=\"string\" definition=\""
             "map projection of the data\">geographic</map_projection>\n");
         }
-        if (strncmp_case(line, "WIDTH", 5) == 0)
+        if (strncmp_case(line, "WIDTH", 5) == 0) {
+          dem_width = atoi(trim_spaces(str));
           fprintf(fp, "      <width type=\"int\" definition=\"width of the "
-            "image\">%s</width>\n", trim_spaces(str));
-        if (strncmp_case(line, "FILE_LENGTH", 11) == 0)
+            "image\">%d</width>\n", dem_width);
+        }
+        if (strncmp_case(line, "FILE_LENGTH", 11) == 0) {
+          dem_height = atoi(trim_spaces(str));
           fprintf(fp, "      <height type=\"int\" definition=\"height of the "
-            "image\">%s</height>\n", trim_spaces(str));
-        if (strncmp_case(line, "Y_FIRST", 7) == 0)
+            "image\">%d</height>\n", dem_height);
+        }
+        if (strncmp_case(line, "Y_FIRST", 7) == 0) {
+          dem_start_lat = atof(trim_spaces(str));
           fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
-            "latitude of the image [degrees]\" units=\"degrees_north\">%s"
-            "</start_lat>\n", trim_spaces(str));
-        if (strncmp_case(line, "X_FIRST", 7) == 0)
+            "latitude of the image [degrees]\" units=\"degrees_north\">%g"
+            "</start_lat>\n", dem_start_lat);
+        }
+        if (strncmp_case(line, "X_FIRST", 7) == 0) {
+          dem_start_lon = atof(trim_spaces(str));
           fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
-            "longitude of the image [degrees]\" units=\"degrees_east\">%s"
-            "</start_lon>\n", trim_spaces(str));
-        if (strncmp_case(line, "Y_STEP", 6) == 0)
+            "longitude of the image [degrees]\" units=\"degrees_east\">%g"
+            "</start_lon>\n", dem_start_lon);
+        }
+        if (strncmp_case(line, "Y_STEP", 6) == 0) {
+          dem_spacing_lat = atof(trim_spaces(str));
           fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
             "spacing in latitude direction [degrees]\" units=\"degrees_north\""
-            ">%s</spacing_lat>\n", trim_spaces(str));
-        if (strncmp_case(line, "X_STEP", 6) == 0)
+            ">%g</spacing_lat>\n", dem_spacing_lat);
+        }
+        if (strncmp_case(line, "X_STEP", 6) == 0) {
+          dem_spacing_lon = atof(trim_spaces(str));
           fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
             "spacing in longitude direction [degrees]\" units=\"degrees_east\""
-            ">%s</spacing_lon>\n", trim_spaces(str));
+            ">%g</spacing_lon>\n", dem_spacing_lon);
+        }
       }
+      fprintf(fp, "      <url type=\"string\" definition=\"URL used to download"
+        " digital elevation model\">%s</url>\n", params->dem_url);
       fprintf(fp, "    </digital_elevation_model>\n");
       FCLOSE(fpFiles);
     }
 
     // Read information for troposphere
-    sprintf(rscFile, "%s.rsc", files->troposphere);
+    int tropo_width = 0, tropo_height = 0;
+    double tropo_start_lat = -99, tropo_start_lon = -199;
+    double tropo_spacing_lat = -99, tropo_spacing_lon = -199;
+    sprintf(rscFile, "%s.rsc", params->troposphere);
     if (fileExists(rscFile)) {
+      tropo = TRUE;
       fpFiles = FOPEN(rscFile, "rt");
       fprintf(fp, "    <troposphere>\n");
-      split_dir_and_file(files->troposphere, directory, filename);
+      split_dir_and_file(params->troposphere, directory, filename);
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "tropospheric information\">%s</file>\n", filename);
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
@@ -1125,29 +1203,43 @@ int main(int argc, char **argv)
             fprintf(fp, "      <map_projection type=\"string\" definition=\""
             "map projection of the data\">geographic</map_projection>\n");
         }
-        if (strncmp_case(line, "WIDTH", 5) == 0)
+        if (strncmp_case(line, "WIDTH", 5) == 0) {
+          tropo_width = atoi(trim_spaces(str));
           fprintf(fp, "      <width type=\"int\" definition=\"width of the "
-            "image\">%s</width>\n", trim_spaces(str));
-        if (strncmp_case(line, "FILE_LENGTH", 11) == 0)
+            "image\">%d</width>\n", tropo_width);
+        }
+        if (strncmp_case(line, "FILE_LENGTH", 11) == 0) {
+          tropo_height = atoi(trim_spaces(str));
           fprintf(fp, "      <height type=\"int\" definition=\"height of the "
-            "image\">%s</height>\n", trim_spaces(str));
-        if (strncmp_case(line, "Y_FIRST", 7) == 0)
+            "image\">%d</height>\n", tropo_height);
+        }
+        if (strncmp_case(line, "Y_FIRST", 7) == 0) {
+          tropo_start_lat = atof(trim_spaces(str));
           fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
-            "latitude of the image [degrees]\" units=\"degrees_north\">%s"
-            "</start_lat>\n", trim_spaces(str));
-        if (strncmp_case(line, "X_FIRST", 7) == 0)
+            "latitude of the image [degrees]\" units=\"degrees_north\">%g"
+            "</start_lat>\n", tropo_start_lat);
+        }
+        if (strncmp_case(line, "X_FIRST", 7) == 0) {
+          tropo_start_lon = atof(trim_spaces(str));
           fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
-            "longitude of the image [degrees]\" units=\"degrees_east\">%s"
-            "</start_lon>\n", trim_spaces(str));
-        if (strncmp_case(line, "Y_STEP", 6) == 0)
+            "longitude of the image [degrees]\" units=\"degrees_east\">%g"
+            "</start_lon>\n", tropo_start_lon);
+        }
+        if (strncmp_case(line, "Y_STEP", 6) == 0) {
+          tropo_spacing_lat = atof(trim_spaces(str));
           fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
             "spacing in latitude direction [degrees]\" units=\"degrees_north\""
-            ">%s</spacing_lat>\n", trim_spaces(str));
-        if (strncmp_case(line, "X_STEP", 6) == 0)
+            ">%g</spacing_lat>\n", tropo_spacing_lat);
+        }
+        if (strncmp_case(line, "X_STEP", 6) == 0) {
+          tropo_spacing_lon = atof(trim_spaces(str));
           fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
             "spacing in longitude direction [degrees]\" units=\"degrees_east\""
-            ">%s</spacing_lon>\n", trim_spaces(str));
+            ">%g</spacing_lon>\n", tropo_spacing_lon);
+        }
       }
+      fprintf(fp, "      <url type=\"string\" definition=\"URL used to download"
+        " tropospheric correction\">%s</url>\n", params->troposphere_url);
       fprintf(fp, "    </troposphere>\n");
       FCLOSE(fpFiles);
     }
@@ -1156,75 +1248,97 @@ int main(int argc, char **argv)
     // Browse image information
     if (browse) {
       fprintf(fp, "  <browse>\n");
-      if (files->browse_amplitude && fileExists(files->browse_amplitude))
-        fprintf(fp, "    <amplitude>%s</amplitude>\n", files->browse_amplitude);
-      if (files->browse_wrapped_interferogram && 
-        fileExists(files->browse_wrapped_interferogram))
+      if (params->browse_amplitude && fileExists(params->browse_amplitude))
+        fprintf(fp, "    <amplitude>%s</amplitude>\n", params->browse_amplitude);
+      if (params->browse_wrapped_interferogram && 
+        fileExists(params->browse_wrapped_interferogram))
         fprintf(fp, "    <wrapped_interferogram>%s</wrapped_interferogram>\n",
-          files->browse_wrapped_interferogram);
-      if (files->browse_unwrapped_interferogram &&
-        fileExists(files->browse_unwrapped_interferogram))
+          params->browse_wrapped_interferogram);
+      if (params->browse_unwrapped_interferogram &&
+        fileExists(params->browse_unwrapped_interferogram))
         fprintf(fp, "    <unwrapped_interferogram>%s</unwrapped_interferogram>"
-          "\n", files->browse_unwrapped_interferogram);
-      if (files->browse_correlation && fileExists(files->browse_correlation))
+          "\n", params->browse_unwrapped_interferogram);
+      if (params->browse_correlation && fileExists(params->browse_correlation))
         fprintf(fp, "    <correlation>%s</correlation>\n", 
-          files->browse_correlation);
+          params->browse_correlation);
       fprintf(fp, "  </browse>\n");
     }
 
     // Data extent
     fprintf(fp, "  <extent>\n");
-    fprintf(fp, "    <lat_upper_left>%.5f</lat_upper_left>\n", start_lat);
-    fprintf(fp, "    <lon_upper_left>%.5f</lon_upper_left>\n", start_lon);
-    fprintf(fp, "    <lat_upper_right>%.5f</lat_upper_right>\n", start_lat);
-    fprintf(fp, "    <lon_upper_right>%.5f</lon_upper_right>\n",
-      (start_lon + spacing_lon*width));
-    fprintf(fp, "    <lat_lower_right>%.5f</lat_lower_right>\n",
-      (start_lat + spacing_lat*height));
-    fprintf(fp, "    <lon_lower_right>%.5f</lon_lower_right>\n",
-      (start_lon + spacing_lon*width));
-    fprintf(fp, "    <lat_lower_left>%.5f</lat_lower_left>\n",
-      (start_lat + spacing_lat*height));
-    fprintf(fp, "    <lon_lower_left>%.5f</lon_lower_left>\n", start_lon);
+    fprintf(fp, "    <insar>\n");
+    fprintf(fp, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
+      insar_start_lon);
+    fprintf(fp, "      <eastBoundLongitude>%.5f</eastBoundLongitude>\n",
+      (insar_start_lon + insar_spacing_lon*insar_width));
+    fprintf(fp, "      <northBoundLatitude>%.5f</northBoundLatitude>\n",
+      insar_start_lat);
+    fprintf(fp, "      <southBoundLatitude>%.5f</southBoundLatitude>\n",
+      (insar_start_lat + insar_spacing_lat*insar_height));
+    fprintf(fp, "    </insar>\n");
+    if (dem) {
+      fprintf(fp, "    <digital_elevation_model>\n");
+      fprintf(fp, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
+        dem_start_lon);
+      fprintf(fp, "      <eastBoundLongitude>%.5f</eastBoundLongitude>\n",
+        (dem_start_lon + dem_spacing_lon*dem_width));
+      fprintf(fp, "      <northBoundLatitude>%.5f</northBoundLatitude>\n",
+        dem_start_lat);
+      fprintf(fp, "      <southBoundLatitude>%.5f</southBoundLatitude>\n",
+        (dem_start_lat + dem_spacing_lat*dem_height));
+      fprintf(fp, "    </digital_elevation_model>\n");    
+    }
+    if (tropo) {
+      fprintf(fp, "    <troposphere>\n");
+      fprintf(fp, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
+        tropo_start_lon);
+      fprintf(fp, "      <eastBoundLongitude>%.5f</eastBoundLongitude>\n",
+        (tropo_start_lon + tropo_spacing_lon*tropo_width));
+      fprintf(fp, "      <northBoundLatitude>%.5f</northBoundLatitude>\n",
+        tropo_start_lat);
+      fprintf(fp, "      <southBoundLatitude>%.5f</southBoundLatitude>\n",
+        (tropo_start_lat + tropo_spacing_lat*tropo_height));
+      fprintf(fp, "    </troposphere>\n");    
+    }
     fprintf(fp, "  </extent>\n");
 
-    /*
     // Statistics
+    /*
     fprintf(fp, "  <statistics>\n");
     fprintf(fp, "    <wrapped_interferogram>\n");
-    fprintf(fp, "      <minimum_value></minimum_value>\n");
-    fprintf(fp, "      <maximum_value></maximum_value>\n");
-    fprintf(fp, "      <mean_value></mean_value>\n");
-    fprintf(fp, "      <standard_deviation></standard_deviation>\n");
-    fprintf(fp, "      <percent_valid_values></percent_valid_values>\n");
+    fprintf(fp, "      <minimum_value>0.1</minimum_value>\n");
+    fprintf(fp, "      <maximum_value>0.1</maximum_value>\n");
+    fprintf(fp, "      <mean_value>0.1</mean_value>\n");
+    fprintf(fp, "      <standard_deviation>0.1</standard_deviation>\n");
+    fprintf(fp, "      <percent_valid_values>1</percent_valid_values>\n");
     fprintf(fp, "    </wrapped_interferogram>\n");
     fprintf(fp, "    <unwrapped_interferogram>\n");
-    fprintf(fp, "      <minimum_value></minimum_value>\n");
-    fprintf(fp, "      <maximum_value></maximum_value>\n");
-    fprintf(fp, "      <mean_value></mean_value>\n");
-    fprintf(fp, "      <standard_deviation></standard_deviation>\n");
-    fprintf(fp, "      <percent_valid_values></percent_valid_values>\n");
+    fprintf(fp, "      <minimum_value>0.2</minimum_value>\n");
+    fprintf(fp, "      <maximum_value>0.2</maximum_value>\n");
+    fprintf(fp, "      <mean_value>0.2</mean_value>\n");
+    fprintf(fp, "      <standard_deviation>0.2</standard_deviation>\n");
+    fprintf(fp, "      <percent_valid_values>2</percent_valid_values>\n");
     fprintf(fp, "    </unwrapped_interferogram>\n");
     fprintf(fp, "    <correlation>\n");
-    fprintf(fp, "      <minimum_value></minimum_value>\n");
-    fprintf(fp, "      <maximum_value></maximum_value>\n");
-    fprintf(fp, "      <mean_value></mean_value>\n");
-    fprintf(fp, "      <standard_deviation></standard_deviation>\n");
-    fprintf(fp, "      <percent_valid_values></percent_valid_values>\n");
+    fprintf(fp, "      <minimum_value>0.3</minimum_value>\n");
+    fprintf(fp, "      <maximum_value>0.3</maximum_value>\n");
+    fprintf(fp, "      <mean_value>0.3</mean_value>\n");
+    fprintf(fp, "      <standard_deviation>0.3</standard_deviation>\n");
+    fprintf(fp, "      <percent_valid_values>3</percent_valid_values>\n");
     fprintf(fp, "    </correlation>\n");
     fprintf(fp, "    <digital_elevation_model>\n");
-    fprintf(fp, "      <minimum_value></minimum_value>\n");
-    fprintf(fp, "      <maximum_value></maximum_value>\n");
-    fprintf(fp, "      <mean_value></mean_value>\n");
-    fprintf(fp, "      <standard_deviation></standard_deviation>\n");
-    fprintf(fp, "      <percent_valid_values></percent_valid_values>\n");
+    fprintf(fp, "      <minimum_value>0.4</minimum_value>\n");
+    fprintf(fp, "      <maximum_value>0.4</maximum_value>\n");
+    fprintf(fp, "      <mean_value>0.4</mean_value>\n");
+    fprintf(fp, "      <standard_deviation>0.4</standard_deviation>\n");
+    fprintf(fp, "      <percent_valid_values>4</percent_valid_values>\n");
     fprintf(fp, "    </digital_elevation_model>\n");
     fprintf(fp, "    <troposphere>\n");
-    fprintf(fp, "      <minimum_value></minimum_value>\n");
-    fprintf(fp, "      <maximum_value></maximum_value>\n");
-    fprintf(fp, "      <mean_value></mean_value>\n");
-    fprintf(fp, "      <standard_deviation></standard_deviation>\n");
-    fprintf(fp, "      <percent_valid_values></percent_valid_values>\n");
+    fprintf(fp, "      <minimum_value>0.5</minimum_value>\n");
+    fprintf(fp, "      <maximum_value>0.5</maximum_value>\n");
+    fprintf(fp, "      <mean_value>0.5</mean_value>\n");
+    fprintf(fp, "      <standard_deviation>0.5</standard_deviation>\n");
+    fprintf(fp, "      <percent_valid_values>5</percent_valid_values>\n");
     fprintf(fp, "    </troposphere>\n");
     fprintf(fp, "  </statistics>\n");
     */
@@ -1233,7 +1347,7 @@ int main(int argc, char **argv)
     fprintf(fp, "  <processing>\n");
     
     // Master image processing
-    split_dir_and_file(files->master_metadata, directory, filename);
+    split_dir_and_file(params->master_metadata, directory, filename);
     sprintf(logFile, "%s%clog", directory, DIR_SEPARATOR);
     fpFiles = FOPEN(logFile, "rt");
     while (NULL != fgets(line, 255, fpFiles)) {
@@ -1251,7 +1365,7 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);
     
     // Slave image processing
-    split_dir_and_file(files->slave_metadata, directory, filename);
+    split_dir_and_file(params->slave_metadata, directory, filename);
     sprintf(logFile, "%s%clog", directory, DIR_SEPARATOR);
     fpFiles = FOPEN(logFile, "rt");
     while (NULL != fgets(line, 255, fpFiles)) {
@@ -1268,13 +1382,42 @@ int main(int argc, char **argv)
     }
     FCLOSE(fpFiles);
     
+    // Interferometric processing
+    split_dir_and_file(params->processing_log, directory, filename);
+    sprintf(logFile, "%s%clog", directory, DIR_SEPARATOR);
+    fpFiles = FOPEN(logFile, "rt");
+    while (NULL != fgets(line, 255, fpFiles)) {
+      if (strstr(line, "resamp.pl")) {
+        roi2iso_date(line, str);
+        fprintf(fp, "    <create_interferogram>%s</create_interferogram>\n", 
+          str);
+      }
+      if (strstr(line, "make_cor.pl")) {
+        roi2iso_date(line, str);
+        fprintf(fp, "    <create_correlation>%s</create_correlation>\n", str);
+      }
+      if (strstr(line, "make_sim.pl")) {
+        roi2iso_date(line, str);
+        fprintf(fp, "    <remove_topography>%s</remove_topography>\n", str);
+      }
+      if (strstr(line, "unwrap.pl")) {
+        roi2iso_date(line, str);
+        fprintf(fp, "    <phase_unwrapping>%s</phase_unwrapping>\n", str);
+      }
+      if (strstr(line, "make_geomap.pl")) {
+        roi2iso_date(line, str);
+        fprintf(fp, "    <geocoding>%s</geocoding>\n", str);
+      }
+    }
+    FCLOSE(fpFiles);    
+    
     fprintf(fp, "  </processing>\n");
     
     // Root metadata
     char data_source[25], processing[100], copyright[50], original_file[100];
     char version[25];
     sprintf(version, "v31 r172");
-    meta = meta_read(files->master_meta_file);
+    meta = meta_read(params->master_meta_file);
     if (strcmp_case(meta->general->sensor, "ALOS") == 0 && 
         strcmp_case(meta->general->sensor_name, "SAR") == 0) {
       sprintf(data_source, "ALOS PALSAR");
@@ -1283,13 +1426,14 @@ int main(int argc, char **argv)
     meta_free(meta);
     sprintf(processing, "SAR interferometric product, processed by ROI_PAC "
       "(%s)", version);
-    if (fileExists(files->digital_elevation_model))
+    if (params->digital_elevation_model &&
+        fileExists(params->digital_elevation_model))
       strcat(processing, ", corrected for terrain");
-    if (fileExists(files->troposphere))
+    if (params->troposphere && fileExists(params->troposphere))
       strcat(processing, " and troposphere");
-    split_dir_and_file(files->master_meta_file, directory, filename);
+    split_dir_and_file(params->master_meta_file, directory, filename);
     sprintf(original_file, "master: %s, slave: ", stripExt(filename));
-    split_dir_and_file(files->slave_meta_file, directory, filename);
+    split_dir_and_file(params->slave_meta_file, directory, filename);
     strcat(original_file, stripExt(filename));      
 
     fprintf(fp, "  <root>\n");
