@@ -2936,7 +2936,7 @@ static void xml_get_children(xmlNode *node, char **children)
 static void xml_meta2hdf(xmlDoc *doc, xmlNode *node, char *group, char *xmlStr, 
   hid_t h5)
 {
-  char str[512], element[50], value[50], type[25], definition[255], units[25];
+  char str[512], element[50], value[200], type[25], definition[255], units[25];
   xmlNode *cur = NULL;
   cur = node->xmlChildrenNode;
   for (cur = node; cur; cur = cur->next) {
@@ -2962,7 +2962,7 @@ static void xml_meta2hdf(xmlDoc *doc, xmlNode *node, char *group, char *xmlStr,
       else if (strcmp_case(type, "DOUBLE") == 0)
         h5_value_double(h5, group, element, atof(value), definition, units);
       else {
-        asfPrintWarning("Unknown type (%s) for element (%s)!\nWriting element"
+        asfPrintWarning("Unknown type (%s) for element (%s)!\nWriting element "
           "as string!\n", type, element);
         h5_value_str(h5, group, element, value, definition, units);
       }
@@ -3018,7 +3018,7 @@ static void xml_data2hdf(xmlDoc *doc, char *dataFile, char *group,
 static void xml_datameta2hdf(xmlDoc *doc, xmlNode *node, char *group, 
   char *metaXml, char *parameter, hid_t h5)
 {
-  char str[512], element[512], value[100], units[25], valueStr[512];
+  char str[512], element[512], value[200], units[25], valueStr[512];
   xmlNode *cur = NULL;
   cur = node->xmlChildrenNode;
   for (cur = node; cur; cur = cur->next) {
