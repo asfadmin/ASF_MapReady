@@ -180,6 +180,11 @@ static void ymd_hms2iso_date(ymd_date *date, hms_time *time, char *isoStr)
 
 static char *xml_encode(char *xml_str)
 {
+  static char buf[1024];
+  strcpy(buf, "");
+
+  if (xml_str)
+  {
     char *a = asf_strReplace(xml_str, "&", "&amp;");
     char *b = asf_strReplace(a, "<", "&lt;");
     char *c = asf_strReplace(b, ">", "&gt;");
@@ -187,11 +192,11 @@ static char *xml_encode(char *xml_str)
     char *e = asf_strReplace(d, "'", "&apos;");
     FREE(a); FREE(b); FREE(c); FREE(d);
 
-    static char buf[1024];
     strcpy(buf, e);
     FREE(e);
+  }
 
-    return buf;
+  return buf;
 }
 
 static void roi2iso_date(char *line, char *time)
