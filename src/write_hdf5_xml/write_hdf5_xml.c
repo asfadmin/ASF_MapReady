@@ -1196,8 +1196,9 @@ int main(int argc, char **argv)
             ">%g</spacing_lon>\n", dem_spacing_lon);
         }
       }
-      fprintf(fp, "      <url type=\"string\" definition=\"URL used to download"
-        " digital elevation model\">%s</url>\n", xml_encode(params->dem_url));
+      if (params->dem_url)
+        fprintf(fp, "      <url type=\"string\" definition=\"URL used to download"
+          " digital elevation model\">%s</url>\n", xml_encode(params->dem_url));
       fprintf(fp, "    </digital_elevation_model>\n");
       FCLOSE(fpFiles);
     }
@@ -1259,8 +1260,9 @@ int main(int argc, char **argv)
             ">%g</spacing_lon>\n", tropo_spacing_lon);
         }
       }
-      fprintf(fp, "      <url type=\"string\" definition=\"URL used to download"
-        " tropospheric correction\">%s</url>\n", xml_encode(params->troposphere_url));
+      if (params->troposphere_url)
+        fprintf(fp, "      <url type=\"string\" definition=\"URL used to download"
+          " tropospheric correction\">%s</url>\n", xml_encode(params->troposphere_url));
       fprintf(fp, "    </troposphere>\n");
       FCLOSE(fpFiles);
     }
