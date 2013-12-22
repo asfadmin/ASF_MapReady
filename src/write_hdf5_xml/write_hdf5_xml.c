@@ -1379,7 +1379,7 @@ int main(int argc, char **argv)
           meta->stats->band_stats[0].max);
         fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
           meta->stats->band_stats[0].mean);
-        fprintf(fp, "      <standard_deviation>%.11g/standard_deviation>\n",
+        fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
           meta->stats->band_stats[0].std_deviation);
         fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
           meta->stats->band_stats[0].percent_valid);
