@@ -683,6 +683,9 @@ void import_roipac_new(const char *inFile, const char *outFile,
   else if (strcmp(ext, ".dem")==0) {
     type = ROIPAC_DEM;
     meta->general->image_data_type = DEM;
+
+    meta->general->band_count = 1;
+    strcpy(meta->general->bands, "DEM_HEIGHT");
   }
 
   if (type == 0)
