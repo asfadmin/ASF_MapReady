@@ -434,7 +434,7 @@ int main(int argc, char **argv)
   char directory[25], filename[30], creation[30], map_projection[50];
   char *type = (char *) MALLOC(sizeof(char)*10);
   double seconds;
-  int browse = FALSE, dem = FALSE, tropo = FALSE;
+  int browse = FALSE, dem = FALSE, tropo = FALSE, stats = FALSE;
   hms_time hms, midnight;
   ymd_date ymd, start;
   midnight.hour = 0;
@@ -509,7 +509,7 @@ int main(int argc, char **argv)
     fprintf(fp, "<hdf5>\n");
     fprintf(fp, "  <granule>%s</granule>\n", params->granule);
     fprintf(fp, "  <metadata_creation>%s</metadata_creation>\n", creation);
-    
+
     // Fill in the data section
     fprintf(fp, "  <data>\n");
     fprintf(fp, "    <wrapped_interferogram>%s</wrapped_interferogram>\n",
@@ -1260,7 +1260,7 @@ int main(int argc, char **argv)
       FCLOSE(fpFiles);
     }
     fprintf(fp, "  </metadata>\n");
-    
+
     // Browse image information
     if (browse) {
       fprintf(fp, "  <browse>\n");
@@ -1319,6 +1319,13 @@ int main(int argc, char **argv)
     fprintf(fp, "  </extent>\n");
 
     // Statistics
+    meta = meta_read(params->correlation);
+    if (meta->stats)
+      stats = TRUE;
+    meta_free(meta);
+    
+    if (stats)
+      printf("found stats!\n");
     /*
     fprintf(fp, "  <statistics>\n");
     fprintf(fp, "    <wrapped_interferogram>\n");

@@ -293,11 +293,23 @@ calc_stats_from_file(const char *inFile, char *band, double mask,
                      double *min, double *max, double *mean,
                      double *stdDev, gsl_histogram **histogram)
 {
+  double valid;
+  return calc_stats_from_file_ext(inFile, band, mask, min, max, mean, stdDev, 
+                                  &valid, histogram);
+}
+
+void
+calc_stats_from_file_ext(const char *inFile, char *band, double mask,
+                         double *min, double *max, double *mean,
+                         double *stdDev, double *percentValid, 
+                         gsl_histogram **histogram)
+{
     int ii,jj;
 
     *min = 999999;
     *max = -999999;
     *mean = 0.0;
+    *percentValid = 0.0;
 
     meta_parameters *meta = meta_read(inFile);
     int band_number;
@@ -336,6 +348,8 @@ calc_stats_from_file(const char *inFile, char *band, double mask,
     FCLOSE(fp);
 
     *mean /= pixel_count;
+    long total_count = meta->general->line_count*meta->general->sample_count;
+    *percentValid = (double)pixel_count*100.0/total_count;
 
     // Guard against weird data
     if(!(*min<*max)) *max = *min + 1;
@@ -378,12 +392,24 @@ calc_stats_rmse_from_file(const char *inFile, char *band, double mask,
                           double *stdDev, double *rmse,
                           gsl_histogram **histogram)
 {
+  double valid;
+  return calc_stats_rmse_from_file_ext(inFile, band, mask, min, max, mean,
+                                       stdDev, rmse, &valid, histogram);
+}
+
+void
+calc_stats_rmse_from_file_ext(const char *inFile, char *band, double mask,
+                              double *min, double *max, double *mean,
+                              double *stdDev, double *rmse, 
+                              double *percentValid, gsl_histogram **histogram)
+{
     double se;
     int ii,jj;
 
     *min = 999999;
     *max = -999999;
     *mean = 0.0;
+    *percentValid = 0.0;
 
     meta_parameters *meta = meta_read(inFile);
     int band_number =
@@ -413,6 +439,8 @@ calc_stats_rmse_from_file(const char *inFile, char *band, double mask,
     FCLOSE(fp);
 
     *mean /= pixel_count;
+    long total_count = meta->general->line_count*meta->general->sample_count;
+    *percentValid = (double)pixel_count*100.0/total_count;
 
     // Guard against weird data
     if(!(*min<*max)) *max = *min + 1;
