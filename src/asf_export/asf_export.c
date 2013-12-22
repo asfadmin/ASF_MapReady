@@ -503,7 +503,7 @@ main (int argc, char *argv[])
     {
       command_line.sample_mapping = SIGMA;
     }
-    else if (strcmp (command_line.format, "GEOTIFF") == 0) {
+    else if (strcmp_case (command_line.format, "GEOTIFF") == 0) {
       command_line.sample_mapping = NONE;
     }
 

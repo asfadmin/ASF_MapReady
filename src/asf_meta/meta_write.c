@@ -997,6 +997,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp,"rmse:",meta->stats->band_stats[ii].rmse,"Root mean squared error");
       meta_put_double(fp,"std_deviation:",meta->stats->band_stats[ii].std_deviation,
           "Standard deviation");
+      meta_put_double(fp,"percent_valid:",meta->stats->band_stats[ii].percent_valid,
+          "Percent of valid values");
       meta_put_double(fp,"mask:",meta->stats->band_stats[ii].mask,
           "Value ignored while taking statistics");
       meta_put_string(fp,"}","","End band statistics block");
@@ -2085,6 +2087,8 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
       fprintf(fp, "      <rmse>%.11g</rmse>\n", ms->band_stats[ii].rmse);
       fprintf(fp, "      <std_deviation>%.11g</std_deviation>\n",
 	      ms->band_stats[ii].std_deviation);
+	    fprintf(fp, "      <percent_valid>%.11g</percent_valid>\n",
+	      ms->band_stats[ii].percent_valid);
       fprintf(fp, "      <mask>%.11g</mask>\n", ms->band_stats[ii].mask);
       fprintf(fp, "    </band_stats>\n");
     }
