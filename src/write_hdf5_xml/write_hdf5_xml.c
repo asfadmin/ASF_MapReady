@@ -1326,52 +1326,122 @@ int main(int argc, char **argv)
     fprintf(fp, "  </extent>\n");
 
     // Statistics
+    meta = meta_read(params->wrapped_interferogram);
+    if (meta->stats)
+      stats = TRUE;
+    meta_free(meta);
+    meta = meta_read(params->unwrapped_interferogram);
+    if (meta->stats)
+      stats = TRUE;
+    meta_free(meta);
     meta = meta_read(params->correlation);
     if (meta->stats)
       stats = TRUE;
     meta_free(meta);
-    
-    if (stats)
-      printf("found stats!\n");
-    /*
-    fprintf(fp, "  <statistics>\n");
-    fprintf(fp, "    <wrapped_interferogram>\n");
-    fprintf(fp, "      <minimum_value>0.1</minimum_value>\n");
-    fprintf(fp, "      <maximum_value>0.1</maximum_value>\n");
-    fprintf(fp, "      <mean_value>0.1</mean_value>\n");
-    fprintf(fp, "      <standard_deviation>0.1</standard_deviation>\n");
-    fprintf(fp, "      <percent_valid_values>1</percent_valid_values>\n");
-    fprintf(fp, "    </wrapped_interferogram>\n");
-    fprintf(fp, "    <unwrapped_interferogram>\n");
-    fprintf(fp, "      <minimum_value>0.2</minimum_value>\n");
-    fprintf(fp, "      <maximum_value>0.2</maximum_value>\n");
-    fprintf(fp, "      <mean_value>0.2</mean_value>\n");
-    fprintf(fp, "      <standard_deviation>0.2</standard_deviation>\n");
-    fprintf(fp, "      <percent_valid_values>2</percent_valid_values>\n");
-    fprintf(fp, "    </unwrapped_interferogram>\n");
-    fprintf(fp, "    <correlation>\n");
-    fprintf(fp, "      <minimum_value>0.3</minimum_value>\n");
-    fprintf(fp, "      <maximum_value>0.3</maximum_value>\n");
-    fprintf(fp, "      <mean_value>0.3</mean_value>\n");
-    fprintf(fp, "      <standard_deviation>0.3</standard_deviation>\n");
-    fprintf(fp, "      <percent_valid_values>3</percent_valid_values>\n");
-    fprintf(fp, "    </correlation>\n");
-    fprintf(fp, "    <digital_elevation_model>\n");
-    fprintf(fp, "      <minimum_value>0.4</minimum_value>\n");
-    fprintf(fp, "      <maximum_value>0.4</maximum_value>\n");
-    fprintf(fp, "      <mean_value>0.4</mean_value>\n");
-    fprintf(fp, "      <standard_deviation>0.4</standard_deviation>\n");
-    fprintf(fp, "      <percent_valid_values>4</percent_valid_values>\n");
-    fprintf(fp, "    </digital_elevation_model>\n");
-    fprintf(fp, "    <troposphere>\n");
-    fprintf(fp, "      <minimum_value>0.5</minimum_value>\n");
-    fprintf(fp, "      <maximum_value>0.5</maximum_value>\n");
-    fprintf(fp, "      <mean_value>0.5</mean_value>\n");
-    fprintf(fp, "      <standard_deviation>0.5</standard_deviation>\n");
-    fprintf(fp, "      <percent_valid_values>5</percent_valid_values>\n");
-    fprintf(fp, "    </troposphere>\n");
-    fprintf(fp, "  </statistics>\n");
-    */
+    if (params->digital_elevation_model) {
+      char metaFile[512];
+      sprintf(metaFile, "%s.meta", params->digital_elevation_model);
+      meta = meta_read(metaFile);
+      if (meta->stats)
+        stats = TRUE;
+      meta_free(meta);
+    }
+    if (params->troposphere) {
+      meta = meta_read(params->troposphere);
+      if (meta->stats)
+        stats = TRUE;
+      meta_free(meta);
+    }    
+    if (stats) {
+      fprintf(fp, "  <statistics>\n");
+      meta = meta_read(params->wrapped_interferogram);
+      if (meta->stats) {
+        fprintf(fp, "    <wrapped_interferogram>\n");
+        fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+          meta->stats->band_stats[0].min);
+        fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+          meta->stats->band_stats[0].max);
+        fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+          meta->stats->band_stats[0].mean);
+        fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+          meta->stats->band_stats[0].std_deviation);
+        fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+          meta->stats->band_stats[0].percent_valid);
+        fprintf(fp, "    </wrapped_interferogram>\n");
+      }
+      meta_free(meta);
+      meta = meta_read(params->unwrapped_interferogram);
+      if (meta->stats) {
+        fprintf(fp, "    <unwrapped_interferogram>\n");
+        fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+          meta->stats->band_stats[0].min);
+        fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+          meta->stats->band_stats[0].max);
+        fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+          meta->stats->band_stats[0].mean);
+        fprintf(fp, "      <standard_deviation>%.11g/standard_deviation>\n",
+          meta->stats->band_stats[0].std_deviation);
+        fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+          meta->stats->band_stats[0].percent_valid);
+        fprintf(fp, "    </unwrapped_interferogram>\n");
+      }
+      meta_free(meta);
+      meta = meta_read(params->correlation);
+      if (meta->stats) {
+        fprintf(fp, "    <correlation>\n");
+        fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+          meta->stats->band_stats[0].min);
+        fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+          meta->stats->band_stats[0].max);
+        fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+          meta->stats->band_stats[0].mean);
+        fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+          meta->stats->band_stats[0].std_deviation);
+        fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+          meta->stats->band_stats[0].percent_valid);
+        fprintf(fp, "    </correlation>\n");
+      }
+      meta_free(meta);
+      if (params->digital_elevation_model) {
+        char metaFile[512];
+        sprintf(metaFile, "%s.meta", params->digital_elevation_model);
+        meta = meta_read(metaFile);
+        if (meta->stats) {
+          fprintf(fp, "    <digital_elevation_model>\n");
+          fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+            meta->stats->band_stats[0].min);
+          fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+            meta->stats->band_stats[0].max);
+          fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+            meta->stats->band_stats[0].mean);
+          fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+            meta->stats->band_stats[0].std_deviation);
+          fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>"
+            "\n", meta->stats->band_stats[0].percent_valid);
+          fprintf(fp, "    </digital_elevation_model>\n");
+        }
+        meta_free(meta);
+      }
+      if (params->troposphere) {
+        meta = meta_read(params->troposphere);
+        if (meta->stats) {
+          fprintf(fp, "    <troposphere>\n");
+          fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+            meta->stats->band_stats[0].min);
+          fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+            meta->stats->band_stats[0].max);
+          fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+            meta->stats->band_stats[0].mean);
+          fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+            meta->stats->band_stats[0].std_deviation);
+          fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>"
+            "\n", meta->stats->band_stats[0].percent_valid);
+          fprintf(fp, "    </troposphere>\n");
+        }
+        meta_free(meta);
+      }
+      fprintf(fp, "  </statistics>\n");
+    }
 
     // Working the various log files
     fprintf(fp, "  <processing>\n");
