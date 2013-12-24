@@ -1007,6 +1007,16 @@ int main(int argc, char **argv)
     fprintf(fp, "      <orbit_type type=\"string\" definition=\"orbit type: "
       "HDR (header information) or PRC (precision state vectors)\">%s"
       "</orbit_type>\n", orbit_type);
+    meta = meta_read(params->unwrapped_interferogram);
+    if (meta->stats) {
+      fprintf(fp, "      <phase_minimum>%g</phase_minimum>\n",
+        meta->stats->band_stats[0].min);
+      fprintf(fp, "      <phase_maximum>%g</phase_maximum>\n",
+        meta->stats->band_stats[0].max);
+      fprintf(fp, "      <percent_unwrapped>%g</percent_unwrapped>\n",
+        meta->stats->band_stats[0].percent_valid);
+    }
+    meta_free(meta);
     // filter
     // filter_strength
     // unwrapped_method
@@ -1095,6 +1105,12 @@ int main(int argc, char **argv)
     fprintf(fp, "      <orbit_type type=\"string\" definition=\"orbit type: "
       "HDR (header information) or PRC (precision state vectors)\">%s"
       "</orbit_type>\n", orbit_type);
+    meta = meta_read(params->correlation);
+    if (meta->stats) {
+      fprintf(fp, "      <average_coherence>%g</average_coherence>\n",
+        meta->stats->band_stats[0].mean);
+    }
+    meta_free(meta);
     fprintf(fp, "    </correlation>\n");
     FCLOSE(fpFiles);
 
@@ -1263,6 +1279,18 @@ int main(int argc, char **argv)
       if (params->troposphere_url)
         fprintf(fp, "      <url type=\"string\" definition=\"URL used to download"
           " tropospheric correction\">%s</url>\n", xml_encode(params->troposphere_url));
+      meta = meta_read(params->troposphere);
+      if (meta->stats) {
+        fprintf(fp, "      <correction_minimum>%g</correction_minimum>\n",
+          meta->stats->band_stats[0].min);
+        fprintf(fp, "      <correction_maximum>%g</correction_maximum>\n",
+          meta->stats->band_stats[0].max);
+        fprintf(fp, "      <correction_coverage>%g</correction_coverage>\n",
+          meta->stats->band_stats[0].percent_valid);
+        fprintf(fp, "      <correction.variation>%g</correction_variation>\n",
+          meta->stats->band_stats[0].std_deviation);
+      }
+      meta_free(meta);
       fprintf(fp, "    </troposphere>\n");
       FCLOSE(fpFiles);
     }
