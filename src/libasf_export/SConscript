@@ -18,6 +18,7 @@ localenv.ParseConfig("pkg-config --cflags --libs libpng")
 localenv.ParseConfig("pkg-config --cflags --libs libtiff-4")
 localenv.ParseConfig("pkg-config --cflags --libs gsl")
 localenv.ParseConfig("pkg-config --cflags --libs netcdf")
+localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
 
 localenv.AppendUnique(LIBS = [
     "m",

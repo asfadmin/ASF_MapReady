@@ -68,58 +68,31 @@
 void stat_write(stat_parameters *stats, const char *file_name, const int num_bands)
 {
 	FILE *stat_file;
-	//char stat_name[256];
-	char equation_str[256];
 	int  band, ii;
 
-	//create_name(stat_name, file_name, ".stat");
 	stat_file = FOPEN(file_name, "w");
 
-/* Write stats structure to file */
+  /* Write stats structure to file */
 	fprintf(stat_file,"# Statistics for image file of the same base name\n");
-        fprintf(stat_file,"Number of bands: %d\n", num_bands);
+  fprintf(stat_file,"Number of bands: %d\n", num_bands);
   for (band=0; band<num_bands; band++) {
-        fprintf(stat_file,"Band number: %d\n", band);
-	fprintf(stat_file,"%-16.11g\t# minimum\n",stats[band].min);
-	fprintf(stat_file,"%-16.11g\t# maximum\n",stats[band].max);
-	fprintf(stat_file,"%-16.11g\t# mean\n",stats[band].mean);
-	fprintf(stat_file,"%-16.11g\t# rms error\n",stats[band].rmse);
-	fprintf(stat_file,"%-16.11g\t# standard deviation\n",stats[band].std_deviation);
-	fprintf(stat_file,"%-16.11g\t# masked value (none if NaN)\n",stats[band].mask);
-	fprintf(stat_file,
-		"%-16.11g\t# Slope of line fitting data to [0..255]\n",
-		stats[band].slope);
-	fprintf(stat_file,
-		"%-16.11g\t# Offset of line fitting data to [0..255]\n",
-		stats[band].offset);
-	fprintf(stat_file,
-		"%-16d\t# Upper left line of the window statistics were taken in\n",
-		stats[band].upper_left_line);
-	fprintf(stat_file,
-		"%-16d\t# Upper left sample of the window statistics were taken in\n",
-		stats[band].upper_left_samp);
-	fprintf(stat_file,
-		"%-16d\t# Lower right line of the window statistics were taken in\n",
-		stats[band].lower_right_line);
-	fprintf(stat_file,
-		"%-16d\t# Lower right sample of the window statistics were taken in\n",
-		stats[band].lower_right_samp);
-	fprintf(stat_file,"\n");
+    fprintf(stat_file,"Band number: %d\n", band);
+    fprintf(stat_file,"%-16.11g\t# minimum\n",stats[band].min);
+    fprintf(stat_file,"%-16.11g\t# maximum\n",stats[band].max);
+    fprintf(stat_file,"%-16.11g\t# mean\n",stats[band].mean);
+    fprintf(stat_file,"%-16.11g\t# rms error\n",stats[band].rmse);
+    fprintf(stat_file,"%-16.11g\t# standard deviation\n",stats[band].std_deviation);
+    fprintf(stat_file,"%-16.11g\t# masked value (none if NaN)\n",stats[band].mask);
+    fprintf(stat_file,"\n");
 
-	/* Write out histogram */
-	sprintf(equation_str,
-		"(Data fit to [0..255] using equation:  byte = %lf * sample + %lf)",
-		stats[band].slope, stats[band].offset);
-	fprintf(stat_file,"# Histogram %s\n",
-		(stats[band].slope==1.0 && stats[band].offset==0.0) ? "" : equation_str);
-	for (ii=0; ii<256; ii++) {
-		if (ii%8 == 0) {
-			fprintf(stat_file, "%s%3i-%3i:", (ii==0) ? "" : "\n",
-				ii, ii+7);
-		}
-		fprintf(stat_file, " %8i", stats[band].histogram[ii]);
-	}
-	fprintf(stat_file, "\n");
+    /* Write out histogram */	
+    fprintf(stat_file,"# Histogram\n");
+    for (ii=0; ii<256; ii++) {
+      if (ii%8 == 0)
+        fprintf(stat_file, "%s%3i-%3i:", (ii==0) ? "" : "\n", ii, ii+7);
+      fprintf(stat_file, " %8i", stats[band].histogram[ii]);
+    }
+    fprintf(stat_file, "\n");
   }
 
 	FCLOSE(stat_file);

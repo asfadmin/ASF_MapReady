@@ -48,7 +48,7 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
   meta->sar->deskewed = 1;
   meta->sar->line_increment = 1;
   meta->sar->sample_increment = 1;
-  strcpy(meta->general->processor, "");
+  strcpy(meta->general->processor, "ROI_PAC");
 
   FILE *ifp = FOPEN(in, "r");
   int nl, ns, yr, mo, da, hr, mn, sc, ms=0, tm_val=0;
@@ -211,8 +211,9 @@ meta_parameters *meta_read_roipac(const char *in, const char *sv_file)
 
     meta->general->start_line = 0;
     meta->general->start_sample = 0;
-    meta->general->x_pixel_size = xs;
-    meta->general->y_pixel_size = ys;
+    meta->general->x_pixel_size = fabs(xs);
+    meta->general->y_pixel_size = fabs(ys);
+    meta->general->no_data = 0;
 
     mp->hem = meta->general->center_latitude > 0 ? 'N' : 'S';
 
@@ -682,6 +683,9 @@ void import_roipac_new(const char *inFile, const char *outFile,
   else if (strcmp(ext, ".dem")==0) {
     type = ROIPAC_DEM;
     meta->general->image_data_type = DEM;
+
+    meta->general->band_count = 1;
+    strcpy(meta->general->bands, "DEM_HEIGHT");
   }
 
   if (type == 0)

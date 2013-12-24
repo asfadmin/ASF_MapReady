@@ -373,6 +373,7 @@ typedef struct {
   double mean;                  /* Mean average of image values          */
   double rmse;                  /* Root mean squared error               */
   double std_deviation;         /* Standard deviation                    */
+  double percent_valid;         // Percent of valid values
   double mask;                  /* Value ignored while taking statistics */
 } meta_stats;
 /********************************************************************

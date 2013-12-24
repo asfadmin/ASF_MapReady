@@ -1267,6 +1267,8 @@ void fill_structure_field(char *field_name, void *valp)
     { (MSTATSBLOCK)->rmse = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "std_deviation") )
     { (MSTATSBLOCK)->std_deviation = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "percent_valid") )
+    { (MSTATSBLOCK)->percent_valid = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "mask") )
     { (MSTATSBLOCK)->mask = VALP_AS_DOUBLE; return; }
   }
@@ -1285,6 +1287,8 @@ void fill_structure_field(char *field_name, void *valp)
     { (MSTATS)->rmse = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "std_deviation") )
     { (MSTATS)->std_deviation = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "percent_valid") )
+    { (MSTATS)->percent_valid = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "mask") )
     { (MSTATS)->mask = VALP_AS_DOUBLE; return; }
   }
