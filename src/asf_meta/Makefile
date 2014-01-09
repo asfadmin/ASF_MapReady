@@ -199,7 +199,7 @@ meta_update: meta_update.c build_only
 distclean:
 	rm -f core *~ TAGS gdb_init.com
 
-test: *.t.c build_only
+test: *.t.c
 	$(CC) $(CFLAGS) -o test *.t.c $(LIBDIR)/libcunit.a $(LIBDIR)/asf_meta.a $(LIBDIR)/asf.a $(LIBDIR)/libasf_proj.a $(LIBS) -lm -lz
 	./test
 
