@@ -538,236 +538,240 @@ int main(int argc, char **argv)
     fprintf(fp, "  </data>\n");
     
     fprintf(fp, "  <metadata>\n");
-    fprintf(fp, "    <master_image>\n");
+    if (params->master_meta_file) {
+      fprintf(fp, "    <master_image>\n");
 
-    // Read ASF master metadata
-    meta = meta_read(params->master_meta_file);
-    fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
-      "master image\">%s</file>\n", meta->general->basename);
-    fprintf(fp, "      <platform type=\"string\" definition=\"name of the "
-      "platform\">%s</platform>\n", meta->general->sensor);
-    if (strcmp_case(meta->general->sensor, "ALOS") == 0 && 
-    strcmp_case(meta->general->sensor_name, "SAR") == 0)
-      fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
-        "sensor\">PALSAR</sensor>\n");
-    else
-      fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
-        "sensor\">%s</sensor>\n", meta->general->sensor_name);
-    fprintf(fp, "      <wavelength type=\"double\" definition=\"wavelength of "
-      "the sensor\" units=\"m\">%g</wavelength>\n", meta->sar->wavelength);
-    fprintf(fp, "      <beam_mode type=\"string\" definition=\"beam mode of the"
-      " sensor\">%s</beam_mode>\n", meta->general->mode);
-    fprintf(fp, "      <absolute_orbit type=\"int\" definition=\"absolute orbit"
-      " of the image\">%d</absolute_orbit>\n", meta->general->orbit);
-    fprintf(fp, "      <frame type=\"int\" definition=\"frame number of the "
-      "image\">%d</frame>\n",  meta->general->frame);
-    if (meta->general->orbit_direction == 'A')
-      fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
-      "direction of the sensor\">ascending</flight_direction>\n");
-    else if (meta->general->orbit_direction == 'D')
-      fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
-      "direction of the sensor\">descending</flight_direction>\n");
-    fprintf(fp, "      <polarization type=\"string\" definition=\"polarization "
-      "of the transmitted and received signal\">%s</polarization>\n", 
-      meta->sar->polarization);
-    fprintf(fp, "      <data_processing_level type=\"string\" definition=\""
-      "processing level of the input data\">raw</data_processing_level>\n");
-    fprintf(fp, "      <data_format type=\"string\" definition=\"data format "
-      "of input data\">CEOS</data_format>\n");
-    fprintf(fp, "      <prf type=\"double\" definition=\"pulse repetition "
-      "frequency\" units=\"Hz\">%g</prf>\n", meta->sar->prf);
-    meta_free(meta);
+      // Read ASF master metadata
+      meta = meta_read(params->master_meta_file);
+      fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
+        "master image\">%s</file>\n", meta->general->basename);
+      fprintf(fp, "      <platform type=\"string\" definition=\"name of the "
+        "platform\">%s</platform>\n", meta->general->sensor);
+      if (strcmp_case(meta->general->sensor, "ALOS") == 0 && 
+      strcmp_case(meta->general->sensor_name, "SAR") == 0)
+        fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
+          "sensor\">PALSAR</sensor>\n");
+      else
+        fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
+          "sensor\">%s</sensor>\n", meta->general->sensor_name);
+      fprintf(fp, "      <wavelength type=\"double\" definition=\"wavelength of "
+        "the sensor\" units=\"m\">%g</wavelength>\n", meta->sar->wavelength);
+      fprintf(fp, "      <beam_mode type=\"string\" definition=\"beam mode of the"
+        " sensor\">%s</beam_mode>\n", meta->general->mode);
+      fprintf(fp, "      <absolute_orbit type=\"int\" definition=\"absolute orbit"
+        " of the image\">%d</absolute_orbit>\n", meta->general->orbit);
+      fprintf(fp, "      <frame type=\"int\" definition=\"frame number of the "
+        "image\">%d</frame>\n",  meta->general->frame);
+      if (meta->general->orbit_direction == 'A')
+        fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
+        "direction of the sensor\">ascending</flight_direction>\n");
+      else if (meta->general->orbit_direction == 'D')
+        fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
+        "direction of the sensor\">descending</flight_direction>\n");
+      fprintf(fp, "      <polarization type=\"string\" definition=\"polarization "
+        "of the transmitted and received signal\">%s</polarization>\n", 
+        meta->sar->polarization);
+      fprintf(fp, "      <data_processing_level type=\"string\" definition=\""
+        "processing level of the input data\">raw</data_processing_level>\n");
+      fprintf(fp, "      <data_format type=\"string\" definition=\"data format "
+        "of input data\">CEOS</data_format>\n");
+      fprintf(fp, "      <prf type=\"double\" definition=\"pulse repetition "
+        "frequency\" units=\"Hz\">%g</prf>\n", meta->sar->prf);
+      meta_free(meta);
 
-    // Read ROI_PAC master metadata
-    fpFiles = FOPEN(params->master_metadata, "rt");
-    while (NULL != fgets(line, 255, fpFiles)) {
-      sprintf(str, "%s", line+40);
-      if (strncmp_case(line, "FIRST_LINE_YEAR", 15) == 0)
-        start.year = atoi(trim_spaces(str));
-      if (strncmp_case(line, "FIRST_LINE_MONTH_OF_YEAR", 24) == 0)
-        start.month = atoi(trim_spaces(str));
-      if (strncmp_case(line, "FIRST_LINE_DAY_OF_MONTH", 23) == 0)
-        start.day = atoi(trim_spaces(str));
-      if (strncmp_case(line, "FIRST_LINE_UTC", 14) == 0) {
-        fprintf(fp, "      <start_seconds_day type=\"double\" definition=\""
-          "seconds of the day at the start of the image\" units=\"s\">%s"
-          "</start_seconds_day>\n", trim_spaces(str));
-        ymd = start;
-        hms = midnight;
-        seconds = atof(trim_spaces(str));
-        add_time(seconds, &ymd, &hms);
-        ymd_hms2iso_date(&ymd, &hms, isoStr);
-        fprintf(fp, "      <start_datetime type=\"string\" definition=\"UTC "
-          "time at the start of the image\">%s</start_datetime>\n", isoStr); 	
+      // Read ROI_PAC master metadata
+      fpFiles = FOPEN(params->master_metadata, "rt");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        sprintf(str, "%s", line+40);
+        if (strncmp_case(line, "FIRST_LINE_YEAR", 15) == 0)
+          start.year = atoi(trim_spaces(str));
+        if (strncmp_case(line, "FIRST_LINE_MONTH_OF_YEAR", 24) == 0)
+          start.month = atoi(trim_spaces(str));
+        if (strncmp_case(line, "FIRST_LINE_DAY_OF_MONTH", 23) == 0)
+          start.day = atoi(trim_spaces(str));
+        if (strncmp_case(line, "FIRST_LINE_UTC", 14) == 0) {
+          fprintf(fp, "      <start_seconds_day type=\"double\" definition=\""
+            "seconds of the day at the start of the image\" units=\"s\">%s"
+            "</start_seconds_day>\n", trim_spaces(str));
+          ymd = start;
+          hms = midnight;
+          seconds = atof(trim_spaces(str));
+          add_time(seconds, &ymd, &hms);
+          ymd_hms2iso_date(&ymd, &hms, isoStr);
+          fprintf(fp, "      <start_datetime type=\"string\" definition=\"UTC "
+            "time at the start of the image\">%s</start_datetime>\n", isoStr); 	
+        }
+        if (strncmp_case(line, "CENTER_LINE_UTC", 15) == 0) {
+          fprintf(fp, "      <center_seconds_day type=\"double\" definition=\""
+            "seconds of the day at the center of the image\" units=\"s\">%s"
+            "</center_seconds_day>\n", trim_spaces(str));
+          ymd = start;
+          hms = midnight;
+          seconds = atof(trim_spaces(str));
+          add_time(seconds, &ymd, &hms);
+          ymd_hms2iso_date(&ymd, &hms, isoStr);
+          fprintf(fp, "      <center_datetime type=\"string\" definition=\"UTC "
+            "time at the center of the image\">%s</center_datetime>\n", isoStr);
+        }
+        if (strncmp_case(line, "LAST_LINE_UTC", 13) == 0) {
+          fprintf(fp, "      <end_seconds_day type=\"double\" definition=\""
+            "seconds of the day at the end of the image\" units=\"s\">%s"
+            "</end_seconds_day>\n", trim_spaces(str));
+          ymd = start;
+          hms = midnight;
+          seconds = atof(trim_spaces(str));
+          add_time(seconds, &ymd, &hms);
+          ymd_hms2iso_date(&ymd, &hms, isoStr);
+          fprintf(fp, "      <end_datetime type=\"string\" definition=\"UTC "
+            "time at the end of the image\">%s</end_datetime>\n", isoStr);
+        }
+        if (strncmp_case(line, "LATITUDE", 8) == 0)
+          fprintf(fp, "      <peg_latitude type=\"double\" definition=\"latitude "
+            "of the peg point [degrees]\" units=\"degrees_north\">%s"
+            "</peg_latitude>\n", trim_spaces(str));
+        if (strncmp_case(line, "LONGITUDE", 9) == 0)
+          fprintf(fp, "      <peg_longitude type=\"double\" definition=\""
+            "longitude of the peg point [degrees]\" units=\"degrees_east\">%s"
+            "</peg_longitude>\n", trim_spaces(str));
+        if (strncmp_case(line, "HEADING", 7) == 0)
+          fprintf(fp, "      <peg_heading type=\"double\" definition=\"heading "
+            "of the peg point [degrees]\" units=\"degrees_north\">%s"
+            "</peg_heading>\n", trim_spaces(str));
+        if (strncmp_case(line, "HEIGHT ", 7) == 0)
+          fprintf(fp, "      <height type=\"double\" definition=\"height of the "
+            "platform at the image center [m]\" units=\"m\">%s</height>\n", 
+            trim_spaces(str));
+        if (strncmp_case(line, "EARTH_RADIUS", 12) == 0)
+          fprintf(fp, "      <earth_radius type=\"double\" definition=\"earth "
+            "radius at the image center\" units=\"m\">%s</earth_radius>\n",
+            trim_spaces(str));
       }
-      if (strncmp_case(line, "CENTER_LINE_UTC", 15) == 0) {
-        fprintf(fp, "      <center_seconds_day type=\"double\" definition=\""
-          "seconds of the day at the center of the image\" units=\"s\">%s"
-          "</center_seconds_day>\n", trim_spaces(str));
-        ymd = start;
-        hms = midnight;
-        seconds = atof(trim_spaces(str));
-        add_time(seconds, &ymd, &hms);
-        ymd_hms2iso_date(&ymd, &hms, isoStr);
-        fprintf(fp, "      <center_datetime type=\"string\" definition=\"UTC "
-          "time at the center of the image\">%s</center_datetime>\n", isoStr);
-      }
-      if (strncmp_case(line, "LAST_LINE_UTC", 13) == 0) {
-        fprintf(fp, "      <end_seconds_day type=\"double\" definition=\""
-          "seconds of the day at the end of the image\" units=\"s\">%s"
-          "</end_seconds_day>\n", trim_spaces(str));
-        ymd = start;
-        hms = midnight;
-        seconds = atof(trim_spaces(str));
-        add_time(seconds, &ymd, &hms);
-        ymd_hms2iso_date(&ymd, &hms, isoStr);
-        fprintf(fp, "      <end_datetime type=\"string\" definition=\"UTC "
-          "time at the end of the image\">%s</end_datetime>\n", isoStr);
-      }
-      if (strncmp_case(line, "LATITUDE", 8) == 0)
-        fprintf(fp, "      <peg_latitude type=\"double\" definition=\"latitude "
-          "of the peg point [degrees]\" units=\"degrees_north\">%s"
-          "</peg_latitude>\n", trim_spaces(str));
-      if (strncmp_case(line, "LONGITUDE", 9) == 0)
-        fprintf(fp, "      <peg_longitude type=\"double\" definition=\""
-          "longitude of the peg point [degrees]\" units=\"degrees_east\">%s"
-          "</peg_longitude>\n", trim_spaces(str));
-      if (strncmp_case(line, "HEADING", 7) == 0)
-        fprintf(fp, "      <peg_heading type=\"double\" definition=\"heading "
-          "of the peg point [degrees]\" units=\"degrees_north\">%s"
-          "</peg_heading>\n", trim_spaces(str));
-      if (strncmp_case(line, "HEIGHT ", 7) == 0)
-        fprintf(fp, "      <height type=\"double\" definition=\"height of the "
-          "platform at the image center [m]\" units=\"m\">%s</height>\n", 
-          trim_spaces(str));
-      if (strncmp_case(line, "EARTH_RADIUS", 12) == 0)
-        fprintf(fp, "      <earth_radius type=\"double\" definition=\"earth "
-          "radius at the image center\" units=\"m\">%s</earth_radius>\n",
-          trim_spaces(str));
+      FCLOSE(fpFiles);
+      fprintf(fp, "      <data_source type=\"string\" definition=\"source "
+        "providing the data\">Alaska Satellite Facility</data_source>\n");
+      if (meta_is_valid_double(params->master_faraday_rotation))
+        fprintf(fp, "      <faraday_rotation type=\"double\" definition=\""
+          "Faraday rotation [degrees]\" units=\"degrees\">%g</faraday_rotation>"
+          "\n", params->master_faraday_rotation);
+      fprintf(fp, "    </master_image>\n");
     }
-    FCLOSE(fpFiles);
-    fprintf(fp, "      <data_source type=\"string\" definition=\"source "
-      "providing the data\">Alaska Satellite Facility</data_source>\n");
-    if (meta_is_valid_double(params->master_faraday_rotation))
-      fprintf(fp, "      <faraday_rotation type=\"double\" definition=\""
-        "Faraday rotation [degrees]\" units=\"degrees\">%g</faraday_rotation>"
-        "\n", params->master_faraday_rotation);
-    fprintf(fp, "    </master_image>\n");
-    fprintf(fp, "    <slave_image>\n");
+    if (params->slave_meta_file) {
+      fprintf(fp, "    <slave_image>\n");
 
-    // Read ASF master metadata
-    meta = meta_read(params->slave_meta_file);
-    fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
-      "slave image\">%s</file>\n", meta->general->basename);
-    fprintf(fp, "      <platform type=\"string\" definition=\"name of the "
-      "platform\">%s</platform>\n", meta->general->sensor);
-    if (strcmp_case(meta->general->sensor, "ALOS") == 0 && 
-    strcmp_case(meta->general->sensor_name, "SAR") == 0)
-      fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
-        "sensor\">PALSAR</sensor>\n");
-    else
-      fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
-        "sensor\">%s</sensor>\n", meta->general->sensor_name);
-    fprintf(fp, "      <wavelength type=\"double\" definition=\"wavelength of "
-      "the sensor\" units=\"m\">%g</wavelength>\n", meta->sar->wavelength);
-    fprintf(fp, "      <beam_mode type=\"string\" definition=\"beam mode of the"
-      " sensor\">%s</beam_mode>\n", meta->general->mode);
-    fprintf(fp, "      <absolute_orbit type=\"int\" definition=\"absolute orbit"
-      " of the image\">%d</absolute_orbit>\n", meta->general->orbit);
-    fprintf(fp, "      <frame type=\"int\" definition=\"frame number of the "
-      "image\">%d</frame>\n",  meta->general->frame);
-    if (meta->general->orbit_direction == 'A')
-      fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
-      "direction of the sensor\">ascending</flight_direction>\n");
-    else if (meta->general->orbit_direction == 'D')
-      fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
-      "direction of the sensor\">descending</flight_direction>\n");
-    fprintf(fp, "      <polarization type=\"string\" definition=\"polarization "
-      "of the transmitted and received signal\">%s</polarization>\n", 
-      meta->sar->polarization);
-    fprintf(fp, "      <data_processing_level type=\"string\" definition=\""
-      "processing level of the input data\">raw</data_processing_level>\n");
-    fprintf(fp, "      <data_format type=\"string\" definition=\"data format "
-      "of input data\">CEOS</data_format>\n");
-    fprintf(fp, "      <prf type=\"double\" definition=\"pulse repetition "
-      "frequency\" units=\"Hz\">%g</prf>\n", meta->sar->prf);
-    meta_free(meta);
+      // Read ASF master metadata
+      meta = meta_read(params->slave_meta_file);
+      fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
+        "slave image\">%s</file>\n", meta->general->basename);
+      fprintf(fp, "      <platform type=\"string\" definition=\"name of the "
+        "platform\">%s</platform>\n", meta->general->sensor);
+      if (strcmp_case(meta->general->sensor, "ALOS") == 0 && 
+      strcmp_case(meta->general->sensor_name, "SAR") == 0)
+        fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
+          "sensor\">PALSAR</sensor>\n");
+      else
+        fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
+          "sensor\">%s</sensor>\n", meta->general->sensor_name);
+      fprintf(fp, "      <wavelength type=\"double\" definition=\"wavelength of "
+        "the sensor\" units=\"m\">%g</wavelength>\n", meta->sar->wavelength);
+      fprintf(fp, "      <beam_mode type=\"string\" definition=\"beam mode of the"
+        " sensor\">%s</beam_mode>\n", meta->general->mode);
+      fprintf(fp, "      <absolute_orbit type=\"int\" definition=\"absolute orbit"
+        " of the image\">%d</absolute_orbit>\n", meta->general->orbit);
+      fprintf(fp, "      <frame type=\"int\" definition=\"frame number of the "
+        "image\">%d</frame>\n",  meta->general->frame);
+      if (meta->general->orbit_direction == 'A')
+        fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
+        "direction of the sensor\">ascending</flight_direction>\n");
+      else if (meta->general->orbit_direction == 'D')
+        fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
+        "direction of the sensor\">descending</flight_direction>\n");
+      fprintf(fp, "      <polarization type=\"string\" definition=\"polarization "
+        "of the transmitted and received signal\">%s</polarization>\n", 
+        meta->sar->polarization);
+      fprintf(fp, "      <data_processing_level type=\"string\" definition=\""
+        "processing level of the input data\">raw</data_processing_level>\n");
+      fprintf(fp, "      <data_format type=\"string\" definition=\"data format "
+        "of input data\">CEOS</data_format>\n");
+      fprintf(fp, "      <prf type=\"double\" definition=\"pulse repetition "
+        "frequency\" units=\"Hz\">%g</prf>\n", meta->sar->prf);
+      meta_free(meta);
 
-    // Read ROI_PAC slave metadata
-    fpFiles = FOPEN(params->slave_metadata, "rt");
-    while (NULL != fgets(line, 255, fpFiles)) {
-      sprintf(str, "%s", line+40);
-      if (strncmp_case(line, "FIRST_LINE_YEAR", 15) == 0)
-        start.year = atoi(trim_spaces(str));
-      if (strncmp_case(line, "FIRST_LINE_MONTH_OF_YEAR", 24) == 0)
-        start.month = atoi(trim_spaces(str));
-      if (strncmp_case(line, "FIRST_LINE_DAY_OF_MONTH", 23) == 0)
-        start.day = atoi(trim_spaces(str));
-      if (strncmp_case(line, "FIRST_LINE_UTC", 14) == 0) {
-        fprintf(fp, "      <start_seconds_day type=\"double\" definition=\""
-          "seconds of the day at the start of the image\" units=\"s\">%s"
-          "</start_seconds_day>\n", trim_spaces(str));
-        ymd = start;
-        hms = midnight;
-        seconds = atof(trim_spaces(str));
-        add_time(seconds, &ymd, &hms);
-        ymd_hms2iso_date(&ymd, &hms, isoStr);
-        fprintf(fp, "      <start_datetime type=\"string\" definition=\"UTC "
-          "time at the start of the image\">%s</start_datetime>\n", isoStr); 	
+      // Read ROI_PAC slave metadata
+      fpFiles = FOPEN(params->slave_metadata, "rt");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        sprintf(str, "%s", line+40);
+        if (strncmp_case(line, "FIRST_LINE_YEAR", 15) == 0)
+          start.year = atoi(trim_spaces(str));
+        if (strncmp_case(line, "FIRST_LINE_MONTH_OF_YEAR", 24) == 0)
+          start.month = atoi(trim_spaces(str));
+        if (strncmp_case(line, "FIRST_LINE_DAY_OF_MONTH", 23) == 0)
+          start.day = atoi(trim_spaces(str));
+        if (strncmp_case(line, "FIRST_LINE_UTC", 14) == 0) {
+          fprintf(fp, "      <start_seconds_day type=\"double\" definition=\""
+            "seconds of the day at the start of the image\" units=\"s\">%s"
+            "</start_seconds_day>\n", trim_spaces(str));
+          ymd = start;
+          hms = midnight;
+          seconds = atof(trim_spaces(str));
+          add_time(seconds, &ymd, &hms);
+          ymd_hms2iso_date(&ymd, &hms, isoStr);
+          fprintf(fp, "      <start_datetime type=\"string\" definition=\"UTC "
+            "time at the start of the image\">%s</start_datetime>\n", isoStr); 	
+        }
+        if (strncmp_case(line, "CENTER_LINE_UTC", 15) == 0) {
+          fprintf(fp, "      <center_seconds_day type=\"double\" definition=\""
+            "seconds of the day at the center of the image\" units=\"s\">%s"
+            "</center_seconds_day>\n", trim_spaces(str));
+          ymd = start;
+          hms = midnight;
+          seconds = atof(trim_spaces(str));
+          add_time(seconds, &ymd, &hms);
+          ymd_hms2iso_date(&ymd, &hms, isoStr);
+          fprintf(fp, "      <center_datetime type=\"string\" definition=\"UTC "
+            "time at the center of the image\">%s</center_datetime>\n", isoStr);
+        }
+        if (strncmp_case(line, "LAST_LINE_UTC", 13) == 0) {
+          fprintf(fp, "      <end_seconds_day type=\"double\" definition=\""
+            "seconds of the day at the end of the image\" units=\"s\">%s"
+            "</end_seconds_day>\n", trim_spaces(str));
+          ymd = start;
+          hms = midnight;
+          seconds = atof(trim_spaces(str));
+          add_time(seconds, &ymd, &hms);
+          ymd_hms2iso_date(&ymd, &hms, isoStr);
+          fprintf(fp, "      <end_datetime type=\"string\" definition=\"UTC "
+            "time at the end of the image\">%s</end_datetime>\n", isoStr);
+        }
+        if (strncmp_case(line, "LATITUDE", 8) == 0)
+          fprintf(fp, "      <peg_latitude type=\"double\" definition=\"latitude "
+            "of the peg point [degrees]\" units=\"degrees_north\">%s"
+            "</peg_latitude>\n", trim_spaces(str));
+        if (strncmp_case(line, "LONGITUDE", 9) == 0)
+          fprintf(fp, "      <peg_longitude type=\"double\" definition=\""
+            "longitude of the peg point [degrees]\" units=\"degrees_east\">%s"
+            "</peg_longitude>\n", trim_spaces(str));
+        if (strncmp_case(line, "HEADING", 7) == 0)
+          fprintf(fp, "      <peg_heading type=\"double\" definition=\"heading "
+            "of the peg point [degrees]\" units=\"degrees_north\">%s"
+            "</peg_heading>\n", trim_spaces(str));
+        if (strncmp_case(line, "HEIGHT ", 7) == 0)
+          fprintf(fp, "      <height type=\"double\" definition=\"height of the "
+            "platform at the image center [m]\" units=\"m\">%s</height>\n", 
+            trim_spaces(str));
+        if (strncmp_case(line, "EARTH_RADIUS", 12) == 0)
+          fprintf(fp, "      <earth_radius type=\"double\" definition=\"earth "
+            "radius at the image center\" units=\"m\">%s</earth_radius>\n",
+            trim_spaces(str));
       }
-      if (strncmp_case(line, "CENTER_LINE_UTC", 15) == 0) {
-        fprintf(fp, "      <center_seconds_day type=\"double\" definition=\""
-          "seconds of the day at the center of the image\" units=\"s\">%s"
-          "</center_seconds_day>\n", trim_spaces(str));
-        ymd = start;
-        hms = midnight;
-        seconds = atof(trim_spaces(str));
-        add_time(seconds, &ymd, &hms);
-        ymd_hms2iso_date(&ymd, &hms, isoStr);
-        fprintf(fp, "      <center_datetime type=\"string\" definition=\"UTC "
-          "time at the center of the image\">%s</center_datetime>\n", isoStr);
-      }
-      if (strncmp_case(line, "LAST_LINE_UTC", 13) == 0) {
-        fprintf(fp, "      <end_seconds_day type=\"double\" definition=\""
-          "seconds of the day at the end of the image\" units=\"s\">%s"
-          "</end_seconds_day>\n", trim_spaces(str));
-        ymd = start;
-        hms = midnight;
-        seconds = atof(trim_spaces(str));
-        add_time(seconds, &ymd, &hms);
-        ymd_hms2iso_date(&ymd, &hms, isoStr);
-        fprintf(fp, "      <end_datetime type=\"string\" definition=\"UTC "
-          "time at the end of the image\">%s</end_datetime>\n", isoStr);
-      }
-      if (strncmp_case(line, "LATITUDE", 8) == 0)
-        fprintf(fp, "      <peg_latitude type=\"double\" definition=\"latitude "
-          "of the peg point [degrees]\" units=\"degrees_north\">%s"
-          "</peg_latitude>\n", trim_spaces(str));
-      if (strncmp_case(line, "LONGITUDE", 9) == 0)
-        fprintf(fp, "      <peg_longitude type=\"double\" definition=\""
-          "longitude of the peg point [degrees]\" units=\"degrees_east\">%s"
-          "</peg_longitude>\n", trim_spaces(str));
-      if (strncmp_case(line, "HEADING", 7) == 0)
-        fprintf(fp, "      <peg_heading type=\"double\" definition=\"heading "
-          "of the peg point [degrees]\" units=\"degrees_north\">%s"
-          "</peg_heading>\n", trim_spaces(str));
-      if (strncmp_case(line, "HEIGHT ", 7) == 0)
-        fprintf(fp, "      <height type=\"double\" definition=\"height of the "
-          "platform at the image center [m]\" units=\"m\">%s</height>\n", 
-          trim_spaces(str));
-      if (strncmp_case(line, "EARTH_RADIUS", 12) == 0)
-        fprintf(fp, "      <earth_radius type=\"double\" definition=\"earth "
-          "radius at the image center\" units=\"m\">%s</earth_radius>\n",
-          trim_spaces(str));
+      FCLOSE(fpFiles);
+      fprintf(fp, "      <data_source type=\"string\" definition=\"source "
+        "providing the data\">Alaska Satellite Facility</data_source>\n");
+      if (meta_is_valid_double(params->slave_faraday_rotation))
+        fprintf(fp, "      <faraday_rotation type=\"double\" definition=\""
+          "Faraday rotation [degrees]\" units=\"degrees\">%g</faraday_rotation>"
+          "\n", params->slave_faraday_rotation);
+      fprintf(fp, "    </slave_image>\n");
     }
-    FCLOSE(fpFiles);
-    fprintf(fp, "      <data_source type=\"string\" definition=\"source "
-      "providing the data\">Alaska Satellite Facility</data_source>\n");
-    if (meta_is_valid_double(params->slave_faraday_rotation))
-      fprintf(fp, "      <faraday_rotation type=\"double\" definition=\""
-        "Faraday rotation [degrees]\" units=\"degrees\">%g</faraday_rotation>"
-        "\n", params->slave_faraday_rotation);
-    fprintf(fp, "    </slave_image>\n");
     
     // Read Doppler information
     double doppler0, doppler1, doppler2, slant_range_azimuth_resolution;
@@ -826,445 +830,485 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);    
 
     // Read information for wrapped interferogram
-    sprintf(rscFile, "%s.rsc", params->wrapped_interferogram);
-    fpFiles = FOPEN(rscFile, "rt");
-    fprintf(fp, "    <wrapped_interferogram>\n");
-    split_dir_and_file(params->wrapped_interferogram, directory, filename);
-    fprintf(fp, "      <file type=\"string\" definition=\"file name of "
-      "wrapped interferogram\">%s</file>\n", filename);
-    fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-      "data\">Alaska Satellite Facility</source>\n");				
-    fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-      "projection of the data\">geographic</map_projection>\n");
-    while (NULL != fgets(line, 255, fpFiles)) {
-      sprintf(str, "%s", line+40);
-      if (strncmp_case(line, "WIDTH", 5) == 0)
-        fprintf(fp, "      <width type=\"int\" definition=\"width of the "
-          "image\">%s</width>\n", trim_spaces(str));
-      if (strncmp_case(line, "FILE_LENGTH", 11) == 0)
-        fprintf(fp, "      <height type=\"int\" definition=\"height of the "
-        "image\">%s</height>\n", trim_spaces(str));
-      if (strncmp_case(line, "Y_FIRST", 7) == 0)
-        fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
-          "latitude of the image [degrees]\" units=\"degrees_north\">%s"
-          "</start_lat>\n", trim_spaces(str));
-      if (strncmp_case(line, "X_FIRST", 7) == 0)
-        fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
-          "longitude of the image [degrees]\" units=\"degrees_east\">%s"
-          "</start_lon>\n", trim_spaces(str));
-      if (strncmp_case(line, "Y_STEP", 6) == 0)
-        fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
-          "spacing in latitude direction [degrees]\" units=\"degrees_north\""
-          ">%s</spacing_lat>\n", trim_spaces(str));
-      if (strncmp_case(line, "X_STEP", 6) == 0)
-        fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
-          "spacing in longitude direction [degrees]\" units=\"degrees_east\""
-          ">%s</spacing_lon>\n", trim_spaces(str));
-      // range looks
-      // azimuth looks
+    if (params->wrapped_interferogram) {
+      sprintf(rscFile, "%s.rsc", params->wrapped_interferogram);
+      fpFiles = FOPEN(rscFile, "rt");
+      fprintf(fp, "    <wrapped_interferogram>\n");
+      split_dir_and_file(params->wrapped_interferogram, directory, filename);
+      fprintf(fp, "      <file type=\"string\" definition=\"file name of "
+        "wrapped interferogram\">%s</file>\n", filename);
+      fprintf(fp, "      <source type=\"string\" definition=\"source of the "
+        "data\">Alaska Satellite Facility</source>\n");				
+      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
+        "projection of the data\">geographic</map_projection>\n");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        sprintf(str, "%s", line+40);
+        if (strncmp_case(line, "WIDTH", 5) == 0)
+          fprintf(fp, "      <width type=\"int\" definition=\"width of the "
+            "image\">%s</width>\n", trim_spaces(str));
+        if (strncmp_case(line, "FILE_LENGTH", 11) == 0)
+          fprintf(fp, "      <height type=\"int\" definition=\"height of the "
+          "image\">%s</height>\n", trim_spaces(str));
+        if (strncmp_case(line, "Y_FIRST", 7) == 0)
+          fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
+            "latitude of the image [degrees]\" units=\"degrees_north\">%s"
+            "</start_lat>\n", trim_spaces(str));
+        if (strncmp_case(line, "X_FIRST", 7) == 0)
+          fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
+            "longitude of the image [degrees]\" units=\"degrees_east\">%s"
+            "</start_lon>\n", trim_spaces(str));
+        if (strncmp_case(line, "Y_STEP", 6) == 0)
+          fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
+            "spacing in latitude direction [degrees]\" units=\"degrees_north\""
+            ">%s</spacing_lat>\n", trim_spaces(str));
+        if (strncmp_case(line, "X_STEP", 6) == 0)
+          fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
+            "spacing in longitude direction [degrees]\" units=\"degrees_east\""
+            ">%s</spacing_lon>\n", trim_spaces(str));
+        // range looks
+        // azimuth looks
+      }
+      if (params->baseline) {
+        fprintf(fp, "      <vertical_baseline type=\"double\" definition=\""
+          "vertical baseline component [m]\" units=\"m\">%g"
+          "</vertical_baseline>\n", vertical_baseline);
+        fprintf(fp, "      <vertical_baseline_rate type=\"double\" definition"
+          "=\"vertical baseline velocity [m/m]\" units=\"m/m\">%g"
+          "</vertical_baseline_rate>\n", vertical_baseline_rate);
+        fprintf(fp, "      <vertical_baseline_acceleration type=\"double\" "
+          "definition=\"vertical baseline acceleration [m/m^2]\" units=\""
+          "m/m^2\">%g</vertical_baseline_acceleration>\n", 
+          vertical_baseline_acceleration);
+        fprintf(fp, "      <horizontal_baseline type=\"double\" definition=\""
+          "horizontal baseline component [m]\" units=\"m\">%g"
+          "</horizontal_baseline>\n", horizontal_baseline);
+        fprintf(fp, "      <horizontal_baseline_rate type=\"double\" "
+          "definition=\"horizontal baseline velocity [m/m]\" units=\"m/m\">%g"
+          "</horizontal_baseline_rate>\n", horizontal_baseline_rate);
+        fprintf(fp, "      <horizontal_baseline_acceleration type=\"double\" "
+          "definition=\"horizontal baseline acceleration [m/m^2]\" units=\""
+          "m/m^2\">%g</horizontal_baseline_acceleration>\n", 
+          horizontal_baseline_acceleration);
+      }
+      if (params->doppler) {
+        fprintf(fp, "      <doppler0 type=\"double\" definition=\"constant "
+          "Doppler term [Hz/PRF]\" units=\"Hz/PRF\">%g</doppler0>\n", 
+          doppler0);
+        fprintf(fp, "      <doppler1 type=\"double\" definition=\"linear "
+          "Doppler term [Hz/(PRF*pixel)]\" units=\"Hz/(PRF*pixel)\">%g"
+          "</doppler1>\n", doppler1);
+        fprintf(fp, "      <doppler2 type=\"double\" definition=\"quadratic "
+          "Doppler term [Hz/(PRF*pixel^2)]\" units=\"Hz/(PRF*pixel^2)\">%g"
+          "</doppler2>\n", doppler2); 
+        fprintf(fp, "      <slant_range_azimuth_resolution type=\"double\" "
+          "definition=\"azimuth resolution in slant range [m]\" units=\"m\">"
+          "%g</slant_range_azimuth_resolution>\n", 
+          slant_range_azimuth_resolution);
+      }
+      fprintf(fp, "      <baseline_method type=\"string\" definition=\"baseline "
+        "refinement using unwrapped phase and topography\">topo</baseline_method>"
+        "\n");
+      fprintf(fp, "      <orbit_type type=\"string\" definition=\"orbit type: "
+        "HDR (header information) or PRC (precision state vectors)\">%s"
+        "</orbit_type>\n", orbit_type);
+      // filter
+      // filter_strength
+      fprintf(fp, "    </wrapped_interferogram>\n");
+      FCLOSE(fpFiles);
     }
-    if (params->baseline) {
-      fprintf(fp, "      <vertical_baseline type=\"double\" definition=\""
-        "vertical baseline component [m]\" units=\"m\">%g"
-        "</vertical_baseline>\n", vertical_baseline);
-      fprintf(fp, "      <vertical_baseline_rate type=\"double\" definition"
-        "=\"vertical baseline velocity [m/m]\" units=\"m/m\">%g"
-        "</vertical_baseline_rate>\n", vertical_baseline_rate);
-      fprintf(fp, "      <vertical_baseline_acceleration type=\"double\" "
-        "definition=\"vertical baseline acceleration [m/m^2]\" units=\""
-        "m/m^2\">%g</vertical_baseline_acceleration>\n", 
-        vertical_baseline_acceleration);
-      fprintf(fp, "      <horizontal_baseline type=\"double\" definition=\""
-        "horizontal baseline component [m]\" units=\"m\">%g"
-        "</horizontal_baseline>\n", horizontal_baseline);
-      fprintf(fp, "      <horizontal_baseline_rate type=\"double\" "
-        "definition=\"horizontal baseline velocity [m/m]\" units=\"m/m\">%g"
-        "</horizontal_baseline_rate>\n", horizontal_baseline_rate);
-      fprintf(fp, "      <horizontal_baseline_acceleration type=\"double\" "
-        "definition=\"horizontal baseline acceleration [m/m^2]\" units=\""
-        "m/m^2\">%g</horizontal_baseline_acceleration>\n", 
-        horizontal_baseline_acceleration);
-    }
-    if (params->doppler) {
-      fprintf(fp, "      <doppler0 type=\"double\" definition=\"constant "
-        "Doppler term [Hz/PRF]\" units=\"Hz/PRF\">%g</doppler0>\n", 
-        doppler0);
-      fprintf(fp, "      <doppler1 type=\"double\" definition=\"linear "
-        "Doppler term [Hz/(PRF*pixel)]\" units=\"Hz/(PRF*pixel)\">%g"
-        "</doppler1>\n", doppler1);
-      fprintf(fp, "      <doppler2 type=\"double\" definition=\"quadratic "
-        "Doppler term [Hz/(PRF*pixel^2)]\" units=\"Hz/(PRF*pixel^2)\">%g"
-        "</doppler2>\n", doppler2); 
-      fprintf(fp, "      <slant_range_azimuth_resolution type=\"double\" "
-        "definition=\"azimuth resolution in slant range [m]\" units=\"m\">"
-        "%g</slant_range_azimuth_resolution>\n", 
-        slant_range_azimuth_resolution);
-    }
-    fprintf(fp, "      <baseline_method type=\"string\" definition=\"baseline "
-      "refinement using unwrapped phase and topography\">topo</baseline_method>"
-      "\n");
-    fprintf(fp, "      <orbit_type type=\"string\" definition=\"orbit type: "
-      "HDR (header information) or PRC (precision state vectors)\">%s"
-      "</orbit_type>\n", orbit_type);
-    // filter
-    // filter_strength
-    fprintf(fp, "    </wrapped_interferogram>\n");
-    FCLOSE(fpFiles);
 
     // Read information for unwrapped interferogram
     int insar_width = 0, insar_height = 0;
     double insar_start_lat = -99, insar_start_lon = -199;
     double insar_spacing_lat = -99, insar_spacing_lon = -199;
-    sprintf(rscFile, "%s.rsc", params->unwrapped_interferogram);
-    fpFiles = FOPEN(rscFile, "rt");
-    fprintf(fp, "    <unwrapped_interferogram>\n");
-    split_dir_and_file(params->unwrapped_interferogram, directory, filename);
-    fprintf(fp, "      <file type=\"string\" definition=\"file name of "
-      "unwrapped interferogram\">%s</file>\n", filename);
-    fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-      "data\">Alaska Satellite Facility</source>\n");				
-    fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-      "projection of the data\">geographic</map_projection>\n");
-    while (NULL != fgets(line, 255, fpFiles)) {
-      sprintf(str, "%s", line+40);
-      if (strncmp_case(line, "WIDTH", 5) == 0) {
-        insar_width = atoi(trim_spaces(str));
-        fprintf(fp, "      <width type=\"int\" definition=\"width of the "
-          "image\">%d</width>\n", insar_width);
+    if (params->unwrapped_interferogram) {
+      sprintf(rscFile, "%s.rsc", params->unwrapped_interferogram);
+      fpFiles = FOPEN(rscFile, "rt");
+      fprintf(fp, "    <unwrapped_interferogram>\n");
+      split_dir_and_file(params->unwrapped_interferogram, directory, filename);
+      fprintf(fp, "      <file type=\"string\" definition=\"file name of "
+        "unwrapped interferogram\">%s</file>\n", filename);
+      fprintf(fp, "      <source type=\"string\" definition=\"source of the "
+        "data\">Alaska Satellite Facility</source>\n");				
+      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
+        "projection of the data\">geographic</map_projection>\n");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        sprintf(str, "%s", line+40);
+        if (strncmp_case(line, "WIDTH", 5) == 0) {
+          insar_width = atoi(trim_spaces(str));
+          fprintf(fp, "      <width type=\"int\" definition=\"width of the "
+            "image\">%d</width>\n", insar_width);
+        }
+        if (strncmp_case(line, "FILE_LENGTH", 11) == 0) {
+          insar_height = atoi(trim_spaces(str));
+          fprintf(fp, "      <height type=\"int\" definition=\"height of the "
+            "image\">%d</height>\n", insar_height);
+        }
+        if (strncmp_case(line, "Y_FIRST", 7) == 0) {
+          insar_start_lat = atof(trim_spaces(str));
+          fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
+            "latitude of the image [degrees]\" units=\"degrees_north\">%g"
+            "</start_lat>\n", insar_start_lat);
+        }
+        if (strncmp_case(line, "X_FIRST", 7) == 0) {
+          insar_start_lon = atof(trim_spaces(str));
+          fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
+            "longitude of the image [degrees]\" units=\"degrees_east\">%g"
+            "</start_lon>\n", insar_start_lon);
+        }
+        if (strncmp_case(line, "Y_STEP", 6) == 0) {
+          insar_spacing_lat = atof(trim_spaces(str));
+          fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
+            "spacing in latitude direction [degrees]\" units=\"degrees_north\""
+            ">%g</spacing_lat>\n", insar_spacing_lat);
+        }
+        if (strncmp_case(line, "X_STEP", 6) == 0) {
+          insar_spacing_lon = atof(trim_spaces(str));
+          fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
+            "spacing in longitude direction [degrees]\" units=\"degrees_east\""
+            ">%g</spacing_lon>\n", insar_spacing_lon);
+        }
+        // range looks
+        // azimuth looks
       }
-      if (strncmp_case(line, "FILE_LENGTH", 11) == 0) {
-        insar_height = atoi(trim_spaces(str));
-        fprintf(fp, "      <height type=\"int\" definition=\"height of the "
-          "image\">%d</height>\n", insar_height);
+      if (params->baseline) {
+        fprintf(fp, "      <vertical_baseline type=\"double\" definition=\""
+          "vertical baseline component [m]\" units=\"m\">%g"
+          "</vertical_baseline>\n", vertical_baseline);
+        fprintf(fp, "      <vertical_baseline_rate type=\"double\" definition"
+          "=\"vertical baseline velocity [m/m]\" units=\"m/m\">%g"
+          "</vertical_baseline_rate>\n", vertical_baseline_rate);
+        fprintf(fp, "      <vertical_baseline_acceleration type=\"double\" "
+          "definition=\"vertical baseline acceleration [m/m^2]\" units=\""
+          "m/m^2\">%g</vertical_baseline_acceleration>\n", 
+          vertical_baseline_acceleration);
+        fprintf(fp, "      <horizontal_baseline type=\"double\" definition=\""
+          "horizontal baseline component [m]\" units=\"m\">%g"
+          "</horizontal_baseline>\n", horizontal_baseline);
+        fprintf(fp, "      <horizontal_baseline_rate type=\"double\" "
+          "definition=\"horizontal baseline velocity [m/m]\" units=\"m/m\">%g"
+          "</horizontal_baseline_rate>\n", horizontal_baseline_rate);
+        fprintf(fp, "      <horizontal_baseline_acceleration type=\"double\" "
+          "definition=\"horizontal baseline acceleration [m/m^2]\" units=\""
+          "m/m^2\">%g</horizontal_baseline_acceleration>\n", 
+          horizontal_baseline_acceleration);
       }
-      if (strncmp_case(line, "Y_FIRST", 7) == 0) {
-        insar_start_lat = atof(trim_spaces(str));
-        fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
-          "latitude of the image [degrees]\" units=\"degrees_north\">%g"
-          "</start_lat>\n", insar_start_lat);
+      if (params->doppler) {
+        fprintf(fp, "      <doppler0 type=\"double\" definition=\"constant "
+          "Doppler term [Hz/PRF]\" units=\"Hz/PRF\">%g</doppler0>\n", 
+          doppler0);
+        fprintf(fp, "      <doppler1 type=\"double\" definition=\"linear "
+          "Doppler term [Hz/(PRF*pixel)]\" units=\"Hz/(PRF*pixel)\">%g"
+          "</doppler1>\n", doppler1);
+        fprintf(fp, "      <doppler2 type=\"double\" definition=\"quadratic "
+          "Doppler term [Hz/(PRF*pixel^2)]\" units=\"Hz/(PRF*pixel^2)\">%g"
+          "</doppler2>\n", doppler2); 
+        fprintf(fp, "      <slant_range_azimuth_resolution type=\"double\" "
+          "definition=\"azimuth resolution in slant range [m]\" units=\"m\">"
+          "%g</slant_range_azimuth_resolution>\n", 
+          slant_range_azimuth_resolution);
       }
-      if (strncmp_case(line, "X_FIRST", 7) == 0) {
-        insar_start_lon = atof(trim_spaces(str));
-        fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
-          "longitude of the image [degrees]\" units=\"degrees_east\">%g"
-          "</start_lon>\n", insar_start_lon);
+      fprintf(fp, "      <baseline_method type=\"string\" definition=\"baseline "
+        "refinement using unwrapped phase and topography\">topo</baseline_method>"
+        "\n");
+      fprintf(fp, "      <orbit_type type=\"string\" definition=\"orbit type: "
+        "HDR (header information) or PRC (precision state vectors)\">%s"
+        "</orbit_type>\n", orbit_type);
+      meta = meta_read(params->unwrapped_interferogram);
+      if (meta->stats) {
+        fprintf(fp, "      <phase_minimum>%g</phase_minimum>\n",
+          meta->stats->band_stats[0].min);
+        fprintf(fp, "      <phase_maximum>%g</phase_maximum>\n",
+          meta->stats->band_stats[0].max);
+        fprintf(fp, "      <percent_unwrapped>%g</percent_unwrapped>\n",
+          meta->stats->band_stats[0].percent_valid);
       }
-      if (strncmp_case(line, "Y_STEP", 6) == 0) {
-        insar_spacing_lat = atof(trim_spaces(str));
-        fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
-          "spacing in latitude direction [degrees]\" units=\"degrees_north\""
-          ">%g</spacing_lat>\n", insar_spacing_lat);
-      }
-      if (strncmp_case(line, "X_STEP", 6) == 0) {
-        insar_spacing_lon = atof(trim_spaces(str));
-        fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
-          "spacing in longitude direction [degrees]\" units=\"degrees_east\""
-          ">%g</spacing_lon>\n", insar_spacing_lon);
-      }
-      // range looks
-      // azimuth looks
+      meta_free(meta);
+      // filter
+      // filter_strength
+      // unwrapped_method
+      // unwrapping_parameters
+      fprintf(fp, "    </unwrapped_interferogram>\n");
+      FCLOSE(fpFiles);
     }
-    if (params->baseline) {
-      fprintf(fp, "      <vertical_baseline type=\"double\" definition=\""
-        "vertical baseline component [m]\" units=\"m\">%g"
-        "</vertical_baseline>\n", vertical_baseline);
-      fprintf(fp, "      <vertical_baseline_rate type=\"double\" definition"
-        "=\"vertical baseline velocity [m/m]\" units=\"m/m\">%g"
-        "</vertical_baseline_rate>\n", vertical_baseline_rate);
-      fprintf(fp, "      <vertical_baseline_acceleration type=\"double\" "
-        "definition=\"vertical baseline acceleration [m/m^2]\" units=\""
-        "m/m^2\">%g</vertical_baseline_acceleration>\n", 
-        vertical_baseline_acceleration);
-      fprintf(fp, "      <horizontal_baseline type=\"double\" definition=\""
-        "horizontal baseline component [m]\" units=\"m\">%g"
-        "</horizontal_baseline>\n", horizontal_baseline);
-      fprintf(fp, "      <horizontal_baseline_rate type=\"double\" "
-        "definition=\"horizontal baseline velocity [m/m]\" units=\"m/m\">%g"
-        "</horizontal_baseline_rate>\n", horizontal_baseline_rate);
-      fprintf(fp, "      <horizontal_baseline_acceleration type=\"double\" "
-        "definition=\"horizontal baseline acceleration [m/m^2]\" units=\""
-        "m/m^2\">%g</horizontal_baseline_acceleration>\n", 
-        horizontal_baseline_acceleration);
-    }
-    if (params->doppler) {
-      fprintf(fp, "      <doppler0 type=\"double\" definition=\"constant "
-        "Doppler term [Hz/PRF]\" units=\"Hz/PRF\">%g</doppler0>\n", 
-        doppler0);
-      fprintf(fp, "      <doppler1 type=\"double\" definition=\"linear "
-        "Doppler term [Hz/(PRF*pixel)]\" units=\"Hz/(PRF*pixel)\">%g"
-        "</doppler1>\n", doppler1);
-      fprintf(fp, "      <doppler2 type=\"double\" definition=\"quadratic "
-        "Doppler term [Hz/(PRF*pixel^2)]\" units=\"Hz/(PRF*pixel^2)\">%g"
-        "</doppler2>\n", doppler2); 
-      fprintf(fp, "      <slant_range_azimuth_resolution type=\"double\" "
-        "definition=\"azimuth resolution in slant range [m]\" units=\"m\">"
-        "%g</slant_range_azimuth_resolution>\n", 
-        slant_range_azimuth_resolution);
-    }
-    fprintf(fp, "      <baseline_method type=\"string\" definition=\"baseline "
-      "refinement using unwrapped phase and topography\">topo</baseline_method>"
-      "\n");
-    fprintf(fp, "      <orbit_type type=\"string\" definition=\"orbit type: "
-      "HDR (header information) or PRC (precision state vectors)\">%s"
-      "</orbit_type>\n", orbit_type);
-    // filter
-    // filter_strength
-    // unwrapped_method
-    // unwrapping_parameters
-    fprintf(fp, "    </unwrapped_interferogram>\n");
-    FCLOSE(fpFiles);
 
     // Read information for coherence image
-    sprintf(rscFile, "%s.rsc", params->correlation);
-    fpFiles = FOPEN(rscFile, "rt");
-    fprintf(fp, "    <correlation>\n");
-    split_dir_and_file(params->correlation, directory, filename);
-    fprintf(fp, "      <file type=\"string\" definition=\"file name of "
-      "correlation image\">%s</file>\n", filename);
-    fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-      "data\">Alaska Satellite Facility</source>\n");				
-    fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-      "projection of the data\">geographic</map_projection>\n");
-    while (NULL != fgets(line, 255, fpFiles)) {
-      sprintf(str, "%s", line+40);
-      if (strncmp_case(line, "WIDTH", 5) == 0)
-        fprintf(fp, "      <width type=\"int\" definition=\"width of the "
-          "image\">%s</width>\n", trim_spaces(str));
-      if (strncmp_case(line, "FILE_LENGTH", 11) == 0)
-        fprintf(fp, "      <height type=\"int\" definition=\"height of the "
-          "image\">%s</height>\n", trim_spaces(str));
-      if (strncmp_case(line, "Y_FIRST", 7) == 0)
-        fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
-          "latitude of the image [degrees]\" units=\"degrees_north\">%s"
-          "</start_lat>\n", trim_spaces(str));
-      if (strncmp_case(line, "X_FIRST", 7) == 0)
-        fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
-          "longitude of the image [degrees]\" units=\"degrees_east\">%s"
-          "</start_lon>\n", trim_spaces(str));
-      if (strncmp_case(line, "Y_STEP", 6) == 0)
-        fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
-          "spacing in latitude direction [degrees]\" units=\"degrees_north\""
-          ">%s</spacing_lat>\n", trim_spaces(str));
-      if (strncmp_case(line, "X_STEP", 6) == 0)
-        fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
-          "spacing in longitude direction [degrees]\" units=\"degrees_east\""
-          ">%s</spacing_lon>\n", trim_spaces(str));
-      // range looks
-      // azimuth looks
+    if (params->correlation) {
+      sprintf(rscFile, "%s.rsc", params->correlation);
+      fpFiles = FOPEN(rscFile, "rt");
+      fprintf(fp, "    <correlation>\n");
+      split_dir_and_file(params->correlation, directory, filename);
+      fprintf(fp, "      <file type=\"string\" definition=\"file name of "
+        "correlation image\">%s</file>\n", filename);
+      fprintf(fp, "      <source type=\"string\" definition=\"source of the "
+        "data\">Alaska Satellite Facility</source>\n");				
+      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
+        "projection of the data\">geographic</map_projection>\n");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        sprintf(str, "%s", line+40);
+        if (strncmp_case(line, "WIDTH", 5) == 0)
+          fprintf(fp, "      <width type=\"int\" definition=\"width of the "
+            "image\">%s</width>\n", trim_spaces(str));
+        if (strncmp_case(line, "FILE_LENGTH", 11) == 0)
+          fprintf(fp, "      <height type=\"int\" definition=\"height of the "
+            "image\">%s</height>\n", trim_spaces(str));
+        if (strncmp_case(line, "Y_FIRST", 7) == 0)
+          fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
+            "latitude of the image [degrees]\" units=\"degrees_north\">%s"
+            "</start_lat>\n", trim_spaces(str));
+        if (strncmp_case(line, "X_FIRST", 7) == 0)
+          fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
+            "longitude of the image [degrees]\" units=\"degrees_east\">%s"
+            "</start_lon>\n", trim_spaces(str));
+        if (strncmp_case(line, "Y_STEP", 6) == 0)
+          fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
+            "spacing in latitude direction [degrees]\" units=\"degrees_north\""
+            ">%s</spacing_lat>\n", trim_spaces(str));
+        if (strncmp_case(line, "X_STEP", 6) == 0)
+          fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
+            "spacing in longitude direction [degrees]\" units=\"degrees_east\""
+            ">%s</spacing_lon>\n", trim_spaces(str));
+        // range looks
+        // azimuth looks
+      }
+      if (params->baseline) {
+        fprintf(fp, "      <vertical_baseline type=\"double\" definition=\""
+          "vertical baseline component [m]\" units=\"m\">%g"
+          "</vertical_baseline>\n", vertical_baseline);
+        fprintf(fp, "      <vertical_baseline_rate type=\"double\" definition"
+          "=\"vertical baseline velocity [m/m]\" units=\"m/m\">%g"
+          "</vertical_baseline_rate>\n", vertical_baseline_rate);
+        fprintf(fp, "      <vertical_baseline_acceleration type=\"double\" "
+          "definition=\"vertical baseline acceleration [m/m^2]\" units=\""
+          "m/m^2\">%g</vertical_baseline_acceleration>\n", 
+          vertical_baseline_acceleration);
+        fprintf(fp, "      <horizontal_baseline type=\"double\" definition=\""
+          "horizontal baseline component [m]\" units=\"m\">%g"
+          "</horizontal_baseline>\n", horizontal_baseline);
+        fprintf(fp, "      <horizontal_baseline_rate type=\"double\" "
+          "definition=\"horizontal baseline velocity [m/m]\" units=\"m/m\">%g"
+          "</horizontal_baseline_rate>\n", horizontal_baseline_rate);
+        fprintf(fp, "      <horizontal_baseline_acceleration type=\"double\" "
+          "definition=\"horizontal baseline acceleration [m/m^2]\" units=\""
+          "m/m^2\">%g</horizontal_baseline_acceleration>\n", 
+          horizontal_baseline_acceleration);
+      }
+      if (params->doppler) {
+        fprintf(fp, "      <doppler0 type=\"double\" definition=\"constant "
+          "Doppler term [Hz/PRF]\" units=\"Hz/PRF\">%g</doppler0>\n", 
+          doppler0);
+        fprintf(fp, "      <doppler1 type=\"double\" definition=\"linear "
+          "Doppler term [Hz/(PRF*pixel)]\" units=\"Hz/(PRF*pixel)\">%g"
+          "</doppler1>\n", doppler1);
+        fprintf(fp, "      <doppler2 type=\"double\" definition=\"quadratic "
+          "Doppler term [Hz/(PRF*pixel^2)]\" units=\"Hz/(PRF*pixel^2)\">%g"
+          "</doppler2>\n", doppler2); 
+        fprintf(fp, "      <slant_range_azimuth_resolution type=\"double\" "
+          "definition=\"azimuth resolution in slant range [m]\" units=\"m\">"
+          "%g</slant_range_azimuth_resolution>\n", 
+          slant_range_azimuth_resolution);
+      }
+      fprintf(fp, "      <baseline_method type=\"string\" definition=\"baseline "
+        "refinement using unwrapped phase and topography\">topo</baseline_method>"
+        "\n");
+      fprintf(fp, "      <orbit_type type=\"string\" definition=\"orbit type: "
+        "HDR (header information) or PRC (precision state vectors)\">%s"
+        "</orbit_type>\n", orbit_type);
+      meta = meta_read(params->correlation);
+      if (meta->stats) {
+        fprintf(fp, "      <average_coherence>%g</average_coherence>\n",
+          meta->stats->band_stats[0].mean);
+      }
+      meta_free(meta);
+      fprintf(fp, "    </correlation>\n");
+      FCLOSE(fpFiles);
     }
-    if (params->baseline) {
-      fprintf(fp, "      <vertical_baseline type=\"double\" definition=\""
-        "vertical baseline component [m]\" units=\"m\">%g"
-        "</vertical_baseline>\n", vertical_baseline);
-      fprintf(fp, "      <vertical_baseline_rate type=\"double\" definition"
-        "=\"vertical baseline velocity [m/m]\" units=\"m/m\">%g"
-        "</vertical_baseline_rate>\n", vertical_baseline_rate);
-      fprintf(fp, "      <vertical_baseline_acceleration type=\"double\" "
-        "definition=\"vertical baseline acceleration [m/m^2]\" units=\""
-        "m/m^2\">%g</vertical_baseline_acceleration>\n", 
-        vertical_baseline_acceleration);
-      fprintf(fp, "      <horizontal_baseline type=\"double\" definition=\""
-        "horizontal baseline component [m]\" units=\"m\">%g"
-        "</horizontal_baseline>\n", horizontal_baseline);
-      fprintf(fp, "      <horizontal_baseline_rate type=\"double\" "
-        "definition=\"horizontal baseline velocity [m/m]\" units=\"m/m\">%g"
-        "</horizontal_baseline_rate>\n", horizontal_baseline_rate);
-      fprintf(fp, "      <horizontal_baseline_acceleration type=\"double\" "
-        "definition=\"horizontal baseline acceleration [m/m^2]\" units=\""
-        "m/m^2\">%g</horizontal_baseline_acceleration>\n", 
-        horizontal_baseline_acceleration);
-    }
-    if (params->doppler) {
-      fprintf(fp, "      <doppler0 type=\"double\" definition=\"constant "
-        "Doppler term [Hz/PRF]\" units=\"Hz/PRF\">%g</doppler0>\n", 
-        doppler0);
-      fprintf(fp, "      <doppler1 type=\"double\" definition=\"linear "
-        "Doppler term [Hz/(PRF*pixel)]\" units=\"Hz/(PRF*pixel)\">%g"
-        "</doppler1>\n", doppler1);
-      fprintf(fp, "      <doppler2 type=\"double\" definition=\"quadratic "
-        "Doppler term [Hz/(PRF*pixel^2)]\" units=\"Hz/(PRF*pixel^2)\">%g"
-        "</doppler2>\n", doppler2); 
-      fprintf(fp, "      <slant_range_azimuth_resolution type=\"double\" "
-        "definition=\"azimuth resolution in slant range [m]\" units=\"m\">"
-        "%g</slant_range_azimuth_resolution>\n", 
-        slant_range_azimuth_resolution);
-    }
-    fprintf(fp, "      <baseline_method type=\"string\" definition=\"baseline "
-      "refinement using unwrapped phase and topography\">topo</baseline_method>"
-      "\n");
-    fprintf(fp, "      <orbit_type type=\"string\" definition=\"orbit type: "
-      "HDR (header information) or PRC (precision state vectors)\">%s"
-      "</orbit_type>\n", orbit_type);
-    fprintf(fp, "    </correlation>\n");
-    FCLOSE(fpFiles);
 
     // Read information for incidence angle map
-    sprintf(rscFile, "%s.rsc", params->incidence_angle);
-    fpFiles = FOPEN(rscFile, "rt");
-    fprintf(fp, "    <incidence_angle>\n");
-    split_dir_and_file(params->incidence_angle, directory, filename);
-    fprintf(fp, "      <file type=\"string\" definition=\"file name of "
-      "incidence angle map\">%s</file>\n", filename);
-    fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-      "data\">Alaska Satellite Facility</source>\n");				
-    fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-      "projection of the data\">geographic</map_projection>\n");
-    while (NULL != fgets(line, 255, fpFiles)) {
-      sprintf(str, "%s", line+40);
-      if (strncmp_case(line, "WIDTH", 5) == 0)
-        fprintf(fp, "      <width type=\"int\" definition=\"width of the "
-          "image\">%s</width>\n", trim_spaces(str));
-      if (strncmp_case(line, "FILE_LENGTH", 11) == 0)
-        fprintf(fp, "      <height type=\"int\" definition=\"height of the "
-          "image\">%s</height>\n", trim_spaces(str));
-      if (strncmp_case(line, "Y_FIRST", 7) == 0)
-        fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
-          "latitude of the image [degrees]\" units=\"degrees_north\">%s"
-          "</start_lat>\n", trim_spaces(str));
-      if (strncmp_case(line, "X_FIRST", 7) == 0)
-        fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
-          "longitude of the image [degrees]\" units=\"degrees_east\">%s"
-          "</start_lon>\n", trim_spaces(str));
-      if (strncmp_case(line, "Y_STEP", 6) == 0)
-        fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
-          "spacing in latitude direction [degrees]\" units=\"degrees_north\""
-          ">%s</spacing_lat>\n", trim_spaces(str));
-      if (strncmp_case(line, "X_STEP", 6) == 0)
-        fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
-          "spacing in longitude direction [degrees]\" units=\"degrees_east\""
-          ">%s</spacing_lon>\n", trim_spaces(str));
-    }			
-    fprintf(fp, "    </incidence_angle>\n");
-    FCLOSE(fpFiles);
+    if (params->incidence_angle) {
+      sprintf(rscFile, "%s.rsc", params->incidence_angle);
+      fpFiles = FOPEN(rscFile, "rt");
+      fprintf(fp, "    <incidence_angle>\n");
+      split_dir_and_file(params->incidence_angle, directory, filename);
+      fprintf(fp, "      <file type=\"string\" definition=\"file name of "
+        "incidence angle map\">%s</file>\n", filename);
+      fprintf(fp, "      <source type=\"string\" definition=\"source of the "
+        "data\">Alaska Satellite Facility</source>\n");				
+      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
+        "projection of the data\">geographic</map_projection>\n");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        sprintf(str, "%s", line+40);
+        if (strncmp_case(line, "WIDTH", 5) == 0)
+          fprintf(fp, "      <width type=\"int\" definition=\"width of the "
+            "image\">%s</width>\n", trim_spaces(str));
+        if (strncmp_case(line, "FILE_LENGTH", 11) == 0)
+          fprintf(fp, "      <height type=\"int\" definition=\"height of the "
+            "image\">%s</height>\n", trim_spaces(str));
+        if (strncmp_case(line, "Y_FIRST", 7) == 0)
+          fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
+            "latitude of the image [degrees]\" units=\"degrees_north\">%s"
+            "</start_lat>\n", trim_spaces(str));
+        if (strncmp_case(line, "X_FIRST", 7) == 0)
+          fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
+            "longitude of the image [degrees]\" units=\"degrees_east\">%s"
+            "</start_lon>\n", trim_spaces(str));
+        if (strncmp_case(line, "Y_STEP", 6) == 0)
+          fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
+            "spacing in latitude direction [degrees]\" units=\"degrees_north\""
+            ">%s</spacing_lat>\n", trim_spaces(str));
+        if (strncmp_case(line, "X_STEP", 6) == 0)
+          fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
+            "spacing in longitude direction [degrees]\" units=\"degrees_east\""
+            ">%s</spacing_lon>\n", trim_spaces(str));
+      }			
+      fprintf(fp, "    </incidence_angle>\n");
+      FCLOSE(fpFiles);
+    }
 
     // Read information for digital elevation model
     int dem_width = 0, dem_height = 0;
     double dem_start_lat = -99, dem_start_lon = -199;
     double dem_spacing_lat = -99, dem_spacing_lon = -199;
-    sprintf(rscFile, "%s.rsc", params->digital_elevation_model);
-    if (fileExists(rscFile)) {
-      dem = TRUE;
-      fpFiles = FOPEN(rscFile, "rt");
-      fprintf(fp, "    <digital_elevation_model>\n");
-      split_dir_and_file(params->digital_elevation_model, directory, filename);
-      fprintf(fp, "      <file type=\"string\" definition=\"file name of "
-        "digital elevation model\">%s</file>\n", filename);
-      fprintf(fp, "      <height_units type=\"string\" definition=\"units of "
-        "the height values\">meters</height_units>\n");
-      fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">OpenTopo</source>\n");				
-      while (NULL != fgets(line, 255, fpFiles)) {
-        sprintf(str, "%s", line+13);
-        if (strncmp_case(line, "PROJECTION", 10) == 0) {
-          sprintf(map_projection, "%s", trim_spaces(str));
-          if (strcmp_case(map_projection, "LATLON") == 0)
-            fprintf(fp, "      <map_projection type=\"string\" definition=\""
-            "map projection of the data\">geographic</map_projection>\n");
+    if (params->digital_elevation_model) {
+      sprintf(rscFile, "%s.rsc", params->digital_elevation_model);
+      if (fileExists(rscFile)) {
+        dem = TRUE;
+        fpFiles = FOPEN(rscFile, "rt");
+        fprintf(fp, "    <digital_elevation_model>\n");
+        split_dir_and_file(params->digital_elevation_model, directory, filename);
+        fprintf(fp, "      <file type=\"string\" definition=\"file name of "
+          "digital elevation model\">%s</file>\n", filename);
+        fprintf(fp, "      <height_units type=\"string\" definition=\"units of "
+          "the height values\">meters</height_units>\n");
+        fprintf(fp, "      <source type=\"string\" definition=\"source of the "
+          "data\">OpenTopo</source>\n");				
+        while (NULL != fgets(line, 255, fpFiles)) {
+          sprintf(str, "%s", line+13);
+          if (strncmp_case(line, "PROJECTION", 10) == 0) {
+            sprintf(map_projection, "%s", trim_spaces(str));
+            if (strcmp_case(map_projection, "LATLON") == 0)
+              fprintf(fp, "      <map_projection type=\"string\" definition=\""
+              "map projection of the data\">geographic</map_projection>\n");
+          }
+          if (strncmp_case(line, "WIDTH", 5) == 0) {
+            dem_width = atoi(trim_spaces(str));
+            fprintf(fp, "      <width type=\"int\" definition=\"width of the "
+              "image\">%d</width>\n", dem_width);
+          }
+          if (strncmp_case(line, "FILE_LENGTH", 11) == 0) {
+            dem_height = atoi(trim_spaces(str));
+            fprintf(fp, "      <height type=\"int\" definition=\"height of the "
+              "image\">%d</height>\n", dem_height);
+          }
+          if (strncmp_case(line, "Y_FIRST", 7) == 0) {
+            dem_start_lat = atof(trim_spaces(str));
+            fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
+              "latitude of the image [degrees]\" units=\"degrees_north\">%g"
+              "</start_lat>\n", dem_start_lat);
+          }
+          if (strncmp_case(line, "X_FIRST", 7) == 0) {
+            dem_start_lon = atof(trim_spaces(str));
+            fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
+              "longitude of the image [degrees]\" units=\"degrees_east\">%g"
+              "</start_lon>\n", dem_start_lon);
+          }
+          if (strncmp_case(line, "Y_STEP", 6) == 0) {
+            dem_spacing_lat = atof(trim_spaces(str));
+            fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
+              "spacing in latitude direction [degrees]\" units=\"degrees_north\""
+              ">%g</spacing_lat>\n", dem_spacing_lat);
+          }
+          if (strncmp_case(line, "X_STEP", 6) == 0) {
+            dem_spacing_lon = atof(trim_spaces(str));
+            fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
+              "spacing in longitude direction [degrees]\" units=\"degrees_east\""
+              ">%g</spacing_lon>\n", dem_spacing_lon);
+          }
         }
-        if (strncmp_case(line, "WIDTH", 5) == 0) {
-          dem_width = atoi(trim_spaces(str));
-          fprintf(fp, "      <width type=\"int\" definition=\"width of the "
-            "image\">%d</width>\n", dem_width);
-        }
-        if (strncmp_case(line, "FILE_LENGTH", 11) == 0) {
-          dem_height = atoi(trim_spaces(str));
-          fprintf(fp, "      <height type=\"int\" definition=\"height of the "
-            "image\">%d</height>\n", dem_height);
-        }
-        if (strncmp_case(line, "Y_FIRST", 7) == 0) {
-          dem_start_lat = atof(trim_spaces(str));
-          fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
-            "latitude of the image [degrees]\" units=\"degrees_north\">%g"
-            "</start_lat>\n", dem_start_lat);
-        }
-        if (strncmp_case(line, "X_FIRST", 7) == 0) {
-          dem_start_lon = atof(trim_spaces(str));
-          fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
-            "longitude of the image [degrees]\" units=\"degrees_east\">%g"
-            "</start_lon>\n", dem_start_lon);
-        }
-        if (strncmp_case(line, "Y_STEP", 6) == 0) {
-          dem_spacing_lat = atof(trim_spaces(str));
-          fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
-            "spacing in latitude direction [degrees]\" units=\"degrees_north\""
-            ">%g</spacing_lat>\n", dem_spacing_lat);
-        }
-        if (strncmp_case(line, "X_STEP", 6) == 0) {
-          dem_spacing_lon = atof(trim_spaces(str));
-          fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
-            "spacing in longitude direction [degrees]\" units=\"degrees_east\""
-            ">%g</spacing_lon>\n", dem_spacing_lon);
-        }
+        if (params->dem_url)
+          fprintf(fp, "      <url type=\"string\" definition=\"URL used to download"
+            " digital elevation model\">%s</url>\n", xml_encode(params->dem_url));
+        fprintf(fp, "    </digital_elevation_model>\n");
+        FCLOSE(fpFiles);
       }
-      if (params->dem_url)
-        fprintf(fp, "      <url type=\"string\" definition=\"URL used to download"
-          " digital elevation model\">%s</url>\n", xml_encode(params->dem_url));
-      fprintf(fp, "    </digital_elevation_model>\n");
-      FCLOSE(fpFiles);
     }
 
     // Read information for troposphere
     int tropo_width = 0, tropo_height = 0;
     double tropo_start_lat = -99, tropo_start_lon = -199;
     double tropo_spacing_lat = -99, tropo_spacing_lon = -199;
-    sprintf(rscFile, "%s.rsc", params->troposphere);
-    if (fileExists(rscFile)) {
-      tropo = TRUE;
-      fpFiles = FOPEN(rscFile, "rt");
-      fprintf(fp, "    <troposphere>\n");
-      split_dir_and_file(params->troposphere, directory, filename);
-      fprintf(fp, "      <file type=\"string\" definition=\"file name of "
-        "tropospheric information\">%s</file>\n", filename);
-      fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">Jet Propulsion Laboratory</source>\n");				
-      while (NULL != fgets(line, 255, fpFiles)) {
-        sprintf(str, "%s", line+15);
-        if (strncmp_case(line, "PROJECTION", 10) == 0) {
-          sprintf(map_projection, "%s", trim_spaces(str));
-          if (strcmp_case(map_projection, "LATLON") == 0)
-            fprintf(fp, "      <map_projection type=\"string\" definition=\""
-            "map projection of the data\">geographic</map_projection>\n");
+    if (params->troposphere) {
+      sprintf(rscFile, "%s.rsc", params->troposphere);
+      if (fileExists(rscFile)) {
+        tropo = TRUE;
+        fpFiles = FOPEN(rscFile, "rt");
+        fprintf(fp, "    <troposphere>\n");
+        split_dir_and_file(params->troposphere, directory, filename);
+        fprintf(fp, "      <file type=\"string\" definition=\"file name of "
+          "tropospheric information\">%s</file>\n", filename);
+        fprintf(fp, "      <source type=\"string\" definition=\"source of the "
+          "data\">Jet Propulsion Laboratory</source>\n");				
+        while (NULL != fgets(line, 255, fpFiles)) {
+          sprintf(str, "%s", line+15);
+          if (strncmp_case(line, "PROJECTION", 10) == 0) {
+            sprintf(map_projection, "%s", trim_spaces(str));
+            if (strcmp_case(map_projection, "LATLON") == 0)
+              fprintf(fp, "      <map_projection type=\"string\" definition=\""
+              "map projection of the data\">geographic</map_projection>\n");
+          }
+          if (strncmp_case(line, "WIDTH", 5) == 0) {
+            tropo_width = atoi(trim_spaces(str));
+            fprintf(fp, "      <width type=\"int\" definition=\"width of the "
+              "image\">%d</width>\n", tropo_width);
+          }
+          if (strncmp_case(line, "FILE_LENGTH", 11) == 0) {
+            tropo_height = atoi(trim_spaces(str));
+            fprintf(fp, "      <height type=\"int\" definition=\"height of the "
+              "image\">%d</height>\n", tropo_height);
+          }
+          if (strncmp_case(line, "Y_FIRST", 7) == 0) {
+            tropo_start_lat = atof(trim_spaces(str));
+            fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
+              "latitude of the image [degrees]\" units=\"degrees_north\">%g"
+              "</start_lat>\n", tropo_start_lat);
+          }
+          if (strncmp_case(line, "X_FIRST", 7) == 0) {
+            tropo_start_lon = atof(trim_spaces(str));
+            fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
+              "longitude of the image [degrees]\" units=\"degrees_east\">%g"
+              "</start_lon>\n", tropo_start_lon);
+          }
+          if (strncmp_case(line, "Y_STEP", 6) == 0) {
+            tropo_spacing_lat = atof(trim_spaces(str));
+            fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
+              "spacing in latitude direction [degrees]\" units=\"degrees_north\""
+              ">%g</spacing_lat>\n", tropo_spacing_lat);
+          }
+          if (strncmp_case(line, "X_STEP", 6) == 0) {
+            tropo_spacing_lon = atof(trim_spaces(str));
+            fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
+              "spacing in longitude direction [degrees]\" units=\"degrees_east\""
+              ">%g</spacing_lon>\n", tropo_spacing_lon);
+          }
         }
-        if (strncmp_case(line, "WIDTH", 5) == 0) {
-          tropo_width = atoi(trim_spaces(str));
-          fprintf(fp, "      <width type=\"int\" definition=\"width of the "
-            "image\">%d</width>\n", tropo_width);
+        if (params->troposphere_url)
+          fprintf(fp, "      <url type=\"string\" definition=\"URL used to download"
+            " tropospheric correction\">%s</url>\n", xml_encode(params->troposphere_url));
+        meta = meta_read(params->troposphere);
+        if (meta->stats) {
+          fprintf(fp, "      <correction_minimum>%g</correction_minimum>\n",
+            meta->stats->band_stats[0].min);
+          fprintf(fp, "      <correction_maximum>%g</correction_maximum>\n",
+            meta->stats->band_stats[0].max);
+          fprintf(fp, "      <correction_coverage>%g</correction_coverage>\n",
+            meta->stats->band_stats[0].percent_valid);
+          fprintf(fp, "      <correction.variation>%g</correction_variation>\n",
+            meta->stats->band_stats[0].std_deviation);
         }
-        if (strncmp_case(line, "FILE_LENGTH", 11) == 0) {
-          tropo_height = atoi(trim_spaces(str));
-          fprintf(fp, "      <height type=\"int\" definition=\"height of the "
-            "image\">%d</height>\n", tropo_height);
-        }
-        if (strncmp_case(line, "Y_FIRST", 7) == 0) {
-          tropo_start_lat = atof(trim_spaces(str));
-          fprintf(fp, "      <start_lat type=\"double\" definition=\"starting "
-            "latitude of the image [degrees]\" units=\"degrees_north\">%g"
-            "</start_lat>\n", tropo_start_lat);
-        }
-        if (strncmp_case(line, "X_FIRST", 7) == 0) {
-          tropo_start_lon = atof(trim_spaces(str));
-          fprintf(fp, "      <start_lon type=\"double\" definition=\"starting "
-            "longitude of the image [degrees]\" units=\"degrees_east\">%g"
-            "</start_lon>\n", tropo_start_lon);
-        }
-        if (strncmp_case(line, "Y_STEP", 6) == 0) {
-          tropo_spacing_lat = atof(trim_spaces(str));
-          fprintf(fp, "      <spacing_lat type=\"double\" definition=\"pixel "
-            "spacing in latitude direction [degrees]\" units=\"degrees_north\""
-            ">%g</spacing_lat>\n", tropo_spacing_lat);
-        }
-        if (strncmp_case(line, "X_STEP", 6) == 0) {
-          tropo_spacing_lon = atof(trim_spaces(str));
-          fprintf(fp, "      <spacing_lon type=\"double\" definition=\"pixel "
-            "spacing in longitude direction [degrees]\" units=\"degrees_east\""
-            ">%g</spacing_lon>\n", tropo_spacing_lon);
-        }
+        meta_free(meta);
+        fprintf(fp, "    </troposphere>\n");
+        FCLOSE(fpFiles);
       }
-      if (params->troposphere_url)
-        fprintf(fp, "      <url type=\"string\" definition=\"URL used to download"
-          " tropospheric correction\">%s</url>\n", xml_encode(params->troposphere_url));
-      fprintf(fp, "    </troposphere>\n");
-      FCLOSE(fpFiles);
     }
     fprintf(fp, "  </metadata>\n");
 
