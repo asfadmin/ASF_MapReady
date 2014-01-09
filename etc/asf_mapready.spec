@@ -19,18 +19,15 @@ The ASF MapReady Remote Sensing Toolkit now supports the
 processing of ALOS data.
 %prep
 echo Executing: %%prep
-%setup -DT -n asf_tools
  
 %build
 echo Executing: %%build
-cd $RPM_BUILD_DIR/asf_tools
 ./configure --prefix=$RPM_BUILD_ROOT/usr/local
 make mapready
 
 %install
 echo Executing: %%install
 rm -rf $RPM_BUILD_ROOT
-cd $RPM_BUILD_DIR/asf_tools
 make install
 rm -rf $RPM_BUILD_ROOT/usr/local/lib
 
@@ -41,4 +38,3 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(666,root,root,777)
 %attr(-,root,root) /usr/local/bin
 /usr/local/share
-
