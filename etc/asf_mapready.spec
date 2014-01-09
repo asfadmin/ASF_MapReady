@@ -1,7 +1,7 @@
 Summary: ASF Tools for processing SAR data
-Name: asf_mapready
-Version: %{asftoolsversion}
-Release: %{asftoolsbuildnumber}
+Name: %{package_name}
+Version: %{asfversion}
+Release: %{buildnumber}
 License: BSD
 Group: Applications/Scientific
 URL: http://www.asf.alaska.edu
