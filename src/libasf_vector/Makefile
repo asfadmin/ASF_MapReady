@@ -33,6 +33,7 @@ OBJS = \
 	datapool.o \
 	high_altitude_photography.o \
 	smap.o \
+	granule.o \
 	custom.o \
 	utils.o \
 	config.o

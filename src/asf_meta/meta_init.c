@@ -424,6 +424,18 @@ meta_latlon *meta_latlon_init(int line_count, int sample_count)
   return latlon;
 }
 
+meta_quality *meta_quality_init(void)
+{
+	meta_quality *quality = (meta_quality *) MALLOC(sizeof(meta_quality));
+	quality->bit_error_rate = MAGIC_UNSET_DOUBLE;
+	quality->azimuth_resolution = MAGIC_UNSET_DOUBLE;
+	quality->range_resolution = MAGIC_UNSET_DOUBLE;
+	quality->signal_to_noise_ratio = MAGIC_UNSET_DOUBLE;
+	quality->peak_sidelobe_ratio = MAGIC_UNSET_DOUBLE;
+	quality->integrated_sidelobe_ratio = MAGIC_UNSET_DOUBLE;
+	return quality;
+}
+
 /****************************************************
  * raw_init:
  * Allocate memory for a fresh meta structure and fill
@@ -448,6 +460,7 @@ meta_parameters *raw_init(void)
   meta->insar           = NULL;
   meta->dem             = NULL;
   meta->latlon          = NULL;
+  meta->quality         = NULL;
 
   meta->meta_version = META_VERSION;
 
@@ -597,6 +610,8 @@ void meta_free(meta_parameters *meta)
     meta->insar = NULL;
     FREE(meta->dem);
     meta->dem = NULL;
+    FREE(meta->quality);
+    meta->quality = NULL;
     if (meta->latlon) {
       FREE(meta->latlon->lat);
       FREE(meta->latlon->lon);
