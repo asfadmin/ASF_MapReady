@@ -72,6 +72,12 @@ typedef struct {
 	char *troposphere_url;
   double master_faraday_rotation;
 	double slave_faraday_rotation;
+	char *metadata;
+	char *rtc_metadata;
+	char *rtc_file;
+	char *rtc_log;
+	char *gamma_version;
+	char *dem_source;
 } params_t;
 
 void usage(char *name)
@@ -113,7 +119,6 @@ int strmatches(const char *key, ...)
     return found;
 }
 
-/*
 static void meta2iso_date(meta_parameters *meta, 
 	char *begin, char *center, char *end)
 {
@@ -125,34 +130,27 @@ static void meta2iso_date(meta_parameters *meta,
   julian.year = meta->state_vectors->year;
   julian.jd = meta->state_vectors->julDay;
 	date_jd2ymd(&julian, &date);
-	// ALOS Palsar is different
-	if (strcmp_case(meta->general->sensor, "ALOS") != 0) {
-  	begin_time = 
-  		meta->state_vectors->second + meta->state_vectors->vecs[0].time;
-  	date_sec2hms(begin_time, &time);
-  	sprintf(begin, "%4d-%02d-%02dT%02d:%02d:%09.6lfZ", 
-  		date.year, date.month, date.day, time.hour, time.min, time.sec);
-  	center_time = 
-  		meta->state_vectors->second + meta->state_vectors->vecs[1].time;
-  	date_sec2hms(center_time, &time);
-  	sprintf(center, "%4d-%02d-%02dT%02d:%02d:%09.6lfZ", 
-  		date.year, date.month, date.day, time.hour, time.min, time.sec);
-  	end_time = 
-  		meta->state_vectors->second + meta->state_vectors->vecs[2].time;
-  	date_sec2hms(end_time, &time);
-  	sprintf(end, "%4d-%02d-%02dT%02d:%02d:%09.6lfZ", 
-  		date.year, date.month, date.day, time.hour, time.min, time.sec);
-  }
-  else {
-  	center_time = meta_get_time(meta, meta->general->line_count/2, 0.0);
-  	center_time += meta->state_vectors->second;
-  	center_time += meta->state_vectors->vecs[0].time;
-  	date_sec2hms(center_time, &time);
-  	sprintf(center, "%4d-%02d-%02dT%02d:%02d:%09.6lfZ", 
-  		date.year, date.month, date.day, time.hour, time.min, time.sec);
-  }
+  begin_time = meta_get_time(meta, 0.0, 0.0);
+  begin_time += meta->state_vectors->second;
+  begin_time -= meta->state_vectors->vecs[0].time;
+  date_sec2hms(begin_time, &time);
+  sprintf(begin, "%4d-%02d-%02dT%02d:%02d:%09.6lfZ", 
+    date.year, date.month, date.day, time.hour, time.min, time.sec);
+  center_time = meta_get_time(meta, meta->general->line_count/2, 0.0);
+  center_time += meta->state_vectors->second;
+  center_time -= meta->state_vectors->vecs[0].time;
+  date_sec2hms(center_time, &time);
+  sprintf(center, "%4d-%02d-%02dT%02d:%02d:%09.6lfZ", 
+    date.year, date.month, date.day, time.hour, time.min, time.sec);
+  end_time = meta_get_time(meta, meta->general->line_count, 0.0);
+  end_time += meta->state_vectors->second;
+  end_time -= meta->state_vectors->vecs[0].time;
+  date_sec2hms(end_time, &time);
+  sprintf(end, "%4d-%02d-%02dT%02d:%02d:%09.6lfZ", 
+    date.year, date.month, date.day, time.hour, time.min, time.sec);
 }
 
+/*
 static void line2iso_date(char *line, char *time)
 {
   char buf[100];
@@ -214,31 +212,67 @@ static void roi2iso_date(char *line, char *time)
 		year, month, day, hour, min, sec);
 }
 
+static void gamma2iso_date(char *line, char *time)
+{
+  char mon[][5]=
+    {"","JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
+  char buf[100];
+#define subStr(start,len,dest) strncpy(buf,&line[start],len);buf[len]=0;sscanf(buf,"%d",dest);
+	int i, year, month, day, hour, min, sec; 
+  for (i=0; i<13; i++) {
+    strncpy(buf, &line[4], 3);
+    buf[3] = 0;
+    if (strcmp_case(buf, mon[i]) == 0)
+      month = i;
+  }
+	subStr(8,2,&day);
+	subStr(11,2,&hour);
+	subStr(14,2,&min);
+	subStr(17,2,&sec);
+	subStr(20,4,&year);
+	sprintf(time, "%4d-%02d-%02dT%02d:%02d:%02d.000000Z", 
+		year, month, day, hour, min, sec);
+}
+
 params_t *params_init(char *type) {
 
 	params_t *params = (params_t *) MALLOC(sizeof(params_t));
-	params->granule = NULL;
-	params->master_meta_file = NULL;
-	params->slave_meta_file = NULL;
-	params->master_metadata = NULL;
-	params->slave_metadata = NULL;
-	params->doppler = NULL;
-	params->processing_log = NULL;
-	params->baseline = NULL;
-	params->wrapped_interferogram = NULL;
-	params->unwrapped_interferogram = NULL;
-	params->correlation = NULL;
-	params->incidence_angle = NULL;
-	params->digital_elevation_model = NULL;
-	params->dem_url = NULL;
-	params->troposphere = NULL;
-	params->troposphere_url = NULL;
-	params->browse_amplitude = NULL;
-	params->browse_wrapped_interferogram = NULL;
-	params->browse_unwrapped_interferogram = NULL;
-	params->browse_correlation = NULL;
-	params->master_faraday_rotation = MAGIC_UNSET_DOUBLE;
-	params->slave_faraday_rotation = MAGIC_UNSET_DOUBLE;
+	if (strcmp_case(type, "InSAR") == 0) {
+    params->granule = NULL;
+    params->master_meta_file = NULL;
+    params->slave_meta_file = NULL;
+    params->master_metadata = NULL;
+    params->slave_metadata = NULL;
+    params->doppler = NULL;
+    params->processing_log = NULL;
+    params->baseline = NULL;
+    params->wrapped_interferogram = NULL;
+    params->unwrapped_interferogram = NULL;
+    params->correlation = NULL;
+    params->incidence_angle = NULL;
+    params->digital_elevation_model = NULL;
+    params->dem_url = NULL;
+    params->troposphere = NULL;
+    params->troposphere_url = NULL;
+    params->browse_amplitude = NULL;
+    params->browse_wrapped_interferogram = NULL;
+    params->browse_unwrapped_interferogram = NULL;
+    params->browse_correlation = NULL;
+    params->master_faraday_rotation = MAGIC_UNSET_DOUBLE;
+    params->slave_faraday_rotation = MAGIC_UNSET_DOUBLE;
+	}
+	else if (strcmp_case(type, "GAMMA RTC") == 0) {
+	  params->granule = NULL;
+    params->metadata = NULL;
+    params->digital_elevation_model = NULL;
+    params->rtc_metadata = NULL;
+    params->rtc_file = NULL;
+    params->rtc_log = NULL;
+    params->processing_log = NULL;
+    params->browse_amplitude = NULL;
+    params->gamma_version = NULL;
+    params->dem_source = NULL;
+	}
 	
 	return params;
 }
@@ -284,6 +318,18 @@ void params_free(params_t *params) {
 		FREE(params->browse_unwrapped_interferogram);
 	if (params->browse_correlation)
 		FREE(params->browse_correlation);
+	if (params->metadata)
+	  FREE(params->metadata);
+	if (params->rtc_metadata)
+	  FREE(params->metadata);
+	if (params->rtc_file)
+	  FREE(params->rtc_file);
+	if (params->rtc_log)
+	  FREE(params->rtc_log);
+	if (params->gamma_version)
+	  FREE(params->gamma_version);
+	if (params->dem_source)
+	  FREE(params->dem_source);
 	FREE(params);
 }
 
@@ -389,6 +435,54 @@ void read_filenames(const char * file, params_t **params, char *type)
 				list->slave_faraday_rotation = atof(trim_spaces(value));
 		}
   }
+  else if (strncmp_case(line, "[GAMMA RTC]", 11) == 0) {
+  	list = params_init("GAMMA RTC");
+  	sprintf(type, "GAMMA RTC");
+		while (NULL != fgets(line, n, fp)) {
+			p = strchr(line, '=');
+			sprintf(value, "%s", p+1);
+			if (strncmp_case(line, "granule", 7) == 0) {
+				list->granule = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->granule, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "metadata", 8) == 0) {
+				list->metadata = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->metadata, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "digital elevation model", 23) == 0) {
+				list->digital_elevation_model = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->digital_elevation_model, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "terrain corrected metadata", 26) == 0) {
+				list->rtc_metadata = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->rtc_metadata, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "terrain corrected file", 22) == 0) {
+				list->rtc_file = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->rtc_file, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "initial processing log", 22) == 0) {
+				list->processing_log = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->processing_log, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "terrain correction log", 22) == 0) {
+				list->rtc_log = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->rtc_log, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "gamma version", 13) == 0) {
+				list->gamma_version = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->gamma_version, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "dem source", 10) == 0) {
+				list->dem_source = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->dem_source, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "browse amplitude", 16) == 0) {
+				list->browse_amplitude = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->browse_amplitude, "%s", trim_spaces(value));
+			}
+		}
+  }
   *params = list;
   
   FCLOSE(fp);
@@ -433,7 +527,8 @@ int main(int argc, char **argv)
 
   asfSplashScreen(argc, argv);
 
-  FILE *fpFiles = NULL;
+  FILE *fp=NULL, *fpFiles = NULL;
+  meta_parameters *meta = NULL;
   params_t *params = NULL;
   char line[255], str[50], isoStr[50], rscFile[512], logFile[512];
   char directory[25], filename[30], creation[30], map_projection[50];
@@ -509,8 +604,8 @@ int main(int argc, char **argv)
       asfPrintError("Browse image of correlation (%s) is missing!\n",
         params->browse_correlation);
 
-    meta_parameters *meta = NULL;
-    FILE *fp = FOPEN(xml_name, "wt");
+    meta = NULL;
+    fp = FOPEN(xml_name, "wt");
     fprintf(fp, "<hdf5>\n");
     fprintf(fp, "  <granule>%s</granule>\n", params->granule);
     fprintf(fp, "  <metadata_creation>%s</metadata_creation>\n", creation);
@@ -1594,6 +1689,267 @@ int main(int argc, char **argv)
     fprintf(fp, "</hdf5>\n");
     FCLOSE(fp);
   }
+  else if (strcmp_case(type, "GAMMA RTC") == 0) {
+
+    meta = NULL;
+    fp = FOPEN(xml_name, "wt");
+    fprintf(fp, "<hdf5>\n");
+    fprintf(fp, "  <granule>%s</granule>\n", params->granule);
+    fprintf(fp, "  <metadata_creation>%s</metadata_creation>\n", creation);
+
+    // Let's check for the files first
+    if (params->metadata && !fileExists(params->metadata))
+      asfPrintError("Metadata file (%s) is missing!\n", params->metadata);
+    if (params->digital_elevation_model && 
+        !fileExists(params->digital_elevation_model))
+      asfPrintError("Digital elevation model (%s) is missing!\n",
+        params->digital_elevation_model);
+    if (params->rtc_metadata && !fileExists(params->rtc_metadata))
+      asfPrintError("Metadata for terrain corrected file (%s) is missing!\n",
+        params->rtc_metadata);
+    if (params->rtc_file && !fileExists(params->rtc_file))
+      asfPrintError("Terrain corrected file (%s) is missing!\n", 
+        params->rtc_file);
+    if (params->browse_amplitude && fileExists(params->browse_amplitude))
+      browse = TRUE;
+
+    // Fill in the data section
+    fprintf(fp, "  <data>\n");
+    fprintf(fp, "    <terrain_corrected_image>%s</terrain_corrected_image>\n",
+      params->rtc_file);
+    fprintf(fp, "    <digital_elevation_model>%s</digital_elevation_model>\n",
+      appendExt(params->digital_elevation_model, ".img"));
+    fprintf(fp, "  </data>\n");
+
+    // Add metadata
+    char original_file[100];
+    char *begin = (char *) MALLOC(sizeof(char)*30);
+    char *center = (char *) MALLOC(sizeof(char)*30);
+    char *end = (char *) MALLOC(sizeof(char)*30);
+    int year;
+    fprintf(fp, "  <metadata>\n");
+    fprintf(fp, "    <input_image>\n");
+    meta = meta_read(params->metadata);
+    meta2iso_date(meta, begin, center, end);
+    sprintf(original_file, "%s", meta->general->basename);
+    fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
+      "input image\">%s</file>\n", meta->general->basename);
+    fprintf(fp, "      <platform type=\"string\" definition=\"name of the "
+      "platform\">%s</platform>\n", meta->general->sensor);
+    if (strcmp_case(meta->general->sensor, "ALOS") == 0 && 
+    strcmp_case(meta->general->sensor_name, "SAR") == 0)
+      fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
+        "sensor\">PALSAR</sensor>\n");
+    else
+      fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
+        "sensor\">%s</sensor>\n", meta->general->sensor_name);
+    fprintf(fp, "      <wavelength type=\"double\" definition=\"wavelength of "
+      "the sensor\" units=\"m\">%g</wavelength>\n", meta->sar->wavelength);
+    fprintf(fp, "      <beam_mode type=\"string\" definition=\"beam mode of the"
+      " sensor\">%s</beam_mode>\n", meta->general->mode);
+    fprintf(fp, "      <absolute_orbit type=\"int\" definition=\"absolute orbit"
+      " of the image\">%d</absolute_orbit>\n", meta->general->orbit);
+    fprintf(fp, "      <frame type=\"int\" definition=\"frame number of the "
+      "image\">%d</frame>\n",  meta->general->frame);
+    if (meta->general->orbit_direction == 'A')
+      fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
+      "direction of the sensor\">ascending</flight_direction>\n");
+    else if (meta->general->orbit_direction == 'D')
+      fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
+      "direction of the sensor\">descending</flight_direction>\n");
+    fprintf(fp, "      <polarization type=\"string\" definition=\"polarization "
+      "of the transmitted and received signal\">%s</polarization>\n", 
+      meta->sar->polarization);
+    if (meta->general->image_data_type == COMPLEX_IMAGE)
+      fprintf(fp, "      <data_processing_level type=\"string\" definition=\""
+        "processing level of the input data\">single look complex"
+        "</data_processing_level>\n");
+    fprintf(fp, "      <data_format type=\"string\" definition=\"data format "
+      "of input data\">CEOS</data_format>\n");
+    fprintf(fp, "      <prf type=\"double\" definition=\"pulse repetition "
+      "frequency\" units=\"Hz\">%g</prf>\n", meta->sar->prf);
+    fprintf(fp, "      <start_datetime type=\"string\" definition=\"UTC "
+      "time at the start of the image\">%s</start_datetime>\n", begin); 	
+    fprintf(fp, "      <center_datetime type=\"string\" definition=\"UTC "
+      "time at the center of the image\">%s</center_datetime>\n", center);
+    fprintf(fp, "      <end_datetime type=\"string\" definition=\"UTC "
+      "time at the end of the image\">%s</end_datetime>\n", end);
+    strncpy(str, center, 4);
+    year = atoi(str);
+    FREE(begin);
+    FREE(center);
+    FREE(end);
+    meta_free(meta);
+    fprintf(fp, "      <data_source type=\"string\" definition=\"source "
+      "providing the data\">Alaska Satellite Facility</data_source>\n");
+    fprintf(fp, "    </input_image>\n");
+    fprintf(fp, "  </metadata>\n");
+
+    // Browse image information
+    if (browse) {
+      fprintf(fp, "  <browse>\n");
+      fprintf(fp, "  </browse>\n");
+    }
+
+    // Data extent
+    double plat_min, plat_max, plon_min, plon_max;
+    fprintf(fp, "  <extent>\n");
+    meta = meta_read(params->rtc_metadata);
+    meta_get_bounding_box(meta, &plat_min, &plat_max, &plon_min, &plon_max);
+    fprintf(fp, "    <terrain_corrected_image>\n");
+    fprintf(fp, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
+      plon_min);
+    fprintf(fp, "      <eastBoundLongitude>%.5f</eastBoundLongitude>\n",
+      plon_max);
+    fprintf(fp, "      <northBoundLatitude>%.5f</northBoundLatitude>\n",
+      plat_max);
+    fprintf(fp, "      <southBoundLatitude>%.5f</southBoundLatitude>\n",
+      plat_min);
+    fprintf(fp, "    </terrain_corrected_image>\n");
+    meta_free(meta);
+    meta = meta_read(params->digital_elevation_model);
+    meta_get_bounding_box(meta, &plat_min, &plat_max, &plon_min, &plon_max);
+    fprintf(fp, "    <digital_elevation_model>\n");
+    fprintf(fp, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
+      plon_min);
+    fprintf(fp, "      <eastBoundLongitude>%.5f</eastBoundLongitude>\n",
+      plon_max);
+    fprintf(fp, "      <northBoundLatitude>%.5f</northBoundLatitude>\n",
+      plat_max);
+    fprintf(fp, "      <southBoundLatitude>%.5f</southBoundLatitude>\n",
+      plat_min);
+    fprintf(fp, "    </digital_elevation_model>\n");
+    meta_free(meta);
+    fprintf(fp, "  </extent>\n");
+
+    // Statistics
+    meta = meta_read(params->rtc_metadata);
+    if (meta->stats)
+      stats = TRUE;
+    meta_free(meta);
+    meta = meta_read(params->digital_elevation_model);
+    if (meta->stats)
+      stats = TRUE;
+    meta_free(meta);    
+    if (stats) {
+      fprintf(fp, "  <statistics>\n");
+      meta = meta_read(params->rtc_metadata);
+      if (meta->stats) {
+        fprintf(fp, "    <terrain_corrected_image>\n");
+        fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+          meta->stats->band_stats[0].min);
+        fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+          meta->stats->band_stats[0].max);
+        fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+          meta->stats->band_stats[0].mean);
+        fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+          meta->stats->band_stats[0].std_deviation);
+        fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+          meta->stats->band_stats[0].percent_valid);
+        fprintf(fp, "    </terrain_corrected_image>\n");
+      }
+      meta_free(meta);
+      meta = meta_read(params->digital_elevation_model);
+      if (meta->stats) {
+        fprintf(fp, "    <digital_elevation_model>\n");
+        fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+          meta->stats->band_stats[0].min);
+        fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+          meta->stats->band_stats[0].max);
+        fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+          meta->stats->band_stats[0].mean);
+        fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+          meta->stats->band_stats[0].std_deviation);
+        fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+          meta->stats->band_stats[0].percent_valid);
+        fprintf(fp, "    </digital_elevation_model>\n");
+      }
+      meta_free(meta);
+      fprintf(fp, "  </statistics>\n");
+    }
+
+    // Working the various log files
+    fprintf(fp, "  <processing>\n");
+
+    // Initial processing
+    char *p;
+    fpFiles = FOPEN(params->processing_log, "rt");
+    while (NULL != fgets(line, 255, fpFiles)) {
+      if (strstr(line, "PROCESSING START:")) {
+        p = strstr(line, "PROCESSING START:");
+        gamma2iso_date(p+18, str);
+        fprintf(fp, "    <data_ingest>%s</data_ingest>\n", str);
+      }
+    }
+    FCLOSE(fpFiles);
+
+    // Terrain correction
+    fpFiles = FOPEN(params->rtc_log, "rt");
+    while (NULL != fgets(line, 255, fpFiles)) {
+      if (strstr(line, "mk_geo_radcal processing start:") &&
+          strstr(line, "mode: 0")) {
+        p = strstr(line, "processing start:");
+        gamma2iso_date(p+18, str);
+        fprintf(fp, "    <simulate_sar>%s</simulate_sar>\n", str);
+      }
+      if (strstr(line, "mk_geo_radcal processing start:") &&
+          strstr(line, "mode: 1")) {
+        p = strstr(line, "processing start:");
+        gamma2iso_date(p+18, str);
+        fprintf(fp, "    <initial_offset>%s</initial_offset>\n", str);
+      }
+      if (strstr(line, "mk_geo_radcal processing start:") &&
+          strstr(line, "mode: 2")) {
+        p = strstr(line, "processing start:");
+        gamma2iso_date(p+18, str);
+        fprintf(fp, "    <refined_offset>%s</refined_offset>\n", str);
+      }
+      if (strstr(line, "mk_geo_radcal processing start:") &&
+          strstr(line, "mode: 3")) {
+        p = strstr(line, "processing start:");
+        gamma2iso_date(p+18, str);
+        fprintf(fp, "    <terrain_correction>%s</terrain_correction>\n", str);
+      }
+    }
+    FCLOSE(fpFiles);
+
+    fprintf(fp, "  </processing>\n");
+    
+    // Root metadata
+    char data_source[25], processing[100], copyright[50];
+    meta = meta_read(params->metadata);
+    if (strcmp_case(meta->general->sensor, "ALOS") == 0 && 
+        strcmp_case(meta->general->sensor_name, "SAR") == 0) {
+      sprintf(data_source, "ALOS PALSAR");
+      sprintf(copyright, "JAXA, METI (%d)", year);
+    }
+    meta_free(meta);
+    sprintf(processing, "Terrain corrected product, processed by GAMMA");
+    if (params->gamma_version) {
+      sprintf(str, " (%s)", params->gamma_version);
+      strcat(processing, str);
+    }
+    if (params->dem_source) {
+      sprintf(str, " and corrected with a %s DEM", params->dem_source);
+      strcat(processing, str);
+    }
+
+    fprintf(fp, "  <root>\n");
+    fprintf(fp, "    <institution>Alaska Satellite Facility</institution>\n");
+    fprintf(fp, "    <title>%s</title>\n", processing);
+    fprintf(fp, "    <source>Single look complex %s data</source>\n", 
+      data_source);
+    fprintf(fp, "    <original_file>%s</original_file>\n", original_file);
+    fprintf(fp, "    <comment>Copyright %s</comment>\n", copyright);
+    fprintf(fp, "    <reference>Documentation available at: www.asf.alaska.edu"
+      "</reference>\n");
+    fprintf(fp, "    <history>%s: H5 file created.</history>\n", creation);
+    fprintf(fp, "  </root>\n");
+    
+    fprintf(fp, "</hdf5>\n");
+    FCLOSE(fp);
+  }
+  
   // FIXME: This is the Seasat metadata that needs to be stored new style.
   /*
   char piFile[1024];
