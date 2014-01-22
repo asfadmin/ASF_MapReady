@@ -1728,6 +1728,8 @@ int main(int argc, char **argv)
     char *end = (char *) MALLOC(sizeof(char)*30);
     int year;
     fprintf(fp, "  <metadata>\n");
+    
+    // Original input image
     fprintf(fp, "    <input_image>\n");
     meta = meta_read(params->metadata);
     meta2iso_date(meta, begin, center, end);
@@ -1757,9 +1759,36 @@ int main(int argc, char **argv)
     else if (meta->general->orbit_direction == 'D')
       fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
       "direction of the sensor\">descending</flight_direction>\n");
-    fprintf(fp, "      <polarization type=\"string\" definition=\"polarization "
-      "of the transmitted and received signal\">%s</polarization>\n", 
-      meta->sar->polarization);
+    if (strcmp_case(meta->sar->polarization, "HH") == 0) {
+      fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+        "\"polarization of transmitted signal\">horizontal</"
+        "transmitted_polarization>\n");
+      fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+        "polarization of received signal\">horizontal</received_polarization>"
+        "\n");
+    }
+    else if (strcmp_case(meta->sar->polarization, "HV") == 0) {
+      fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+        "\"polarization of transmitted signal\">horizontal</"
+        "transmitted_polarization>\n");
+      fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+        "polarization of received signal\">vertical</received_polarization>\n");
+    }
+    else if (strcmp_case(meta->sar->polarization, "VH") == 0) {
+      fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+        "\"polarization of transmitted signal\">vertical</"
+        "transmitted_polarization>\n");
+      fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+        "polarization of received signal\">horizontal</received_polarization>"
+        "\n");
+    }
+    else if (strcmp_case(meta->sar->polarization, "VV") == 0) {
+      fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+        "\"polarization of transmitted signal\">vertical</"
+        "transmitted_polarization>\n");
+      fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+        "polarization of received signal\">vertical</received_polarization>\n");
+    }
     if (meta->general->image_data_type == COMPLEX_IMAGE)
       fprintf(fp, "      <data_processing_level type=\"string\" definition=\""
         "processing level of the input data\">single look complex"
@@ -1783,6 +1812,45 @@ int main(int argc, char **argv)
     fprintf(fp, "      <data_source type=\"string\" definition=\"source "
       "providing the data\">Alaska Satellite Facility</data_source>\n");
     fprintf(fp, "    </input_image>\n");
+    
+    // Terrain corrected result
+    split_dir_and_file(params->rtc_file, directory, filename);
+    fprintf(fp, "    <terrain_corrected_image>\n");
+    meta = meta_read(params->rtc_metadata);
+    fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
+      "terrain corrected image\">%s</file>\n", filename);
+    fprintf(fp, "      <width type=\"int\" definition=\"width of the image\">"
+      "%d</width>\n", meta->general->sample_count);
+    fprintf(fp, "      <height type=\"int\" definition=\"height of the image\">"
+      "%d</height>\n", meta->general->line_count);
+    fprintf(fp, "      <x_spacing type=\"double\" definition=\"spacing in x "
+      "direction\">%g</x_spacing>\n", meta->general->x_pixel_size);
+    fprintf(fp, "      <y_spacing type=\"double\" definition=\"spacing in y "
+      "direction\">%g</y_spacing>\n", meta->general->y_pixel_size);
+    meta_free(meta);
+    fprintf(fp, "      <software type=\"string\" definition=\"version of the "
+      "software used for terrain correction\">%s</software>\n", 
+      params->gamma_version);
+    fprintf(fp, "    </terrain_corrected_image>\n");
+
+    // Digital elevation model
+    split_dir_and_file(params->digital_elevation_model, directory, filename);
+    fprintf(fp, "    <digital_elevation_model>\n");
+    meta = meta_read(params->digital_elevation_model);
+    fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
+      "digital elevation model\">%s</file>\n", filename);
+    fprintf(fp, "      <width type=\"int\" definition=\"width of the image\">"
+      "%d</width>\n", meta->general->sample_count);
+    fprintf(fp, "      <height type=\"int\" definition=\"height of the image\">"
+      "%d</height>\n", meta->general->line_count);
+    fprintf(fp, "      <x_spacing type=\"double\" definition=\"spacing in x "
+      "direction\">%g</x_spacing>\n", meta->general->x_pixel_size);
+    fprintf(fp, "      <y_spacing type=\"double\" definition=\"spacing in y "
+      "direction\">%g</y_spacing>\n", meta->general->y_pixel_size);
+    meta_free(meta);
+    fprintf(fp, "      <source type=\"string\" definition=\"source where the "
+      "digital elevation model came from\">%s</source>\n", params->dem_source);
+    fprintf(fp, "    </digital_elevation_model>\n");
     fprintf(fp, "  </metadata>\n");
 
     // Browse image information
