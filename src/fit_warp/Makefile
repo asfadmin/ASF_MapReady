@@ -14,7 +14,7 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(XML_LIBS) \
 	$(GLIB_LIBS) \
-	-lm 
+	-lm -lz
 
 fit_warp: fit_warp.c
 	$(CC) $(CFLAGS) -o fit_warp fit_warp.c $(LIBS) $(LDFLAGS)
