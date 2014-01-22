@@ -11,7 +11,7 @@ LIBS  = \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(XML_LIBS) \
-	-lm
+	-lm -lz
 
 OBJS = \
 	remap_main.o
