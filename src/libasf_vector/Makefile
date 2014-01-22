@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS += -Werror \
+CFLAGS += $(W_ERROR) \
 	$(TIFF_CFLAGS) \
 	$(GEOTIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \

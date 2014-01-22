@@ -40,7 +40,7 @@ CFLAGS += $(GSL_CFLAGS) $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) \
 	$(TIFF_CFLAGS) \
 	-Wall -W -Wmissing-prototypes -Wstrict-prototypes \
 	-Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
-	-Wwrite-strings -Wnested-externs -fno-common -Werror
+	-Wwrite-strings -Wnested-externs -fno-common $(W_ERROR)
 
 LIBS :=	\
 	$(LIBDIR)/libasf_geocode.a \

@@ -2,7 +2,7 @@ include ../../make_support/system_rules
 
 TARGET = rtc
 
-CFLAGS += -Wall -Werror $(GLIBS_CFLAGS) -g
+CFLAGS += -Wall $(W_ERROR) $(GLIBS_CFLAGS) -g
 
 LIBS  = \
 	$(LIBDIR)/libasf_terrcorr.a \

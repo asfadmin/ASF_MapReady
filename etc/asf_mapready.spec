@@ -22,7 +22,7 @@ echo Executing: %%prep
  
 %build
 echo Executing: %%build
-./configure --prefix=$RPM_BUILD_ROOT/usr/local
+./configure --prefix=$RPM_BUILD_ROOT/usr/local no-werror
 make mapready
 
 %install

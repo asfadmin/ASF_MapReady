@@ -4,11 +4,11 @@ include ../../make_support/system_rules
 
 LIBS  = \
 	$(LIBDIR)/asf_meta.a \
-	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_raster.a \
+	$(GSL_LIBS) \
 	$(XML_LIBS) \
 	-lm
 
