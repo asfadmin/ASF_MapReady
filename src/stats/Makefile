@@ -10,7 +10,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_raster.a \
 	$(GSL_LIBS) \
 	$(XML_LIBS) \
-	-lm
+	-lm -lz
 
 CFLAGS += \
 	$(PROJ_CFLAGS) \
