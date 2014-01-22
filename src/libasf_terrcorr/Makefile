@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := -Wall -Werror $(CFLAGS)
+CFLAGS := -Wall $(W_ERROR) $(CFLAGS)
 
 OBJS =  seedsquares.o asf_terrcorr.o build_dem.o rtc.o make_gr_dem.o uavsar_rtc.o
 

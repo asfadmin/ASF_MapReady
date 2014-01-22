@@ -16,7 +16,7 @@ LIBS  = \
 OBJS = \
 	remap_main.o
 
-CFLAGS += -Wall -Werror
+CFLAGS += -Wall $(W_ERROR)
 
 all: exe clean
 

@@ -31,7 +31,7 @@ LIBS  = \
 	$(HDF5_LIBS) \
 	$(ZLIB_LIBS)
 
-CFLAGS += -Wall -Werror
+CFLAGS += -Wall $(W_ERROR)
 
 OBJS  = asf_kml_overlay.o
 

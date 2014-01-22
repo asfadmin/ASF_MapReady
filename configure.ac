@@ -1,5 +1,7 @@
 AC_PREREQ(2.59)
 AC_INIT
+config_flags="$*";
+
 # The most recent version of aclocal doesn't seem to work if this
 # macro isn't called.
 #AM_INIT_AUTOMAKE
@@ -27,6 +29,11 @@ have_hdfeos5="no"
 have_hdf5="no"
 have_netcdf="no"
 have_cunit="no"
+w_error="-Werror"
+
+if test "${config_flags#*no-werror}" != "${config_flags}" ; then
+   w_error=""
+fi
 
 AC_PROG_CC
 AC_PROG_LEX
@@ -422,7 +429,8 @@ WINSYS    =   $winsys
 CC        =   $CC
 RANLIB    =   $ranlib
 OPTFLAG   =   $optFlag
-C99_FLAGS = $c99
+C99_FLAGS =   $c99
+W_ERROR   =   $w_error
 EOF
 
 # 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
