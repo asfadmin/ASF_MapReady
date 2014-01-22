@@ -227,7 +227,7 @@ fi
 AC_SUBST(ASF_LIB_SHAPELIB)
 
 #### libfftw check ####
-AC_CHECK_LIB(fftw,main,have_fftw="yes",have_fftw="no")
+#AC_CHECK_LIB(fftw,main,have_fftw="yes",have_fftw="no")
 if test "$have_fftw" = "no" ; then
    ASF_LIB_FFTW="${ext_lib_src_dir}/libfftw"
    FFTW_LIBS="\$(LIBDIR)/libfftw3f.a"
