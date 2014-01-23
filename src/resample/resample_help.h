@@ -28,6 +28,7 @@
         TOOL_NAME"  [\n"\
         "                -square <pixsiz> | \n"\
         "                -scale <scale factor> | \n"\
+        "                -size <width/height> | \n"\
         "                -scalex <x scale factor> -scaley <y scale factor> |\n"\
         "                <x pixel size> <y pixel size> \n"\
         "             ]\n"\
@@ -52,7 +53,7 @@
 #endif
 #define TOOL_INPUT \
         "   <infile>  The basename of the input data file.\n\n"\
-        "   You have four different ways of specifying the size of the\n"\
+        "   You have several different ways of specifying the size of the\n"\
         "   output image:\n\n"\
         "     X and Y Pixel Sizes:\n"\
         "       resample <x pixel size> <y pixel size> infile outfile\n"\
@@ -61,6 +62,8 @@
         "     X and Y Scale Factors:\n"\
         "       resample -scalex <x scale factor> -scaley <y scale factor>\n"\
         "                infile outfile\n"\
+        "     Output has a specified maximum size:\n"\
+        "       resample -size <size>\n"\
         "     Uniform Scaling (Equal X and Y Scale Factors):\n"\
         "       resample -scale <scale factor> infile outfile\n\n"
 
