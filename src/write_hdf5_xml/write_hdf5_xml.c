@@ -40,6 +40,7 @@
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_meta.h"
+#include "asf_raster.h"
 #include "asf_license.h"
 #include "dateUtil.h"
 #include "time.h"
@@ -67,6 +68,7 @@ typedef struct {
 	char *browse_correlation;
 	char *incidence_angle;
 	char *digital_elevation_model;
+	char *dem_metadata;
 	char *dem_url;
 	char *troposphere;
 	char *troposphere_url;
@@ -265,6 +267,7 @@ params_t *params_init(char *type) {
 	  params->granule = NULL;
     params->metadata = NULL;
     params->digital_elevation_model = NULL;
+    params->dem_metadata = NULL;
     params->rtc_metadata = NULL;
     params->rtc_file = NULL;
     params->rtc_log = NULL;
@@ -330,6 +333,8 @@ void params_free(params_t *params) {
 	  FREE(params->gamma_version);
 	if (params->dem_source)
 	  FREE(params->dem_source);
+	if (params->dem_metadata)
+	  FREE(params->dem_metadata);
 	FREE(params);
 }
 
@@ -452,6 +457,10 @@ void read_filenames(const char * file, params_t **params, char *type)
 			if (strncmp_case(line, "digital elevation model", 23) == 0) {
 				list->digital_elevation_model = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->digital_elevation_model, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "dem metadata", 12) == 0) {
+				list->dem_metadata = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->dem_metadata, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "terrain corrected metadata", 26) == 0) {
 				list->rtc_metadata = (char *) MALLOC(sizeof(char)*n);
@@ -1836,18 +1845,19 @@ int main(int argc, char **argv)
     // Digital elevation model
     split_dir_and_file(params->digital_elevation_model, directory, filename);
     fprintf(fp, "    <digital_elevation_model>\n");
-    meta = meta_read(params->digital_elevation_model);
+    meta_parameters *dem_meta = 
+      gamma_dem2meta(params->digital_elevation_model, params->dem_metadata);
+    meta_write(dem_meta, "try.meta");
     fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
       "digital elevation model\">%s</file>\n", filename);
     fprintf(fp, "      <width type=\"int\" definition=\"width of the image\">"
-      "%d</width>\n", meta->general->sample_count);
+      "%d</width>\n", dem_meta->general->sample_count);
     fprintf(fp, "      <height type=\"int\" definition=\"height of the image\">"
-      "%d</height>\n", meta->general->line_count);
+      "%d</height>\n", dem_meta->general->line_count);
     fprintf(fp, "      <x_spacing type=\"double\" definition=\"spacing in x "
-      "direction\">%g</x_spacing>\n", meta->general->x_pixel_size);
+      "direction\">%g</x_spacing>\n", dem_meta->general->x_pixel_size);
     fprintf(fp, "      <y_spacing type=\"double\" definition=\"spacing in y "
-      "direction\">%g</y_spacing>\n", meta->general->y_pixel_size);
-    meta_free(meta);
+      "direction\">%g</y_spacing>\n", dem_meta->general->y_pixel_size);
     fprintf(fp, "      <source type=\"string\" definition=\"source where the "
       "digital elevation model came from\">%s</source>\n", params->dem_source);
     fprintf(fp, "    </digital_elevation_model>\n");
@@ -1875,8 +1885,7 @@ int main(int argc, char **argv)
       plat_min);
     fprintf(fp, "    </terrain_corrected_image>\n");
     meta_free(meta);
-    meta = meta_read(params->digital_elevation_model);
-    meta_get_bounding_box(meta, &plat_min, &plat_max, &plon_min, &plon_max);
+    meta_get_bounding_box(dem_meta, &plat_min, &plat_max, &plon_min, &plon_max);
     fprintf(fp, "    <digital_elevation_model>\n");
     fprintf(fp, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
       plon_min);
@@ -1887,7 +1896,6 @@ int main(int argc, char **argv)
     fprintf(fp, "      <southBoundLatitude>%.5f</southBoundLatitude>\n",
       plat_min);
     fprintf(fp, "    </digital_elevation_model>\n");
-    meta_free(meta);
     fprintf(fp, "  </extent>\n");
 
     // Statistics
@@ -1895,10 +1903,8 @@ int main(int argc, char **argv)
     if (meta->stats)
       stats = TRUE;
     meta_free(meta);
-    meta = meta_read(params->digital_elevation_model);
-    if (meta->stats)
-      stats = TRUE;
-    meta_free(meta);    
+    if (params->digital_elevation_model)
+      stats = TRUE;    
     if (stats) {
       fprintf(fp, "  <statistics>\n");
       meta = meta_read(params->rtc_metadata);
@@ -1917,23 +1923,26 @@ int main(int argc, char **argv)
         fprintf(fp, "    </terrain_corrected_image>\n");
       }
       meta_free(meta);
-      meta = meta_read(params->digital_elevation_model);
-      if (meta->stats) {
-        fprintf(fp, "    <digital_elevation_model>\n");
-        fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
-          meta->stats->band_stats[0].min);
-        fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
-          meta->stats->band_stats[0].max);
-        fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
-          meta->stats->band_stats[0].mean);
-        fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
-          meta->stats->band_stats[0].std_deviation);
-        fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
-          meta->stats->band_stats[0].percent_valid);
-        fprintf(fp, "    </digital_elevation_model>\n");
-      }
-      meta_free(meta);
+      long long pixel_count = 
+        dem_meta->general->line_count * dem_meta->general->sample_count;
+      float *data = (float *) MALLOC(sizeof(float)*pixel_count);
+      FILE *fpDEM = FOPEN(params->digital_elevation_model, "rb");
+      FREAD(data, sizeof(float), pixel_count, fpDEM);
+      FCLOSE(fpDEM);
+      double min, max, mean, stdDev, percentValid;
+      calc_stats_ext(data, pixel_count, dem_meta->general->no_data, FALSE,
+		    &min, &max, &mean, &stdDev, &percentValid);
+      fprintf(fp, "    <digital_elevation_model>\n");
+      fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n", min);
+      fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n", max);
+      fprintf(fp, "      <mean_value>%.11g</mean_value>\n", mean);
+      fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+        stdDev);
+      fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+        percentValid);
+      fprintf(fp, "    </digital_elevation_model>\n");
       fprintf(fp, "  </statistics>\n");
+      meta_free(dem_meta);
     }
 
     // Working the various log files

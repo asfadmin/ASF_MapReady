@@ -1059,4 +1059,7 @@ int parse_annotation_line(char *line, char *key, char *value);
 meta_parameters* uavsar_polsar2meta(uavsar_polsar *params);
 meta_parameters* uavsar_insar2meta(uavsar_insar *params);
 
+// Prototypes for gamma_dem2meta.c
+meta_parameters *gamma_dem2meta(char *demFile, char *demPar);
+
 #endif

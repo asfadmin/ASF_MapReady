@@ -4,6 +4,7 @@
 include ../../make_support/system_rules
 
 LIBS  = \
+  $(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
@@ -14,7 +15,7 @@ LIBS  = \
 	$(ZLIB_LIBS) \
 	-lm
 
-CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS)
+CFLAGS += $(GSL_CFLAGS) $(GLIB_CFLAGS) $(PROJ_CFLAGS)
 
 OBJS_M2X = write_hdf5_xml.o
 
