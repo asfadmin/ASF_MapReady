@@ -283,9 +283,9 @@ int point_target_analysis(char *inFile, char *crFile, char *ptaFile)
 	//}
 
 	// Determine the stats for the peak chip
-	double min, max, mean, stdDev;
+	double min, max, mean, stdDev, percentValid;
 	calc_stats_ext(peak, peakSize*peakSize, 0.0001, FALSE, 
-		       &min, &max, &mean, &stdDev);
+		       &min, &max, &mean, &stdDev, &percentValid);
 
     //for (ii=0; ii<peakSize; ++ii) {
     //  for (kk=0; kk<peakSize; ++kk) {
