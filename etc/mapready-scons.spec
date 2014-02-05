@@ -20,6 +20,6 @@ processing of ALOS data.
 scons
 
 %install
-scons install --prefix=%{buildroot}%{_prefix}
+scons install --prefix=%{buildroot}%{prefix}
 
 %files
