@@ -4,7 +4,7 @@ Version: %{asfversion}
 Release: %{buildnumber}
 License: GPLv3
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Prefix: /usr/local
+Prefix: /usr/local/mapready
 
 %description
 The ASF MapReady Remote Sensing Toolkit is a set of tools for
