@@ -23,4 +23,4 @@ scons
 scons install --prefix=%{buildroot}%{prefix}
 
 %files
-%dir /usr/local
+%dir %{prefix}
