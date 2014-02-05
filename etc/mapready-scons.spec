@@ -1,6 +1,8 @@
+Summary: ASF Tools for processing SAR data
 Name: %{package_name}
 Version: %{asf_version}
 Release: %{build_number}
+License: GPLv3
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Prefix: /usr/local
 
