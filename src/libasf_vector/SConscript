@@ -12,7 +12,6 @@ localenv.AppendUnique(CPPPATH = [
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
-localenv.ParseConfig("pkg-config --cflags --libs shapelib")
 
 localenv.AppendUnique(LIBS = [
     "m",
@@ -21,6 +20,7 @@ localenv.AppendUnique(LIBS = [
     "asf_meta",
     "asf_proj",
     "asf_import",
+    "shp",
 ])
 
 libs = localenv.SharedLibrary("libasf_vector", [
