@@ -675,6 +675,36 @@ int main(int argc, char **argv)
       fprintf(fp, "      <polarization type=\"string\" definition=\"polarization "
         "of the transmitted and received signal\">%s</polarization>\n", 
         meta->sar->polarization);
+      if (strcmp_case(meta->sar->polarization, "HH") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">horizontal</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">horizontal</received_polarization>"
+          "\n");
+      }
+      else if (strcmp_case(meta->sar->polarization, "HV") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">horizontal</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">vertical</received_polarization>\n");
+      }
+      else if (strcmp_case(meta->sar->polarization, "VH") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">vertical</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">horizontal</received_polarization>"
+          "\n");
+      }
+      else if (strcmp_case(meta->sar->polarization, "VV") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">vertical</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">vertical</received_polarization>\n");
+      }
       fprintf(fp, "      <data_processing_level type=\"string\" definition=\""
         "processing level of the input data\">raw</data_processing_level>\n");
       fprintf(fp, "      <data_format type=\"string\" definition=\"data format "
@@ -792,6 +822,36 @@ int main(int argc, char **argv)
       fprintf(fp, "      <polarization type=\"string\" definition=\"polarization "
         "of the transmitted and received signal\">%s</polarization>\n", 
         meta->sar->polarization);
+      if (strcmp_case(meta->sar->polarization, "HH") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">horizontal</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">horizontal</received_polarization>"
+          "\n");
+      }
+      else if (strcmp_case(meta->sar->polarization, "HV") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">horizontal</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">vertical</received_polarization>\n");
+      }
+      else if (strcmp_case(meta->sar->polarization, "VH") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">vertical</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">horizontal</received_polarization>"
+          "\n");
+      }
+      else if (strcmp_case(meta->sar->polarization, "VV") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">vertical</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">vertical</received_polarization>\n");
+      }
       fprintf(fp, "      <data_processing_level type=\"string\" definition=\""
         "processing level of the input data\">raw</data_processing_level>\n");
       fprintf(fp, "      <data_format type=\"string\" definition=\"data format "
@@ -1120,11 +1180,12 @@ int main(int argc, char **argv)
         "</orbit_type>\n", orbit_type);
       meta = meta_read(params->unwrapped_interferogram);
       if (meta->stats) {
-        fprintf(fp, "      <phase_minimum>%g</phase_minimum>\n",
-          meta->stats->band_stats[0].min);
-        fprintf(fp, "      <phase_maximum>%g</phase_maximum>\n",
-          meta->stats->band_stats[0].max);
-        fprintf(fp, "      <percent_unwrapped>%g</percent_unwrapped>\n",
+        fprintf(fp, "      <phase_minimum type=\"double\" definition=\"minimum "
+          "phase value\">%g</phase_minimum>\n", meta->stats->band_stats[0].min);
+        fprintf(fp, "      <phase_maximum type=\"double\" definition=\"maximum "
+          "phase value\">%g</phase_maximum>\n", meta->stats->band_stats[0].max);
+        fprintf(fp, "      <percent_unwrapped type=\"double\" definition=\""
+          "percentage of unwrapped phase\" units=\"percent\">%g</percent_unwrapped>\n",
           meta->stats->band_stats[0].percent_valid);
       }
       meta_free(meta);
@@ -1220,7 +1281,8 @@ int main(int argc, char **argv)
         "</orbit_type>\n", orbit_type);
       meta = meta_read(params->correlation);
       if (meta->stats) {
-        fprintf(fp, "      <average_coherence>%g</average_coherence>\n",
+        fprintf(fp, "      <average_coherence type=\"double\" definition=\""
+          "average coherence\">%g</average_coherence>\n",
           meta->stats->band_stats[0].mean);
       }
       meta_free(meta);
@@ -1727,7 +1789,7 @@ int main(int argc, char **argv)
     fprintf(fp, "    <terrain_corrected_image>%s</terrain_corrected_image>\n",
       params->rtc_file);
     fprintf(fp, "    <digital_elevation_model>%s</digital_elevation_model>\n",
-      appendExt(params->digital_elevation_model, ".img"));
+      params->digital_elevation_model);
     fprintf(fp, "  </data>\n");
 
     // Add metadata
@@ -1847,7 +1909,6 @@ int main(int argc, char **argv)
     fprintf(fp, "    <digital_elevation_model>\n");
     meta_parameters *dem_meta = 
       gamma_dem2meta(params->digital_elevation_model, params->dem_metadata);
-    meta_write(dem_meta, "try.meta");
     fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
       "digital elevation model\">%s</file>\n", filename);
     fprintf(fp, "      <width type=\"int\" definition=\"width of the image\">"
