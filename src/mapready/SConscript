@@ -17,7 +17,6 @@ localenv.AppendUnique(CPPPATH = [
 localenv.ParseConfig("pkg-config --cflags --libs libglade-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs libpng15")
-localenv.ParseConfig("pkg-config --cflags --libs libtiff-4")
 localenv.ParseConfig("pkg-config --cflags --libs gtk+-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
 
@@ -30,6 +29,7 @@ localenv.AppendUnique(LIBS = [
     "asf_raster",
     "asf_vector",
     "asf_meta",
+    "tiff",
 ])
 
 bins = localenv.Program("mapready", Glob("*.c"))
