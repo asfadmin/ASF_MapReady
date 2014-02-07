@@ -8,6 +8,7 @@ localenv.AppendUnique(CPPPATH = [
         "#src/libasf_proj/",
         "#src/libasf_import/",
         "#src/libasf_raster/",
+        "/usr/include/libshp",
         ])
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
