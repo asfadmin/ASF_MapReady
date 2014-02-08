@@ -6,6 +6,8 @@ License: GPLv3
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Prefix: /usr/local
 
+BuildRequires: scons
+
 %description
 The ASF MapReady Remote Sensing Toolkit is a set of tools for
 processing SAR data, including importing the raw CEOS data,
