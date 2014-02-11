@@ -16,7 +16,7 @@ LIBS  = \
 	$(ZLIB_LIBS) \
 	-lm
 
-CFLAGS += -Werror
+CFLAGS += $(W_ERROR)
 
 all: exe clean
 

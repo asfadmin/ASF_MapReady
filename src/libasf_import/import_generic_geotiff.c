@@ -3407,7 +3407,7 @@ void classify_geotiff(GTIF *input_gtif,
             if (r &&
                 *raster_type != RasterPixelIsArea)
             {
-                asfPrintError("Only map-projected GeoTIFFs with pixels that represent area are supported.");
+                asfPrintWarning("Only map-projected GeoTIFFs with pixels that represent area are supported.");
             }
             if (a && !l) {
                 asfPrintWarning("Invalid map-projected GeoTIFF found ...angular units set to %s and\n"

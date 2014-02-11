@@ -70,7 +70,6 @@ LIB = \
 	$(PROJ_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
-	$(HDFEOS5_LIBS) \
 	$(ZLIB_LIBS) \
 	-lglib-2.0 \
 	-lcomdlg32
@@ -99,7 +98,7 @@ else
 
 ### Begin Unix Section
 
-CFLAGS += -Werror -Wall \
+CFLAGS += $(W_ERROR) -Wall \
 	$(GSL_CFLAGS) \
 	$(JPEG_CFLAGS) \
 	$(PROJ_CFLAGS) \
@@ -131,7 +130,6 @@ LDLIBS = \
 	$(GEOTIFF_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
-	$(HDFEOS5_LIBS) \
 	$(GTK_LIBS) \
 	$(PNG_LIBS) \
 	$(XML_LIBS) \

@@ -1,7 +1,7 @@
 Summary: ASF Tools for processing SAR data, Seasat processing edition
-Name: asf_mapready_asps
-Version: %{asftoolsversion}
-Release: %{asftoolsbuildnumber}
+Name: %{package_name}
+Version: %{asfversion}
+Release: %{buildnumber}
 License: BSD
 Group: Applications/Scientific
 URL: http://www.asf.alaska.edu
@@ -22,18 +22,15 @@ This version is an ASF Internal release with modifications
 needed for processing of SEASAT data.
 %prep
 echo Executing: %%prep
-%setup -DT -n asf_tools
  
 %build
 echo Executing: %%build
-cd $RPM_BUILD_DIR/asf_tools
 ./configure --prefix=$RPM_BUILD_ROOT/usr/local
 make
 
 %install
 echo Executing: %%install
 rm -rf $RPM_BUILD_ROOT
-cd $RPM_BUILD_DIR/asf_tools
 make install
 rm -rf $RPM_BUILD_ROOT/usr/local/lib
 
