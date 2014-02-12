@@ -58,10 +58,10 @@ else:
 
 endian = checkEndian(globalenv)
 
-if endian == "little" :
+if endian == "big" :
     globalenv.AppendUnique(CPPDEFINES = ["ASF_BIG_ENDIAN", "ASF_BIG_IEEE"])
 
-elif endian == "big" :
+elif endian == "little" :
     globalenv.AppendUnique(CPPDEFINES = ["ASF_LIL_ENDIAN", "ASF_LIL_IEEE"])
 
 else:
