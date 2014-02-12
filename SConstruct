@@ -147,6 +147,9 @@ src_subs = lib_subs + [
     "update_state",
     "clm",
     "populate_meta_field",
+    "stats",
+    "write_hdf5_xml",
+    "asf2geobrowse",
     ]
 
 # paths where the libraries will be built
