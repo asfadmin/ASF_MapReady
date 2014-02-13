@@ -22,7 +22,7 @@ processing of ALOS data.
 scons
 
 %install
-scons install --prefix=%{buildroot}%{prefix}
+scons install --prefix=%{buildroot}%{prefix} --header_prefix=%{prefix}
 
 %files
 %{prefix}
