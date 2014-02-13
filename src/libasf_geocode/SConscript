@@ -32,9 +32,14 @@ libs = localenv.SharedLibrary("libasf_geocode", [
         "geoid_adjust.c",
         ])
 
-shares = localenv.File([
-    "WW15MGH.DAC",
-])
+shares = [
+     localenv.Dir([
+        "#src/libasf_geocode/projections",
+     ]),
+     localenv.File([
+        "WW15MGH.DAC",
+     ]),
+]
 
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)
 localenv.Install(globalenv["inst_dirs"]["shares"], shares)
