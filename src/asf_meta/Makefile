@@ -87,6 +87,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	err_die.o \
 	fixed2gei.o \
 	frame_calc.o \
+  gamma_dem2meta.o \
 	gei2fixed.o \
 	getLatLong.o \
 	getLoc.o \

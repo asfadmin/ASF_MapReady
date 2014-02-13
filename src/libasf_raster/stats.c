@@ -16,11 +16,14 @@
 void calc_stats(float *data, long long pixel_count, double mask, double *min,
 		double *max, double *mean, double *stdDev)
 {
-  return calc_stats_ext(data, pixel_count, mask, TRUE, min, max, mean, stdDev);
+  double percentValid;
+  return calc_stats_ext(data, pixel_count, mask, TRUE, min, max, mean, stdDev,
+    &percentValid);
 }
 
 void calc_stats_ext(float *data, long long pixel_count, double mask, int report,
-		    double *min, double *max, double *mean, double *stdDev)
+		                double *min, double *max, double *mean, double *stdDev,
+		                double *percentValid)
 {
     long long ii, pix;
 
@@ -56,6 +59,7 @@ void calc_stats_ext(float *data, long long pixel_count, double mask, int report,
     if (report)
       asfPercentMeter(1.0);
     *mean /= pix;
+    *percentValid = (double)pix*100.0/pixel_count;
 
     if (report)
       asfPrintStatus("\nCalculating standard deviation...\n");

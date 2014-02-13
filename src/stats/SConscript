@@ -17,6 +17,6 @@ localenv.AppendUnique(LIBS = [
     "asf_raster",
 ])
 
-bins = localenv.Program("write_hdf5_xml", Glob("*.c"))
+bins = localenv.Program("stats", Glob("*.c"))
 
 localenv.Install(globalenv["inst_dirs"]["bins"], bins)

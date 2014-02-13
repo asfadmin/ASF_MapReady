@@ -141,6 +141,7 @@ sources = [
     "iso_init.c",
     "iso_write.c",
     "iso_read.c",
+    "gamma_dem2meta.c",
     ]
 
 # run the parser generator and lexer
