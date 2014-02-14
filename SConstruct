@@ -19,11 +19,25 @@ AddOption("--header_prefix",
           help = "What prefix to use in the config.h header. Specify this if config.h should have something different from what's given with the '--prefix' option. Typically only Jenkins will need to use this.",
           )
 
+AddOption("--pkg_version",
+          dest = "pkg_version",
+          type = "string",
+          nargs = 1,
+          action = "store",
+          metavar = "DIR",
+          help = "This defines the version string applied to the entire package.",
+          )
+
 # parse and check command line options
 if GetOption("prefix") is None:
     inst_base = "/usr/local"
 else:
     inst_base = GetOption("prefix")
+
+if GetOption("pkg_version") is None:
+    pkg_version = "UNDEFINED"
+else:
+    pkg_version = GetOption("pkg_version")
 
 globalenv = Environment(TOOLS = ["default", add_UnitTest, checkEndian])
 
@@ -161,7 +175,7 @@ lib_build_paths = [os.path.join("#", rpath_link_path) for rpath_link_path in rpa
 globalenv.AppendUnique(LIBPATH = lib_build_paths)
 
 # common command line options
-globalenv.AppendUnique(CCFLAGS = ["-Wall", "-g"])
+globalenv.AppendUnique(CCFLAGS = ["-Wall", "-g", "-DMAPREADY_VERSION_STRING=\\\"" + pkg_version + "\\\""])
 globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined", "-Wl,-rpath=\\$$ORIGIN/../lib"] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
 
 # common include directories

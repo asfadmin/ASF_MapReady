@@ -15,6 +15,7 @@ localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 localenv.AppendUnique(LIBS = [
     "asf",
     "asf_raster",
+    "asf_meta",
 ])
 
 bins = localenv.Program("stats", Glob("*.c"))
