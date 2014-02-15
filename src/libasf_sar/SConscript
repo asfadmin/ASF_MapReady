@@ -47,5 +47,18 @@ libs = localenv.SharedLibrary("libasf_sar", [
         "c2p.c",
         ])
 
+shares = [
+    localenv.File([
+        "polarimetry.cfg",
+        "point_target_analysis.cfg",
+    ]),
+    localenv.Dir([
+        "#src/libasf_sar/classifications",
+    ]),
+]
+
+
+
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
 
