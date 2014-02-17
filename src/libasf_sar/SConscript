@@ -54,6 +54,7 @@ shares = [
     ]),
     localenv.Dir([
         "#src/libasf_sar/classifications",
+        "#src/libasf_sar/look_up_tables",
     ]),
 ]
 
