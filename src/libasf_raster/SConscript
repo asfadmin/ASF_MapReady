@@ -45,5 +45,12 @@ libs = localenv.SharedLibrary("libasf_raster", [
         "fit_warp.c",
         ])
 
+shares = [
+     localenv.Dir([
+        "#src/libasf_raster/look_up_tables",
+     ]),
+]
+
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
 
