@@ -135,6 +135,10 @@ int main(argc,argv)
                                       "-nearest_neighbor", "-nn",
                                       "--nearest_neighbor", "--nn",
                                       NULL);
+    int use_lo = extract_flag_options(&argc, &argv,
+				      "-logical_or", "-lo", 
+   				      "--logical_or", "--lo",
+				      NULL);
     int is_square_pixsiz = extract_flag_options(&argc, &argv, "-square", NULL);
     int is_scaling = extract_flag_options(&argc, &argv, "-scale", NULL);
     int is_scalex = extract_double_options(&argc, &argv, &xscalfact,
@@ -147,6 +151,13 @@ int main(argc,argv)
         (is_square_pixsiz + is_scaling + is_scaley + is_size > 1) ||
         (is_scalex == 1 && is_scaley == 0) ||
         (is_scaley == 1 && is_scalex == 0))
+    {
+       asfPrintStatus("*** Invalid combination of arguments.\n");
+       usage();
+       return 1;
+    }
+
+    if (use_nn + use_lo > 1) 
     {
        asfPrintStatus("*** Invalid combination of arguments.\n");
        usage();
@@ -244,7 +255,7 @@ int main(argc,argv)
     }
 
     // finally ready
-    resample_ext(infile, outfile, xscalfact, yscalfact, use_nn);
+    resample_ext(infile, outfile, xscalfact, yscalfact, use_nn+2*use_lo);
     
     meta_free(metaIn);
     return(0);
