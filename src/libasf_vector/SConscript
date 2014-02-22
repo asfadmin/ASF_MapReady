@@ -48,5 +48,10 @@ libs = localenv.SharedLibrary("libasf_vector", [
         "rgps.c",
         ])
 
+shares = localenv.File([
+    "header.lst",
+])
+
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
 
