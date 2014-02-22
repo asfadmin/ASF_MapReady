@@ -32,7 +32,7 @@
         "                -scalex <x scale factor> -scaley <y scale factor> |\n"\
         "                <x pixel size> <y pixel size> \n"\
         "             ]\n"\
-        "             [ -nearest_neighbor ]\n"\
+        "             [ -nearest_neighbor | -logical_or ]\n"\
         "             <infile> <outfile>\n" \
         "             [-license] [-version] [-help]"
 
@@ -97,6 +97,8 @@
     "        using this option.  (-scalex)\n"\
     "   -nearest_neighbor ( -nn )\n"\
     "        Don't average pixels when interpolating, use the nearest.\n"\
+    "   -logical_or (-lo)\n"\
+    "        Don't average pixels when interpolation, use a logical or operation.\n"\
     "   -license\n" \
     "        Print copyright and license for this software then exit.\n" \
     "   -version\n" \
