@@ -162,7 +162,12 @@ main (int argc, char *argv[])
   FCLOSE(ifp);
   FCLOSE(ofp);
   FREE(buf);
-  
+
+  if (meta->stats) { 
+    FREE(meta->stats);
+    meta->stats = NULL;
+  }
+ 
   meta_write(meta, out_meta);
   meta_free(meta);
 
