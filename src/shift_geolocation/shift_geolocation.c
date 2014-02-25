@@ -250,6 +250,9 @@ main (int argc, char *argv[])
     if (strncmp_case(meta->projection->units, "degree", 6) == 0) {
       asfPrintStatus("Projection has units of degrees.\n");
 
+      // Not sure if this really works
+      asfPrintWarning("Experimental code");
+
       double x_shift_deg, y_shift_deg, xc, yc;
       if (user_gave_meters) {
         xc = meta->projection->startX + meta->projection->perX*ns/2;
