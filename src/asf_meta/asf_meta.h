@@ -964,6 +964,9 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta);
 void read_proj_file(char * file, project_parameters_t * pps,
 		    projection_type_t * proj_type, datum_type_t *datum,
 		    spheroid_type_t *spheroid);
+void write_esri_proj_file(char *inFile);
+void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile);
+char *meta2esri_proj(meta_parameters *meta, char *projFile);
 
 /***************************************************************************
   Misc projection-related functions
