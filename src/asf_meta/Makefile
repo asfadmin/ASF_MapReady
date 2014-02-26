@@ -5,7 +5,7 @@ include ../../make_support/system_rules
 LIBS = $(XML_LIBS) $(GSL_LIBS) $(PROJ_LIBS)
 
 # Had to add -Wno-unused-function because flex generates some
-CFLAGS += -Werror -Wno-unused-function $(XML_CFLAGS)
+CFLAGS += $(W_ERROR) -Wno-unused-function $(XML_CFLAGS)
 
 # Things used/needed by make's implicit rules for lex and yacc.
 # Need the GNU flex and bison, others are broken in variety of ways.
@@ -201,6 +201,6 @@ distclean:
 	rm -f core *~ TAGS gdb_init.com
 
 test: *.t.c build_only
-	$(CC) $(CFLAGS) -o test *.t.c $(LIBDIR)/libcunit.a $(LIBDIR)/asf_meta.a $(LIBDIR)/asf.a $(LIBDIR)/libasf_proj.a $(LIBS)
+	$(CC) $(CFLAGS) -o test *.t.c $(LIBDIR)/libcunit.a $(LIBDIR)/asf_meta.a $(LIBDIR)/asf.a $(LIBDIR)/libasf_proj.a $(LIBS) -lm -lz
 	./test
 

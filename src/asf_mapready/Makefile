@@ -33,7 +33,7 @@ LIBS  = \
 	$(ZLIB_LIBS) \
 	-lm
 
-CFLAGS += -Wall -Werror
+CFLAGS += -Wall $(W_ERROR)
 
 OBJS  = asf_mapready.o
 

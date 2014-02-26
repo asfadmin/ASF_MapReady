@@ -12,7 +12,6 @@ localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs gsl")
 localenv.ParseConfig("pkg-config --cflags --libs libpng")
-localenv.ParseConfig("pkg-config --cflags --libs libtiff-4")
 
 localenv.AppendUnique(LIBS = [
     "m",
@@ -21,6 +20,7 @@ localenv.AppendUnique(LIBS = [
     "asf_meta",
     "asf_proj",
     "asf_fft",
+    "tiff",
 ])
 
 libs = localenv.SharedLibrary("libasf_raster", [
@@ -45,5 +45,12 @@ libs = localenv.SharedLibrary("libasf_raster", [
         "fit_warp.c",
         ])
 
+shares = [
+     localenv.Dir([
+        "#src/libasf_raster/look_up_tables",
+     ]),
+]
+
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
 
