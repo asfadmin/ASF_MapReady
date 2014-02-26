@@ -67,6 +67,12 @@
   <binary dest="${bundle}/Contents/MacOS/trim">
     ${project}/bin/trim
   </binary>
+  <binary dest="${bundle}/Contents/MacOS/asf_mapready">
+    ${project}/bin/asf_mapready
+  </binary>
+  <binary dest="${bundle}/Contents/MacOS/asf_view">
+    ${project}/bin/asf_view
+  </binary>
 
   <!-- Copy in GTK+ modules.  Note the ${gtkdir} macro, which expands
        to the correct library subdirectory for the specified gtk
@@ -92,6 +98,9 @@
 <!-- Starting with 2.24, gdk-pixbuf installs into its own directory. -->
   <binary>
     ${prefix}/lib/gdk-pixbuf-2.0/${pkg:${gtk}:gtk_binary_version}/loaders/*.so
+  </binary>
+  <binary>
+    ${prefix}/lib/pango/${pkg:pango:pango_module_version}/modules/*.so
   </binary>
 
   <!-- Translation filenames, one for each program or library that you
