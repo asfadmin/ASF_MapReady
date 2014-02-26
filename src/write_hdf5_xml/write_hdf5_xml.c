@@ -39,6 +39,7 @@
 
 #include "asf.h"
 #include "asf_nan.h"
+#include "asf_endian.h"
 #include "asf_meta.h"
 #include "asf_raster.h"
 #include "asf_license.h"
@@ -66,7 +67,10 @@ typedef struct {
 	char *browse_wrapped_interferogram;
 	char *browse_unwrapped_interferogram;
 	char *browse_correlation;
+	char *kml_overlay;
 	char *incidence_angle;
+	char *layover_shadow_mask;
+	char *layover_shadow_stats;
 	char *digital_elevation_model;
 	char *dem_metadata;
 	char *dem_url;
@@ -75,9 +79,16 @@ typedef struct {
   double master_faraday_rotation;
 	double slave_faraday_rotation;
 	char *metadata;
-	char *rtc_metadata;
-	char *rtc_file;
+	char *rtc_HH_metadata;
+	char *rtc_HV_metadata;
+	char *rtc_VH_metadata;
+	char *rtc_VV_metadata;
+	char *rtc_HH_file;
+	char *rtc_HV_file;
+	char *rtc_VH_file;
+	char *rtc_VV_file;
 	char *rtc_log;
+	char *main_log;
 	char *gamma_version;
 	char *dem_source;
 } params_t;
@@ -266,13 +277,23 @@ params_t *params_init(char *type) {
 	else if (strcmp_case(type, "GAMMA RTC") == 0) {
 	  params->granule = NULL;
     params->metadata = NULL;
+    params->layover_shadow_mask = NULL;
+    params->layover_shadow_stats = NULL;
     params->digital_elevation_model = NULL;
     params->dem_metadata = NULL;
-    params->rtc_metadata = NULL;
-    params->rtc_file = NULL;
+    params->rtc_HH_metadata = NULL;
+    params->rtc_HV_metadata = NULL;
+    params->rtc_VH_metadata = NULL;
+    params->rtc_VV_metadata = NULL;
+    params->rtc_HH_file = NULL;
+    params->rtc_HV_file = NULL;
+    params->rtc_VH_file = NULL;
+    params->rtc_VV_file = NULL;
     params->rtc_log = NULL;
     params->processing_log = NULL;
+    params->main_log = NULL;
     params->browse_amplitude = NULL;
+    params->kml_overlay = NULL;
     params->gamma_version = NULL;
     params->dem_source = NULL;
 	}
@@ -305,6 +326,10 @@ void params_free(params_t *params) {
 		FREE(params->correlation);
 	if (params->incidence_angle)
 		FREE(params->incidence_angle);
+	if (params->layover_shadow_mask)
+	  FREE(params->layover_shadow_mask);
+	if (params->layover_shadow_stats)
+	  FREE(params->layover_shadow_stats);
 	if (params->digital_elevation_model)
 		FREE(params->digital_elevation_model);
 	if (params->dem_url)
@@ -321,14 +346,30 @@ void params_free(params_t *params) {
 		FREE(params->browse_unwrapped_interferogram);
 	if (params->browse_correlation)
 		FREE(params->browse_correlation);
+	if (params->kml_overlay)
+	  FREE(params->kml_overlay);
 	if (params->metadata)
 	  FREE(params->metadata);
-	if (params->rtc_metadata)
-	  FREE(params->metadata);
-	if (params->rtc_file)
-	  FREE(params->rtc_file);
+	if (params->rtc_HH_metadata)
+	  FREE(params->rtc_HH_metadata);
+	if (params->rtc_HV_metadata)
+	  FREE(params->rtc_HV_metadata);
+	if (params->rtc_VH_metadata)
+	  FREE(params->rtc_VH_metadata);
+	if (params->rtc_VV_metadata)
+	  FREE(params->rtc_VV_metadata);
+	if (params->rtc_HH_file)
+	  FREE(params->rtc_HH_file);
+	if (params->rtc_HV_file)
+	  FREE(params->rtc_HV_file);
+	if (params->rtc_VH_file)
+	  FREE(params->rtc_VH_file);
+	if (params->rtc_VV_file)
+	  FREE(params->rtc_VV_file);
 	if (params->rtc_log)
 	  FREE(params->rtc_log);
+	if (params->main_log)
+	  FREE(params->main_log);
 	if (params->gamma_version)
 	  FREE(params->gamma_version);
 	if (params->dem_source)
@@ -462,13 +503,45 @@ void read_filenames(const char * file, params_t **params, char *type)
 				list->dem_metadata = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->dem_metadata, "%s", trim_spaces(value));
 			}
-			if (strncmp_case(line, "terrain corrected metadata", 26) == 0) {
-				list->rtc_metadata = (char *) MALLOC(sizeof(char)*n);
-				sprintf(list->rtc_metadata, "%s", trim_spaces(value));
+			if (strncmp_case(line, "layover shadow mask", 19) == 0) {
+			  list->layover_shadow_mask = (char *) MALLOC(sizeof(char)*n);
+			  sprintf(list->layover_shadow_mask, "%s", trim_spaces(value));
+      }			
+			if (strncmp_case(line, "layover shadow stats", 20) == 0) {
+			  list->layover_shadow_stats = (char *) MALLOC(sizeof(char)*n);
+			  sprintf(list->layover_shadow_stats, "%s", trim_spaces(value));
+      }			
+			if (strncmp_case(line, "terrain corrected HH metadata", 29) == 0) {
+				list->rtc_HH_metadata = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->rtc_HH_metadata, "%s", trim_spaces(value));
 			}
-			if (strncmp_case(line, "terrain corrected file", 22) == 0) {
-				list->rtc_file = (char *) MALLOC(sizeof(char)*n);
-				sprintf(list->rtc_file, "%s", trim_spaces(value));
+			if (strncmp_case(line, "terrain corrected HV metadata", 29) == 0) {
+				list->rtc_HV_metadata = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->rtc_HV_metadata, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "terrain corrected VH metadata", 29) == 0) {
+				list->rtc_VH_metadata = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->rtc_VH_metadata, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "terrain corrected VV metadata", 29) == 0) {
+				list->rtc_VV_metadata = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->rtc_VV_metadata, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "terrain corrected HH file", 25) == 0) {
+				list->rtc_HH_file = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->rtc_HH_file, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "terrain corrected HV file ", 25) == 0) {
+				list->rtc_HV_file = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->rtc_HV_file, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "terrain corrected VH file", 25) == 0) {
+				list->rtc_VH_file = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->rtc_VH_file, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "terrain corrected VV file", 25) == 0) {
+				list->rtc_VV_file = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->rtc_VV_file, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "initial processing log", 22) == 0) {
 				list->processing_log = (char *) MALLOC(sizeof(char)*n);
@@ -478,6 +551,10 @@ void read_filenames(const char * file, params_t **params, char *type)
 				list->rtc_log = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->rtc_log, "%s", trim_spaces(value));
 			}
+			if (strncmp_case(line, "main log", 8) == 0) {
+				list->main_log = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->main_log, "%s", trim_spaces(value));
+			}
 			if (strncmp_case(line, "gamma version", 13) == 0) {
 				list->gamma_version = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->gamma_version, "%s", trim_spaces(value));
@@ -486,9 +563,13 @@ void read_filenames(const char * file, params_t **params, char *type)
 				list->dem_source = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->dem_source, "%s", trim_spaces(value));
 			}
-			if (strncmp_case(line, "browse amplitude", 16) == 0) {
+			if (strncmp_case(line, "browse image", 12) == 0) {
 				list->browse_amplitude = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->browse_amplitude, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "kml overlay", 11) == 0) {
+				list->kml_overlay = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->kml_overlay, "%s", trim_spaces(value));
 			}
 		}
   }
@@ -675,6 +756,36 @@ int main(int argc, char **argv)
       fprintf(fp, "      <polarization type=\"string\" definition=\"polarization "
         "of the transmitted and received signal\">%s</polarization>\n", 
         meta->sar->polarization);
+      if (strcmp_case(meta->sar->polarization, "HH") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">horizontal</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">horizontal</received_polarization>"
+          "\n");
+      }
+      else if (strcmp_case(meta->sar->polarization, "HV") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">horizontal</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">vertical</received_polarization>\n");
+      }
+      else if (strcmp_case(meta->sar->polarization, "VH") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">vertical</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">horizontal</received_polarization>"
+          "\n");
+      }
+      else if (strcmp_case(meta->sar->polarization, "VV") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">vertical</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">vertical</received_polarization>\n");
+      }
       fprintf(fp, "      <data_processing_level type=\"string\" definition=\""
         "processing level of the input data\">raw</data_processing_level>\n");
       fprintf(fp, "      <data_format type=\"string\" definition=\"data format "
@@ -792,6 +903,36 @@ int main(int argc, char **argv)
       fprintf(fp, "      <polarization type=\"string\" definition=\"polarization "
         "of the transmitted and received signal\">%s</polarization>\n", 
         meta->sar->polarization);
+      if (strcmp_case(meta->sar->polarization, "HH") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">horizontal</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">horizontal</received_polarization>"
+          "\n");
+      }
+      else if (strcmp_case(meta->sar->polarization, "HV") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">horizontal</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">vertical</received_polarization>\n");
+      }
+      else if (strcmp_case(meta->sar->polarization, "VH") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">vertical</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">horizontal</received_polarization>"
+          "\n");
+      }
+      else if (strcmp_case(meta->sar->polarization, "VV") == 0) {
+        fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
+          "\"polarization of transmitted signal\">vertical</"
+          "transmitted_polarization>\n");
+        fprintf(fp, "      <received_polarization type=\"string\" definition=\""
+          "polarization of received signal\">vertical</received_polarization>\n");
+      }
       fprintf(fp, "      <data_processing_level type=\"string\" definition=\""
         "processing level of the input data\">raw</data_processing_level>\n");
       fprintf(fp, "      <data_format type=\"string\" definition=\"data format "
@@ -1120,11 +1261,12 @@ int main(int argc, char **argv)
         "</orbit_type>\n", orbit_type);
       meta = meta_read(params->unwrapped_interferogram);
       if (meta->stats) {
-        fprintf(fp, "      <phase_minimum>%g</phase_minimum>\n",
-          meta->stats->band_stats[0].min);
-        fprintf(fp, "      <phase_maximum>%g</phase_maximum>\n",
-          meta->stats->band_stats[0].max);
-        fprintf(fp, "      <percent_unwrapped>%g</percent_unwrapped>\n",
+        fprintf(fp, "      <phase_minimum type=\"double\" definition=\"minimum "
+          "phase value\">%g</phase_minimum>\n", meta->stats->band_stats[0].min);
+        fprintf(fp, "      <phase_maximum type=\"double\" definition=\"maximum "
+          "phase value\">%g</phase_maximum>\n", meta->stats->band_stats[0].max);
+        fprintf(fp, "      <percent_unwrapped type=\"double\" definition=\""
+          "percentage of unwrapped phase\" units=\"percent\">%g</percent_unwrapped>\n",
           meta->stats->band_stats[0].percent_valid);
       }
       meta_free(meta);
@@ -1220,7 +1362,8 @@ int main(int argc, char **argv)
         "</orbit_type>\n", orbit_type);
       meta = meta_read(params->correlation);
       if (meta->stats) {
-        fprintf(fp, "      <average_coherence>%g</average_coherence>\n",
+        fprintf(fp, "      <average_coherence type=\"double\" definition=\""
+          "average coherence\">%g</average_coherence>\n",
           meta->stats->band_stats[0].mean);
       }
       meta_free(meta);
@@ -1713,21 +1856,25 @@ int main(int argc, char **argv)
         !fileExists(params->digital_elevation_model))
       asfPrintError("Digital elevation model (%s) is missing!\n",
         params->digital_elevation_model);
-    if (params->rtc_metadata && !fileExists(params->rtc_metadata))
+    if (params->rtc_HH_metadata && !fileExists(params->rtc_HH_metadata))
       asfPrintError("Metadata for terrain corrected file (%s) is missing!\n",
-        params->rtc_metadata);
-    if (params->rtc_file && !fileExists(params->rtc_file))
+        params->rtc_HH_metadata);
+    if (params->rtc_HH_file && !fileExists(params->rtc_HH_file))
       asfPrintError("Terrain corrected file (%s) is missing!\n", 
-        params->rtc_file);
-    if (params->browse_amplitude && fileExists(params->browse_amplitude))
-      browse = TRUE;
+        params->rtc_HH_file);
 
     // Fill in the data section
     fprintf(fp, "  <data>\n");
-    fprintf(fp, "    <terrain_corrected_image>%s</terrain_corrected_image>\n",
-      params->rtc_file);
+    if (params->rtc_HH_file)
+      fprintf(fp, "    <terrain_corrected_HH>%s</terrain_corrected_HH>\n",
+        params->rtc_HH_file);
     fprintf(fp, "    <digital_elevation_model>%s</digital_elevation_model>\n",
-      appendExt(params->digital_elevation_model, ".img"));
+      params->digital_elevation_model);
+    fprintf(fp, "    <layover_shadow_mask>%s</layover_shadow_mask>\n",
+      params->layover_shadow_mask);
+    fprintf(fp, "    <browse_image>%s</browse_image>\n", 
+      params->browse_amplitude);
+    fprintf(fp, "    <kml_overlay>%s</kml_overlay>\n", params->kml_overlay);
     fprintf(fp, "  </data>\n");
 
     // Add metadata
@@ -1823,11 +1970,11 @@ int main(int argc, char **argv)
     fprintf(fp, "    </input_image>\n");
     
     // Terrain corrected result
-    split_dir_and_file(params->rtc_file, directory, filename);
+    split_dir_and_file(params->rtc_HH_file, directory, filename);
     fprintf(fp, "    <terrain_corrected_image>\n");
-    meta = meta_read(params->rtc_metadata);
+    meta = meta_read(params->rtc_HH_metadata);
     fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
-      "terrain corrected image\">%s</file>\n", filename);
+      "terrain corrected HH image\">%s</file>\n", filename);
     fprintf(fp, "      <width type=\"int\" definition=\"width of the image\">"
       "%d</width>\n", meta->general->sample_count);
     fprintf(fp, "      <height type=\"int\" definition=\"height of the image\">"
@@ -1847,7 +1994,6 @@ int main(int argc, char **argv)
     fprintf(fp, "    <digital_elevation_model>\n");
     meta_parameters *dem_meta = 
       gamma_dem2meta(params->digital_elevation_model, params->dem_metadata);
-    meta_write(dem_meta, "try.meta");
     fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
       "digital elevation model\">%s</file>\n", filename);
     fprintf(fp, "      <width type=\"int\" definition=\"width of the image\">"
@@ -1860,19 +2006,15 @@ int main(int argc, char **argv)
       "direction\">%g</y_spacing>\n", dem_meta->general->y_pixel_size);
     fprintf(fp, "      <source type=\"string\" definition=\"source where the "
       "digital elevation model came from\">%s</source>\n", params->dem_source);
+    fprintf(fp, "      <projection_string>%s</projection_string>\n",
+      meta2esri_proj(dem_meta, NULL));
     fprintf(fp, "    </digital_elevation_model>\n");
     fprintf(fp, "  </metadata>\n");
-
-    // Browse image information
-    if (browse) {
-      fprintf(fp, "  <browse>\n");
-      fprintf(fp, "  </browse>\n");
-    }
 
     // Data extent
     double plat_min, plat_max, plon_min, plon_max;
     fprintf(fp, "  <extent>\n");
-    meta = meta_read(params->rtc_metadata);
+    meta = meta_read(params->rtc_HH_metadata);
     meta_get_bounding_box(meta, &plat_min, &plat_max, &plon_min, &plon_max);
     fprintf(fp, "    <terrain_corrected_image>\n");
     fprintf(fp, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
@@ -1899,48 +2041,158 @@ int main(int argc, char **argv)
     fprintf(fp, "  </extent>\n");
 
     // Statistics
-    meta = meta_read(params->rtc_metadata);
-    if (meta->stats)
-      stats = TRUE;
-    meta_free(meta);
-    if (params->digital_elevation_model)
+    if (params->rtc_HH_metadata) {
+      meta = meta_read(params->rtc_HH_metadata);
+      if (meta->stats)
+        stats = TRUE;
+      meta_free(meta);
+    }
+    if (params->digital_elevation_model || params->layover_shadow_stats)
       stats = TRUE;    
     if (stats) {
+      long long pixel_count = 0;
       fprintf(fp, "  <statistics>\n");
-      meta = meta_read(params->rtc_metadata);
-      if (meta->stats) {
-        fprintf(fp, "    <terrain_corrected_image>\n");
-        fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
-          meta->stats->band_stats[0].min);
-        fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
-          meta->stats->band_stats[0].max);
-        fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
-          meta->stats->band_stats[0].mean);
-        fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
-          meta->stats->band_stats[0].std_deviation);
-        fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
-          meta->stats->band_stats[0].percent_valid);
-        fprintf(fp, "    </terrain_corrected_image>\n");
+      if (params->rtc_HH_metadata) {
+        meta = meta_read(params->rtc_HH_metadata);
+        if (meta->stats) {
+          fprintf(fp, "    <terrain_corrected_HH>\n");
+          fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+            meta->stats->band_stats[0].min);
+          fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+            meta->stats->band_stats[0].max);
+          fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+            meta->stats->band_stats[0].mean);
+          fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+            meta->stats->band_stats[0].std_deviation);
+          fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+            meta->stats->band_stats[0].percent_valid);
+          fprintf(fp, "    </terrain_corrected_HH>\n");
+        }
+        pixel_count = meta->general->sample_count * meta->general->line_count;
+        meta_free(meta);
       }
-      meta_free(meta);
-      long long pixel_count = 
-        dem_meta->general->line_count * dem_meta->general->sample_count;
-      float *data = (float *) MALLOC(sizeof(float)*pixel_count);
-      FILE *fpDEM = FOPEN(params->digital_elevation_model, "rb");
-      FREAD(data, sizeof(float), pixel_count, fpDEM);
-      FCLOSE(fpDEM);
-      double min, max, mean, stdDev, percentValid;
-      calc_stats_ext(data, pixel_count, dem_meta->general->no_data, FALSE,
-		    &min, &max, &mean, &stdDev, &percentValid);
-      fprintf(fp, "    <digital_elevation_model>\n");
-      fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n", min);
-      fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n", max);
-      fprintf(fp, "      <mean_value>%.11g</mean_value>\n", mean);
-      fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
-        stdDev);
-      fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
-        percentValid);
-      fprintf(fp, "    </digital_elevation_model>\n");
+      if (params->rtc_HV_metadata) {
+        meta = meta_read(params->rtc_HV_metadata);
+        if (meta->stats) {
+          fprintf(fp, "    <terrain_corrected_HV>\n");
+          fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+            meta->stats->band_stats[0].min);
+          fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+            meta->stats->band_stats[0].max);
+          fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+            meta->stats->band_stats[0].mean);
+          fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+            meta->stats->band_stats[0].std_deviation);
+          fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+            meta->stats->band_stats[0].percent_valid);
+          fprintf(fp, "    </terrain_corrected_HV>\n");
+        }
+        meta_free(meta);
+      }
+      if (params->rtc_VH_metadata) {
+        meta = meta_read(params->rtc_VH_metadata);
+        if (meta->stats) {
+          fprintf(fp, "    <terrain_corrected_VH>\n");
+          fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+            meta->stats->band_stats[0].min);
+          fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+            meta->stats->band_stats[0].max);
+          fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+            meta->stats->band_stats[0].mean);
+          fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+            meta->stats->band_stats[0].std_deviation);
+          fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+            meta->stats->band_stats[0].percent_valid);
+          fprintf(fp, "    </terrain_corrected_VH>\n");
+        }
+        meta_free(meta);
+      }
+      if (params->rtc_VV_metadata) {
+        meta = meta_read(params->rtc_VV_metadata);
+        if (meta->stats) {
+          fprintf(fp, "    <terrain_corrected_VV>\n");
+          fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+            meta->stats->band_stats[0].min);
+          fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+            meta->stats->band_stats[0].max);
+          fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+            meta->stats->band_stats[0].mean);
+          fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+            meta->stats->band_stats[0].std_deviation);
+          fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+            meta->stats->band_stats[0].percent_valid);
+          fprintf(fp, "    </terrain_corrected_VV>\n");
+        }
+        meta_free(meta);
+      }
+      if (params->digital_elevation_model) {
+        long long pixel_count = 
+          dem_meta->general->line_count * dem_meta->general->sample_count;
+        float *data = (float *) MALLOC(sizeof(float)*pixel_count);
+        FILE *fpDEM = FOPEN(params->digital_elevation_model, "rb");
+        FREAD(data, sizeof(float), pixel_count, fpDEM);
+        FCLOSE(fpDEM);
+        long long ii;
+        for (ii=0; ii<pixel_count; ii++)
+          ieee_big32(data[ii]);
+        double min, max, mean, stdDev, percentValid;
+        calc_stats_ext(data, pixel_count, dem_meta->general->no_data, FALSE,
+          &min, &max, &mean, &stdDev, &percentValid);
+        fprintf(fp, "    <digital_elevation_model>\n");
+        fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n", min);
+        fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n", max);
+        fprintf(fp, "      <mean_value>%.11g</mean_value>\n", mean);
+        fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+          stdDev);
+        fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+          percentValid);
+        fprintf(fp, "    </digital_elevation_model>\n");
+      }
+      if (params->layover_shadow_stats) {
+        long long h[32];
+        FILE *fpStats = FOPEN(params->layover_shadow_stats, "r");
+        while (NULL != fgets(line, 255, fpStats)) {
+          if (strstr(line, "  0-  7:"))
+            sscanf(line+8, "%lld %lld %lld %lld %lld %lld %lld %lld", 
+              &h[0], &h[1], &h[2], &h[3], &h[4], &h[5], &h[6], &h[7]);
+          if (strstr(line, "  8- 15:"))
+            sscanf(line+8, "%lld %lld %lld %lld %lld %lld %lld %lld", 
+              &h[8], &h[9], &h[10], &h[11], &h[12], &h[13], &h[14], &h[15]);
+          if (strstr(line, " 16- 23:"))
+            sscanf(line+8, "%lld %lld %lld %lld %lld %lld %lld %lld", 
+              &h[16], &h[17], &h[18], &h[19], &h[20], &h[21], &h[22], &h[23]);
+          if (strstr(line, " 24- 31:"))
+            sscanf(line+8, "%lld %lld %lld %lld %lld %lld %lld %lld", 
+              &h[24], &h[25], &h[26], &h[27], &h[28], &h[29], &h[30], &h[31]);
+        }
+        FCLOSE(fpStats);
+        pixel_count -= h[0];
+        float no_layover_shadow = 0;
+        float true_layover = 0, layover = 0, true_shadow = 0, shadow = 0;
+        int ii;
+        for (ii=0; ii<32; ii++) {
+          if (ii & 1)
+            no_layover_shadow += h[ii] / (float)pixel_count;
+          if (ii & 2)
+            true_layover += h[ii] / (float)pixel_count;
+          if (ii & 4)
+            layover += h[ii] / (float)pixel_count;
+          if (ii & 8)
+            true_shadow += h[ii] / (float)pixel_count;
+          if (ii & 16)
+            shadow += h[ii] / (float)pixel_count;
+        }
+        fprintf(fp, "    <layover_shadow_mask>\n");
+        fprintf(fp, "      <no_layover_shadow>%.1lf</no_layover_shadow>\n",
+          no_layover_shadow*100.0);
+        fprintf(fp, "      <true_layover>%.1lf</true_layover>\n", 
+          true_layover*100.0);
+        fprintf(fp, "      <layover>%.1lf</layover>\n", layover*100.0);
+        fprintf(fp, "      <true_shadow>%.1lf</true_shadow>\n", 
+          true_shadow*100.0);
+        fprintf(fp, "      <shadow>%.1lf</shadow>\n", shadow*100.0);
+        fprintf(fp, "    </layover_shadow_mask>\n");
+      }
       fprintf(fp, "  </statistics>\n");
       meta_free(dem_meta);
     }
