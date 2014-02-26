@@ -65,6 +65,7 @@ int trim(char *infile, char *outfile,
     mX = metaIn->projection->perX;
   }
   */
+  meta_get_corner_coords(metaOut);
 
   meta_write(metaOut, outfile);
 
