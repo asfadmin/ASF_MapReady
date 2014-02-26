@@ -74,6 +74,7 @@
 #include <asf_meta.h>
 #include <asf_license.h>
 #include <asf_contact.h>
+#include <asf_export.h>
 
 // Print minimalistic usage info & exit
 void usage(const char *name)

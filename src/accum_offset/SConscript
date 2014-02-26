@@ -29,12 +29,9 @@ localenv.AppendUnique(LIBPATH = [
     
 bins = localenv.Program("accum_offset", Glob("*.c"))
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
 
 mans = localenv.File(["accum_offset.1"])
 
-globalenv.Install(globalenv["inst_dirs"]["mans"], mans)
+localenv.Install(globalenv["inst_dirs"]["mans"], mans)
 
-# run the unit test, and set its dependencies
-test_result = localenv.UnitTest("test.semaphore", None)
-localenv.Depends(test_result, [bins, mans])

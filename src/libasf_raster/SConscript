@@ -10,6 +10,18 @@ localenv.AppendUnique(CPPPATH = [
 
 localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+localenv.ParseConfig("pkg-config --cflags --libs libpng")
+localenv.ParseConfig("pkg-config --cflags --libs libtiff-4")
+
+localenv.AppendUnique(LIBS = [
+    "m",
+    "jpeg",
+    "asf",
+    "asf_meta",
+    "asf_proj",
+    "asf_fft",
+])
 
 libs = localenv.SharedLibrary("libasf_raster", [
         "interpolate.c",
@@ -30,10 +42,8 @@ libs = localenv.SharedLibrary("libasf_raster", [
         "raster_calc.c",
         "diffimage.c",
         "spline_eval.c",
+        "fit_warp.c",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
 
-# run the unit test, and set its dependencies
-test_result = localenv.UnitTest("test.semaphore", None)
-localenv.Depends(test_result, [libs])

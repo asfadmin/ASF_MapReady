@@ -58,14 +58,14 @@ int test_base(char *basefile, char *matfile, char *vecfile)
       Ax[i] += A[i][j] * x[j];
     }
     sprintf (logbuf, "   %3d  b = %9.3f   A * x = %9.3f   diff = %9.3f  \n", i, b[i], Ax[i], b[i] - Ax[i]);
-    if (!quietflag) printf(logbuf);
+    if (!quietflag) printf("%s", logbuf);
     if (logflag && !quietflag) printLog(logbuf);
     sum += (b[i] - Ax[i])*(b[i] - Ax[i]);
     errsum += (b[i] - Ax[i]);
   }
   rms = sqrt(sum/(double)(m));
   sprintf(logbuf, "\n   rms diff(b, A*x) = %f, avg diff(b, A*x) = %f\n\n", rms, errsum/(double)m);
-  if (!quietflag) printf(logbuf);
+  if (!quietflag) printf("%s", logbuf);
   if (logflag && !quietflag) printLog(logbuf);
 
   return(0);

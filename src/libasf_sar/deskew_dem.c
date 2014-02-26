@@ -628,6 +628,9 @@ static Vector * calculate_normal(Vector ***localVectors, int sample)
   return normal;
 }
 
+/*
+ * Not being used for now -- what we have in RTC is more accurate
+
 static float
 calculate_local_incidence(Vector *n, Vector *satpos, Vector *p)
 
@@ -643,6 +646,7 @@ calculate_local_incidence(Vector *n, Vector *satpos, Vector *p)
 
   return local_incidence;
 }
+*/
 
 static float
 calculate_correction(meta_parameters *meta_in, int line, int samp,

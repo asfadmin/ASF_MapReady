@@ -39,37 +39,6 @@ typedef int unproject_arr_t(project_parameters_t *pps, double *x, double *y,
       double *z, double **lat, double **lon,
       double **height, long length, datum_type_t dtm);
 
-void location_minmax(meta_location *loc, double *minLat, double *maxLat,
-		     double *minLon, double *maxLon)
-{
-  int ii;
-  double corner_lat[4], corner_lon[4], min_x, max_x, min_y, max_y;
-  min_x = min_y = 9999999;
-  max_x = max_y = -9999999;
-  corner_lat[0] = loc->lat_start_near_range;
-  corner_lat[1] = loc->lat_start_far_range;
-  corner_lat[2] = loc->lat_end_near_range;
-  corner_lat[3] = loc->lat_end_far_range;
-  corner_lon[0] = loc->lon_start_near_range;
-  corner_lon[1] = loc->lon_start_far_range;
-  corner_lon[2] = loc->lon_end_near_range;
-  corner_lon[3] = loc->lon_end_far_range;
-  for (ii=0; ii<4; ii++) {
-    if (corner_lat[ii] < min_y)
-      min_y = corner_lat[ii];
-    if (corner_lat[ii] > max_y)
-      max_y = corner_lat[ii];
-    if (corner_lon[ii] < min_x)
-      min_x = corner_lon[ii];
-    if (corner_lon[ii] > max_x)
-      max_x = corner_lon[ii];
-  }
-  *minLat = min_y;
-  *maxLat = max_y;
-  *minLon = min_x;
-  *maxLon = max_x;
-}
-
 char *proj_info_as_string(projection_type_t projection_type,
                           project_parameters_t *pp, datum_type_t *datum)
 {
@@ -255,13 +224,10 @@ static int is_alos_avnir(meta_parameters *meta) {
 // functions to use when we need to use a function pointer to perform
 // a generic operation.
 static int
-project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
-       double height, double *x, double *y, double *z,
-             datum_type_t datum)
+project_lat_long_pseudo (project_parameters_t* UNUSED(pps), double lat, 
+	double lon, double height, double *x, double *y, double *z,
+  datum_type_t UNUSED(datum))
 {
-  /* Silence compiler warning about unused argument.  */
-  pps = pps; datum = datum;
-
   *x = lon * R2D;
   *y = lat * R2D;
   if (z) *z = height;
@@ -270,13 +236,12 @@ project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
 }
 
 static int
-project_lat_long_pseudo_arr(project_parameters_t *pps, double *lat, double *lon,
-			    double *height, double **x, double **y, 
-			    double **z, long length, datum_type_t datum)
+project_lat_long_pseudo_arr(project_parameters_t* UNUSED(pps), double *lat, 
+	double *lon, double *height, double **x, double **y, double **z, long length,
+	datum_type_t UNUSED(datum))
 {
-  pps = pps; datum = datum;
   long ii;
-  double *pz;
+  double *pz = NULL;
   *x = (double *) MALLOC(sizeof(double) * length);
   *y = (double *) MALLOC(sizeof(double) * length);
   if (z) {
@@ -295,13 +260,10 @@ project_lat_long_pseudo_arr(project_parameters_t *pps, double *lat, double *lon,
 }
 
 static int
-project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
-           double z, double *lat, double *lon,
-           double *height, datum_type_t datum)
+project_lat_long_pseudo_inv (project_parameters_t* UNUSED(pps), double x, 
+	double y, double z, double *lat, double *lon, double *height, 
+	datum_type_t UNUSED(datum))
 {
-  /* Silence compiler warning about unused argument.  */
-  pps = pps; datum = datum;
-
   *lat = y * D2R;
   *lon = x * D2R;
   if (height) *height = z;
@@ -310,12 +272,10 @@ project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
 }
 
 static int
-project_lat_long_pseudo_inv_arr(project_parameters_t *pps, double *x, double *y,
-				double *z, double **lat, double **lon,
-				double **height, long length, 
-				datum_type_t datum)
+project_lat_long_pseudo_inv_arr(project_parameters_t* UNUSED(pps), double *x, 
+	double *y, double *z, double **lat, double **lon, double **height, 
+	long length, datum_type_t UNUSED(datum))
 {
-  pps = pps; datum = datum;
   long ii;
   *lat = (double *) MALLOC(sizeof(double) * length);
   *lon = (double *) MALLOC(sizeof(double) * length);
@@ -736,9 +696,9 @@ int asf_geocode_from_proj_file(const char *projection_file,
 {
   project_parameters_t pp;
   projection_type_t projection_type;
-  datum_type_t tmp_datum = datum;
+  //datum_type_t tmp_datum = datum;
   spheroid_type_t spheroid;
-  double sphere;
+  //double sphere;
   char *err=NULL;
 
   if (!parse_proj_args_file(projection_file, &pp, &projection_type, &datum, 
@@ -911,7 +871,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   unsigned long out_of_range_negative = 0;
   unsigned long out_of_range_positive = 0;
   overlap_method_t overlap=OVERLAY_OVERLAP;
-  double pixel_size_x, pixel_size_y;
+  double pixel_size_x = 0.0, pixel_size_y = 0.0;
   int input_is_latlon = FALSE;
 
   if (pixel_size == 0.0)
@@ -1390,6 +1350,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       pixel_size_x = imd->general->x_pixel_size;
       pixel_size_y = imd->general->y_pixel_size;
     }
+    else if (pixel_size > 0) {
+      pixel_size_x = pixel_size_y = pixel_size;
+    }
 
     // If all input metadata is byte, we will store everything as bytes,
     // in order to save memory.  (But the math will use floating point.)
@@ -1404,11 +1367,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
           "turn out greater than 255 will be set to 255.\n"
           "RECOMMENDATION: Select a different resampling method for geocoding.\n");
     }
-
-    // In case of geographic information that is provided by lat/lon bands,
-    // the boundary needs to be extracted from the location block
-    if (imd->latlon)
-      location_minmax(imd->location, &min_y, &max_y, &min_x, &max_x);
 
     // done with this image's metadata
     meta_free(imd);
@@ -1692,8 +1650,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   }
 
   // NOTE: If we ever allow the user to provide a spheroid
-  // selection on the command line (asf_convert, asf_geocode)
-  // or via the GUI (asf_convert_gui) then this will need
+  // selection on the command line (asf_mapready, asf_geocode)
+  // or via the GUI (mapready) then this will need
   // to change, but for now, associate a spheroid with
   // the datum based on standard use.
 
@@ -1810,20 +1768,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         height_correction = 400;
     }
 
-    /* Confused more than it helped. RG
-
-    // Issue a warning when the chosen pixel size is smaller than the
-    // input pixel size.
-    if ( MAX(imd->general->x_pixel_size,
-          imd->general->y_pixel_size) > pixel_size )
-    {
-        asfPrintWarning
-        ("Requested pixel size %f is smaller than the input image resolution "
-        "(%0.1f meters).\n", pixel_size,
-        MAX (imd->general->x_pixel_size, imd->general->y_pixel_size));
-    }
-    */
-
     // We will call "resample" on the input data if the geocoding
     // will significantly downsample.  This is because asf_geocode will
     // (with bilinear) use just 4 input pixels, which will throw away a
@@ -1877,8 +1821,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // The pixel size requested by the user better not oversample by
     // the factor of 2.  Specifying --force will skip this check
     // Only apply for metric projections (no geographic)
-    int input_is_latlon = imd->projection &&
-                          imd->projection->type == LAT_LONG_PSEUDO_PROJECTION;
     int output_is_latlon = projection_type == LAT_LONG_PSEUDO_PROJECTION;
     if (!input_is_latlon && !output_is_latlon) {
       if (!force_flag &&
@@ -1923,112 +1865,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
           &unproject_input, NULL);
     }
 
-    if (imd->latlon) {
-      // This geocoding method does not require establishing a mapping function.
-      // It is rather a look up of values for a given lat/lon location.
-      int ii, kk, nsIn, nlIn, nsOut, nlOut, oix, oiy, nLine, nSample;
-      int minSample, maxSample, minLine, maxLine;
-      float inc, *inValues, *outValues, *lines, *samples, fValue;
-      float diff, minDiff;
-      double lat, lon, yLine, xSample;
-
-      nsIn = imd->general->sample_count;
-      nsOut = omd->general->sample_count;
-      nlOut = omd->general->line_count;
-      inc = omd->general->x_pixel_size;
-      location_minmax(omd->location, &min_y, &max_y, &min_x, &max_x);
-      /*
-      min_y = omd->location->lat_start_near_range;
-      min_x = omd->location->lon_start_near_range;	    
-      */
-      lines = (float *) MALLOC(sizeof(float)*nsOut*nlOut);
-      samples = (float *) MALLOC(sizeof(float)*nsOut*nlOut);
-      asfPrintStatus("Establishing mapping scheme ...\n");
-      for (oiy=0; oiy<nlOut; oiy++) {
-
-	lat = min_y - oiy*inc;
-	lon = min_x;
-	meta_get_lineSamp(imd, lat, lon, 0.0, &yLine, &xSample);
-	nLine = (int)(yLine);
-	nSample = (int)(xSample);
-
-	for (oix=0; oix<nsOut; oix++) {
-	  lon = min_x + oix*inc;	  
-	  minLine = nLine - 4;
-	  maxLine = nLine + 4;
-	  minSample = nSample - 4;
-	  maxSample = nSample + 4;
-	  if (minLine < 0)
-	    minLine = 0;
-	  if (maxLine >= nlOut)
-	    maxLine = nlOut - 1;
-	  if (minSample < 0)
-	    minSample = 0;
-	  if (maxSample >= nsIn)
-	    maxSample = nsIn - 1;
-	  minDiff=9999999;
-	  for (ii=minLine; ii<maxLine; ii++) {
-	    for (kk=minSample; kk<maxSample; kk++) {
-	      diff = fabs(imd->latlon->lat[ii*nsIn + kk] - lat) +
-		fabs(imd->latlon->lon[ii*nsIn + kk] - lon);
-	      if (diff < minDiff) {
-		minDiff = diff;
-		nLine = ii;
-		nSample = kk;
-	      }
-	    }
-	  }
-	  lines[oiy*nsOut+oix] = nLine;
-	  samples[oiy*nsOut+oix] = nSample;
-	}
-	/*
-	for (oix=0; oix<nsOut; oix++) {
-	  lat = min_y - oiy*inc;
-	  lon = min_x + oix*inc;
-	  meta_get_lineSamp(imd, lat, lon, 0.0, &yLine, &xSample);
-	  lines[oiy*nsOut+oix] = (int)(yLine + 0.5);
-	  samples[oiy*nsOut+oix] = (int)(xSample + 0.5);
-	}
-	*/
-	asfPercentMeter((double)oiy/nlOut);
-      }
-      asfPrintStatus("\rProcessed 100%\n");
-
-      for (kk=0; kk<imd->general->band_count; kk++) {
-	if (multiband || kk == band_num) {
-	  if (n_bands > 1) {
-
-	    FILE *fpIn = FOPEN(input_image, "rb");
-	    nsIn = imd->general->sample_count;
-	    nlIn = imd->general->line_count;
-	    inValues = (float *) MALLOC(sizeof(float)*nsIn*nlIn);
-	    get_band_float_lines(fpIn, imd, kk, 0, nlIn, inValues);
-	    FCLOSE(fpIn);
-
-	    FILE *fpOut = FOPEN(output_image, kk>0 ? "ab" : "wb");
-	    outValues = (float *) MALLOC(sizeof(float)*nsOut);
-	    asfPrintStatus("Geocoding band: %s\n", band_name[kk]);
-	    for (oiy=0; oiy<nlOut; oiy++) {
-	      for (oix=0; oix<nsOut; oix++) {
-		nLine = lines[oiy*nsOut+oix];
-		nSample = samples[oiy*nsOut+oix];
-		fValue = inValues[nLine*nsIn + nSample];
-		outValues[oix] = fValue;
-	      }
-	      put_band_float_line(fpOut, omd, kk, oiy, outValues);
-	      asfLineMeter(oiy, nlOut);
-	    }
-	    FCLOSE(fpOut);
-	    
-	    FREE(inValues);
-	    FREE(outValues);
-	  }
-	}
-      }
-      FREE(lines);
-      FREE(samples);
-    }
-    else {
       // This would be the place to do the resampling of geocoded images
       // that happen to be in the same map projection as the mosaic but don't
       // have the same pixel size.
@@ -2819,7 +2655,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       
       // reset average_height (avoid double correction for scansar 400m)
       average_height += height_correction;
-    } //else regular geocoding
   }
   if (band_name) {
     int kk;
@@ -2858,7 +2693,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     }
   }
 
-  if (resample_method == BICUBIC &&
+  if (resample_method == RESAMPLE_BICUBIC &&
       omd->general->data_type == ASF_BYTE &&
       (out_of_range_negative || out_of_range_positive))
   {

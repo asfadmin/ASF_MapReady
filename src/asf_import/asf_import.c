@@ -23,7 +23,7 @@ following defines.
 "              [-interferogam <file>] [-coherence <file>] [-slave <file>]\n"\
 "              [-baseline <file>] [-cpx_gamma <file>] [-line <start line subset>]\n"\
 "              [-sample <start sample subset>] [-width <subset width>]\n"\
-"              [-height <subset height>] [-uavsar <type>]\n"\ 
+"              [-height <subset height>] [-uavsar <type>]\n"\
 "              [-subset <latUL> <lonUL> <latLR> <lonLR>] [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
 
@@ -449,7 +449,7 @@ int main(int argc, char *argv[])
     char *uavsar_type=NULL;
     char *prcPath=NULL;
     char format_type_str[256]="";
-    input_format_t format_type;
+    input_format_t format_type=UNKNOWN_INPUT_FORMAT;
     char band_id[256]="";
     char data_type[256]="";
     char image_data_type[256]="";
@@ -917,7 +917,10 @@ int main(int argc, char *argv[])
       format_type = POLSARPRO;
     else if (strncmp_case(format_type_str, "GAMMA", 5) == 0)
       format_type = GAMMA;
+    // Old type is "roipac" new type is "roi_pac" what could be simpler!!
     else if (strncmp_case(format_type_str, "ROIPAC", 6) == 0)
+      format_type = ROIPAC_DEPRECATED;
+    else if (strncmp_case(format_type_str, "ROI_PAC", 7) == 0)
       format_type = ROIPAC;
     else if (strncmp_case(format_type_str, "SMAP", 4) == 0)
       format_type = SMAP;

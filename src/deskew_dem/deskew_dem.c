@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 
 	int fill_value=LEAVE_MASK;
 	deskew_dem(inDemName, NULL, outName, inSarName, doRadiometric,
-                   NULL, NULL, do_interp, fill_value, 0);
+                   NULL, NULL, do_interp, fill_value, 0, 0);
 	exit(EXIT_SUCCESS);
 }
 

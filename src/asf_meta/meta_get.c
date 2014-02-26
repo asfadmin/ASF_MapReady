@@ -190,7 +190,7 @@ double meta_get_dop(meta_parameters *meta,double yLine, double xSample)
     radarsat2_doppler_params *r2 = meta->doppler->r2;
     double slant_time = 
       r2->time_first_sample + xSample * meta->sar->range_time_per_pixel;
-    for (ii=0; ii<r2->doppler_count; ii)
+    for (ii=0; ii<r2->doppler_count; ++ii)
       doppler += 
 	r2->centroid[ii] * pow((slant_time - r2->ref_time_centroid), ii);
 

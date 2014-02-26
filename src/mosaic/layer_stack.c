@@ -191,7 +191,7 @@ static void get_inner_extents(char *file,
   int startX = sample_count - 1;
   int endX = 0;
   int startY = -99;
-  int endY = -99;
+  //int endY = -99;
   int startLine = -99;
   int startSample = -99;
   int endLine = 0;
@@ -229,7 +229,7 @@ static void get_inner_extents(char *file,
         endSample = kk;
       }
       startSample = kk;
-      endY = ii;
+      //endY = ii;
     }
   }
   FCLOSE(fp);

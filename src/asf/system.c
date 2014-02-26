@@ -34,7 +34,7 @@ asfSystem(const char *format, ...)
   va_start(ap, format);
   vsnprintf(cmd, 4095, format, ap);
 
-  asfSystem_imp(TRUE, cmd);
+  return asfSystem_imp(TRUE, cmd);
 }
 
 static int

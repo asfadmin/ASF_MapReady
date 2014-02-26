@@ -529,7 +529,7 @@ static void interpolate_prc_vectors(doris_prc_polar *stVec, double time,
     kx = start + (int)(x + 0.5) - 1;
     doris_prc_polar polarVec;
     geocentric_latlon(stVec[kx], &polarVec);
-    polar2cartesian(polarVec, &outVec);
+    polar2cartesian(polarVec, outVec);
   }
   else {
     doris_prc_cartesian cartVec;
@@ -583,7 +583,7 @@ static char *find_in_share(const char * filename)
     }
 }
 
-static char *get_arclist_from_settings(char *sensor)
+static char *get_arclist_from_settings(const char *sensor)
 {
   if (strcmp_case(sensor, "ERS-1") == 0 ||
       strcmp_case(sensor, "ERS-2") == 0)
@@ -614,7 +614,7 @@ static char *get_arclist_from_settings(char *sensor)
                       sensor);
      }
      FREE(settings_file);
-     return arclist;     
+     return STRDUP(arclist);     
    }
    else {
      asfPrintError("Could not open mapready_settings.cfg");
@@ -714,7 +714,7 @@ static char *findInArcList(char *acquisition_time, char *arclist)
   return odr;
 }
 
-int update_state_vectors(char *outBaseName, char *file)
+int update_state_vectors(char *outBaseName, const char *file_in)
 {
   int ret = FALSE;
   char *odrFile = NULL;
@@ -743,10 +743,15 @@ int update_state_vectors(char *outBaseName, char *file)
   asfPrintStatus("\nChecking for %s precision state vectors...\n",
                  sensor);
 
-  if (!file || strlen(file) == 0) {
+  char *file=NULL;
+  if (file_in && strlen(file_in)>0)
+    file = STRDUP(file_in);
+  else {
     file = get_arclist_from_settings(sensor);    
   }
+
   if (!file || strlen(file) == 0) {
+    FREE(file);
     return ret;
   }
 
@@ -878,5 +883,6 @@ int update_state_vectors(char *outBaseName, char *file)
 		   " vectors\nOrbit information not available in orbit file "
 		   "(%s).\n\n", odrFile);
 
+  FREE(file);
   return ret;
 }

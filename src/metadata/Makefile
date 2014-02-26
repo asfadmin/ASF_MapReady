@@ -16,49 +16,22 @@ LIBS  = \
 	$(ZLIB_LIBS) \
 	-lm
 
-OBJLIB  = prn_facdr.o \
-	prn_raddr.o \
-	prn_ifiledr.o \
-	prn_mpdr.o \
-	prn_dssr.o \
-	prn_dhr.o \
-	prn_ppdr.o \
-	prn_atdr.o \
-	prn_rsr.o \
-	prn_dqsr.o \
-	prn_fdr.o \
-	prn_ampr.o \
-	prn_esa_facdr.o \
-	prn_jaxa_facdr.o \
-	prn_ppr.o \
-	prn_rcdr.o \
-	prn_shr.o \
-	prn_ardr.o \
-	prn_rsi_raddr.o \
-	prn_tfdr.o \
-	help.o \
-	metadata.o
+CFLAGS += -Werror
 
-all: lib exe clean
-
-lib: ${OBJLIB}
-	ar r libasf_metadata.a $(OBJLIB)
-	$(RANLIB) libasf_metadata.a
-	mv libasf_metadata.a $(LIBDIR)
-	cp metadisplay.h $(ASF_INCLUDE_DIR)
+all: exe clean
 
 exe: metadata dumpCeosRecords dumpLineHeader
 
-metadata: metadata_main.c lib
-	$(CC) $(CFLAGS) -o metadata metadata_main.c $(LIBDIR)/libasf_metadata.a $(LIBS)
+metadata: metadata_main.c help.c
+	$(CC) $(CFLAGS) -o metadata metadata_main.c help.c $(LIBDIR)/libasf_metadata.a $(LIBS)
 	mv  metadata$(BIN_POSTFIX) $(BINDIR)
 	cp metadata.man ../../man/cat1/metadata.1 
 
-dumpCeosRecords: dumpCeosRecords.c lib
+dumpCeosRecords: dumpCeosRecords.c
 	$(CC) $(CFLAGS) -o dumpCeosRecords dumpCeosRecords.c $(LIBDIR)/libasf_metadata.a $(LIBS)
 	mv dumpCeosRecords$(BIN_POSTFIX) $(BINDIR)
 
-dumpLineHeader: dumpLineHeader.c lib
+dumpLineHeader: dumpLineHeader.c
 	$(CC) $(CFLAGS) -o dumpLineHeader dumpLineHeader.c $(LIBDIR)/libasf_metadata.a $(LIBS)
 	mv dumpLineHeader$(BIN_POSTFIX) $(BINDIR)
 	mkdir -p $(SHAREDIR)/metadata

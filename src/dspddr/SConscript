@@ -28,8 +28,5 @@ localenv.AppendUnique(LIBPATH = [
 
 bins = localenv.Program("dspddr", Glob("*.c"))
 
-globalenv.Install(globalenv["inst_dirs"]["bins"], bins)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
 
-# run the unit test, and set its dependencies
-test_result = localenv.UnitTest("test.semaphore", None)
-localenv.Depends(test_result, [bins])

@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS += \
+CFLAGS += -Werror \
 	$(TIFF_CFLAGS) \
 	$(GEOTIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
@@ -33,6 +33,7 @@ OBJS = \
 	datapool.o \
 	high_altitude_photography.o \
 	smap.o \
+	granule.o \
 	custom.o \
 	utils.o \
 	config.o

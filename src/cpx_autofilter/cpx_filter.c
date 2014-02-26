@@ -156,6 +156,11 @@ int main(int argc,char **argv)
      case INTEGER32: inMeta->general->data_type=COMPLEX_INTEGER32; break;
      case REAL32:    inMeta->general->data_type=COMPLEX_REAL32;    break;
      case REAL64:    inMeta->general->data_type=COMPLEX_REAL64;    break;
+     case COMPLEX_BYTE:
+     case COMPLEX_INTEGER16:
+     case COMPLEX_INTEGER32:
+     case COMPLEX_REAL32:
+     case COMPLEX_REAL64: break;
     }
     meta_write (inMeta, inName);
   }

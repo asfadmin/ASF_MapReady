@@ -11,38 +11,6 @@
 
 #include "seasat_slant_shift.h"
 
-typedef struct {
-    int year;/*Gregorian year (e.g. 1998)*/
-    int jd;/*Julian day of year (e.g. 33, for February 2nd.)*/
-} julian_date;
-
-typedef struct {
-    int year;/*Gregorian year (e.g. 1998)*/
-    int month;/*1-based month of year (e.g. 3 for March).*/
-    int day;/*1-based day of month.*/
-} ymd_date;
-
-typedef struct {
-    int hour;/*Military-time hour of day (e.g. 00 for midnight hour.)*/
-    int min;/*Minute of hour, from 0 to 59*/
-    double sec;/*Second of minute, from 0.000... to 59.999...*/
-} hms_time;
-
-/*********************************************
-Calender/Date Conversion utilities:*/
-/*Get number of days in given Gregorian Year.*/
-int date_getDaysInYear(int year);
-
-/*Get month/day given year and julian day of year; vice versa.
- ------------------------------------------------------------*/
-void date_jd2ymd(julian_date *in,ymd_date *out);
-void date_ymd2jd(ymd_date *in,julian_date *out);
-
-/*Convert hour/minute/second to seconds in day; vice versa.
- ---------------------------------------------------------*/
-double date_hms2sec(hms_time *in);
-void date_sec2hms(double sec,hms_time *out);
-
 
 
 

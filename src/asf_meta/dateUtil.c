@@ -3,6 +3,7 @@
 formats.
 */
 #include "asf.h"
+#include "asf_meta.h"
 #include "dateUtil.h"
 #include <time.h>
 #include <assert.h>
@@ -275,7 +276,7 @@ void parse_refTime(const char *refTime, julian_date *julDay, hms_time *time)
      {
         tmpStr[0] = refTime[cnt++]; tmpStr[1] = refTime[cnt++];
         tmpStr[2] = refTime[cnt++]; tmpStr[3] = '\n';
-        time->sec = (atof(tmpStr)/1000.0);
+        time->sec += (atof(tmpStr)/1000.0);
      }
 
  }
@@ -755,14 +756,17 @@ instr="DD-MMM-YYYY, hh:mm:ss"
 index  000000000011111111112
 index  012345678901234567890
 */
-void parse_date(const char *inStr,ymd_date *date,hms_time *time)
+void parse_date(const char *s,ymd_date *date,hms_time *time)
 {
+  char inStr[256];
+  if (strlen(s)>255) asfPrintError("parse_date: string too long: %s\n", s);
+  strcpy(inStr, s);
   char mon[][5]= 
     {"","JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
   char buf[100];
   int i,sec;
   if (strcmp(inStr, "???") == 0)
-    sprintf(inStr, "01-Jan-1900, 00:00:00");
+    strcpy(inStr, "01-Jan-1900, 00:00:00");
 #define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
   subStr(7,4,&date->year);
   for (i=0; i<13; i++) {
@@ -839,12 +843,27 @@ char *fgdc_date(void)
   strftime(t_stamp, 10, "%Y%m%d", localtime(&t));
 
   return t_stamp;  
-} 
+}
+
+char *iso_date(void)
+{
+  time_t t;
+  char *t_stamp;
+
+  t_stamp = (char*) MALLOC(30*sizeof(char));
+  t = time(NULL);
+  strftime(t_stamp, 30, "%Y-%m-%dT%H:%M:%S.000000Z", gmtime(&t));
+
+  return t_stamp;  
+}
 
 // MMM-DD-YYYY hh:mm:ss
 // 01234567890123456789
-void ursa2date(const char *inStr, ymd_date *date, hms_time *time)
+void ursa2date(const char *s, ymd_date *date, hms_time *time)
 {
+  char inStr[256];
+  if (strlen(s)>255) asfPrintError("ursa2date: string too long: %s\n", s);
+  strcpy(inStr, s);
   char mon[][5]= 
     {"","JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
   char buf[100];

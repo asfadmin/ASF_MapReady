@@ -58,7 +58,7 @@ void roi_put3_dop(FILE *roi_file,double fd, double fdd, double fddd,char *commen
 /* Global variables filled in read_roi_infile and used in main */
 char 	datfilename[256];	// Original dat file
 char *basefile; 
-int node;
+int orbit, node;
 double 	dop1,dop2,dop3;		// doppler coefficients
 double 	prf;	      		// pulse repitition frequency
 
@@ -71,7 +71,7 @@ main(int argc, char *argv[])
   char tmpfile[256], productfile[256], roifile[256];
   int start_line;
   char cmd[256];
-  char metafile[256];
+  //char metafile[256];
   int err=0;
   int val;
   int c;
@@ -96,16 +96,19 @@ main(int argc, char *argv[])
   strcpy(productfile,argv[optind]);
   strcpy(roifile,productfile);
   strcat(roifile,".roi.in");
-  strcpy(metafile,productfile);
-  strcat(metafile,".meta");
+  //strcpy(metafile,productfile);
+  //strcat(metafile,".meta");
 
   printf("================================================================================\n");
   printf("%s: RECREATING SEASAT PRODUCT %s\n",argv[0],productfile);
   printf("================================================================================\n");
 
   /* get the node number to process */
-  meta_parameters *meta = meta_read(metafile);
-  node = meta->general->frame;
+  //meta_parameters *meta = meta_read(metafile);
+  //node = meta->general->frame;
+
+  sscanf(roifile,"SS_%d_STD_F%d.roi.in", &orbit, &node);
+  printf("Found orbit %d and node %d\n", orbit, node);
 
   /* change the doppler in the ROI .in file */
   fix_roi_infile(roifile);

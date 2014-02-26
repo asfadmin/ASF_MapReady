@@ -9,6 +9,24 @@
 
 #include "asf.h"
 
+void removeImgAndMeta(const char *base)
+{
+    char * meta_file = appendExt(base, ".meta");
+    char * img_file = appendExt(base, ".img");
+    char * hdr_file = appendExt(base, ".hdr");
+
+    if (fileExists(meta_file))
+      remove_file(meta_file);
+    if (fileExists(img_file))
+      remove_file(img_file);
+    if (fileExists(hdr_file))
+      remove_file(hdr_file);
+
+    FREE(meta_file);
+    FREE(img_file);
+    FREE(hdr_file);
+}
+
 void copyImgAndMeta(const char *src, const char *dst)
 {
     char * src_meta_file = appendExt(src, ".meta");
@@ -146,6 +164,7 @@ char *findExt(const char *name)
         strcmp_case(ext, ".NUL") == 0       ||
         strcmp_case(ext, ".VOL") == 0       ||
         strcmp_case(ext, ".CSV") == 0       ||
+        strcmp_case(ext, ".LOG") == 0				||
         strcmp_case(ext, ".BRS") == 0       ||
         strcmp_case(ext, ".AMP") == 0       || // roipac
         strcmp_case(ext, ".COR") == 0       || // roipac

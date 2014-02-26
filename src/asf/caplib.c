@@ -371,6 +371,20 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
     return ret;
 }
 
+size_t FREADZ(void *ptr, size_t size, size_t nitems, FILE *stream)
+{
+  int ret = FREAD_CHECKED(ptr,size,nitems,stream,TRUE);
+  if (ret < nitems) {
+    char *c_ptr = (char*)ptr;
+    int ii;
+
+    for (ii=ret*size; ii<nitems*size; ++ii) {
+      c_ptr[ii] = 0;
+    }
+  }
+  return ret;
+}
+
 size_t FREAD_CHECKED(void *ptr, size_t size, size_t nitems, FILE *stream, int short_ok)
 {
     size_t ret = 0;
@@ -383,9 +397,6 @@ size_t FREAD_CHECKED(void *ptr, size_t size, size_t nitems, FILE *stream, int sh
     }
     if (size < 1) {
         asfPrintError("Programmer error: Invalid data size (%d) passed to FREAD_CHECKED\n", size);
-    }
-    if (nitems < 0) {
-        asfPrintError("Programmer error: Invalid number of items (%d) to FREAD_CHECKED\n", nitems);
     }
 
     ret = fread(ptr, size, nitems, stream);

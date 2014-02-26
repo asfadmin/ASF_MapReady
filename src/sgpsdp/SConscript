@@ -1,6 +1,10 @@
 Import("globalenv")
 localenv = globalenv.Clone()
 
+localenv.AppendUnique(LIBS = [
+    "m",
+])
+
 libs = localenv.SharedLibrary("libasf_sgpsdp", [
         "math.c",
         "obs.c",
@@ -10,8 +14,5 @@ libs = localenv.SharedLibrary("libasf_sgpsdp", [
         "sgpsdp.c",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
 
-# run the unit test, and set its dependencies
-test_result = localenv.UnitTest("test.semaphore", None)
-localenv.Depends(test_result, [libs])

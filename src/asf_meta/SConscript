@@ -9,6 +9,14 @@ localenv.AppendUnique(CPPPATH = [
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+
+localenv.AppendUnique(LIBS = [
+    "m",
+    "proj",
+    "asf",
+    "asf_proj",
+])
 
 localenv.AppendUnique(YACCFLAGS = ["-y", "-d", "-p meta_yy"])
 localenv.AppendUnique(LEXFLAGS = ["-Pmeta_yy", "-s", "-t"])
@@ -141,8 +149,4 @@ sources += localenv.CFile("metadata_lexer.c", "metadata_lexer.l")
 
 libs = localenv.SharedLibrary("asf_meta", sources)
 
-globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
-
-# run the unit test, and set its dependencies
-test_result = localenv.UnitTest("test.semaphore", None)
-localenv.Depends(test_result, [libs])
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)

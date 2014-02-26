@@ -70,4 +70,4 @@ typedef struct {
   double z;
 } doris_prc_cartesian;
 
-int update_state_vectors(char *outBaseName, char *odrFile);
+int update_state_vectors(char *outBaseName, const char *odrFile);
