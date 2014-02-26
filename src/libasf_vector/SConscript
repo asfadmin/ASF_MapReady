@@ -8,11 +8,11 @@ localenv.AppendUnique(CPPPATH = [
         "#src/libasf_proj/",
         "#src/libasf_import/",
         "#src/libasf_raster/",
+        "/usr/include/libshp",
         ])
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
-localenv.ParseConfig("pkg-config --cflags --libs shapelib")
 
 localenv.AppendUnique(LIBS = [
     "m",
@@ -21,6 +21,7 @@ localenv.AppendUnique(LIBS = [
     "asf_meta",
     "asf_proj",
     "asf_import",
+    "shp",
 ])
 
 libs = localenv.SharedLibrary("libasf_vector", [
@@ -47,5 +48,10 @@ libs = localenv.SharedLibrary("libasf_vector", [
         "rgps.c",
         ])
 
+shares = localenv.File([
+    "header.lst",
+])
+
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
 

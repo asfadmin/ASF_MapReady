@@ -11,12 +11,12 @@ LIBS  = \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(XML_LIBS) \
-	-lm
+	-lm -lz
 
 OBJS = \
 	remap_main.o
 
-CFLAGS += -Wall -Werror
+CFLAGS += -Wall $(W_ERROR)
 
 all: exe clean
 

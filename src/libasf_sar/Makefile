@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := -Wall -Werror $(CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS)
+CFLAGS := -Wall $(W_ERROR) $(CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS)
 
 OBJS = \
 	gr2sr.o \

@@ -72,6 +72,7 @@ MAPREADY_MODULES = \
 	src/byteswap \
 	src/write_hdf5_xml \
 	src/stats \
+	src/asf2geobrowse \
 	src/populate_meta_field \
 	src/make_overlay \
 	src/asf_kml_overlay \

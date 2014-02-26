@@ -2,11 +2,11 @@ Summary: ASF Tools for processing SAR data
 Name: %{package_name}
 Version: %{asfversion}
 Release: %{buildnumber}
-License: BSD
-Group: Applications/Scientific
-URL: http://www.asf.alaska.edu
+License: GPLv3
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Prefix: /usr/local
+
+BuildRequires: scons
 
 %description
 The ASF MapReady Remote Sensing Toolkit is a set of tools for
@@ -17,24 +17,12 @@ JPEG and GeoTIFF.
 
 The ASF MapReady Remote Sensing Toolkit now supports the
 processing of ALOS data.
-%prep
-echo Executing: %%prep
- 
+
 %build
-echo Executing: %%build
-./configure --prefix=$RPM_BUILD_ROOT/usr/local no-werror
-make mapready
+scons --pkg_version=%{version}-%{release}
 
 %install
-echo Executing: %%install
-rm -rf $RPM_BUILD_ROOT
-make install
-rm -rf $RPM_BUILD_ROOT/usr/local/lib
-
-%clean
-rm -rf $RPM_BUILD_ROOT
+scons install --prefix=%{buildroot}%{prefix} --header_prefix=%{prefix} --pkg_version=%{version}-%{release}
 
 %files
-%defattr(666,root,root,777)
-%attr(-,root,root) /usr/local/bin
-/usr/local/share
+%{prefix}

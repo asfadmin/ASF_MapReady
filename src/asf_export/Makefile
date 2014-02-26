@@ -26,7 +26,7 @@ SOURCES := asf_export.c
 #
 ###############################################################################
 
-CFLAGS += -Werror \
+CFLAGS += $(W_ERROR) \
 	$(GEOTIFF_CFLAGS) \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \

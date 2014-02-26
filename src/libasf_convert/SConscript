@@ -38,5 +38,10 @@ localenv.AppendUnique(LIBS = [
 
 libs = localenv.SharedLibrary("libasf_convert", Glob("*.c"))
 
+shares = localenv.File([
+    "mapready_settings.cfg",
+])
+
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
 

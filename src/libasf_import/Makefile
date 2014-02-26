@@ -19,7 +19,7 @@ LIBS  = \
 	$(GSL_LIBS) \
 	-lz
 
-CFLAGS += -Werror \
+CFLAGS += $(W_ERROR) \
 	$(GEOTIFF_CFLAGS) \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
