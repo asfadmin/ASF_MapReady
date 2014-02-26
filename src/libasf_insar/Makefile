@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := -Wall $(CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
+CFLAGS := -Wall $(CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) $(JPEG_CFLAGS)
 
 OBJS = \
 	functions.o \

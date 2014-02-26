@@ -1,6 +1,9 @@
 #ifndef _ASF_VERSION_H_
 #define _ASF_VERSION_H_
 
+#ifdef MAKE_VER
+#define MAPREADY_VERSION_STRING "MAKE-DEV"
+#endif
 
 // SAR Training Processor
 #define STP_VERSION_STRING "1.2.0-dev"

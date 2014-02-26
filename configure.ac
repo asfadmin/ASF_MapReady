@@ -431,6 +431,7 @@ RANLIB    =   $ranlib
 OPTFLAG   =   $optFlag
 C99_FLAGS =   $c99
 W_ERROR   =   $w_error
+VER       =   -DMAKE_VER
 EOF
 
 # 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
@@ -554,6 +555,7 @@ CFLAGS := \
 	$(BUILD_PKG) \
 	$(ENDIAN_FLAGS) \
 	$(INCLUDE_FLAGS) \
+	$(VER) \
 	$(CFLAGS)
 
 LDFLAGS := $(LDFLAGS) $(DEBUGLIBS) -lm
