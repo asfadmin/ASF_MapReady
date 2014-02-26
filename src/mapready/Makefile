@@ -101,6 +101,7 @@ else
 CFLAGS += $(W_ERROR) -Wall \
 	$(GSL_CFLAGS) \
 	$(JPEG_CFLAGS) \
+	$(PNG_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GTK_CFLAGS) \
 	$(XML_CFLAGS) \
