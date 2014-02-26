@@ -452,7 +452,10 @@ calc_stats_rmse_from_file_ext(const char *inFile, char *band, double mask,
     // Initialize the histogram.
     const int num_bins = 256;
     gsl_histogram *hist = gsl_histogram_alloc (num_bins);
-    gsl_histogram_set_ranges_uniform (hist, *min, *max);
+    if (meta->general->data_type == ASF_BYTE)
+      gsl_histogram_set_ranges_uniform (hist, 0, 255);
+    else
+      gsl_histogram_set_ranges_uniform (hist, *min, *max);
     *stdDev = 0.0;
 
     // pass 2 -- update histogram, calculate standard deviation
