@@ -40,6 +40,7 @@
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_endian.h"
+#include "asf_import.h"
 #include "asf_meta.h"
 #include "asf_raster.h"
 #include "asf_license.h"
@@ -71,8 +72,9 @@ typedef struct {
 	char *incidence_angle;
 	char *layover_shadow_mask;
 	char *layover_shadow_stats;
-	char *digital_elevation_model;
+	char *dem_file;
 	char *dem_metadata;
+	char *original_dem;
 	char *dem_url;
 	char *troposphere;
 	char *troposphere_url;
@@ -263,7 +265,7 @@ params_t *params_init(char *type) {
     params->unwrapped_interferogram = NULL;
     params->correlation = NULL;
     params->incidence_angle = NULL;
-    params->digital_elevation_model = NULL;
+    params->dem_file = NULL;
     params->dem_url = NULL;
     params->troposphere = NULL;
     params->troposphere_url = NULL;
@@ -279,8 +281,9 @@ params_t *params_init(char *type) {
     params->metadata = NULL;
     params->layover_shadow_mask = NULL;
     params->layover_shadow_stats = NULL;
-    params->digital_elevation_model = NULL;
+    params->dem_file = NULL;
     params->dem_metadata = NULL;
+    params->original_dem = NULL;
     params->rtc_HH_metadata = NULL;
     params->rtc_HV_metadata = NULL;
     params->rtc_VH_metadata = NULL;
@@ -330,8 +333,12 @@ void params_free(params_t *params) {
 	  FREE(params->layover_shadow_mask);
 	if (params->layover_shadow_stats)
 	  FREE(params->layover_shadow_stats);
-	if (params->digital_elevation_model)
-		FREE(params->digital_elevation_model);
+	if (params->dem_file)
+		FREE(params->dem_file);
+	if (params->dem_metadata)
+	  FREE(params->dem_metadata);
+	if (params->original_dem)
+	  FREE(params->original_dem);
 	if (params->dem_url)
 	  FREE(params->dem_url);
 	if (params->troposphere)
@@ -374,8 +381,6 @@ void params_free(params_t *params) {
 	  FREE(params->gamma_version);
 	if (params->dem_source)
 	  FREE(params->dem_source);
-	if (params->dem_metadata)
-	  FREE(params->dem_metadata);
 	FREE(params);
 }
 
@@ -444,8 +449,8 @@ void read_filenames(const char * file, params_t **params, char *type)
 				sprintf(list->incidence_angle, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "digital elevation model", 23) == 0) {
-				list->digital_elevation_model = (char *) MALLOC(sizeof(char)*n);
-				sprintf(list->digital_elevation_model, "%s", trim_spaces(value));
+				list->dem_file = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->dem_file, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "dem url", 7) == 0) {
 				list->dem_url = (char *) MALLOC(sizeof(char)*n);
@@ -495,13 +500,17 @@ void read_filenames(const char * file, params_t **params, char *type)
 				list->metadata = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->metadata, "%s", trim_spaces(value));
 			}
-			if (strncmp_case(line, "digital elevation model", 23) == 0) {
-				list->digital_elevation_model = (char *) MALLOC(sizeof(char)*n);
-				sprintf(list->digital_elevation_model, "%s", trim_spaces(value));
+			if (strncmp_case(line, "oversampled dem file", 20) == 0) {
+				list->dem_file = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->dem_file, "%s", trim_spaces(value));
 			}
-			if (strncmp_case(line, "dem metadata", 12) == 0) {
+			if (strncmp_case(line, "oversampled dem metadata", 24) == 0) {
 				list->dem_metadata = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->dem_metadata, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "original dem", 12) == 0) {
+				list->original_dem = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->original_dem, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "layover shadow mask", 19) == 0) {
 			  list->layover_shadow_mask = (char *) MALLOC(sizeof(char)*n);
@@ -621,7 +630,7 @@ int main(int argc, char **argv)
   meta_parameters *meta = NULL;
   params_t *params = NULL;
   char line[255], str[50], isoStr[50], rscFile[512], logFile[512];
-  char directory[25], filename[30], creation[30], map_projection[50];
+  char directory[25], filename[768], creation[30], map_projection[50];
   char *type = (char *) MALLOC(sizeof(char)*10);
   double seconds;
   int browse = FALSE, dem = FALSE, tropo = FALSE, stats = FALSE;
@@ -709,11 +718,11 @@ int main(int argc, char **argv)
     fprintf(fp, "    <correlation>%s</correlation>\n", params->correlation);
     fprintf(fp, "    <incidence_angle>%s</incidence_angle>\n", 
       params->incidence_angle);
-    if (params->digital_elevation_model) {
-      sprintf(file_name, "%s.img", params->digital_elevation_model);
+    if (params->dem_file) {
+      sprintf(file_name, "%s.img", params->dem_file);
       if (fileExists(file_name))
         fprintf(fp, "    <digital_elevation_model>%s</digital_elevation_model>\n",
-          params->digital_elevation_model);
+          params->dem_file);
     }
     if (params->troposphere) {
       sprintf(file_name, "%s.img", params->troposphere);
@@ -1416,13 +1425,13 @@ int main(int argc, char **argv)
     int dem_width = 0, dem_height = 0;
     double dem_start_lat = -99, dem_start_lon = -199;
     double dem_spacing_lat = -99, dem_spacing_lon = -199;
-    if (params->digital_elevation_model) {
-      sprintf(rscFile, "%s.rsc", params->digital_elevation_model);
+    if (params->dem_file) {
+      sprintf(rscFile, "%s.rsc", params->dem_file);
       if (fileExists(rscFile)) {
         dem = TRUE;
         fpFiles = FOPEN(rscFile, "rt");
         fprintf(fp, "    <digital_elevation_model>\n");
-        split_dir_and_file(params->digital_elevation_model, directory, filename);
+        split_dir_and_file(params->dem_file, directory, filename);
         fprintf(fp, "      <file type=\"string\" definition=\"file name of "
           "digital elevation model\">%s</file>\n", filename);
         fprintf(fp, "      <height_units type=\"string\" definition=\"units of "
@@ -1629,9 +1638,9 @@ int main(int argc, char **argv)
     if (meta->stats)
       stats = TRUE;
     meta_free(meta);
-    if (params->digital_elevation_model) {
+    if (params->dem_file) {
       char metaFile[512];
-      sprintf(metaFile, "%s.meta", params->digital_elevation_model);
+      sprintf(metaFile, "%s.meta", params->dem_file);
       meta = meta_read(metaFile);
       if (meta->stats)
         stats = TRUE;
@@ -1693,9 +1702,9 @@ int main(int argc, char **argv)
         fprintf(fp, "    </correlation>\n");
       }
       meta_free(meta);
-      if (params->digital_elevation_model) {
+      if (params->dem_file) {
         char metaFile[512];
-        sprintf(metaFile, "%s.meta", params->digital_elevation_model);
+        sprintf(metaFile, "%s.meta", params->dem_file);
         meta = meta_read(metaFile);
         if (meta->stats) {
           fprintf(fp, "    <digital_elevation_model>\n");
@@ -1817,8 +1826,7 @@ int main(int argc, char **argv)
     meta_free(meta);
     sprintf(processing, "SAR interferometric product, processed by ROI_PAC "
       "(%s)", version);
-    if (params->digital_elevation_model &&
-        fileExists(params->digital_elevation_model))
+    if (params->dem_file && fileExists(params->dem_file))
       strcat(processing, ", corrected for terrain");
     if (params->troposphere && fileExists(params->troposphere))
       strcat(processing, " and troposphere");
@@ -1852,29 +1860,45 @@ int main(int argc, char **argv)
     // Let's check for the files first
     if (params->metadata && !fileExists(params->metadata))
       asfPrintError("Metadata file (%s) is missing!\n", params->metadata);
-    if (params->digital_elevation_model && 
-        !fileExists(params->digital_elevation_model))
-      asfPrintError("Digital elevation model (%s) is missing!\n",
-        params->digital_elevation_model);
+    if (params->dem_file && !fileExists(params->dem_file))
+      asfPrintError("Oversampled digital elevation model (%s) is missing!\n",
+        params->dem_file);
+    if (params->original_dem && !fileExists(params->original_dem))
+      asfPrintError("Original digital elevation model (%s) is missing!\n",
+        params->original_dem);
     if (params->rtc_HH_metadata && !fileExists(params->rtc_HH_metadata))
       asfPrintError("Metadata for terrain corrected file (%s) is missing!\n",
         params->rtc_HH_metadata);
     if (params->rtc_HH_file && !fileExists(params->rtc_HH_file))
       asfPrintError("Terrain corrected file (%s) is missing!\n", 
         params->rtc_HH_file);
-
+    if ((params->browse_amplitude && fileExists(params->browse_amplitude)) ||
+      (params->kml_overlay && fileExists(params->kml_overlay)))
+        browse = TRUE;
+    if (params->browse_amplitude && !fileExists(params->browse_amplitude))
+      asfPrintError("Browse image file (%s) is missing!\n", 
+        params->browse_amplitude);
+    if (params->kml_overlay && !fileExists(params->kml_overlay))
+      asfPrintError("KML overlay file (%s) is missing!\n", params->kml_overlay);
+    
     // Fill in the data section
     fprintf(fp, "  <data>\n");
     if (params->rtc_HH_file)
       fprintf(fp, "    <terrain_corrected_HH>%s</terrain_corrected_HH>\n",
         params->rtc_HH_file);
+    if (params->rtc_HV_file)
+      fprintf(fp, "    <terrain_corrected_HV>%s</terrain_corrected_HV>\n",
+        params->rtc_HV_file);
+    if (params->rtc_VH_file)
+      fprintf(fp, "    <terrain_corrected_VH>%s</terrain_corrected_VH>\n",
+        params->rtc_VH_file);
+    if (params->rtc_VV_file)
+      fprintf(fp, "    <terrain_corrected_VV>%s</terrain_corrected_VV>\n",
+        params->rtc_VV_file);
     fprintf(fp, "    <digital_elevation_model>%s</digital_elevation_model>\n",
-      params->digital_elevation_model);
+      params->original_dem);
     fprintf(fp, "    <layover_shadow_mask>%s</layover_shadow_mask>\n",
       params->layover_shadow_mask);
-    fprintf(fp, "    <browse_image>%s</browse_image>\n", 
-      params->browse_amplitude);
-    fprintf(fp, "    <kml_overlay>%s</kml_overlay>\n", params->kml_overlay);
     fprintf(fp, "  </data>\n");
 
     // Add metadata
@@ -1886,8 +1910,10 @@ int main(int argc, char **argv)
     fprintf(fp, "  <metadata>\n");
     
     // Original input image
+    char beam_mode[5];
     fprintf(fp, "    <input_image>\n");
     meta = meta_read(params->metadata);
+    snprintf(beam_mode, 4, "%s", meta->general->mode);
     meta2iso_date(meta, begin, center, end);
     sprintf(original_file, "%s", meta->general->basename);
     fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
@@ -1970,11 +1996,25 @@ int main(int argc, char **argv)
     fprintf(fp, "    </input_image>\n");
     
     // Terrain corrected result
+    char hh[64]="", hv[64]="", vh[64]="", vv[64]="";
     split_dir_and_file(params->rtc_HH_file, directory, filename);
+    sprintf(hh, "%s", filename);
+    if (strcmp_case(beam_mode, "FBD") == 0 || 
+        strcmp_case(beam_mode, "PLR") == 0) {
+      split_dir_and_file(params->rtc_HV_file, directory, filename);
+      sprintf(hv, ",%s", filename);
+    }
+    if (strcmp_case(beam_mode, "PLR") == 0) {
+      split_dir_and_file(params->rtc_VH_file, directory, filename);
+      sprintf(vh, ",%s", filename);
+      split_dir_and_file(params->rtc_VV_file, directory, filename);
+      sprintf(vv, ",%s", filename);
+    }
+    sprintf(filename, "%s%s%s%s", hh, hv, vh, vv);
     fprintf(fp, "    <terrain_corrected_image>\n");
     meta = meta_read(params->rtc_HH_metadata);
-    fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
-      "terrain corrected HH image\">%s</file>\n", filename);
+    fprintf(fp, "      <file type=\"string\" definition=\"file name(s) of the "
+      "terrain corrected image\">%s</file>\n", filename);
     fprintf(fp, "      <width type=\"int\" definition=\"width of the image\">"
       "%d</width>\n", meta->general->sample_count);
     fprintf(fp, "      <height type=\"int\" definition=\"height of the image\">"
@@ -1983,19 +2023,25 @@ int main(int argc, char **argv)
       "direction\">%g</x_spacing>\n", meta->general->x_pixel_size);
     fprintf(fp, "      <y_spacing type=\"double\" definition=\"spacing in y "
       "direction\">%g</y_spacing>\n", meta->general->y_pixel_size);
-    meta_free(meta);
     fprintf(fp, "      <software type=\"string\" definition=\"version of the "
       "software used for terrain correction\">%s</software>\n", 
       params->gamma_version);
+    fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection information as well known text\">%s</projection_string>\n", 
+      meta2esri_proj(meta, NULL));
     fprintf(fp, "    </terrain_corrected_image>\n");
+    meta_free(meta);
 
     // Digital elevation model
-    split_dir_and_file(params->digital_elevation_model, directory, filename);
-    fprintf(fp, "    <digital_elevation_model>\n");
+    split_dir_and_file(params->original_dem, directory, filename);
+    int ii, ignore[MAX_BANDS];
+    for (ii=0; ii<MAX_BANDS; ii++)
+      ignore[ii] = 0;
     meta_parameters *dem_meta = 
-      gamma_dem2meta(params->digital_elevation_model, params->dem_metadata);
+      read_generic_geotiff_metadata(params->original_dem, ignore, "DEM");
+    fprintf(fp, "    <digital_elevation_model>\n");
     fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
-      "digital elevation model\">%s</file>\n", filename);
+      "digital elevation model\">%s</file>\n", filename);    
     fprintf(fp, "      <width type=\"int\" definition=\"width of the image\">"
       "%d</width>\n", dem_meta->general->sample_count);
     fprintf(fp, "      <height type=\"int\" definition=\"height of the image\">"
@@ -2006,10 +2052,43 @@ int main(int argc, char **argv)
       "direction\">%g</y_spacing>\n", dem_meta->general->y_pixel_size);
     fprintf(fp, "      <source type=\"string\" definition=\"source where the "
       "digital elevation model came from\">%s</source>\n", params->dem_source);
-    fprintf(fp, "      <projection_string>%s</projection_string>\n",
+    fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection information as well known text\">%s</projection_string>\n", 
       meta2esri_proj(dem_meta, NULL));
     fprintf(fp, "    </digital_elevation_model>\n");
+    meta_free(dem_meta);
+
+    // Layover shadow mask
+    split_dir_and_file(params->layover_shadow_mask, directory, filename);
+    meta = meta_read(params->rtc_HH_metadata);
+    fprintf(fp, "    <layover_shadow_mask>\n");
+    fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
+      "layover shadow mask\">%s</file>\n", filename);
+    fprintf(fp, "      <width type=\"int\" definition=\"width of the image\">"
+      "%d</width>\n", meta->general->sample_count);
+    fprintf(fp, "      <height type=\"int\" definition=\"height of the image\">"
+      "%d</height>\n", meta->general->line_count);
+    fprintf(fp, "      <x_spacing type=\"double\" definition=\"spacing in x "
+      "direction\">%g</x_spacing>\n", meta->general->x_pixel_size);
+    fprintf(fp, "      <y_spacing type=\"double\" definition=\"spacing in y "
+      "direction\">%g</y_spacing>\n", meta->general->y_pixel_size);
+    fprintf(fp, "    </layover_shadow_mask>\n");
+    meta_free(meta);
     fprintf(fp, "  </metadata>\n");
+
+    // Browse image information
+    if (browse) {
+      fprintf(fp, "  <browse>\n");
+      if (params->browse_amplitude && fileExists(params->browse_amplitude)) {
+        split_dir_and_file(params->browse_amplitude, directory, filename);
+        fprintf(fp, "    <amplitude>%s</amplitude>\n", filename);
+      }
+      if (params->kml_overlay && fileExists(params->kml_overlay)) {
+        split_dir_and_file(params->kml_overlay, directory, filename);
+        fprintf(fp, "    <kml_overlay>%s</kml_overlay>\n", filename);
+      }
+      fprintf(fp, "  </browse>\n");
+    }
 
     // Data extent
     double plat_min, plat_max, plon_min, plon_max;
@@ -2027,6 +2106,8 @@ int main(int argc, char **argv)
       plat_min);
     fprintf(fp, "    </terrain_corrected_image>\n");
     meta_free(meta);
+    dem_meta = 
+      gamma_dem2meta(params->dem_file, params->dem_metadata);
     meta_get_bounding_box(dem_meta, &plat_min, &plat_max, &plon_min, &plon_max);
     fprintf(fp, "    <digital_elevation_model>\n");
     fprintf(fp, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
@@ -2047,7 +2128,7 @@ int main(int argc, char **argv)
         stats = TRUE;
       meta_free(meta);
     }
-    if (params->digital_elevation_model || params->layover_shadow_stats)
+    if (params->dem_file || params->layover_shadow_stats)
       stats = TRUE;    
     if (stats) {
       long long pixel_count = 0;
@@ -2125,11 +2206,11 @@ int main(int argc, char **argv)
         }
         meta_free(meta);
       }
-      if (params->digital_elevation_model) {
+      if (params->dem_file) {
         long long pixel_count = 
           dem_meta->general->line_count * dem_meta->general->sample_count;
         float *data = (float *) MALLOC(sizeof(float)*pixel_count);
-        FILE *fpDEM = FOPEN(params->digital_elevation_model, "rb");
+        FILE *fpDEM = FOPEN(params->dem_file, "rb");
         FREAD(data, sizeof(float), pixel_count, fpDEM);
         FCLOSE(fpDEM);
         long long ii;
@@ -2166,7 +2247,10 @@ int main(int argc, char **argv)
               &h[24], &h[25], &h[26], &h[27], &h[28], &h[29], &h[30], &h[31]);
         }
         FCLOSE(fpStats);
+        meta = meta_read(params->rtc_HH_metadata);
+        pixel_count = meta->general->line_count * meta->general->sample_count;
         pixel_count -= h[0];
+        meta_free(meta);
         float no_layover_shadow = 0;
         float true_layover = 0, layover = 0, true_shadow = 0, shadow = 0;
         int ii;
