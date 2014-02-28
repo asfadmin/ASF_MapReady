@@ -1415,7 +1415,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     asfPrintError("Invalid height and width parameters in TIFF file,\n"
         "Height = %ld, Width = %ld\n", height, width);
   }
-
+  
   /***** FILL IN THE REST OF THE META DATA (Projection parms should already exist) *****/
   /*                                                                                   */
   char image_data_type[256];
@@ -1660,7 +1660,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   double mask_value = MAGIC_UNSET_DOUBLE;
 
   // Look for a non-standard GDAL tag that contains the no data value
-  char* charDummy = NULL;
+  char *charDummy = (char *) MALLOC(sizeof(char)*255);
   if (TIFFGetField(input_tiff,TIFFTAG_GDAL_NODATA,&charDummy)) {
     if (strcmp_case( charDummy, "nan" ) != 0) {
       mg->no_data = (double)atof(charDummy);
