@@ -9,7 +9,6 @@
 #include "asf_nan.h"
 #include "asf.h"
 #include "asf_meta.h"
-#include "asf_raster.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
