@@ -102,7 +102,8 @@ following defines.
 "        imported, e.g. a TIFF or GeoTIFF with an embedded color palette.\n"\
 "   -metadata <metadata file>\n"\
 "        Allows the ingest of metadata that does not have the same basename\n"\
-"        as the image data.\n"\
+"        as the image data.  When importing GAMMA data, use this to specify\n"\
+"        the parameter (usually _par) file.\n"\
 "   -interferogram <file>\n"\
 "        Allows the ingest of an interferogram that is in the same geometry\n"\
 "        as the amplitude image that is ingested as the main file.\n"\
@@ -938,7 +939,8 @@ int main(int argc, char *argv[])
         flags[f_METADATA_FILE] == FLAG_NOT_SET) {
       // GAMMA/ROIPAC requires the metadata file
       asfPrintError("%s ingest requires the specific name of the %s\n"
-	  "metadata file. See asf_import -help for more information.\n", 
+	  "metadata file.  Use the -metadata option.\n"
+          "See asf_import -help for more information.\n", 
 	  format_type_str, format_type_str);
     }
     if (flags[f_SLAVE] != FLAG_NOT_SET &&

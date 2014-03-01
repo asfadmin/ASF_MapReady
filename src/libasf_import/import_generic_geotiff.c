@@ -257,6 +257,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   datum_type_t datum;
   va_list ap;
 
+  _XTIFFInitialize();
+
   /***** INITIALIZE PARAMETERS *****/
   /*                               */
   // Create a new metadata object for the image.
@@ -1660,7 +1662,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   double mask_value = MAGIC_UNSET_DOUBLE;
 
   // Look for a non-standard GDAL tag that contains the no data value
-  char *charDummy = (char *) MALLOC(sizeof(char)*255);
+  char *charDummy;
   if (TIFFGetField(input_tiff,TIFFTAG_GDAL_NODATA,&charDummy)) {
     if (strcmp_case( charDummy, "nan" ) != 0) {
       mg->no_data = (double)atof(charDummy);
