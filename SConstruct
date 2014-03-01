@@ -165,6 +165,8 @@ src_subs = lib_subs + [
     "write_hdf5_xml",
     "asf2geobrowse",
     "sqrt_img",
+    "color_browse",
+    "annotate_image",
     ]
 
 # paths where the libraries will be built
