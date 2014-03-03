@@ -81,6 +81,10 @@ typedef struct {
   double master_faraday_rotation;
 	double slave_faraday_rotation;
 	char *metadata;
+	char *input_HH_file;
+	char *input_HV_file;
+	char *input_VH_file;
+	char *input_VV_file;
 	char *rtc_HH_metadata;
 	char *rtc_HV_metadata;
 	char *rtc_VH_metadata;
@@ -284,6 +288,10 @@ params_t *params_init(char *type) {
     params->dem_file = NULL;
     params->dem_metadata = NULL;
     params->original_dem = NULL;
+    params->input_HH_file = NULL;
+    params->input_HV_file = NULL;
+    params->input_VH_file = NULL;
+    params->input_VV_file = NULL;
     params->rtc_HH_metadata = NULL;
     params->rtc_HV_metadata = NULL;
     params->rtc_VH_metadata = NULL;
@@ -357,6 +365,14 @@ void params_free(params_t *params) {
 	  FREE(params->kml_overlay);
 	if (params->metadata)
 	  FREE(params->metadata);
+	if (params->input_HH_file)
+	  FREE(params->input_HH_file);
+	if (params->input_HV_file)
+	  FREE(params->input_HV_file);
+	if (params->input_VH_file)
+	  FREE(params->input_VH_file);
+	if (params->input_VV_file)
+	  FREE(params->input_VV_file);
 	if (params->rtc_HH_metadata)
 	  FREE(params->rtc_HH_metadata);
 	if (params->rtc_HV_metadata)
@@ -519,6 +535,22 @@ void read_filenames(const char * file, params_t **params, char *type)
 			if (strncmp_case(line, "layover shadow stats", 20) == 0) {
 			  list->layover_shadow_stats = (char *) MALLOC(sizeof(char)*n);
 			  sprintf(list->layover_shadow_stats, "%s", trim_spaces(value));
+      }			
+			if (strncmp_case(line, "input HH file", 13) == 0) {
+			  list->input_HH_file = (char *) MALLOC(sizeof(char)*n);
+			  sprintf(list->input_HH_file, "%s", trim_spaces(value));
+      }			
+			if (strncmp_case(line, "input HV file", 13) == 0) {
+			  list->input_HV_file = (char *) MALLOC(sizeof(char)*n);
+			  sprintf(list->input_HV_file, "%s", trim_spaces(value));
+      }			
+			if (strncmp_case(line, "input VH file", 13) == 0) {
+			  list->input_VH_file = (char *) MALLOC(sizeof(char)*n);
+			  sprintf(list->input_VH_file, "%s", trim_spaces(value));
+      }			
+			if (strncmp_case(line, "input VV file", 13) == 0) {
+			  list->input_VV_file = (char *) MALLOC(sizeof(char)*n);
+			  sprintf(list->input_VV_file, "%s", trim_spaces(value));
       }			
 			if (strncmp_case(line, "terrain corrected HH metadata", 29) == 0) {
 				list->rtc_HH_metadata = (char *) MALLOC(sizeof(char)*n);
@@ -1814,7 +1846,7 @@ int main(int argc, char **argv)
     fprintf(fp, "  </processing>\n");
     
     // Root metadata
-    char data_source[25], processing[100], copyright[50], original_file[100];
+    char data_source[25], processing[100], copyright[50], original_file[200];
     char version[25];
     sprintf(version, "v31 r172");
     meta = meta_read(params->master_meta_file);
@@ -1902,7 +1934,7 @@ int main(int argc, char **argv)
     fprintf(fp, "  </data>\n");
 
     // Add metadata
-    char original_file[100];
+    char original_file[200];
     char *begin = (char *) MALLOC(sizeof(char)*30);
     char *center = (char *) MALLOC(sizeof(char)*30);
     char *end = (char *) MALLOC(sizeof(char)*30);
@@ -1913,11 +1945,21 @@ int main(int argc, char **argv)
     char beam_mode[5];
     fprintf(fp, "    <input_image>\n");
     meta = meta_read(params->metadata);
-    snprintf(beam_mode, 4, "%s", meta->general->mode);
+    strcpy(beam_mode, "FBS");
+    strcpy(original_file, params->input_HH_file);
+    if (params->input_HV_file) {
+      strcpy(beam_mode, "FBD");
+      sprintf(original_file, "%s,%s", params->input_HH_file, 
+        params->input_HV_file);
+    }
+    if (params->input_VH_file && params->input_VV_file) {
+      strcpy(beam_mode, "PLR");
+      sprintf(original_file, "%s,%s,%s,%s", params->input_HH_file, 
+        params->input_HV_file, params->input_VH_file, params->input_VV_file);
+    }
     meta2iso_date(meta, begin, center, end);
-    sprintf(original_file, "%s", meta->general->basename);
-    fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
-      "input image\">%s</file>\n", meta->general->basename);
+    fprintf(fp, "      <file type=\"string\" definition=\"file name(s) of the "
+      "input image\">%s</file>\n", original_file);
     fprintf(fp, "      <platform type=\"string\" definition=\"name of the "
       "platform\">%s</platform>\n", meta->general->sensor);
     if (strcmp_case(meta->general->sensor, "ALOS") == 0 && 
