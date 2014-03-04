@@ -2290,6 +2290,7 @@ int main(int argc, char **argv)
         }
         FCLOSE(fpStats);
         meta = meta_read(params->rtc_HH_metadata);
+        float valid_values = (pixel_count - h[0]) / (float)pixel_count;
         pixel_count = meta->general->line_count * meta->general->sample_count;
         pixel_count -= h[0];
         meta_free(meta);
@@ -2317,6 +2318,8 @@ int main(int argc, char **argv)
         fprintf(fp, "      <true_shadow>%.1lf</true_shadow>\n", 
           true_shadow*100.0);
         fprintf(fp, "      <shadow>%.1lf</shadow>\n", shadow*100.0);
+        fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+          valid_values*100.0);
         fprintf(fp, "    </layover_shadow_mask>\n");
       }
       fprintf(fp, "  </statistics>\n");
