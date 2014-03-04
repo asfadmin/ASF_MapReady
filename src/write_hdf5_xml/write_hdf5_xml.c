@@ -2310,14 +2310,16 @@ int main(int argc, char **argv)
             shadow += h[ii] / (float)pixel_count;
         }
         fprintf(fp, "    <layover_shadow_mask>\n");
-        fprintf(fp, "      <no_layover_shadow>%.1lf</no_layover_shadow>\n",
-          no_layover_shadow*100.0);
-        fprintf(fp, "      <true_layover>%.1lf</true_layover>\n", 
-          true_layover*100.0);
-        fprintf(fp, "      <layover>%.1lf</layover>\n", layover*100.0);
-        fprintf(fp, "      <true_shadow>%.1lf</true_shadow>\n", 
+        fprintf(fp, "      <percent_no_layover_shadow>%.1lf"
+          "</percent_no_layover_shadow>\n", no_layover_shadow*100.0);
+        fprintf(fp, "      <percent_true_layover>%.1lf"
+          "</percent_true_layover>\n", true_layover*100.0);
+        fprintf(fp, "      <percent_layover>%.1lf</percent_layover>\n", 
+          layover*100.0);
+        fprintf(fp, "      <percent_true_shadow>%.1lf</percent_true_shadow>\n", 
           true_shadow*100.0);
-        fprintf(fp, "      <shadow>%.1lf</shadow>\n", shadow*100.0);
+        fprintf(fp, "      <percent_shadow>%.1lf</percent_shadow>\n", 
+          shadow*100.0);
         fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
           valid_values*100.0);
         fprintf(fp, "    </layover_shadow_mask>\n");
