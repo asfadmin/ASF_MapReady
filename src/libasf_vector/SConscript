@@ -26,6 +26,7 @@ localenv.AppendUnique(LIBS = [
 
 libs = localenv.SharedLibrary("libasf_vector", [
         "convert2vector.c",
+        "convert2vector.t.c",
         "utils.c",
         "header.c",
         "geotiff.c",

@@ -167,6 +167,7 @@ src_subs = lib_subs + [
     "sqrt_img",
     "color_browse",
     "annotate_image",
+    "convert2vector",
     ]
 
 # paths where the libraries will be built
