@@ -162,6 +162,7 @@ src_subs = lib_subs + [
     "clm",
     "populate_meta_field",
     "stats",
+    "byteswap",
     "write_hdf5_xml",
     "asf2geobrowse",
     "sqrt_img",
