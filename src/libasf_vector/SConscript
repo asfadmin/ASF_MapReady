@@ -51,6 +51,7 @@ libs = localenv.SharedLibrary("libasf_vector", [
 
 shares = localenv.File([
     "header.lst",
+    "convert2vector.config",
 ])
 
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)
