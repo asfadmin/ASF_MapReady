@@ -162,11 +162,13 @@ src_subs = lib_subs + [
     "clm",
     "populate_meta_field",
     "stats",
+    "byteswap",
     "write_hdf5_xml",
     "asf2geobrowse",
     "sqrt_img",
     "color_browse",
     "annotate_image",
+    "convert2vector",
     ]
 
 # paths where the libraries will be built
