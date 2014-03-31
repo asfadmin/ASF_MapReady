@@ -7,11 +7,13 @@ int meta_supports_meta_get_latLon(meta_parameters *meta)
   // slant/ground range with state vectors: YES
   // transform block (i.e., ALOS): YES
   // airsar: YES
+  // latlon: YES
   // all others: NO
   if (meta->projection || 
       (meta->sar&&meta->state_vectors) ||
       meta->airsar ||
       meta->uavsar ||
+      meta->latlon ||
       meta->transform) {
     return TRUE;
   } 

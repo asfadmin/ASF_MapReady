@@ -1050,13 +1050,6 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
 meta_parameters *read_generic_geotiff_metadata(const char *inFileName,
 					       int *ignore, ...);
 
-typedef struct {
-  int num;
-  int line;
-  int sample;
-  float diff;
-} latlon_pixel;
-
 // Prototypes for meta2uavsar.c
 int parse_annotation_line(char *line, char *key, char *value);
 meta_parameters* uavsar_polsar2meta(uavsar_polsar *params);

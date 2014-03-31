@@ -167,7 +167,6 @@ int meta_get_latLon(meta_parameters *meta,
     	meta->latlon->lon[(iy+1)*sample_count + ix+1];
     *lon = (a00 + a10 * (xSample - ix) + a01 * (yLine - iy) 
 	    + a11 * (xSample - ix) * (yLine - iy));
-    
   }
   else if (meta->transform) {
       /* ALOS data (not projected) -- use transform block */
@@ -534,26 +533,26 @@ int meta_get_lineSamp(meta_parameters *meta,
         if (elev != 0.0) {
           // note that we don't need to worry about an expensive meta_incid()
           // call, since for Palsar it is calculated from the transform block
-	  int rangeLooks = meta->general->sample_scaling;
+	  			int rangeLooks = meta->general->sample_scaling;
           double incid = meta_incid(meta, *yLine, *xSamp/rangeLooks);
           
           // shift LEFT in ascending images, RIGHT in descending
           if (meta->general->orbit_direction=='A') {
-	    if (meta->sar->image_type == 'S')
-	      *xSamp -= 
-		elev*sin(PI/2-incid)/meta->general->x_pixel_size*rangeLooks;
-	    else
-	      *xSamp -= 
-		elev*tan(PI/2-incid)/meta->general->x_pixel_size*rangeLooks;
-	  }
-          else {
-	    if (meta->sar->image_type == 'S')
-	      *xSamp += 
-		elev*sin(PI/2-incid)/meta->general->x_pixel_size*rangeLooks;
-	    else
-	      *xSamp += 
-		elev*tan(PI/2-incid)/meta->general->x_pixel_size*rangeLooks;
-	  }
+						if (meta->sar->image_type == 'S')
+							*xSamp -= 
+								elev*sin(PI/2-incid)/meta->general->x_pixel_size*rangeLooks;
+						else
+							*xSamp -= 
+								elev*tan(PI/2-incid)/meta->general->x_pixel_size*rangeLooks;
+						}
+		      else {
+						if (meta->sar->image_type == 'S')
+							*xSamp += 
+								elev*sin(PI/2-incid)/meta->general->x_pixel_size*rangeLooks;
+						else
+							*xSamp += 
+								elev*tan(PI/2-incid)/meta->general->x_pixel_size*rangeLooks;
+					}
         }
         
         // we use 0-based indexing, whereas these functions are 1-based.
