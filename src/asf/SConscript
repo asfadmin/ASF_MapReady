@@ -6,7 +6,6 @@ localenv.AppendUnique(CPPPATH = [
 ])
     
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
-localenv.ParseConfig("pkg-config --cflags --libs libtiff-4")
 
 libs = localenv.SharedLibrary("asf", [
     "asf_tiff.c",
@@ -36,6 +35,7 @@ libs = localenv.SharedLibrary("asf", [
 
 localenv.AppendUnique(LIBS = [
     "m",
+    "tiff",
 ])
 
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)

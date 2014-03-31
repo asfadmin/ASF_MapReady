@@ -2,7 +2,7 @@ include ../../make_support/system_rules
 
 SRCS = build_cache.c preview.c
 
-CFLAGS += -Wall -Werror \
+CFLAGS += -Wall $(W_ERROR) \
 	$(GSL_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \

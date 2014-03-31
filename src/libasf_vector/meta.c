@@ -2709,7 +2709,7 @@ static int convert_meta2shape(char *inFile, DBFHandle dbase, SHPHandle shape,
   int ii, field=0, nCols;
 
   // Read metadata
-  meta = meta_read_only(inFile);
+  meta = meta_read(inFile);
   int nl = meta->general->line_count;
   int ns = meta->general->sample_count;
 
@@ -3923,7 +3923,7 @@ int meta2shape(char *inFile, char *outFile, int listFlag)
   }
   else
     strcpy(metaFile, inFile);
-  meta = meta_read_only(metaFile);
+  meta = meta_read(metaFile);
   shape_meta_init(outFile, meta);
   open_shape(outFile, &dbase, &shape);
   

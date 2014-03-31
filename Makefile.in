@@ -69,10 +69,18 @@ MAPREADY_MODULES = \
 	src/remap \
 	src/update_state \
 	src/clm \
+	src/byteswap \
+	src/write_hdf5_xml \
+	src/stats \
+	src/asf2geobrowse \
+	src/sqrt_img \
+	src/color_browse \
+	src/annotate_image \
 	src/populate_meta_field \
 	src/make_overlay \
 	src/asf_kml_overlay \
 	src/sample_plugin \
+	src/convert2vector \
 	@ASF_GUI@
 
 MAPREADY_SOURCE = \
@@ -247,7 +255,6 @@ ALL_MODULES = \
 	$(AP_MODULES) \
 	$(REQ_MODULES) \
 	$(C2V_MODULES) \
-	$(JPL_MODULES) \
 	$(CREATE_THUMBS_MODULES) \
 	$(DATA_QC_MODULES)
 

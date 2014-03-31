@@ -167,7 +167,6 @@ int meta_get_latLon(meta_parameters *meta,
     	meta->latlon->lon[(iy+1)*sample_count + ix+1];
     *lon = (a00 + a10 * (xSample - ix) + a01 * (yLine - iy) 
 	    + a11 * (xSample - ix) * (yLine - iy));
-
   }
   else if (meta->transform) {
       /* ALOS data (not projected) -- use transform block */
@@ -338,43 +337,6 @@ static int get_error(meta_parameters *meta,
   *error = get_distance(new,target);
   return 0;
 }
-
-/*
-static int get_error_ext(meta_parameters *meta,
-			 lat_lon target, double elev,
-			 double old_xSamp, double old_yLine,
-			 double xSamp, double yLine, double *error)
-{
-  lat_lon old, bound, new;
-  int err;
-  err = meta_get_latLon(meta,old_yLine,old_xSamp,elev,&old.lat,&old.lon);
-  if (err)
-    return err;
-  //printf("old: x=%.1f; y=%.1f; lat=%.4f, lon=%.4f\n",
-  //       old_yLine, old_xSamp, old.lat, old.lon);
-  //printf("new: x=%.1f; y=%.1f\n", xSamp, yLine);
-  int div=2;
-  double xBound, yBound;
-  xBound = old_xSamp + (xSamp - old_xSamp)/2;
-  yBound = old_yLine + (yLine - old_yLine)/2;
-  while (xBound < 0 || xBound >= meta->general->sample_count ||
-	 yBound < 0 || yBound >= meta->general->line_count) {
-    div *= 2;
-    xBound = old_xSamp + (xSamp - old_xSamp)/div;
-    yBound = old_yLine + (yLine - old_yLine)/div;
-    if (div > 1000)
-      return 1;
-  }
-  //printf("bound: x=%.1f, y=%.1f, div=%d\n", xBound, yBound, div);
-  err = meta_get_latLon(meta,yBound,xBound,elev,&bound.lat,&bound.lon);
-  if (err)
-    return err;
-  new.lat = old.lat + (bound.lat - old.lat)*div;
-  new.lon = old.lon + (bound.lon - old.lon)*div;
-  *error = get_distance(new,target);
-  return 0;
-}
-*/
 
 /******************************************************************
  * meta_get_lineSamp:

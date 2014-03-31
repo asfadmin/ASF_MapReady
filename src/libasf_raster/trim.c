@@ -66,7 +66,6 @@ int trim(char *infile, char *outfile,
   }
   */
 	meta_get_corner_coords(metaOut);
-
   meta_write(metaOut, outfile);
 
   /* If everything's OK, then allocate a buffer big enough for one line of 

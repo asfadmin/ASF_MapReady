@@ -3,6 +3,7 @@
 formats.
 */
 #include "asf.h"
+#include "asf_meta.h"
 #include "dateUtil.h"
 #include <time.h>
 #include <assert.h>
@@ -842,7 +843,19 @@ char *fgdc_date(void)
   strftime(t_stamp, 10, "%Y%m%d", localtime(&t));
 
   return t_stamp;  
-} 
+}
+
+char *iso_date(void)
+{
+  time_t t;
+  char *t_stamp;
+
+  t_stamp = (char*) MALLOC(30*sizeof(char));
+  t = time(NULL);
+  strftime(t_stamp, 30, "%Y-%m-%dT%H:%M:%S.000000Z", gmtime(&t));
+
+  return t_stamp;  
+}
 
 // MMM-DD-YYYY hh:mm:ss
 // 01234567890123456789

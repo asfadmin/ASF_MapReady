@@ -14,7 +14,6 @@ localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs gdal")
 localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
-localenv.ParseConfig("pkg-config --cflags --libs libtiff-4")
 localenv.ParseConfig("pkg-config --cflags --libs gsl")
 
 localenv.AppendUnique(LIBS = [
@@ -26,6 +25,7 @@ localenv.AppendUnique(LIBS = [
     "asf_proj",
     "asf_raster",
     "asf_sar",
+    "tiff",
 ])
 
 libs = localenv.SharedLibrary("libasf_import", [

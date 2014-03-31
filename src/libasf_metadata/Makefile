@@ -5,7 +5,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS += -Werror
+CFLAGS += $(W_ERROR)
 
 OBJLIB  = prn_facdr.o \
 	prn_raddr.o \

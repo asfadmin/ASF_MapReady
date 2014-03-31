@@ -33,7 +33,7 @@ OBJS  = asf_tiff.o \
 	socket.o \
 	httpUtil.o
 
-CFLAGS += -Werror $(shell \
+CFLAGS += $(W_ERROR) $(shell \
 	if [ "$(SYS)x" != "solarisx" ]; \
 	then echo "-D_XOPEN_SOURCE=600"; \
 	else echo "-D_XOPEN_SOURCE=600 -std=c99"; \

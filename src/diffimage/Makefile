@@ -27,7 +27,7 @@ HEADERS := diffimage_tolerances.h
 #
 ###############################################################################
 
-CFLAGS += \
+CFLAGS += $(W_ERROR) \
 	$(GEOTIFF_CFLAGS) \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \

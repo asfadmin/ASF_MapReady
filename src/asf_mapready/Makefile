@@ -30,17 +30,16 @@ LIBS  = \
 	$(GEOTIFF_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
-	$(HDFEOS5_LIBS) \
 	$(ZLIB_LIBS) \
 	-lm
 
-CFLAGS += -Wall -Werror
+CFLAGS += -Wall $(W_ERROR)
 
 OBJS  = asf_mapready.o
 
 all:    asf_mapready clean
 
-asf_convert: $(OBJS)
+asf_mapready: $(OBJS)
 	$(CC) $(CFLAGS) -o asf_mapready $(OBJS) $(LIBS) $(LDFLAGS)
 	mv asf_mapready$(BIN_POSTFIX) $(BINDIR)/$(DEST_TARGET)$(BIN_POSTFIX)
 

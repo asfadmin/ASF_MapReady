@@ -6,7 +6,26 @@ AddOption("--prefix",
           nargs = 1,
           action = "store",
           metavar = "DIR",
-          help = "installation prefix",
+          help = "The base path where 'scons install' puts things. The config.h header will use this path unless overridden with '--header_prefix'.",
+          )
+
+# The header_prefix option, when specified, will write the given directory to the config.h header. This is a hack necessary to allow Jenkins to do the RPM build without hard-coding the Jenkins build root path into the Mapready binaries. config.h itself is an artifact of the make/autotools build system, and when that system goes away, config.h can go away, and a cleaner solution can be found.
+AddOption("--header_prefix",
+          dest = "header_prefix",
+          type = "string",
+          nargs = 1,
+          action = "store",
+          metavar = "DIR",
+          help = "What prefix to use in the config.h header. Specify this if config.h should have something different from what's given with the '--prefix' option. Typically only Jenkins will need to use this.",
+          )
+
+AddOption("--pkg_version",
+          dest = "pkg_version",
+          type = "string",
+          nargs = 1,
+          action = "store",
+          metavar = "DIR",
+          help = "This defines the version string applied to the entire package.",
           )
 
 # parse and check command line options
@@ -14,6 +33,11 @@ if GetOption("prefix") is None:
     inst_base = "/usr/local"
 else:
     inst_base = GetOption("prefix")
+
+if GetOption("pkg_version") is None:
+    pkg_version = "UNDEFINED"
+else:
+    pkg_version = GetOption("pkg_version")
 
 globalenv = Environment(TOOLS = ["default", add_UnitTest, checkEndian])
 
@@ -34,12 +58,24 @@ inst_dirs = {
     }
 globalenv["inst_dirs"] = inst_dirs
 
+header_dirs = {}
+if GetOption("header_prefix") is None:
+    header_dirs = inst_dirs
+else:
+    header_dirs = {
+        "bins":   os.path.join(GetOption("header_prefix"), "bin"),
+        "libs":   os.path.join(GetOption("header_prefix"), "lib"),
+        "shares": os.path.join(GetOption("header_prefix"), "share/asf_tools"),
+        "mans":   os.path.join(GetOption("header_prefix"), "man"),
+        "docs":   os.path.join(GetOption("header_prefix"), "doc"),
+    }
+
 endian = checkEndian(globalenv)
 
-if endian == "little" :
+if endian == "big" :
     globalenv.AppendUnique(CPPDEFINES = ["ASF_BIG_ENDIAN", "ASF_BIG_IEEE"])
 
-elif endian == "big" :
+elif endian == "little" :
     globalenv.AppendUnique(CPPDEFINES = ["ASF_LIL_ENDIAN", "ASF_LIL_IEEE"])
 
 else:
@@ -49,9 +85,9 @@ else:
 # create or overwrite include/config.h
 # FIXME This is a very ugly way to pass values to the compiler, and once autotools/make goes away, mapready should be edited to remove the need for config.h. These values can then be supplied on the command line to gcc in Scons's CPPDEFINES variable.
 f = open("include/config.h", "w")
-f.write("#define ASF_SHARE_DIR \"" + inst_dirs["shares"] + "\"\n")
-f.write("#define ASF_BIN_DIR \"" + inst_dirs["bins"] + "\"\n")
-f.write("#define ASF_DOC_DIR \"" + inst_dirs["docs"] + "\"\n")
+f.write("#define ASF_SHARE_DIR \"" + header_dirs["shares"] + "\"\n")
+f.write("#define ASF_BIN_DIR \"" + header_dirs["bins"] + "\"\n")
+f.write("#define ASF_DOC_DIR \"" + header_dirs["docs"] + "\"\n") 
 f.close()
 
 # get all the subdirectories under the source root directory, and make these the default targets
@@ -125,6 +161,14 @@ src_subs = lib_subs + [
     "update_state",
     "clm",
     "populate_meta_field",
+    "stats",
+    "byteswap",
+    "write_hdf5_xml",
+    "asf2geobrowse",
+    "sqrt_img",
+    "color_browse",
+    "annotate_image",
+    "convert2vector",
     ]
 
 # paths where the libraries will be built
@@ -136,7 +180,7 @@ lib_build_paths = [os.path.join("#", rpath_link_path) for rpath_link_path in rpa
 globalenv.AppendUnique(LIBPATH = lib_build_paths)
 
 # common command line options
-globalenv.AppendUnique(CCFLAGS = ["-Wall", "-g"])
+globalenv.AppendUnique(CCFLAGS = ["-Wall", "-g", "-DMAPREADY_VERSION_STRING=\\\"" + pkg_version + "\\\""])
 globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined", "-Wl,-rpath=\\$$ORIGIN/../lib"] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
 
 # common include directories

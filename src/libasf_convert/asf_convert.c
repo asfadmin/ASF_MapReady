@@ -649,7 +649,7 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
   int ii;
 
   // Read radiometry
-  radiometry_t radiometry;
+  radiometry_t radiometry = r_AMP;
   if (strncmp_case(cfg->import->radiometry, "AMPLITUDE_IMAGE", 15) == 0)
     radiometry = r_AMP;
   else if (strncmp_case(cfg->import->radiometry, "POWER_IMAGE", 11) == 0)
