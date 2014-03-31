@@ -5,6 +5,7 @@
 #include "asf_tiff.h"
 #include <png.h>
 #include "asf.h"
+#include "asf_meta.h"
 #include "asf_jpeg.h"
 #include <stdlib.h>
 #include "asf_raster.h"
@@ -12,17 +13,6 @@
 #include "asf_nan.h"
 #include "netcdf.h"
 #include "hdf5.h"
-
-/* Evaluate to true if floats are within tolerance of each other.  */
-#define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
-
-/* Default tolerance used for many floating point comparisons in this
-   program.  */
-#define ASF_EXPORT_FLOAT_MICRON 0.000000001
-
-/* Compare floats using the default tolerance for this program.  */
-#define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
-                                (a, b, ASF_EXPORT_FLOAT_MICRON))
 
 /* Maximum image name length we can accept from the user.  Since the
    user may enter a base name only, the actual file name strings need
