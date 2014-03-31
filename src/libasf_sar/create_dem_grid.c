@@ -76,7 +76,6 @@ BUGS:
 *									      *
 ******************************************************************************/
 
-#include "cproj.h"
 #include "asf.h"
 #include "asf_meta.h"
 #include "proj.h"
