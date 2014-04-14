@@ -1957,6 +1957,7 @@ int main(int argc, char **argv)
 
     double range_offset=0, azimuth_offset=0;
     double range_stddev=0, azimuth_stddev=0;
+    int patches_accepted=0, patches_attempted=0;
     fpFiles = FOPEN(params->mk_geo_radcal_2_log, "r");
     while (NULL != fgets(line, 255, fpFiles)) {
       char *key, *value;
@@ -1967,23 +1968,30 @@ int main(int argc, char **argv)
         azimuth_offset = atof(value);
       else if (strcmp(key, "final model fit std. dev. (samples) range") == 0)
         sscanf(value, "%lf azimuth: %lf", &range_stddev, &azimuth_stddev);
+      else if (strcmp(key, "final solution") == 0 && strstr(value, "offset estimates accepted out of"))
+        sscanf(value, "%d offset estimates accepted out of %d samples", &patches_accepted, &patches_attempted);
     }
     FCLOSE(fpFiles);
 
-    int passed = -1;
-    fpFiles = FOPEN(params->coreg_check_log, "r");
-    while (NULL != fgets(line, 255, fpFiles)) {
-      if (strstr(line, "passed coregistration") == 0) {
-        passed = TRUE;
+    int passed;
+    if (fileExists(params->coreg_check_log)) {
+      passed = -1;
+      fpFiles = FOPEN(params->coreg_check_log, "r");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        if (strstr(line, "passed coregistration")) {
+          passed = TRUE;
+        }
+        else if (strstr(line, "failed coregistration")) {
+          passed = FALSE;
+        }
       }
-      else if (strstr(line, "failed coregistration") == 0) {
-        passed = FALSE;
-      }
+      FCLOSE(fpFiles);
+      if (passed == -1)
+        asfPrintError("Could not determine if this granule passed coregistration!");
     }
-    FCLOSE(fpFiles);
-
-    if (passed == -1)
-      asfPrintError("Could not determine if this granule passed coregistration!");
+    else {
+      passed = FALSE;
+    }
 
     // Original input image
     char beam_mode[5];
@@ -2086,9 +2094,9 @@ int main(int argc, char **argv)
     fprintf(fp, "      <doppler_poly_dot_0 type=\"double\" definition=\"Doppler "
       "polynomial dot\" units=\"Hz/s\">%g</doppler_poly_dot_0>\n", ddop0);
     fprintf(fp, "      <doppler_poly_dot_1 type=\"double\" definition=\"Doppler "
-      "polynomial dot\" units=\"Hz/s\">%g</doppler_poly_dot_1>\n", ddop1);
+      "polynomial dot\" units=\"Hz/s/m\">%g</doppler_poly_dot_1>\n", ddop1);
     fprintf(fp, "      <doppler_poly_dot_2 type=\"double\" definition=\"Doppler "
-      "polynomial dot\" units=\"Hz/s\">%g</doppler_poly_dot_2>\n", ddop2);
+      "polynomial dot\" units=\"Hz/s/m^2\">%g</doppler_poly_dot_2>\n", ddop2);
     fprintf(fp, "      <range_looks type=\"int\" definition=\"Number of range "
       "looks\">%d</range_looks>\n", range_looks);
     fprintf(fp, "      <azimuth_looks type=\"int\" definition=\"Number of azimuth "
@@ -2198,12 +2206,20 @@ int main(int argc, char **argv)
     fprintf(fp, "  </metadata>\n");
 
     fprintf(fp, "  <terrain_correction>\n");
+    fprintf(fp, "    <patches_attempted type=\"int\" definition=\"number of patches used to coregister\""
+      ">%d</patches_attempted>\n", patches_attempted);
+    fprintf(fp, "    <patches_accepted type=\"int\" definition=\"number of patches successfully coregistered\""
+      ">%d</patches_accepted>\n", patches_accepted);
     fprintf(fp, "    <coregistration_success type=\"string\" definition=\"Coregistration "
-      " success flag\">%s</coregistration_success>\n", passed ? "Y" : "N");
+      "success flag\">%s</coregistration_success>\n", passed ? "Y" : "N");
     fprintf(fp, "    <offset_x type=\"double\" definition=\"Coregistration range offset\""
       " units=\"pixels\">%g</offset_x>\n", range_offset);
     fprintf(fp, "    <offset_y type=\"double\" definition=\"Coregistration azimuth offset\""
       " units=\"pixels\">%g</offset_y>\n", azimuth_offset);
+    fprintf(fp, "    <residual_range_offset_stddev type=\"double\" definition=\"final model fit std. dev. range\""
+      " units=\"pixels\">%g</residual_range_offset_stddev>\n", range_stddev);
+    fprintf(fp, "    <residual_azimuth_offset_stddev type=\"double\" definition=\"final model fit std. dev. azimuth\""
+      " units=\"pixels\">%g</residual_azimuth_offset_stddev>\n", azimuth_stddev);
     fprintf(fp, "  </terrain_correction>\n");
 
     // Browse image information
