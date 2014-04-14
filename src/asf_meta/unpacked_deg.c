@@ -50,6 +50,8 @@ ALGORITHM REFERENCES
     Printing Office, Washington D.C., 1989.
 *******************************************************************************/
 
+#include <math.h>
+
 /* Convert DMS packed angle into deg 
 ----------------------------------*/
 double unpacked_deg(double angle)
