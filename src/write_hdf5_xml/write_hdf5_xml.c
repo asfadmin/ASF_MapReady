@@ -1937,18 +1937,23 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);
 
     double dop0=0, dop1=0, dop2=0, ddop0=0, ddop1=0, ddop2=0;
-    fpFiles = FOPEN(params->mli_par_file, "r");
-    while (NULL != fgets(line, 255, fpFiles)) {
-      char *key, *value;
-      split2(line, ':', &key, &value);
-      if (strcmp(key, "doppler_polynomial") == 0) {
-        sscanf(value, "%lf %lf %lf", &dop0, &dop1, &dop2);
+    if (params->mli_par_file && fileExists(params->mli_par_file)) {
+      fpFiles = FOPEN(params->mli_par_file, "r");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        char *key, *value;
+        split2(line, ':', &key, &value);
+        if (strcmp(key, "doppler_polynomial") == 0) {
+          sscanf(value, "%lf %lf %lf", &dop0, &dop1, &dop2);
+        }
+        else if (strcmp(key, "doppler_poly_dot") == 0) {
+          sscanf(value, "%lf %lf %lf", &ddop0, &ddop1, &ddop2);
+        }
       }
-      else if (strcmp(key, "doppler_poly_dot") == 0) {
-        sscanf(value, "%lf %lf %lf", &ddop0, &ddop1, &ddop2);
-      }
+      FCLOSE(fpFiles);
     }
-    FCLOSE(fpFiles);
+    else {
+      asfPrintWarning("mli.par not found: %s\n", params->mli_par_file);
+    }
 
     double range_offset=0, azimuth_offset=0;
     double range_stddev=0, azimuth_stddev=0;
