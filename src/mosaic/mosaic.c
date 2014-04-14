@@ -14,8 +14,8 @@
 
 #define ASF_NAME_STRING "mosaic"
 
-static const float_image_byte_order_t fibo_be =
-    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
+//static const float_image_byte_order_t fibo_be =
+//    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
 
 void help()
 {
