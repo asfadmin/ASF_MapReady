@@ -15,11 +15,10 @@ typedef struct {
   double off_nadir;
   int orbit;
   int frame;
-  char acq_date[25];
+  char acq_start[35];
+  char acq_end[35];
   char orbit_dir[15];
   int path;
-  int terrain;
-  int insar;
   double lat1, lon1;
   double lat2, lon2;
   double lat3, lon3;
@@ -35,11 +34,10 @@ void gran_init(granule_type_t *gran)
   gran->off_nadir = MAGIC_UNSET_DOUBLE;
   gran->orbit = MAGIC_UNSET_INT;
   gran->frame = MAGIC_UNSET_INT;
-  strcpy(gran->acq_date, MAGIC_UNSET_STRING);
+  strcpy(gran->acq_start, MAGIC_UNSET_STRING);
+  strcpy(gran->acq_end, MAGIC_UNSET_STRING);
   strcpy(gran->orbit_dir, MAGIC_UNSET_STRING);
   gran->path = MAGIC_UNSET_INT;
-  gran->terrain = -1;
-  gran->insar = -1;
   gran->lat1 = gran->lon1 = MAGIC_UNSET_DOUBLE;
   gran->lat2 = gran->lon2 = MAGIC_UNSET_DOUBLE;
   gran->lat3 = gran->lon3 = MAGIC_UNSET_DOUBLE;
@@ -59,47 +57,43 @@ static int read_gran_line(char *header, int n, char *line, granule_type_t *gran)
   char *test = (char *) MALLOC(sizeof(char)*255);
   for (ii=0; ii<n; ii++) {
     test = get_column(header, ii);
-    //test[strlen(test)-1] = '\0';
-    //test++;
-    if (strcmp(test, "Stack ID") == 0)
+    if (strcmp_case(test, "STACK_ID") == 0)
       gran->stack_id = get_int(line, ii);
-    else if (strcmp(test, "Granule") == 0)
+    else if (strcmp_case(test, "GRANULE") == 0)
       strcpy(gran->granule, get_str(line, ii));
-    else if (strcmp(test, "Satellite") == 0)
+    else if (strcmp_case(test, "SATELLITE") == 0)
       strcpy(gran->satellite, get_str(line, ii));
-    else if (strcmp(test, "Beam Mode") == 0)
+    else if (strcmp_case(test, "BEAM_MODE") == 0)
       strcpy(gran->beam_mode, get_str(line, ii));
-    else if (strcmp(test, "Off Nadir") == 0)
+    else if (strcmp_case(test, "OFF_NADIR") == 0)
       gran->off_nadir = get_double(line, ii);
-    else if (strcmp(test, "Orbit") == 0)
+    else if (strcmp_case(test, "ORBIT") == 0)
       gran->orbit = get_int(line, ii);
-    else if (strcmp(test, "Frame") == 0)
+    else if (strcmp_case(test, "FRAME") == 0)
       gran->frame = get_int(line, ii);
-    else if (strcmp(test, "Acq Date") == 0)
-      strcpy(gran->acq_date, get_str(line, ii));
-    else if (strcmp(test, "Direction") == 0)
+    else if (strcmp_case(test, "ACQ_START") == 0)
+      strcpy(gran->acq_start, get_str(line, ii));
+    else if (strcmp_case(test, "ACQ_END") == 0)
+      strcpy(gran->acq_end, get_str(line, ii));
+    else if (strcmp_case(test, "ORBIT_DIR") == 0)
       strcpy(gran->orbit_dir, get_str(line, ii));
-    else if (strcmp(test, "Path") == 0)
+    else if (strcmp_case(test, "PATH") == 0)
       gran->path = get_int(line, ii);
-    else if (strcmp(test, "Terrain") == 0)
-      gran->terrain = get_int(line, ii);
-    else if (strcmp(test, "InSAR") == 0)
-      gran->insar = get_int(line, ii);
-    else if (strcmp(test, "Lat1") == 0)
+    else if (strcmp_case(test, "LAT1") == 0)
       gran->lat1 = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Lon1") == 0)
+    else if (strcmp_case(test, "LON1") == 0)
       gran->lon1 = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Lat2") == 0)
+    else if (strcmp_case(test, "LAT2") == 0)
       gran->lat2 = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Lon2") == 0)
+    else if (strcmp_case(test, "LON2") == 0)
       gran->lon2 = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Lat3") == 0)
+    else if (strcmp_case(test, "LAT3") == 0)
       gran->lat3 = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Lon3") == 0)
+    else if (strcmp_case(test, "LON3") == 0)
       gran->lon3 = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Lat4") == 0)
+    else if (strcmp_case(test, "LAT4") == 0)
       gran->lat4 = get_req_double(line, ii, &ok);
-    else if (strcmp(test, "Lon4") == 0)
+    else if (strcmp_case(test, "LON4") == 0)
       gran->lon4 = get_req_double(line, ii, &ok);
   }
 
@@ -120,19 +114,19 @@ static int check_gran_location(FILE *ifp, char **header_line, int *n)
   read_header_config("URSA", &dbf, &nCols);
 
   // ensure we have the columns we need
-  int granule_col = find_str(header, "Granule");
-  int near_start_lat_col = find_str(header, "Lat1");
-  int near_start_lon_col = find_str(header, "Lon1");
-  int far_start_lat_col = find_str(header, "Lat2");
-  int far_start_lon_col = find_str(header, "Lon2");
-  int near_end_lat_col = find_str(header, "Lat3");
-  int near_end_lon_col = find_str(header, "Lon3");
-  int far_end_lat_col = find_str(header, "Lat4");
-  int far_end_lon_col = find_str(header, "Lon4");
+  int granule_col = find_str(header, "GRANULE");
+  int near_start_lat_col = find_str(header, "LAT1");
+  int near_start_lon_col = find_str(header, "LON1");
+  int far_start_lat_col = find_str(header, "LAT2");
+  int far_start_lon_col = find_str(header, "LON2");
+  int near_end_lat_col = find_str(header, "LAT3");
+  int near_end_lon_col = find_str(header, "LON3");
+  int far_end_lat_col = find_str(header, "LAT4");
+  int far_end_lon_col = find_str(header, "LON4");
 
   // Check whether all visible columns are actually available in the file
   for (ii=0; ii<nCols; ii++) {
-    if (find_str(header, dbf[ii].header) < 0)
+    if (find_str(header, dbf[ii].kml) < 0)
       dbf[ii].visible = FALSE;
   }
 
@@ -209,53 +203,49 @@ static void add_to_shape(DBFHandle dbase, SHPHandle shape, granule_type_t *gran,
   // Write fields into the database
   for (ii=0; ii<nCols; ii++) {
   
-    if (strcmp(dbf[ii].header, "Stack ID") == 0 && dbf[ii].visible) {
+    if (strcmp_case(dbf[ii].kml, "STACK_ID") == 0 && dbf[ii].visible) {
       DBFWriteIntegerAttribute(dbase, n, field, gran->stack_id);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Granule") == 0 && dbf[ii].visible) {
+    else if (strcmp_case(dbf[ii].kml, "GRANULE") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, gran->granule);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Satellite") == 0 && dbf[ii].visible) {
+    else if (strcmp_case(dbf[ii].kml, "SATELLITE") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, gran->satellite);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Beam Mode") == 0 && dbf[ii].visible) {
+    else if (strcmp_case(dbf[ii].kml, "BEAM_MODE") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, gran->beam_mode);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Off Nadir") == 0 &&
+    else if (strcmp_case(dbf[ii].kml, "OFF_NADIR") == 0 &&
          dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, gran->off_nadir);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Orbit") == 0 && dbf[ii].visible) {
+    else if (strcmp_case(dbf[ii].kml, "ORBIT") == 0 && dbf[ii].visible) {
       DBFWriteIntegerAttribute(dbase, n, field, gran->orbit);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Frame") == 0 && dbf[ii].visible) {
+    else if (strcmp_case(dbf[ii].kml, "FRAME") == 0 && dbf[ii].visible) {
       DBFWriteIntegerAttribute(dbase, n, field, gran->frame);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Acq Date") == 0 && dbf[ii].visible) {
-      DBFWriteStringAttribute(dbase, n, field, gran->acq_date);
+    else if (strcmp_case(dbf[ii].kml, "ACQ_START") == 0 && dbf[ii].visible) {
+      DBFWriteStringAttribute(dbase, n, field, gran->acq_start);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Direction") == 0 && dbf[ii].visible) {
+    else if (strcmp_case(dbf[ii].kml, "ACQ_END") == 0 && dbf[ii].visible) {
+      DBFWriteStringAttribute(dbase, n, field, gran->acq_end);
+      field++;
+    }
+    else if (strcmp_case(dbf[ii].kml, "ORBIT_DIR") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, gran->orbit_dir);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Path") == 0 && dbf[ii].visible) {
+    else if (strcmp_case(dbf[ii].kml, "PATH") == 0 && dbf[ii].visible) {
       DBFWriteIntegerAttribute(dbase, n, field, gran->path);
-      field++;
-    }
-    else if (strcmp(dbf[ii].header, "Terrain") == 0 && dbf[ii].visible) {
-      DBFWriteIntegerAttribute(dbase, n, field, gran->terrain);
-      field++;
-    }
-    else if (strcmp(dbf[ii].header, "InSAR") == 0 && dbf[ii].visible) {
-      DBFWriteIntegerAttribute(dbase, n, field, gran->insar);
       field++;
     }
   }

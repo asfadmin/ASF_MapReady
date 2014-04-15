@@ -30,22 +30,22 @@ static void shape_custom_init(char *inFile, const char *format, char *header,
   for (kk=0; kk<nColumns; kk++) {
     column = get_column(header, kk);
     for (ii=0; ii<nCols; ii++) {
-      if (strncmp_case(column, dbf[ii].header, strlen(dbf[ii].header)-1) == 0
+      if (strncmp_case(column, dbf[ii].kml, strlen(dbf[ii].kml)-1) == 0
       && dbf[ii].visible) {
     if (dbf[ii].format == DBF_STRING) {
-      if (DBFAddField(dbase, dbf[ii].header, FTString, 255, 0) == -1)
+      if (DBFAddField(dbase, dbf[ii].kml, FTString, 255, 0) == -1)
         asfPrintError("Could not add %s field to database file\n",
-              dbf[ii].header);
+              dbf[ii].kml);
     }
     else if (dbf[ii].format == DBF_INTEGER) {
-      if (DBFAddField(dbase, dbf[ii].header, FTInteger, 10, 0) == -1)
+      if (DBFAddField(dbase, dbf[ii].kml, FTInteger, 10, 0) == -1)
         asfPrintError("Could not add %s field to database file\n",
-              dbf[ii].header);
+              dbf[ii].kml);
     }
     else if (dbf[ii].format == DBF_DOUBLE) {
-      if (DBFAddField(dbase, dbf[ii].header, FTDouble, 20, 10) == -1)
+      if (DBFAddField(dbase, dbf[ii].kml, FTDouble, 20, 10) == -1)
         asfPrintError("Could not add %s field to database file\n",
-              dbf[ii].header);
+              dbf[ii].kml);
     }
       }
     }
@@ -150,15 +150,15 @@ int custom2shape(char *inFile, const char *format, char *outFile, int listFlag)
       sValue = get_column(line, kk);
       param = get_column(header, kk);
       for (ii=0; ii<nCols; ii++) {
-    if (strncmp_case(dbf[ii].header, param, strlen(dbf[ii].header)-1) == 0
+    if (strncmp_case(dbf[ii].kml, param, strlen(dbf[ii].kml)-1) == 0
              && dbf[ii].visible) {
 
       // Check for geolocation columns
-      if (strncmp_case(dbf[ii].header, "LAT", 3) == 0) {
+      if (strncmp_case(dbf[ii].kml, "LAT", 3) == 0) {
         sscanf(sValue, "%lf", &lat[nLat]);
         nLat++;
       }
-      else if (strncmp_case(dbf[ii].header, "LON", 3) == 0) {
+      else if (strncmp_case(dbf[ii].kml, "LON", 3) == 0) {
         sscanf(sValue, "%lf", &lon[nLon]);
         nLon++;
       }
@@ -284,15 +284,15 @@ int custom2kml(char *inFile, const char *format, char *outFile, int listFlag)
       sValue = get_column(line, kk);
       param = get_column(header, kk);
       for (ii=0; ii<nCols; ii++) {
-    if (strncmp_case(dbf[ii].header, param, strlen(dbf[ii].header)-1) == 0
+    if (strncmp_case(dbf[ii].kml, param, strlen(dbf[ii].kml)-1) == 0
              && dbf[ii].visible) {
 
       // Check for geolocation columns
-      if (strncmp_case(dbf[ii].header, "LAT", 3) == 0) {
+      if (strncmp_case(dbf[ii].kml, "LAT", 3) == 0) {
         sscanf(sValue, "%lf", &lat[nLat]);
         nLat++;
       }
-      else if (strncmp_case(dbf[ii].header, "LON", 3) == 0) {
+      else if (strncmp_case(dbf[ii].kml, "LON", 3) == 0) {
         sscanf(sValue, "%lf", &lon[nLon]);
         nLon++;
       }

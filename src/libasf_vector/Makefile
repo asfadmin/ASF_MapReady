@@ -15,26 +15,17 @@ CFLAGS += $(W_ERROR) \
 
 OBJS = \
 	convert2vector.o \
-	convert2vector.t.o \
 	utils.o \
 	header.o \
 	geotiff.o \
-	polygon.o \
-	point.o \
-	auig.o \
 	rgps.o \
 	multimatch.o \
 	meta.o \
-	terrasar.o \
 	kml.o \
 	shape.o \
 	generic_csv.o \
-	ursa.o \
-	datapool.o \
-	high_altitude_photography.o \
 	smap.o \
-	granule.o \
-	custom.o \
+	latlon.o \
 	utils.o \
 	config.o
 
@@ -64,6 +55,7 @@ all: build_only
 	cp ursa.h $(ASF_INCLUDE_DIR)
 	mkdir -p $(SHAREDIR)
 	cp header.lst $(SHAREDIR)
+	cp *_data_dictionary.csv $(SHAREDIR)
 	cp convert2vector.config $(SHAREDIR)
 
 build_only: $(OBJS)

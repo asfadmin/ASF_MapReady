@@ -1,0 +1,10 @@
+META,SHAPE,Type,Length,Decimals,Definition
+ID, ID, string,255,0,Polygon ID
+format,FORMAT,string,20,0,Format
+bits_samples,SAMPLES,integer,5,0,Bits per sample
+planes,PLANES,string,25,0,Planes configuration
+band_count,NUM_BANDS,integer,5,0,Number of bands
+upper_left_x,UL_X,double,12,3,Upper left X [m]
+upper_left_y,UL_Y,double,12,3,Upper left Y [m]
+lower_right_x,LR_X,double,12,3,Lower right X [m]
+lower_right_y,LR_Y,double,12,3,Lower right Y [m]

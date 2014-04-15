@@ -5,6 +5,9 @@
 #include "shapefil.h"
 #include "asf_vector.h"
 #include "geotiff_support.h"
+#include <assert.h>
+#include <errno.h>
+#include <ctype.h>
 
 typedef struct {
   char id[50];
@@ -15,6 +18,29 @@ typedef struct {
   double lat[5];
   double lon[5];
 } geotiff_type_t;
+
+static void strip_end_whitesp(char *s)
+{
+    char *p = s + strlen(s) - 1;
+    while (isspace(*p) && p>s)
+        *p-- = '\0';
+}
+
+// output of double values is left aligned and leaves plenty white space
+// as times - get rid of it
+static char lf_buf[32];
+char *lf(double value)
+{
+    if (meta_is_valid_double(value)) {
+        sprintf(lf_buf, "%-16.11g", value);
+        strip_end_whitesp(lf_buf);
+    }
+    else {
+        // For NaN, just leave the value blank 
+        strcpy(lf_buf, "");
+    }
+    return lf_buf;
+}
 
 static void geotiff_init(geotiff_type_t *geotiff)
 {
@@ -88,31 +114,119 @@ static void read_geotiff(char *inFile, geotiff_type_t **g)
   }
 }
 
-// Convert GeoTIFF to generic csv file
+void geotiff2vector(char *inFile, dbf_header_t **dbf, int *nAttr, 
+  double **latArray, double **lonArray, int *nCoords)
+{
+  // Read header information
+  dbf_header_t *header;
+  int n;
+  char shape_type[25];
+  read_header_config("GEOTIFF", &header, &n, shape_type);
+
+  // Read parameter out of TIFF structure
+  data_type_t data_type;
+  short num_bands;
+  short int sample_format, bits_per_sample, planar_config;
+  int ignore[MAX_BANDS], is_scanline_format, is_palette_color_tiff;
+  TIFF *input_tiff = XTIFFOpen(inFile, "r");
+  get_tiff_data_config(input_tiff, &sample_format, &bits_per_sample,
+                       &planar_config, &data_type, &num_bands,
+                       &is_scanline_format, &is_palette_color_tiff, 
+                       REPORT_LEVEL_NONE);
+  XTIFFClose(input_tiff);
+  
+  // Read generic metadata to get geolocation
+  double *lat = (double *) MALLOC(sizeof(double)*5);
+  double *lon = (double *) MALLOC(sizeof(double)*5);
+  int ii;
+  for (ii=0; ii<MAX_BANDS; ii++) 
+    ignore[ii] = 0; // Default to ignoring no bands
+  meta_parameters *meta = read_generic_geotiff_metadata(inFile, ignore, NULL);
+  if (meta && meta->location) {
+    meta_location *ml = meta->location; // Convenience pointer
+    lon[0] = ml->lon_start_near_range;
+    lat[0] = ml->lat_start_near_range;
+    lon[1] = ml->lon_start_far_range;
+    lat[1] = ml->lat_start_far_range;
+    lon[2] = ml->lon_end_far_range;
+    lat[2] = ml->lat_end_far_range;
+    lon[3] = ml->lon_end_near_range;
+    lat[3] = ml->lat_end_near_range;
+    lon[4] = lon[0];
+    lat[4] = lat[0];
+  }
+  else
+    asfPrintError("File (%s) contains no geolocation information\n", inFile);
+  double startX = meta->projection->startX;
+  double startY = meta->projection->startY;
+  double endX = startX + meta->general->sample_count*meta->projection->perX;
+  double endY = startY + meta->general->line_count*meta->projection->perY;
+  meta_free(meta);
+
+  // Assign values
+  for (ii=0; ii<n; ii++) {
+    if (strcmp_case(header[ii].meta, "ID") == 0)
+      header[ii].sValue = STRDUP(inFile);
+    else if (strcmp_case(header[ii].meta, "format") == 0) {
+      if (sample_format == SAMPLEFORMAT_UINT)
+        header[ii].sValue = STRDUP("unsigned integer");
+      else if (sample_format == SAMPLEFORMAT_INT)
+        header[ii].sValue = STRDUP("signed integer");
+      else if (sample_format == SAMPLEFORMAT_IEEEFP)
+        header[ii].sValue = STRDUP("floating point");
+    }
+    else if (strcmp_case(header[ii].meta, "bits_samples") == 0)
+      header[ii].nValue = (int) bits_per_sample;
+    else if (strcmp_case(header[ii].meta, "planes") == 0) {
+      if (planar_config == PLANARCONFIG_CONTIG)
+        header[ii].sValue = STRDUP("contiguous interlaced");
+      else if (planar_config == PLANARCONFIG_SEPARATE)
+        header[ii].sValue = STRDUP("separate planes");
+    }
+    else if (strcmp_case(header[ii].meta, "band_count") == 0)
+      header[ii].nValue = (int) num_bands;
+    else if (strcmp_case(header[ii].meta, "upper_left_x") == 0)
+      header[ii].fValue = startX;
+    else if (strcmp_case(header[ii].meta, "upper_left_y") == 0)
+      header[ii].fValue = startY;
+    else if (strcmp_case(header[ii].meta, "lower_right_x") == 0)
+      header[ii].fValue = endX;
+    else if (strcmp_case(header[ii].meta, "lower_right_y") == 0)
+      header[ii].fValue = endY;
+  }
+
+  *dbf = header;  
+  *nAttr = n;
+  *latArray = lat;
+  *lonArray = lon;
+  *nCoords = 5;
+}
+
+/* Convert GeoTIFF to generic csv file
 int geotiff2csv(char *inFile, char *outFile, int listFlag)
 {
   FILE *fp;
   dbf_header_t *dbf;
   geotiff_type_t *geo;
   int ii, kk, nCols;
-  char str[50];
+  char str[50], shape_type[50];
   char *line = (char *) MALLOC(sizeof(char)*4096);
   char *header = (char *) MALLOC(sizeof(char)*4096);
 
   // Read configuration file
   strcpy(header, "");
-  read_header_config("GEOTIFF", &dbf, &nCols);
+  read_header_config("GEOTIFF", &dbf, &nCols, shape_type);
   for (ii=0; ii<nCols; ii++)
     if (dbf[ii].visible) {
-      if (strcmp(dbf[ii].header, "LAT") == 0 ||
-	  strcmp(dbf[ii].header, "LON") == 0) {
+      if (strcmp(dbf[ii].shape, "LAT") == 0 ||
+	  strcmp(dbf[ii].shape, "LON") == 0) {
 	for (kk=0; kk<4; kk++) {
-	  sprintf(str, "%s%d,", dbf[ii].header, kk+1);
+	  sprintf(str, "%s%d,", dbf[ii].shape, kk+1);
 	  strcat(header, str);
 	}
       }
       else {
-	sprintf(str, "%s,", dbf[ii].header);
+	sprintf(str, "%s,", dbf[ii].shape);
 	strcat(header, str);
       }
     }
@@ -128,33 +242,33 @@ int geotiff2csv(char *inFile, char *outFile, int listFlag)
   header[strlen(header)-1] = ',';
   for (ii=0; ii<nCols; ii++) {
     if (dbf[ii].visible) {
-      if (strcmp(dbf[ii].header, "ID") == 0) {
+      if (strcmp(dbf[ii].shape, "ID") == 0) {
 	sprintf(str, "\"%s\",", geo->id);
 	strcat(line, str);
       }
-      else if (strcmp(dbf[ii].header, "FORMAT") == 0) {
+      else if (strcmp(dbf[ii].shape, "FORMAT") == 0) {
 	sprintf(str, "\"%s\",", geo->format);
         strcat(line, str);
       }
-      else if (strcmp(dbf[ii].header, "BITS_SAMPLES") == 0) {
+      else if (strcmp(dbf[ii].shape, "BITS_SAMPLES") == 0) {
 	sprintf(str, "%d,", geo->bits_per_sample);
         strcat(line, str);
       }
-      else if (strcmp(dbf[ii].header, "PLANES") == 0) {
+      else if (strcmp(dbf[ii].shape, "PLANES") == 0) {
 	sprintf(str, "\"%s\",", geo->planes);
         strcat(line, str);
       }
-      else if (strcmp(dbf[ii].header, "NUM_BANDS") == 0) {
+      else if (strcmp(dbf[ii].shape, "NUM_BANDS") == 0) {
 	sprintf(str, "%d,", geo->band_count);
         strcat(line, str);
       }
-      else if (strcmp(dbf[ii].header, "LAT") == 0) {
+      else if (strcmp(dbf[ii].shape, "LAT") == 0) {
 	for (kk=0; kk<4; kk++) {
 	  sprintf(str, "%s,", lf(geo->lat[kk]));
 	  strcat(line, str);
 	}
       }
-      else if (strcmp(dbf[ii].header, "LON") == 0) {
+      else if (strcmp(dbf[ii].shape, "LON") == 0) {
 	for (kk=0; kk<4; kk++) {
 	  sprintf(str, "%s,", lf(geo->lon[kk]));
 	  strcat(line, str);
@@ -170,6 +284,7 @@ int geotiff2csv(char *inFile, char *outFile, int listFlag)
 
   return 1;
 }
+*/
 
 static void add_placemark(FILE *fp, geotiff_type_t *geo, dbf_header_t *dbf,
 			  int nCols)
@@ -192,22 +307,22 @@ static void add_placemark(FILE *fp, geotiff_type_t *geo, dbf_header_t *dbf,
       strcpy(begin, "");
       strcpy(end, "\n");
     }
-    if (strcmp(dbf[ii].header, "ID") == 0)
+    if (strcmp(dbf[ii].shape, "ID") == 0)
       fprintf(fp, "%s<strong>ID</strong>: %s <br>%s", begin, geo->id, end);
-    else if (strcmp(dbf[ii].header, "FORMAT") == 0)
+    else if (strcmp(dbf[ii].shape, "FORMAT") == 0)
       fprintf(fp, "%s<strong>Format</strong>: %s <br>%s",
 	      begin, geo->format, end);
-    else if (strcmp(dbf[ii].header, "BITS_SAMPLES") == 0)
+    else if (strcmp(dbf[ii].shape, "BITS_SAMPLES") == 0)
       fprintf(fp, "%s<strong>Bits per sample</strong>: %d <br>%s",
 	      begin, geo->bits_per_sample, end);
-    else if (strcmp(dbf[ii].header, "PLANES") == 0)
+    else if (strcmp(dbf[ii].shape, "PLANES") == 0)
       fprintf(fp, "%s<strong>Planes configuration</strong>: %s <br>%s",
 	      begin, geo->planes, end);
-    else if (strcmp(dbf[ii].header, "NUM_BANDS") == 0)
+    else if (strcmp(dbf[ii].shape, "NUM_BANDS") == 0)
       fprintf(fp, "%s<strong>Number of bands</strong>: %d <br>%s",
 	     begin, geo->band_count, end);
-    else if (strcmp(dbf[ii].header, "LAT") == 0 &&
-	     strcmp(dbf[ii].header, "LON") == 0) {
+    else if (strcmp(dbf[ii].shape, "LAT") == 0 &&
+	     strcmp(dbf[ii].shape, "LON") == 0) {
       for (kk=0; kk<4; kk++) {
 	fprintf(fp, "%s<strong>Lat [%d]</strong>: %s <br>%s",
 		begin, kk+1, lf(geo->lat[kk]), end);
@@ -232,7 +347,7 @@ static void add_placemark(FILE *fp, geotiff_type_t *geo, dbf_header_t *dbf,
   fprintf(fp, "  <Polygon>\n");
   fprintf(fp, "    <extrude>1</extrude>\n");
   fprintf(fp, "    <altitudeMode>%s</altitudeMode>\n", altitude_mode());
-  fprintf(fp, "    <outerBoundaryIs>\n");
+  fprintf(fp, "    <outeundaryIs>\n");
   fprintf(fp, "     <LinearRing>\n");
   fprintf(fp, "      <coordinates>\n");
   fprintf(fp, "       %.12f,%.12f,7000\n", geo->lon[0], geo->lat[0]);
@@ -255,9 +370,10 @@ int geotiff2kml(char *inFile, char *outFile, int listFlag)
   dbf_header_t *dbf;
   geotiff_type_t *geo;
   int nCols;
+  char shape_type[25];
 
   // Read configuration file
-  read_header_config("GEOTIFF", &dbf, &nCols);
+  read_header_config("GEOTIFF", &dbf, &nCols, shape_type);
 
   // Read GeoTIFF information
   read_geotiff(inFile, &geo);

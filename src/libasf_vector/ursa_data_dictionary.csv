@@ -1,0 +1,21 @@
+META,SHAPE,Type,Length,Decimals,Definition
+Granule_Name,GRAN_NAME,string,64,0,Granule name
+Granule_Type,GRAN_TYPE,string,32,0,Granule type
+Platform,PLATFORM,string,20,0,Platform
+Sensor,SENSOR,string,20,0,Sensor
+Orbit,ORBIT,integer,7,0,Orbit
+Beam_Mode,BEAM_MODE,string,20,0,Beam mode
+Start_Time,START_TIME,string,30,0,Start acquisition time
+End_Time,END_TIME,string,30,0,End acquisition time
+Near_Start_Lat,NSTART_LAT,double,12,5,Near start latitude [degrees]
+Near_Start_Lon,NSTART_LON,double,12,5,Near start longitude [degrees]
+Far_Start_Lat,FSTART_LAT,double,12,5,Far start latitude [degrees]
+Far_Start_Lon,FSTART_LON,double,12,5,Far start longitude [degrees]
+Near_End_Lat,N_END_LAT,double,12,5,Near end latitude [degrees]
+Near_End_Lon,N_END_LON,double,12,5,Near end longitude [degrees]
+Far_End_Lat,F_END_LAT,double,12,5,Far end latitude [degrees]
+Far_End_Lon,F_END_LON,double,12,5,Far end longitude [degrees]
+Path_Number,PATH,integer,10,0,Path number
+Frame_Number,FRAME,integer,10,0,Frame number
+Cloud_Cover,CLOUDCOVER,integer,5,0,Cloud cover
+Faraday_Rotation,FARADAY,double,10,1,Faraday rotation [degrees]

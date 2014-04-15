@@ -43,6 +43,7 @@ typedef enum {
   TERRASAR_META,
   STF_META,
   CSV,
+  LATLON,
   CUSTOM_FORMAT
 } format_type_t;
 
@@ -76,8 +77,15 @@ typedef enum {
 
 // Generic CSV structure
 typedef struct {
-  char header[255];
+  char *meta;
+  char *shape;
+  char *definition;
+  int length;
+  int decimals;
   dbf_format_t format;
+  char *sValue;
+  double fValue;
+  int nValue;
   int visible;
 } dbf_header_t;
 
@@ -132,7 +140,6 @@ typedef struct {
   double v_wind;
   int alive;
 } cell_t;
-
 
 // Prototype from config.c
 typedef struct
@@ -190,13 +197,12 @@ const char *altitude_mode();
 // Prototypes from shape_utils.c
 void shape_generic_init(char *inFile, dbf_header_t *dbf, int nColumns,
 			format_type_t format);
+void shapefile_init(char *inFile, char *format, meta_parameters *meta);
 void shape_init(char *inFile, format_type_t format);
 int read_shape(char *inFile, char *outFile, format_type_t format, int list);
 int write_shape(char *inFile, char *outFile, format_type_t format, int list);
 void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape);
 void close_shape(DBFHandle dbase, SHPHandle shape);
-void write_esri_proj_file(char *inFile);
-void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile);
 
 // Prototypes from utils.c
 void meta2text(char *inFile, FILE *outFP);
@@ -209,16 +215,21 @@ int isshape(char *inFile);
 int isgeotiff(char *inFile);
 int isrgps(char *inFile);
 int isparfile(char *inFile);
+int isterrasar(char *inFile);
+//int crosses_dateline(double *lon, int vertex_count);
+void split_polygon(double *lat, double *lon, int nCoords, 
+  int *start, double *mLat, double *mLon);
 
 // Prototypes from header.c
 int isVisible(dbf_header_t *dbf, int nCols, char *header);
 char *get_column(char *line, int column);
 int get_number_columns(char *line);
-int read_header_config(const char *format, dbf_header_t **dbf, int *nColumns);
-int read_header_config_ext(const char *format, dbf_header_t **dbf, 
-			   int *nColumns, char *header_file);
+int read_header_config(const char *format, dbf_header_t **dbf, int *nAttr, 
+  char *shape_type);
 
 // Prototypes from meta.c
+meta_parameters *meta2vector(char *inFile, dbf_header_t **dbf, int *nAttr, 
+  double **latArray, double **lonArray, int *nCoords);
 int meta2csv(char *inFile, char *outFile, int listFlag);
 int meta2kml(char *inFile, char *outFile, format_type_t inFormat, 
 	     c2v_config *cfg);
@@ -235,7 +246,7 @@ int write_terrasar2meta(char *inFile, char *outFile, int listFlag);
 
 // Prototypes from point.c
 int point2polygon(char *inFile, char *outFile, int listFlag);
-int point2kml(char *inFile, char *outFile, int listFlag);
+int point2kml(char *inFile, char *outFile);
 void shape_point_init(char *inFile);
 int point2shape(char *inFile, char *outFile, int listFlag);
 
@@ -265,15 +276,18 @@ int csv2shape(char *inFile, char *outFile, int listFlag);
 
 // Prototypes from auig.c
 char *lf(double value);
-int auig2kml(char *in_file, char *out_file, int listFlag);
+/*int auig2kml(char *in_file, char *out_file, int listFlag);
 void shape_auig_init(char *inFile, char *header);
 int auig2shape(char *in_file, char *out_file, int listFlag);
+*/
 
 // Prototypes from geotiff.c
 int geotiff2csv(char *inFile, char *outFile, int listFlag);
 int geotiff2kml(char *inFile, char *outFile, int listFlag);
 void shape_geotiff_init(char *inFile);
 int geotiff2shape(char *inFile, char *outFile, int listFlag);
+void geotiff2vector(char *inFile, dbf_header_t **dbf, int *nAttr, 
+  double **latArray, double **lonArray, int *nCoords);
 
 // Prototypes from kml.c
 void strip_end_whitesp_inplace(char *s);
@@ -281,18 +295,22 @@ int kml2meta(char *in_file, char *out_file, int listFlag);
 int kml2point(char *in_file, char *out_file, int listFlag);
 int kml2polygon(char *in_file, char *out_file, int listFlag);
 int kml2csv(char *in_file, char *out_file, int listFlag);
-int kml2auig(char *in_file, char *out_file, int listFlag);
+//int kml2auig(char *in_file, char *out_file, int listFlag);
 int kml2shape(char *in_file, char *out_file, int listFlag);
 int kml2ursa(char *in_file, char *out_file, int listFlag);
 void test_kml(const char *inFile);
+int convert2kml(char *inFile, char *outFile, char *format, int list, 
+  c2v_config *cfg);
 
 // Prototypes from shape.c
-int shape2meta(char *inFile, char *outfile, int listFlag);
-int shape2point(char *inFile, char *outfile, int listFlag);
-int shape2polygon(char *inFile, char *outfile, int listFlag);
-int shape2csv(char *inFile, char *outfile, int listFlag);
 int shape2auig(char *inFile, char *outfile, int listFlag);
 int shape2kml(char *inFile, char *outfile, int listFlag);
+void write_shape_object(SHPHandle shape, int nAttr, double *lat, double *lon);
+void write_shape_attributes(DBFHandle dbase, int nCoords, int n,
+  dbf_header_t *dbf);
+void shape2latlon(char *infile, double **latArray, double **lonArray, 
+  int **startArray, int *nPoly, int *nCoords);
+int convert2shape(char *inFile, char *outFile, char *format, int list);
 
 // Prototypes from rgps.c
 void rgps2kml(cell_t cell, double *lat, double *lon, FILE *fp);
@@ -304,7 +322,7 @@ void rgps_grid2shape(grid_attr_t grid, DBFHandle dbase, SHPHandle shape,
 void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 
 // Prototypes from multimatch.c
-int multimatch2shape(char *inFile, char *outFile, int listFlag);
+//int multimatch2shape(char *inFile, char *outFile, int listFlag);
 
 // Prototypes from ursa.c
 int ursa2shape(char *inFile, char *outFile, int listFlag, int stack);
@@ -314,21 +332,23 @@ int ursa2kml(char *in_file, char *out_file, int listFlag, int stack);
 int datapool2shape(char *inFile, char *outFile, int listFlag, int stack);
 int datapool2kml(char *in_file, char *out_file, int listFlag, int stack);
 
-// Prototypes from high_altitude_photography.c
-int hap2kml(char *in_file, char *out_file, int listFlag);
-int hap2shape(char *inFile, char *outFile, int listFlag);
-
 // Prototypes from smap.c
+void smap2vector(char *inFile, dbf_header_t **dbf, int *nAttr, 
+  double **latArray, double **lonArray, int *nCoords);
 int smap2shape(char *inFile, char *outFile);
 
 // Prototypes from granule.c
 int granule2shape(char *inFile, char *outFile);
 
-// Prototypes from custom.c
+// Prototypes from latlon.c
+int latlon2shape(char *inFile, char *outFile);
+
+/* Prototypes from custom.c
 int custom2shape(char *inFile, const char *format,
                  char *outFile, int listFlag);
 int custom2kml(char *inFile, const char *format,
 	       char *outFile, int listFlag);
+*/
 
 // Prototypes from convert2vector.t.c
 int test_c2v(char *inFile, const char *inFormat_str,

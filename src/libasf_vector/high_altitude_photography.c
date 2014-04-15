@@ -151,98 +151,98 @@ static void add_to_kml(FILE *fp, hap_t *hap, dbf_header_t *dbf, int nCols)
       strcpy(begin, "");
       strcpy(end, "\n");
     }
-    if (strcmp(dbf[ii].header, "Upper_Left_Lat") == 0)
+    if (strcmp(dbf[ii].kml, "Upper_Left_Lat") == 0)
       fprintf(fp, "<tr><td width=\"200\"><strong>Upper left lat</strong>: %s"
 	      "</td>", lf(hap->near_start_lat));
-    else if (strcmp(dbf[ii].header, "Upper_Left_Lon") == 0)
+    else if (strcmp(dbf[ii].kml, "Upper_Left_Lon") == 0)
       fprintf(fp, "<td><strong>Upper left lon</strong>: %s</td></tr>\n",
 	      lf(hap->near_start_lon));
-    else if (strcmp(dbf[ii].header, "Upper_Right_Lat") == 0)
+    else if (strcmp(dbf[ii].kml, "Upper_Right_Lat") == 0)
       fprintf(fp, "<tr><td width=\"200\"><strong>Upper right lat</strong>: %s"
 	      "</td>", lf(hap->far_start_lat));
-    else if (strcmp(dbf[ii].header, "Upper_Right_Lon") == 0)
+    else if (strcmp(dbf[ii].kml, "Upper_Right_Lon") == 0)
       fprintf(fp, "<td><strong>Upper right lon</strong>: %s</td></tr>\n", 
 	      lf(hap->far_start_lon));
-    else if (strcmp(dbf[ii].header, "Lower_Left_Lat") == 0)
+    else if (strcmp(dbf[ii].kml, "Lower_Left_Lat") == 0)
       fprintf(fp, "<tr><td width=\"200\"><strong>Lower left lat</strong>: %s"
 	      "</td>", lf(hap->near_end_lat));
-    else if (strcmp(dbf[ii].header, "Lower_Left_Lon") == 0)
+    else if (strcmp(dbf[ii].kml, "Lower_Left_Lon") == 0)
       fprintf(fp, "<td><strong>Lower left lon</strong>: %s</td></tr>\n", 
 	      lf(hap->near_end_lon));
-    else if (strcmp(dbf[ii].header, "Lower_Right_Lat") == 0)
+    else if (strcmp(dbf[ii].kml, "Lower_Right_Lat") == 0)
       fprintf(fp, "<tr><td width=\"200\"><strong>Lower right lat</strong>: %s"
 	      "</td>", lf(hap->far_end_lat));
-    else if (strcmp(dbf[ii].header, "Lower_Right_Lon") == 0)
+    else if (strcmp(dbf[ii].kml, "Lower_Right_Lon") == 0)
       fprintf(fp, "<td><strong>Lower right lon</strong>: %s</td></tr>\n", 
 	      lf(hap->far_end_lon));
     /*
-    if (strcmp(dbf[ii].header, "Date_Photography") == 0)
+    if (strcmp(dbf[ii].kml, "Date_Photography") == 0)
       fprintf(fp, "%s<strong>Date of Photography</strong>: %s <br>%s", 
 	      begin, hap->date_photography, end);
-    else if (strcmp(dbf[ii].header, "Location") == 0)
+    else if (strcmp(dbf[ii].kml, "Location") == 0)
       fprintf(fp, "%s<strong>Location</strong>: %s <br>%s", 
 	      begin, hap->location, end);
-    else if (strcmp(dbf[ii].header, "Mission_Line") == 0)
+    else if (strcmp(dbf[ii].kml, "Mission_Line") == 0)
       fprintf(fp, "%s<strong>Mission/Line</strong>: %s <br>%s",
 	      begin, hap->mission_line, end);
-    else if (strcmp(dbf[ii].header, "Roll") == 0)
+    else if (strcmp(dbf[ii].kml, "Roll") == 0)
       fprintf(fp, "%s<strong>Roll</strong>: %s <br>%s",
 	      begin, hap->roll, end);
-    else if (strcmp(dbf[ii].header, "Frame") == 0)
+    else if (strcmp(dbf[ii].kml, "Frame") == 0)
       fprintf(fp, "%s<strong>Frame</strong>: %d <br>%s",
 	      begin, hap->frame, end);
-    else if (strcmp(dbf[ii].header, "Upper_Left_Lat") == 0)
+    else if (strcmp(dbf[ii].kml, "Upper_Left_Lat") == 0)
       fprintf(fp, "%s<strong>Upper left lat</strong>: %s <br>%s", 
 	      begin, lf(hap->near_start_lat), end);
-    else if (strcmp(dbf[ii].header, "Upper_Left_Lon") == 0)
+    else if (strcmp(dbf[ii].kml, "Upper_Left_Lon") == 0)
       fprintf(fp, "%s<strong>Upper left lon</strong>: %s <br>%s", 
 	      begin, lf(hap->near_start_lon), end);
-    else if (strcmp(dbf[ii].header, "Upper_Right_Lat") == 0)
+    else if (strcmp(dbf[ii].kml, "Upper_Right_Lat") == 0)
       fprintf(fp, "%s<strong>Upper right lat</strong>: %s <br>%s", 
 	      begin, lf(hap->far_start_lat), end);
-    else if (strcmp(dbf[ii].header, "Upper_Right_Lon") == 0)
+    else if (strcmp(dbf[ii].kml, "Upper_Right_Lon") == 0)
       fprintf(fp, "%s<strong>Upper right lon</strong>: %s <br>%s", 
 	      begin, lf(hap->far_start_lon), end);
-    else if (strcmp(dbf[ii].header, "Lower_Left_Lat") == 0)
+    else if (strcmp(dbf[ii].kml, "Lower_Left_Lat") == 0)
       fprintf(fp, "%s<strong>Lower left lat</strong>: %s <br>%s", 
 	      begin, lf(hap->near_end_lat), end);
-    else if (strcmp(dbf[ii].header, "Lower_Left_Lon") == 0)
+    else if (strcmp(dbf[ii].kml, "Lower_Left_Lon") == 0)
       fprintf(fp, "%s<strong>Lower left lon</strong>: %s <br>%s", 
 	      begin, lf(hap->near_end_lon), end);
-    else if (strcmp(dbf[ii].header, "Lower_Right_Lat") == 0)
+    else if (strcmp(dbf[ii].kml, "Lower_Right_Lat") == 0)
       fprintf(fp, "%s<strong>Lower right lat</strong>: %s <br>%s", 
 	      begin, lf(hap->far_end_lat), end);
-    else if (strcmp(dbf[ii].header, "Lower_Right_Lon") == 0)
+    else if (strcmp(dbf[ii].kml, "Lower_Right_Lon") == 0)
       fprintf(fp, "%s<strong>Lower right lon</strong>: %s <br>%s", 
 	      begin, lf(hap->far_end_lon), end);
-    else if (strcmp(dbf[ii].header, "Photography") == 0)
+    else if (strcmp(dbf[ii].kml, "Photography") == 0)
       fprintf(fp, "%s<strong>Photography</strong>: %s <br>%s",
 	      begin, hap->photography, end);
-    else if (strcmp(dbf[ii].header, "Camera") == 0)
+    else if (strcmp(dbf[ii].kml, "Camera") == 0)
       fprintf(fp, "%s<strong>Camera</strong>: %s <br>%s",
 	      begin, hap->camera, end);
-    else if (strcmp(dbf[ii].header, "Focal_Length") == 0)
+    else if (strcmp(dbf[ii].kml, "Focal_Length") == 0)
       fprintf(fp, "%s<strong>Camera focal length</strong>: %s <br>%s",
 	      begin, hap->focal_length, end);
-    else if (strcmp(dbf[ii].header, "Sensor_Coverage") == 0)
+    else if (strcmp(dbf[ii].kml, "Sensor_Coverage") == 0)
       fprintf(fp, "%s<strong>Sensor coverage</strong>: %s <br>%s",
 	      begin, hap->sensor, end);
-    else if (strcmp(dbf[ii].header, "Altitude") == 0)
+    else if (strcmp(dbf[ii].kml, "Altitude") == 0)
       fprintf(fp, "%s<strong>Altitude of acquisition</strong>: %s <br>%s",
 	      begin, hap->altitude, end);
-    else if (strcmp(dbf[ii].header, "Field_Of_View") == 0)
+    else if (strcmp(dbf[ii].kml, "Field_Of_View") == 0)
       fprintf(fp, "%s<strong>Horizontal field of view</strong>: %s <br>%s",
 	      begin, hap->field_of_view, end);
-    else if (strcmp(dbf[ii].header, "Resolution") == 0)
+    else if (strcmp(dbf[ii].kml, "Resolution") == 0)
       fprintf(fp, "%s<strong>Resolution</strong>: %s <br>%s",
 	      begin, hap->resolution, end);
-    else if (strcmp(dbf[ii].header, "Overlap") == 0)
+    else if (strcmp(dbf[ii].kml, "Overlap") == 0)
       fprintf(fp, "%s<strong>Overlap</strong>: %s <br>%s",
 	      begin, hap->overlap, end);
-    else if (strcmp(dbf[ii].header, "Scale") == 0)
+    else if (strcmp(dbf[ii].kml, "Scale") == 0)
       fprintf(fp, "%s<strong>Scale</strong>: %s <br>%s",
 	      begin, hap->scale, end);
-    else if (strcmp(dbf[ii].header, "Comments") == 0)
+    else if (strcmp(dbf[ii].kml, "Comments") == 0)
       fprintf(fp, "%s<strong>Comments</strong>: %s <br>%s",
 	      begin, hap->comments, end);
     */
@@ -400,7 +400,7 @@ static int check_hap_location(FILE *ifp, char **header_line, int *n)
   
   // Check whether all visible columns are actually available in the file
   for (ii=0; ii<nCols; ii++) {
-    if (find_str(header, dbf[ii].header) < 0)
+    if (find_str(header, dbf[ii].kml) < 0)
       dbf[ii].visible = FALSE;
   }
   
@@ -523,107 +523,107 @@ void shape_hap_init(char *inFile, char *header)
 
   // Add fields to database
   for (ii=0; ii<nCols; ii++) {
-    if (strcmp(dbf[ii].header, "Filename") == 0 && dbf[ii].visible) {
+    if (strcmp(dbf[ii].kml, "Filename") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "FILENAME", FTString, length, 0) == -1)
         asfPrintError("Could not add FILENAME field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Date_Photography") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Date_Photography") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "DATE_PHOTO", FTString, length, 0) == -1)
         asfPrintError("Could not add DATE_PHOTO field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Location") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Location") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "LOCATION", FTString, length, 0) == -1)
         asfPrintError("Could not add LOCATION field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Mission_Line") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Mission_Line") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "MISSION", FTString, length, 0) == -1)
         asfPrintError("Could not add MISSION field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Roll") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Roll") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "ROLL", FTString, length, 0) == -1)
         asfPrintError("Could not add ROLL field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Frame") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Frame") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "FRAME", FTInteger, 16, 0) == -1)
         asfPrintError("Could not add FRAME field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Center_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Center_Lat") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_CLAT", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_CLAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Center_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Center_Lon") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_CLON", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_CLON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Upper_Left_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Upper_Left_Lat") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_LULAT", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_LULAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Upper_Left_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Upper_Left_Lon") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_LULON", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_LULON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Upper_Right_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Upper_Right_Lat") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_RULAT", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_RULAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Upper_Right_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Upper_Right_Lon") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_RULON", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_RULON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Lower_Left_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Lower_Left_Lat") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_LDLAT", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_LDLAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Lower_Left_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Lower_Left_Lon") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_LDLON", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_LDLON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Lower_Right_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Lower_Right_Lat") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_RDLAT", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_RDLAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Lower_Right_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Lower_Right_Lon") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCN_RDLON", FTDouble, 16, 7) == -1)
         asfPrintError("Could not add SCN_RDLON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Photography") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Photography") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "PHOTOGRAPHY", FTString, length, 0) == -1)
         asfPrintError("Could not add PHOTOGRAPHY field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Camera") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Camera") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "CAMERA", FTString, length, 0) == -1)
         asfPrintError("Could not add CAMERA field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Focal_Length") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Focal_Length") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "FOCAL_LENGTH", FTString, length, 0) == -1)
         asfPrintError("Could not add FOCAL_LENGTH field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Sensor_Coverage") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Sensor_Coverage") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SENSOR", FTString, length, 0) == -1)
         asfPrintError("Could not add SENSOR field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Altitude") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Altitude") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "ALTITUDE", FTString, length, 0) == -1)
         asfPrintError("Could not add ALTITUE field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Field_Of_View") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Field_Of_View") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "FOV", FTString, length, 0) == -1)
         asfPrintError("Could not add FOV field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Resolution") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Resolution") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "RESOLUTION", FTString, length, 0) == -1)
         asfPrintError("Could not add RESOLUTION field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Overlap") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Overlap") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "OVERLAP", FTString, length, 0) == -1)
         asfPrintError("Could not add OVERLAP field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Scale") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Scale") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SCALE", FTString, length, 0) == -1)
         asfPrintError("Could not add SCALE field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Comments") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Comments") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "COMMENTS", FTString, length, 0) == -1)
         asfPrintError("Could not add COMMENTS field to database file\n");
     }
@@ -652,107 +652,107 @@ static void add_to_shape(DBFHandle dbase, SHPHandle shape, hap_t *hap,
 
   // Write fields into the database
   for (ii=0; ii<nCols; ii++) {
-    if (strcmp(dbf[ii].header, "Filename") == 0 && dbf[ii].visible) {
+    if (strcmp(dbf[ii].kml, "Filename") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->filename);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Date_Photography") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Date_Photography") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->date_photography);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Location") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Location") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->location);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Mission_Line") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Mission_Line") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->mission_line);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Roll") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Roll") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->roll);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Frame") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Frame") == 0 && dbf[ii].visible) {
       DBFWriteIntegerAttribute(dbase, n, field, hap->frame);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Center_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Center_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->center_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Center_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Center_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->center_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Upper_Left_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Upper_Left_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->near_start_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Upper_Left_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Upper_Left_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->near_start_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Upper_Right_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Upper_Right_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->far_start_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Upper_Right_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Upper_Right_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->far_start_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Lower_Left_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Lower_Left_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->near_end_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Lower_Left_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Lower_Left_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->near_end_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Lower_Right_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Lower_Right_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->far_end_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Lower_Right_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Lower_Right_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, hap->far_end_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Photography") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Photography") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->photography);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Camera") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Camera") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->camera);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Focal_Length") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Focal_Length") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->focal_length);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Sensor_Coverage") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Sensor_Coverage") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->sensor);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Altitude") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Altitude") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->altitude);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Field_Of_View") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Field_Of_View") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->field_of_view);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Resolution") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Resolution") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->resolution);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Overlap") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Overlap") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->overlap);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Scale") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Scale") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->scale);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Comments") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Comments") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, hap->comments);
       field++;
     }

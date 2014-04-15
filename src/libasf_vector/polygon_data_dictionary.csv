@@ -1,0 +1,4 @@
+META,Shape,Type,Length,Decimals,Definition
+ID, ID, string,255,0,Polygon ID
+lat, LAT, double,12,5,Latitude of vertex [degrees] 
+lon, LON, double,12,5,Longitude of vertex [degrees]

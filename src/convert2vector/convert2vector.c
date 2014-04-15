@@ -195,7 +195,7 @@ int main(int argc, char **argv)
 		     "given on the command line,\nsupersede configuration file "
 		     "information.\n\n");
       if (cfg->list)
-	listFlag = TRUE;
+	    listFlag = TRUE;
       // fix me: take care of directory
     }
     else
@@ -306,13 +306,16 @@ int main(int argc, char **argv)
     asfPrintStatus("   Converting a high altitude photography file ");
   else if (inFormat == SMAP_BOUNDARY)
     asfPrintStatus("   Converting a SMAP file ");
+  else if (inFormat == LATLON)
+    asfPrintStatus("   Converting a geographic polygon file ");
   else {
     dbf_header_t *dbf;
     int nCols;
+    char shape_type[25];
 
     // Check whether you can find information about the format in the header
     // list file in the share directory
-    if (read_header_config(uc(cfg->input_format), &dbf, &nCols))
+    if (read_header_config(uc(cfg->input_format), &dbf, &nCols, shape_type))
       asfPrintStatus("   Converting a %s format file ", uc(cfg->input_format));
     else
       asfPrintError("   Unsupported input format (%s)\n", 
@@ -339,13 +342,14 @@ int main(int argc, char **argv)
   else {
     dbf_header_t *dbf;
     int nCols;
+    char shape_type[25];
 
     // Check whether you can find information about the format in the header
     // list file in the share directory
-    if (read_header_config(uc(cfg->output_format), &dbf, &nCols))
+    if (read_header_config(uc(cfg->input_format), &dbf, &nCols, shape_type))
       asfPrintStatus("into a %s format file ...\n\n", uc(cfg->output_format));
     else
-      asfPrintError("   Unsupported output format (%s)\n", 
+      asfPrintError("   Unsupported input format (%s)\n", 
 		    uc(cfg->output_format));
   }
 
@@ -355,11 +359,7 @@ int main(int argc, char **argv)
   if (tmpdir && strlen(tmpdir) > 0)
     set_asf_tmp_dir(tmpdir);
 
-  if (testFlag)
-    test_c2v(cfg->input_file, cfg->input_format, 
-	     cfg->output_file, cfg->output_format);
-  else
-    convert2vector(cfg);
+  convert2vector(cfg);
 
   asfPrintStatus("Done.\n\n");
 

@@ -66,88 +66,88 @@ static void add_to_kml(FILE *fp, datapool_type_t *datapool, dbf_header_t *dbf,
       strcpy(begin, "");
       strcpy(end, "\n");
     }
-    if (strcmp(dbf[ii].header, "Granule_Name") == 0)
+    if (strcmp(dbf[ii].kml, "Granule_Name") == 0)
       fprintf(fp, "%s<strong>Granule Name</strong>: %s <br>%s",
 	      begin, datapool->granule_name, end);
-    else if (strcmp(dbf[ii].header, "Platform") == 0)
+    else if (strcmp(dbf[ii].kml, "Platform") == 0)
       fprintf(fp, "%s<strong>Platform</strong>: %s <br>%s",
 	      begin, datapool->platform, end);
-    else if (strcmp(dbf[ii].header, "Sensor") == 0)
+    else if (strcmp(dbf[ii].kml, "Sensor") == 0)
       fprintf(fp, "%s<strong>Sensor</strong>: %s <br>%s",
 	      begin, datapool->sensor, end);
-    else if (strcmp(dbf[ii].header, "Beam_Mode") == 0)
+    else if (strcmp(dbf[ii].kml, "Beam_Mode") == 0)
       fprintf(fp, "%s<strong>Beam mode</strong>: %s <br>%s",
 	      begin, datapool->beam_mode, end);
-    else if (strcmp(dbf[ii].header, "Beam_Mode_Description") == 0)
+    else if (strcmp(dbf[ii].kml, "Beam_Mode_Description") == 0)
       fprintf(fp, "%s<strong>Beam mode description</strong>: %s <br>%s",
 	      begin, datapool->beam_mode_description, end);
-    else if (strcmp(dbf[ii].header, "Orbit") == 0)
+    else if (strcmp(dbf[ii].kml, "Orbit") == 0)
       fprintf(fp, "%s<strong>Orbit</strong>: %d <br>%s",
 	      begin, datapool->orbit, end);
-    else if (strcmp(dbf[ii].header, "Path_Number") == 0)
+    else if (strcmp(dbf[ii].kml, "Path_Number") == 0)
       fprintf(fp, "%s<strong>Path Number</strong>: %d <br>%s",
 	      begin, datapool->path_number, end);
-    else if (strcmp(dbf[ii].header, "Frame_Number") == 0)
+    else if (strcmp(dbf[ii].kml, "Frame_Number") == 0)
       fprintf(fp, "%s<strong>Frame Number</strong>: %d <br>%s",
 	      begin, datapool->frame_number, end);
-    else if (strcmp(dbf[ii].header, "Acquisition_Date") == 0)
+    else if (strcmp(dbf[ii].kml, "Acquisition_Date") == 0)
       fprintf(fp, "%s<strong>Acquisition Date</strong>: %s <br>%s",
 	      begin, datapool->acquisition_date, end);
-    else if (strcmp(dbf[ii].header, "Processing_Date") == 0)
+    else if (strcmp(dbf[ii].kml, "Processing_Date") == 0)
       fprintf(fp, "%s<strong>Processing Date</strong>: %s <br>%s",
 	      begin, datapool->processing_date, end);
-    else if (strcmp(dbf[ii].header, "Processing_Level") == 0)
+    else if (strcmp(dbf[ii].kml, "Processing_Level") == 0)
       fprintf(fp, "%s<strong>Processing Level</strong>: %s <br>%s",
 	      begin, datapool->processing_level, end);
-    else if (strcmp(dbf[ii].header, "Start_Time") == 0)
+    else if (strcmp(dbf[ii].kml, "Start_Time") == 0)
       fprintf(fp, "%s<strong>Start Time</strong>: %s <br>%s",
 	      begin, datapool->start_time, end);
-    else if (strcmp(dbf[ii].header, "End_Time") == 0)
+    else if (strcmp(dbf[ii].kml, "End_Time") == 0)
       fprintf(fp, "%s<strong>End Time</strong>: %s <br>%s",
 	      begin, datapool->end_time, end);
-    else if (strcmp(dbf[ii].header, "Center_Lat") == 0)
+    else if (strcmp(dbf[ii].kml, "Center_Lat") == 0)
       fprintf(fp, "%s<strong>Center Lat</strong>: %.4f <br>%s",
 	      begin, datapool->center_lat, end);
-    else if (strcmp(dbf[ii].header, "Center_Lon") == 0)
+    else if (strcmp(dbf[ii].kml, "Center_Lon") == 0)
       fprintf(fp, "%s<strong>Center Lon</strong>: %.4f <br>%s",
 	      begin, datapool->center_lon, end);
-    else if (strcmp(dbf[ii].header, "Near_Start_Lat") == 0)
+    else if (strcmp(dbf[ii].kml, "Near_Start_Lat") == 0)
       fprintf(fp, "%s<strong>Near Start Lat</strong>: %.4f <br>%s",
 	      begin, datapool->near_start_lat, end);
-    else if (strcmp(dbf[ii].header, "Near_Start_Lon") == 0)
+    else if (strcmp(dbf[ii].kml, "Near_Start_Lon") == 0)
       fprintf(fp, "%s<strong>Near Start Lon</strong>: %.4f <br>%s",
 	      begin, datapool->near_start_lon, end);
-    else if (strcmp(dbf[ii].header, "Far_Start_Lat") == 0)
+    else if (strcmp(dbf[ii].kml, "Far_Start_Lat") == 0)
       fprintf(fp, "%s<strong>Far Start Lat</strong>: %.4f <br>%s",
 	      begin, datapool->far_start_lat, end);
-    else if (strcmp(dbf[ii].header, "Far_Start_Lon") == 0)
+    else if (strcmp(dbf[ii].kml, "Far_Start_Lon") == 0)
       fprintf(fp, "%s<strong>Far Start Lon</strong>: %.4f <br>%s",
 	      begin, datapool->far_start_lon, end);
-    else if (strcmp(dbf[ii].header, "Near_End_Lat") == 0)
+    else if (strcmp(dbf[ii].kml, "Near_End_Lat") == 0)
       fprintf(fp, "%s<strong>Near End Lat</strong>: %.4f <br>%s",
 	      begin, datapool->near_end_lat, end);
-    else if (strcmp(dbf[ii].header, "Near_End_Lon") == 0)
+    else if (strcmp(dbf[ii].kml, "Near_End_Lon") == 0)
       fprintf(fp, "%s<strong>Near End Lon</strong>: %.4f <br>%s",
 	      begin, datapool->near_end_lon, end);
-    else if (strcmp(dbf[ii].header, "Far_End_Lat") == 0)
+    else if (strcmp(dbf[ii].kml, "Far_End_Lat") == 0)
       fprintf(fp, "%s<strong>Far End Lat</strong>: %.4f <br>%s",
 	      begin, datapool->far_end_lat, end);
-    else if (strcmp(dbf[ii].header, "Far_End_Lon") == 0)
+    else if (strcmp(dbf[ii].kml, "Far_End_Lon") == 0)
       fprintf(fp, "%s<strong>Far End Lon</strong>: %.4f <br>%s",
 	      begin, datapool->far_end_lon, end);
-    else if (strcmp(dbf[ii].header, "Faraday_Rotation") == 0)
+    else if (strcmp(dbf[ii].kml, "Faraday_Rotation") == 0)
       fprintf(fp, "%s<strong>Faraday Rotation</strong>: %.1f <br>%s",
 	      begin, datapool->faraday_rotation, end);
-    else if (strcmp(dbf[ii].header, "Orbit_Direction") == 0)
+    else if (strcmp(dbf[ii].kml, "Orbit_Direction") == 0)
       fprintf(fp, "%s<strong>Orbit Direction</strong>: %s <br>%s",
 	      begin, datapool->orbit_direction, end);
-    else if (strcmp(dbf[ii].header, "Url") == 0)
+    else if (strcmp(dbf[ii].kml, "Url") == 0)
       fprintf(fp, "%s<strong>URL</strong>: %s <br>%s",
 	      begin, datapool->url, end);
-    else if (strcmp(dbf[ii].header, "Size") == 0)
+    else if (strcmp(dbf[ii].kml, "Size") == 0)
       fprintf(fp, "%s<strong>Size (MB)</strong>: %.2f <br>%s",
 	      begin, datapool->size, end);
-    else if (strcmp(dbf[ii].header, "Off_Nadir_Angle") == 0)
+    else if (strcmp(dbf[ii].kml, "Off_Nadir_Angle") == 0)
       fprintf(fp, "%s<strong>Off Nadir Angle</strong>: %.1f <br>%s",
 	      begin, datapool->off_nadir_angle, end);
   }
@@ -359,7 +359,7 @@ static int check_datapool_location(FILE *ifp, char **header_line, int *n)
 
   // Check whether all visible columns are actually available in the file
   for (ii=0; ii<nCols; ii++) {
-    if (find_str(header, dbf[ii].header) < 0)
+    if (find_str(header, dbf[ii].kml) < 0)
       dbf[ii].visible = FALSE;
   }
 
@@ -481,124 +481,124 @@ void shape_datapool_init(char *inFile, char *header)
 
   // Add fields to database
   for (ii=0; ii<nCols; ii++) {
-    if (strcmp(dbf[ii].header, "Granule_Name") == 0 && dbf[ii].visible) {
+    if (strcmp(dbf[ii].kml, "Granule_Name") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "GRAN_NAME", FTString, length, 0) == -1)
         asfPrintError("Could not add GRAN_NAME field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Platform") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Platform") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "PLATFORM", FTString, length, 0) == -1)
         asfPrintError("Could not add PLATFORM field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Sensor") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Sensor") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "SENSOR", FTString, length, 0) == -1)
         asfPrintError("Could not add SENSOR field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Beam_Mode") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Beam_Mode") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "BEAM_MODE", FTString, length2, 0) == -1)
         asfPrintError("Could not add BEAM_MODE field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Beam_Mode_Description") == 0 && 
+    else if (strcmp(dbf[ii].kml, "Beam_Mode_Description") == 0 && 
 	     dbf[ii].visible) {
       if (DBFAddField(dbase, "BEAM_MODE_D", FTString, length, 0) == -1)
         asfPrintError("Could not add BEAM_MODE_D field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Orbit") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Orbit") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "ORBIT", FTInteger, 7, 0) == -1)
         asfPrintError("Could not add ORBIT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Path_Number") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Path_Number") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "PATH_NUM", FTInteger, 10, 0) == -1)
         asfPrintError("Could not add PATH_NUM field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Frame_Number") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Frame_Number") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "FRAME_NUM", FTInteger, 10, 0) == -1)
         asfPrintError("Could not add FRAME_NUM field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Acquisition_Date") == 0 && 
+    else if (strcmp(dbf[ii].kml, "Acquisition_Date") == 0 && 
 	     dbf[ii].visible) {
       if (DBFAddField(dbase, "ACQ_DATE", FTString, length, 0) == -1)
         asfPrintError("Could not add ACQ_TIME field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Processing_Date") == 0 && 
+    else if (strcmp(dbf[ii].kml, "Processing_Date") == 0 && 
 	     dbf[ii].visible) {
       if (DBFAddField(dbase, "PROC_DATE", FTString, length, 0) == -1)
         asfPrintError("Could not add PROC_TIME field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Processing_Level") == 0 && 
+    else if (strcmp(dbf[ii].kml, "Processing_Level") == 0 && 
 	     dbf[ii].visible) {
       if (DBFAddField(dbase, "PROC_LEVEL", FTString, 10, 0) == -1)
         asfPrintError("Could not add PROC_LEVEL field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Start_Time") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Start_Time") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "START_TIME", FTString, length, 0) == -1)
         asfPrintError("Could not add START_TIME field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "End_Time") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "End_Time") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "END_TIME", FTString, length, 0) == -1)
         asfPrintError("Could not add END_TIME field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Center_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Center_Lat") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "CENTER_LAT", FTDouble, 16, 4) == -1)
         asfPrintError("Could not add CENTER_LAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Center_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Center_Lon") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "CENTER_LON", FTDouble, 16, 4) == -1)
         asfPrintError("Could not add CENTER_LON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Near_Start_Lat") == 0 &&
+    else if (strcmp(dbf[ii].kml, "Near_Start_Lat") == 0 &&
          dbf[ii].visible) {
       if (DBFAddField(dbase, "NSTART_LAT", FTDouble, 16, 4) == -1)
         asfPrintError("Could not add NSTART_LAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Near_Start_Lon") == 0 &&
+    else if (strcmp(dbf[ii].kml, "Near_Start_Lon") == 0 &&
          dbf[ii].visible) {
       if (DBFAddField(dbase, "NSTART_LON", FTDouble, 16, 4) == -1)
         asfPrintError("Could not add NSTART_LON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Far_Start_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Far_Start_Lat") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "FSTART_LAT", FTDouble, 16, 4) == -1)
         asfPrintError("Could not add FSTART_LAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Far_Start_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Far_Start_Lon") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "FSTART_LON", FTDouble, 16, 4) == -1)
         asfPrintError("Could not add FSTART_LON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Near_End_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Near_End_Lat") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "N_END_LAT", FTDouble, 16, 4) == -1)
         asfPrintError("Could not add N_END_LAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Near_End_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Near_End_Lon") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "N_END_LON", FTDouble, 16, 4) == -1)
         asfPrintError("Could not add N_END_LON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Far_End_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Far_End_Lat") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "F_END_LAT", FTDouble, 16, 4) == -1)
         asfPrintError("Could not add F_END_LAT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Far_End_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Far_End_Lon") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "F_END_LON", FTDouble, 16, 4) == -1)
         asfPrintError("Could not add F_END_LON field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Faraday_Rotation") == 0 &&
+    else if (strcmp(dbf[ii].kml, "Faraday_Rotation") == 0 &&
          dbf[ii].visible) {
       if (DBFAddField(dbase, "FARADAYROT", FTDouble, 16, 1) == -1)
         asfPrintError("Could not add FARADAYROT field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Orbit_Direction") == 0 && 
+    else if (strcmp(dbf[ii].kml, "Orbit_Direction") == 0 && 
 	     dbf[ii].visible) {
       if (DBFAddField(dbase, "ORBIT_DIR", FTString, length, 0) == -1)
         asfPrintError("Could not add ORBIT_DIR field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Url") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Url") == 0 && dbf[ii].visible) {
       if (DBFAddField(dbase, "URL", FTString, length2, 0) == -1)
         asfPrintError("Could not add URL field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Size") == 0 &&
+    else if (strcmp(dbf[ii].kml, "Size") == 0 &&
          dbf[ii].visible) {
       if (DBFAddField(dbase, "SIZE_MB", FTDouble, 16, 2) == -1)
         asfPrintError("Could not add SIZE_MB field to database file\n");
     }
-    else if (strcmp(dbf[ii].header, "Off_Nadir_Angle") == 0 &&
+    else if (strcmp(dbf[ii].kml, "Off_Nadir_Angle") == 0 &&
          dbf[ii].visible) {
       if (DBFAddField(dbase, "OFF_NADIR", FTDouble, 16, 2) == -1)
         asfPrintError("Could not add OFF_NADIR field to database file\n");
@@ -646,123 +646,123 @@ static void add_to_shape(DBFHandle dbase, SHPHandle shape, datapool_type_t *data
 
   // Write fields into the database
   for (ii=0; ii<nCols; ii++) {
-    if (strcmp(dbf[ii].header, "Granule_Name") == 0 && dbf[ii].visible) {
+    if (strcmp(dbf[ii].kml, "Granule_Name") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, datapool->granule_name);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Platform") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Platform") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, datapool->platform);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Sensor") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Sensor") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, datapool->sensor);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Beam_Mode") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Beam_Mode") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, datapool->beam_mode);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Beam_Mode_Description") == 0 && 
+    else if (strcmp(dbf[ii].kml, "Beam_Mode_Description") == 0 && 
 	     dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, datapool->beam_mode_description);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Orbit") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Orbit") == 0 && dbf[ii].visible) {
       DBFWriteIntegerAttribute(dbase, n, field, datapool->orbit);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Path_Number") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Path_Number") == 0 && dbf[ii].visible) {
       DBFWriteIntegerAttribute(dbase, n, field, datapool->path_number);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Frame_Number") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Frame_Number") == 0 && dbf[ii].visible) {
       DBFWriteIntegerAttribute(dbase, n, field, datapool->frame_number);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Acquisition_Date") == 0 &&
+    else if (strcmp(dbf[ii].kml, "Acquisition_Date") == 0 &&
 	     dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, datapool->acquisition_date);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Processing_Date") == 0 && 
+    else if (strcmp(dbf[ii].kml, "Processing_Date") == 0 && 
 	     dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, datapool->processing_date);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Processing_Level") == 0 &&
+    else if (strcmp(dbf[ii].kml, "Processing_Level") == 0 &&
 	     dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, datapool->processing_level);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Start_Time") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Start_Time") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, datapool->start_time);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "End_Time") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "End_Time") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, datapool->end_time);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Center_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Center_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, datapool->center_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Center_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Center_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, datapool->center_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Near_Start_Lat") == 0 &&
+    else if (strcmp(dbf[ii].kml, "Near_Start_Lat") == 0 &&
 	     dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, datapool->near_start_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Near_Start_Lon") == 0 &&
+    else if (strcmp(dbf[ii].kml, "Near_Start_Lon") == 0 &&
 	     dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, datapool->near_start_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Far_Start_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Far_Start_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, datapool->far_start_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Far_Start_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Far_Start_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, datapool->far_start_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Near_End_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Near_End_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, datapool->near_end_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Near_End_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Near_End_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, datapool->near_end_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Far_End_Lat") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Far_End_Lat") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, datapool->far_end_lat);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Far_End_Lon") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Far_End_Lon") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, datapool->far_end_lon);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Faraday_Rotation") == 0 &&
+    else if (strcmp(dbf[ii].kml, "Faraday_Rotation") == 0 &&
 	     dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, datapool->faraday_rotation);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Orbit_Direction") == 0 && 
+    else if (strcmp(dbf[ii].kml, "Orbit_Direction") == 0 && 
 	     dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, datapool->orbit_direction);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Url") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Url") == 0 && dbf[ii].visible) {
       DBFWriteStringAttribute(dbase, n, field, datapool->url);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Size") == 0 && dbf[ii].visible) {
+    else if (strcmp(dbf[ii].kml, "Size") == 0 && dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, datapool->size);
       field++;
     }
-    else if (strcmp(dbf[ii].header, "Off_Nadir_Angle") == 0 &&
+    else if (strcmp(dbf[ii].kml, "Off_Nadir_Angle") == 0 &&
 	     dbf[ii].visible) {
       DBFWriteDoubleAttribute(dbase, n, field, datapool->off_nadir_angle);
       field++;

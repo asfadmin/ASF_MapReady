@@ -10,6 +10,8 @@
 #include "asf_vector.h"
 #include "geotiff_support.h"
 #include "get_ceos_names.h"
+#include "terrasar.h"
+#include "xml_util.h"
 
 #define FILENAME_LINE_MAX   (1024)
 #define FILENAME_LEN        (256)
@@ -394,4 +396,76 @@ int isrgps(char *inFile)
     int isRGPS = 0;
 
     return isRGPS;
+}
+
+int isterrasar(char *inFile)
+{
+  int found = FALSE;
+  char *ext = findExt(inFile);
+
+  if (ext && strcmp_case(ext, ".xml") == 0) {
+    char *satellite = (char *) MALLOC(sizeof(char)*25);
+    xmlDoc *doc = xmlReadFile(inFile, NULL, 0);
+    if (doc) {
+      strcpy(satellite, xml_get_string_value(doc, 
+        "level1Product.productInfo.missionInfo.mission"));
+      if (satellite &&
+    	  (strncmp_case(satellite, "TSX", 3) == 0 ||
+	       strncmp_case(satellite, "TDX", 3) == 0))
+        found = TRUE;
+    }
+    xmlFreeDoc(doc);
+    xmlCleanupParser();
+    if (satellite)
+      FREE(satellite);
+  }
+  return found;
+}
+
+void split_polygon(double *lat, double *lon, int nCoords, 
+  int *start, double *mLat, double *mLon)
+{
+  int nCols = nCoords + 5;
+  int ii, nNegative = 0;
+  double m;
+  for (ii=0; ii<nCoords-1; ii++) {
+    if (lon[ii] < 0)
+      nNegative++;
+  }
+  int nNeg = start[0] = 0;
+  int nPos = start[1] = nNegative + 3;
+  for (ii=0; ii<nCoords-1; ii++) {
+    // normal case
+    if (lon[ii] > 0) {
+      mLat[nPos] = lat[ii];
+      mLon[nPos] = lon[ii];
+      nPos++;
+    }
+    if (lon[ii] < 0) {
+      mLat[nNeg] = lat[ii];
+      mLon[nNeg] = lon[ii];
+      nNeg++;
+    }
+    // crossing dateline
+    if (lon[ii] < 0 && lon[ii+1] > 0) { 
+      m = (lat[ii+1] - lat[ii])/(fabs(lon[ii+1] - lon[ii]) - 360.0);
+      mLat[nPos] = mLat[nNeg] = m*(180.0 - lon[ii+1]) + lat[ii+1];
+      mLon[nPos] = 180.0;
+      mLon[nNeg] = -180.0;
+      nPos++;
+      nNeg++;
+    }
+    else if (lon[ii] > 0 && lon[ii+1] < 0) {
+      m = (lat[ii+1] - lat[ii])/(360.0 - fabs(lon[ii+1] - lon[ii]));
+      mLat[nPos] = mLat[nNeg] = m*(180.0 - lon[ii]) + lat[ii];
+      mLon[nPos] = 180.0;
+      mLon[nNeg] = -180.0;
+      nPos++;
+      nNeg++;
+    }
+  }
+  mLat[nNegative+2] = mLat[0];
+  mLon[nNegative+2] = mLon[0];
+  mLat[nCols-1] = mLat[nNegative+3];
+  mLon[nCols-1] = mLon[nNegative+3];
 }

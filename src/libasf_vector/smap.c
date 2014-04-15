@@ -46,8 +46,7 @@ void shape_smap_init(char *inFile)
   return;
 }
 
-static void check_smap_file(char *inDataName, 
-			    int *line_count, int *sample_count)
+static void check_smap_file(char *inDataName, int *line_count, int *sample_count)
 {
   hsize_t dims[2];
   hid_t file, group, dataset, dataspace;
@@ -194,6 +193,46 @@ static void read_smap_outline(char *inDataName, int *vertex_count,
   *vertex_count = counts;
 }
 
+void smap2vector(char *inFile, dbf_header_t **dbf, int *nAttr, 
+  double **latArray, double **lonArray, int *nCoords)
+{
+  // Read header information
+  dbf_header_t *header;
+  int n;
+  char shape_type[25];
+  read_header_config("SMAP", &header, &n, shape_type);
+
+  // Assign values
+  smap_meta *smap = read_smap_meta(inFile);	
+  int ii;
+  for (ii=0; ii<n; ii++) {
+    if (strcmp_case(header[ii].meta, "file_name") == 0)
+      header[ii].sValue = STRDUP(smap->file_name);
+    else if (strcmp_case(header[ii].meta, "start_time") == 0)
+      header[ii].sValue = STRDUP(smap->orbit_start_date_time);
+    else if (strcmp_case(header[ii].meta, "stop_time") == 0)
+      header[ii].sValue = STRDUP(smap->orbit_stop_date_time);
+    else if (strcmp_case(header[ii].meta, "direction") == 0)
+      header[ii].sValue = STRDUP(smap->orbit_direction);
+  }
+  FREE(smap);
+
+  // Read lat/lon for boundary of SMAP data set
+  double *lat, *lon;
+  int line_count, sample_count, vertex_count;
+  check_smap_file(inFile, &line_count, &sample_count);
+  lat = (double *) MALLOC(sizeof(double)*(line_count+sample_count)*2+1);
+  lon = (double *) MALLOC(sizeof(double)*(line_count+sample_count)*2+1);
+  read_smap_outline(inFile, &vertex_count, lat, lon);  
+  lat[vertex_count] = lat[0];
+  lon[vertex_count] = lon[0];
+
+  *dbf = header;  
+  *nAttr = n;
+  *latArray = lat;
+  *lonArray = lon;
+  *nCoords = vertex_count+1;
+}
 
 int smap2shape(char *inFile, char *outFile)
 {
