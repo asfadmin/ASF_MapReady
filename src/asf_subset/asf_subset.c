@@ -200,9 +200,10 @@ int main (int argc, char *argv[])
   meta_parameters *meta = meta_read(inFile);
   if (strcmp_case(meta->general->sensor, "SMAP") == 0)
     smap = TRUE;
-  if (meta->projection && meta->projection->type == SCANSAR_PROJECTION)
+  if (meta->projection && meta->projection->type != SCANSAR_PROJECTION) {
+    map = TRUE;
     projected = TRUE;
-  meta_free(meta);
+  }
 
   // Create a temporary directory, if we needed it
   if (shapeFile) {
@@ -212,12 +213,35 @@ int main (int argc, char *argv[])
   }
 
   // Put geographic information into the appropriate arrays
-  if (shapeFile)
+  if (shapeFile) {
     shape2latlon(shapeFile, &lat, &lon, &start, &nParts, &nVertices);
+    if (map) {
+      int ii;
+      int nl = meta->general->line_count;
+      int ns = meta->general->sample_count;
+      double line, sample;
+      double minSample = ns, maxSample = 0.0, minLine = nl, maxLine = 0.0;
+      for (ii=0; ii<nVertices; ii++) {
+        meta_get_lineSamp(meta, lat[ii], lon[ii], 0.0, &line, &sample);
+        if (line < minLine)
+          minLine = line;
+        if (line > maxLine)
+          maxLine = line;
+        if (sample < minSample)
+          minSample = sample;
+        if (sample > maxSample)
+          maxSample = sample;
+      }
+      startX = minSample;
+      startY = minLine;
+      sizeX = maxSample - minSample;
+      sizeY = maxLine - minLine;
+    }
+  }
   else if (latlon) {
     nVertices = 4;
-    lat = (double *) MALLOC(sizeof(double)*4);
-    lon = (double *) MALLOC(sizeof(double)*4);
+    lat = (double *) MALLOC(sizeof(double)*nVertices);
+    lon = (double *) MALLOC(sizeof(double)*nVertices);
     lat[0] = maxY;
     lon[0] = minX;
     lat[1] = maxY;
@@ -226,18 +250,26 @@ int main (int argc, char *argv[])
     lon[2] = maxX;
     lat[3] = minY;
     lon[3] = minX;
+    int dateline = crosses_dateline(lon, 0, nVertices);
+    if (dateline && maxX < 0) {
+      lon[1] += 360.0;
+      lon[2] += 360.0;
+    }
   }
-  if (latlon) {
+  meta_free(meta);
+
+  // Get on with the subsetting
+  if (latlon && !map) {
     if (smap) {
       if (shapeFile) {
         char *tmpFile = (char *) MALLOC(sizeof(char)*(strlen(tmpDir)+15));
         sprintf(tmpFile, "%s%csubset.img", tmpDir, DIR_SEPARATOR);
         asfPrintStatus("Clipping to polygon extent ...\n");
         clip_to_polygon(inFile, tmpFile, lat, lon, start, nParts, nVertices);
-        asfPrintStatus("\nSubsetting to geographic box extent ...\n");
+        asfPrintStatus("\nShrinking image to polygon extent ...\n");
         trim_zeros_ext(tmpFile, outFile, TRUE, TRUE, TRUE);
         FREE(tmpFile);      
-        //remove_dir(tmpDir);
+        remove_dir(tmpDir);
       }
       else {
         asfPrintStatus("Subsetting to geographic box extent ...\n");
@@ -248,12 +280,17 @@ int main (int argc, char *argv[])
       if (shapeFile) {
         char *tmpFile = (char *) MALLOC(sizeof(char)*(strlen(tmpDir)+15));
         sprintf(tmpFile, "%s%csubset.img", tmpDir, DIR_SEPARATOR);
+        char *tmp2File = (char *) MALLOC(sizeof(char)*(strlen(tmpDir)+15));
+        sprintf(tmp2File, "%s%cclip.img", tmpDir, DIR_SEPARATOR);
         asfPrintStatus("Subsetting to geographic box extent ...\n");
         subset_by_latlon(inFile, tmpFile, lat, lon, nVertices);
         asfPrintStatus("\nClipping to polygon extent ...\n");
-        clip_to_polygon(tmpFile, outFile, lat, lon, start, nParts, nVertices);
-        FREE(tmpFile);      
-        //remove_dir(tmpDir);
+        clip_to_polygon(tmpFile, tmp2File, lat, lon, start, nParts, nVertices);
+        asfPrintStatus("\nShrinking image to polygon extent ...\n");
+        trim_zeros_ext(tmp2File, outFile, TRUE, TRUE, TRUE);
+        FREE(tmpFile);
+        FREE(tmp2File);
+        remove_dir(tmpDir);
       }
       else {
         asfPrintStatus("Subsetting to geographic box extent ...\n");
@@ -268,11 +305,11 @@ int main (int argc, char *argv[])
       char *tmpFile = (char *) MALLOC(sizeof(char)*(strlen(tmpDir)+15));
       sprintf(tmpFile, "%s%csubset.img", tmpDir, DIR_SEPARATOR);
       asfPrintStatus("Subsetting to map projected box extent ...\n");
-      subset_by_map(inFile, tmpFile, minX, maxX, minY, maxY);    
+      trim(inFile, tmpFile, startX, startY, sizeX, sizeY);
       asfPrintStatus("\nClipping to polygon extent ...\n");
       clip_to_polygon(tmpFile, outFile, lat, lon, start, nParts, nVertices);
       FREE(tmpFile);      
-      //remove_dir(tmpDir);
+      remove_dir(tmpDir);
     }
     else {
       asfPrintStatus("Subsetting to map projected box extent ...\n");

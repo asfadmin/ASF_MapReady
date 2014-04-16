@@ -367,8 +367,6 @@ void subset_by_latlon(char *infile, char *outfile, double *lat, double *lon,
     if (lon[ii] < minLon)
       minLon = lon[ii];
   }
-  asfPrintStatus("Latitude  - minimum: %.5f, maximum: %.5f\n", minLat, maxLat);
-  asfPrintStatus("Longitude - minimum: %.5f, maximum: %.5f\n", minLon, maxLon);
   meta_get_lineSamp(meta, minLat, minLon, 0.0, &line, &sample);
   if (line < minLine)
     minLine = line;
@@ -409,10 +407,6 @@ void subset_by_latlon(char *infile, char *outfile, double *lat, double *lon,
   startY = (int) (minLine + 0.5);
   sizeX = (int) (maxSample - minSample);
   sizeY = (int) (maxLine - minLine);
-  asfPrintStatus("Line   - minimum: %5.0f, maximum: %5.0f\n", 
-    minLine, maxLine);
-  asfPrintStatus("Sample - minimum: %5.0f, maximum: %5.0f\n", 
-    minSample, maxSample);
   trim(infile, outfile, startX, startY, sizeX, sizeY);
   meta_free(meta); 
 }
@@ -427,14 +421,12 @@ Poly *polygon_new(double *x, double *y, int start, int end)
   self->dateline = crosses_dateline(x, 0, end);
 
   int i;
-  //printf("start: %d, end: %d, n: %d\n", start, end, n);
   for (i=start; i<end; ++i) {
     if (self->dateline && (x[i] < 0))
-      self->x[i] = x[i] + 360.0;
+      self->x[i-start] = x[i] + 360.0;
     else
-      self->x[i] = x[i];
-    self->y[i] = y[i];
-    //printf("i: %4d, lat: %.5f, lon: %.5f\n", i, self->y[i], self->x[i]);
+      self->x[i-start] = x[i];
+    self->y[i-start] = y[i];
   }
 
   return self;
@@ -471,13 +463,7 @@ void clip_to_polygon(char *inFile, char *outFile, double *lat, double *lon,
 {
   int ii, jj, kk;
   double pLat, pLon;
-  
-  for (kk=0; kk<nParts; kk++) {
-    for (ii=start[kk]; ii<start[kk+1]; ii++)
-      printf("%d - part: %d, lat: %.5f, lon: %.5f\n", ii, kk, lat[ii], lon[ii]);
-  }
-  printf("nParts: %d, nVertices: %d\n", nParts, nVertices);
-  
+    
   // Grab some metadata
   meta_parameters *meta = meta_read(inFile);
   int nb = meta->general->band_count;
@@ -485,23 +471,18 @@ void clip_to_polygon(char *inFile, char *outFile, double *lat, double *lon,
   int ns = meta->general->sample_count;
   
   // Set things up for polygon tests
+  int dateline = crosses_dateline(lon, 0, nVertices);
   int *factor = (int *) MALLOC(sizeof(int)*ns);
   float *values = (float *) MALLOC(sizeof(float)*ns);
-  //int begin, end;
+  int begin, end;
 
-  /* Load polygon
+  // Load polygon
   Poly **p = (Poly**) MALLOC(sizeof(Poly*)*nParts); 
   for (ii=0; ii<nParts; ii++) {
     begin = start[ii];
     end = start[ii+1];
     p[ii] = polygon_new(lon, lat, begin, end);
   }
-  for (ii=0; ii<nParts; ii++) {
-    printf("Part %d, start: %d, end: %d\n", ii, start[ii], start[ii+1]);
-    for (kk=start[ii]; kk<start[ii+1]; kk++)
-      printf("%d - lat: %.5f, lon: %.5f\n", kk, p[ii]->y[kk], p[ii]->x[kk]);
-  }
-  */
   
   // Go through image and update values outside polygon
   FILE *fpIn = FOPEN(inFile, "rb");
@@ -510,13 +491,12 @@ void clip_to_polygon(char *inFile, char *outFile, double *lat, double *lon,
     for (ii=0; ii<ns; ii++) {
       factor[ii] = 0;
       meta_get_latLon(meta, (double) kk, (double) ii, 0.0, &pLat, &pLon);
-      Poly *p2 = polygon_new(lon, lat, 529, 1077);
-      //for (jj=0; jj<nParts; jj++) {
-      //  if (point_in_polygon(p[jj], pLon, pLat))
-        if (point_in_polygon(p2, pLon, pLat))
+      if (dateline && pLon<0)
+        pLon += 360;
+      for (jj=0; jj<nParts; jj++) {
+        if (point_in_polygon(p[jj], pLon, pLat))
           factor[ii] = 1;
-      //}
-      polygon_free(p2);
+      }
     }
     for (jj=0; jj<nb; jj++) {
       get_band_float_line(fpIn, meta, jj, kk, values);    
@@ -530,11 +510,9 @@ void clip_to_polygon(char *inFile, char *outFile, double *lat, double *lon,
   FCLOSE(fpOut);
   meta_write(meta, outFile);
   meta_free(meta);
-  /*
   for (ii=0; ii<nParts; ii++)
     polygon_free(p[ii]);
   FREE(p);
-  */
   FREE(factor);
   FREE(values);
 }
