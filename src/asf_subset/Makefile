@@ -5,9 +5,9 @@ TARGET = asf_subset
 CFLAGS += $(GLIBS_CFLAGS)
 
 LIBS  = \
-	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/libasf_import.a \
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/libasf_proj.a \
