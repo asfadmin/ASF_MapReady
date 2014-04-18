@@ -74,6 +74,7 @@
 #include <asf_license.h>
 #include <asf_contact.h>
 #include <asf_raster.h>
+#include <smap.h>
 
 // Print minimalistic usage info & exit
 static void usage(char *name)
@@ -264,12 +265,16 @@ int main (int argc, char *argv[])
       if (shapeFile) {
         char *tmpFile = (char *) MALLOC(sizeof(char)*(strlen(tmpDir)+15));
         sprintf(tmpFile, "%s%csubset.img", tmpDir, DIR_SEPARATOR);
+        char *tmp2File = (char *) MALLOC(sizeof(char)*(strlen(tmpDir)+15));
+        sprintf(tmp2File, "%s%cupdate_meta.img", tmpDir, DIR_SEPARATOR);
         asfPrintStatus("Clipping to polygon extent ...\n");
         clip_to_polygon(inFile, tmpFile, lat, lon, start, nParts, nVertices);
         asfPrintStatus("\nShrinking image to polygon extent ...\n");
-        trim_zeros_ext(tmpFile, outFile, TRUE, TRUE, TRUE);
+        trim_zeros_ext(tmpFile, tmp2File, TRUE, TRUE, TRUE);
+        update_smap_geolocation(tmp2File, outFile);
         FREE(tmpFile);      
         remove_dir(tmpDir);
+        
       }
       else {
         asfPrintStatus("Subsetting to geographic box extent ...\n");
