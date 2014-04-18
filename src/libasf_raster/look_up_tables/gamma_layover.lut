@@ -1,0 +1,45 @@
+# Gamma Layover/shadow mask look up table
+0 0 0        # NOT USED! (the values are numbered starting at 1)
+0 0 0        # 1 normal (1=normal, 2=true layover, 4=layover, 8=true shadow, 16=shadow
+0 153 32     # 2 true layover
+0 153 32     # 3 true layover
+0 255 32     # 4 layover
+0 255 32     # 5 layover
+0 255 32     # 6 layover
+0 255 32     # 7 layover
+153 64 0     # 8 true shadow
+153 64 0     # 9 true shadow
+153 64 0     # 10 true shadow
+153 64 0     # 11 true shadow
+153 64 0     # 12 true shadow
+153 64 0     # 13 true shadow
+153 64 0     # 14 true shadow
+153 64 0     # 15 true shadow
+255 64 0     # 16 shadow
+255 64 0     # 17 shadow
+255 64 0     # 18 shadow
+255 64 0     # 19 shadow
+255 64 0     # 20 shadow
+255 64 0     # 21 shadow
+255 64 0     # 22 shadow
+255 64 0     # 23 shadow
+255 64 0     # 24 shadow
+255 64 0     # 25 shadow
+255 64 0     # 26 shadow
+255 64 0     # 27 shadow
+255 64 0     # 28 shadow
+255 64 0     # 29 shadow
+255 64 0     # 30 shadow
+255 64 0     # 31 shadow
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
+0 0 0
