@@ -2106,13 +2106,13 @@ int main(int argc, char **argv)
     fprintf(fp, "      <azimuth_spacing type=\"double\" definition=\"Pixel size in "
       "azimuth\" units=\"m\">%g</azimuth_spacing>\n", azimuth_spacing);
     fprintf(fp, "      <slant_to_first type=\"double\" definition=\"Slant range "
-      "distance to the near-range edge of the image\" units=\"m\">%g"
+      "distance to the near-range edge of the image\" units=\"m\">%.3f"
       "</slant_to_first>\n", slant_first);
     fprintf(fp, "      <slant_to_center type=\"double\" definition=\"Slant range "
-      "distance to the center of the image\" units=\"m\">%g"
+      "distance to the center of the image\" units=\"m\">%.3f"
       "</slant_to_center>\n", slant_center);
     fprintf(fp, "      <slant_to_last type=\"double\" definition=\"Slant range "
-      "distance to the far-range edge of the image\" units=\"m\">%g"
+      "distance to the far-range edge of the image\" units=\"m\">%.3f"
       "</slant_to_last>\n", slant_last);
     strncpy(str, center, 4);
     year = atoi(str);
