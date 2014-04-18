@@ -1925,7 +1925,7 @@ int main(int argc, char **argv)
     while (NULL != fgets(line, 255, fpFiles)) {
       char *key, *value;
       split2(line, ':', &key, &value);
-      if (strcmp(key, "range looks") == 0)
+      if (strcmp(key, "range looks") == 0 && strstr(line, "azimuth looks") == NULL)
         range_looks = atoi(value);
       else if (strcmp(key, "azimuth looks") == 0)
         azimuth_looks = atoi(value);
