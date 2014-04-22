@@ -1,5 +1,5 @@
 META,SHAPE,Type,Length,Decimals,Definition
-ID, ID, string,255,0,Polygon ID
+ID,ID,string,255,0,Polygon ID
 format,FORMAT,string,20,0,Format
 bits_samples,SAMPLES,integer,5,0,Bits per sample
 planes,PLANES,string,25,0,Planes configuration

@@ -469,6 +469,7 @@ void clip_to_polygon(char *inFile, char *outFile, double *lat, double *lon,
   int nb = meta->general->band_count;
   int nl = meta->general->line_count;
   int ns = meta->general->sample_count;
+  char **bands = extract_band_names(meta->general->bands, nb);
   
   // Set things up for polygon tests
   int dateline = crosses_dateline(lon, 0, nVertices);
@@ -496,12 +497,15 @@ void clip_to_polygon(char *inFile, char *outFile, double *lat, double *lon,
       for (jj=0; jj<nParts; jj++) {
         if (point_in_polygon(p[jj], pLon, pLat))
           factor[ii] = 1;
-      }
+      } 
     }
     for (jj=0; jj<nb; jj++) {
       get_band_float_line(fpIn, meta, jj, kk, values);    
-      for (ii=0; ii<ns; ii++)
-        values[ii] *= (float) factor[ii];
+      if (strcmp_case(bands[jj], "lat") != 0 && 
+        strcmp_case(bands[jj], "lon") != 0) {
+        for (ii=0; ii<ns; ii++)
+          values[ii] *= (float) factor[ii];
+      }
       put_band_float_line(fpOut, meta, jj, kk, values);
     }
     asfLineMeter(kk, nl);
@@ -515,4 +519,7 @@ void clip_to_polygon(char *inFile, char *outFile, double *lat, double *lon,
   FREE(p);
   FREE(factor);
   FREE(values);
+  for (ii=0; ii<nb; ii++)
+    FREE(bands[ii]);
+  FREE(bands);
 }

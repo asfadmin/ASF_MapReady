@@ -1,25 +1,25 @@
 META,SHAPE,Type,Length,Decimals,Definition
-Granule_Name,GRAN_NAME,string,64,0,Granule name
+Granule Name,GRAN_NAME,string,64,0,Granule name
 Platform,PLATFORM,string,20,0,Platform
 Sensor,SENSOR,string,20,0,Sensor
 Orbit,ORBIT,integer,7,0,Orbit
-Beam_Mode,BEAM_MODE,string,20,0,Beam mode
-Path_Number,PATH,integer,10,0,Path number
-Frame_Number,FRAME,integer,10,0,Frame number
-Acquisition_Date,ACQ_DATE,string,30,0,Acquisition date
-Start_Time,START_TIME,string,30,0,Acquisition start time
-End_Time,END_TIME,string,30,0,Acquisition end time
-Center_Lat,CENTER_LAT,double,12,5,Center latitude [degrees]
-Center_Lon,CENTER_LON,double,12,5,Center longitude [degrees]
-Near_Start_Lat,NSTART_LAT,double,12,5,Near start latitude [degrees]
-Near_Start_Lon,NSTART_LON,double,12,5,Near start longitude [degrees]
-Far_Start_Lat,FSTART_LAT,double,12,5,Far start latitude [degrees]
-Far_Start_Lon,FSTART_LON,double,12,5,Far start longitude [degrees]
-Near_End_Lat,N_END_LAT,double,12,5,Near end latitude [degrees]
-Near_End_Lon,N_END_LON,double,12,5,Near end longitude [degrees]
-Far_End_Lat,F_END_LAT,double,12,5,Far end latitude [degrees]
-Far_End_Lon,F_END_LON,double,12,5,Far end longitude [degrees]
-Faraday_Rotation,FARADAY,double,16,1,Faraday rotation [degrees]
-Orbit_Direction,ORBIT_DIR,string,15,0,Orbit direction
-Url,URL,string,512,0,URL
-Off_Nadir_Angle,OFF_NADIR,double,12,5,Off nadir angle [degrees]
+Beam Mode,BEAM_MODE,string,20,0,Beam mode
+Path Number,PATH,integer,10,0,Path number
+Frame Number,FRAME,integer,10,0,Frame number
+Acquisition Date,ACQ_DATE,string,30,0,Acquisition date
+Start Time,START_TIME,string,30,0,Acquisition start time
+End Time,END_TIME,string,30,0,Acquisition end time
+Center Lat,CENTER_LAT,double,12,5,Center latitude [degrees]
+Center Lon,CENTER_LON,double,12,5,Center longitude [degrees]
+Near Start Lat,LAT1,double,12,5,Near start latitude [degrees]
+Near Start Lon,LON1,double,12,5,Near start longitude [degrees]
+Far Start Lat,LAT2,double,12,5,Far start latitude [degrees]
+Far Start Lon,LON2,double,12,5,Far start longitude [degrees]
+Near End Lat,LAT4,double,12,5,Near end latitude [degrees]
+Near End Lon,LON4,double,12,5,Near end longitude [degrees]
+Far End Lat,LAT3,double,12,5,Far end latitude [degrees]
+Far End Lon,LON3,double,12,5,Far end longitude [degrees]
+Faraday Rotation,FARADAY,double,16,1,Faraday rotation [degrees]
+Ascending or Descending?,ORBIT_DIR,string,15,0,Orbit direction
+URL,URL,string,255,0,URL
+Off Nadir Angle,OFF_NADIR,double,12,5,Off nadir angle [degrees]

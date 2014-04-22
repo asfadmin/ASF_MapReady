@@ -15,18 +15,12 @@ CFLAGS += $(W_ERROR) \
 
 OBJS = \
 	convert2vector.o \
+	vector.o \
 	utils.o \
 	header.o \
-	geotiff.o \
 	rgps.o \
-	multimatch.o \
-	meta.o \
 	kml.o \
 	shape.o \
-	generic_csv.o \
-	smap.o \
-	latlon.o \
-	utils.o \
 	config.o
 
 LIBS = \

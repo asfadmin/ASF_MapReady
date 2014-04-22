@@ -97,7 +97,6 @@ int read_header_config(const char *format, dbf_header_t **dbf,
   strcpy(shape_type, "UNKNOWN");
 
   char header_file[1024];
-  //asfPrintStatus("Reading header information from %s\n", get_asf_share_dir());
   sprintf(header_file, "%s%c%s", 
 	  get_asf_share_dir(), DIR_SEPARATOR, "header.lst");
   

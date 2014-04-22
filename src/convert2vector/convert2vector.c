@@ -7,35 +7,48 @@
 #include <stdio.h>
 #include <ctype.h>
 
-static int iscsv(char *file)
-{
-  char *ext = findExt(file);
-  if (!ext) {
-    char *csvfile = appendExt(file, ".csv");
-    int ret = fileExists(csvfile);
-    free(csvfile);
-    return ret;
-  } else {
-    return strcmp_case(ext,".csv")==0;
-  }
-}
+#define VERSION 3.0
 
-static int isxmlfile(char *file)
+void usage()
 {
-  char *ext = findExt(file);
-  if (!ext) {
-    char *xmlfile = appendExt(file, ".xml");
-    int ret = fileExists(xmlfile);
-    free(xmlfile);
-    return ret;
-  } else {
-    return strcmp_case(ext,".xml")==0;
-  }
+  printf("\n"
+   "USAGE:\n"
+   "   convert2vector [-list] [-input-format <format>] [-output-format "
+   "<format>]\n" \
+   "                  [-config <configuration file>]\n" \
+   "                  [-log <filename>] [-license] [-version] [-help "
+   "[<input format>]]\n" \
+   "                  <input file> <output file>\n");
+  printf("\n"
+   "REQUIRED ARGUMENTS:\n"
+   "   snapshot      Basename of the output file.\n"
+   "                 cells: cells_<snapshot>, grid points: grid_<snapshot>\n");
+  printf("\n"
+   "OPTIONAL ARGUMENTS:\n"
+   "   -cells        Generates a data layer with the cell information.\n"
+   "   grid points   File name with grid point table.\n"
+   "   attributes    File name with cell attribute table.\n"
+   "   connectvity   File name with cell connectivity table.\n"
+   "   cell definition    File name with cell definition table.\n"
+   "   grid definition    File name with grid definition table.\n"
+   "   input type    input files can database files or backup text files.\n"
+   "                 database: 'db' or text file: 'txt'.\n"
+   "   -weather      Generates a data layer with weather information.\n"
+   "   table         File name with weather table.\n"
+   "   date          Date for which to extract the weather data\n");
+  printf("\n"
+   "DESCRIPTION:\n"
+   "   This program converts information out of the RGPS database into\n"
+   "   ArcGIS shape files and KML files.\n");
+  printf("\n"
+   "Version %.2f, ASF SAR Tools\n"
+   "\n",VERSION);
+  exit(EXIT_FAILURE);
 }
 
 int main(int argc, char **argv)
 {
-  char informat_str[25], outformat_str[25], configFile[255];
+  char inFormat[25], outFormat[25], configFile[255];
   int listFlag=0;
   int stackFlag=0;
   int timeFlag=0;
@@ -47,7 +60,6 @@ int main(int argc, char **argv)
   int transparencyFlag=0;
   int northFlag=0, southFlag=0, eastFlag=0, westFlag=0;
   int needed_args=3;
-  format_type_t inFormat, outFormat;
   c2v_config *cfg=NULL;
 
   if (argc > 1) {
@@ -55,9 +67,7 @@ int main(int argc, char **argv)
       handle_common_asf_args(&argc, &argv, TOOL_NAME);
   }
 
-  /* parse command line */
-  strcpy(informat_str, "GEOTIFF"); // Default value
-  strcpy(outformat_str, "KML"); // Default value
+  // parse command line
   configFlag =  
     checkForOption("-config", argc, argv) ?
     getStringOption("-config", argc, argv, configFile, NULL) :
@@ -226,133 +236,21 @@ int main(int argc, char **argv)
     cfg->transparency = 50;
   }
 
-  inFormat = str2format(cfg->input_format);
-  outFormat = str2format(cfg->output_format);
-
-  if (!inputFormatFlag && !configFlag) {
-    // If the input format option was not used, try to determine the input 
-    // format from the file itself
-    if (ismetadata(cfg->input_file)) {
-      inFormat = META;
-      strcpy(informat_str, "meta");
-    }
-    else if (isleader(cfg->input_file)) {
-      inFormat = LEADER;
-      strcpy(informat_str, "leader");
-    }
-    else if (ispoint(cfg->input_file)) {
-      inFormat = POINT;
-      strcpy(informat_str, "point");
-    }
-    else if (ispolygon(cfg->input_file)) {
-      inFormat = POLYGON;
-      strcpy(informat_str, "polygon");
-    }
-    else if (isshape(cfg->input_file)) {
-      inFormat = SHAPEFILE;
-      strcpy(informat_str, "shape");
-    }
-    else if (isgeotiff(cfg->input_file)) {
-      inFormat = GEOTIFF_META;
-      strcpy(informat_str, "geotiff");
-    }
-    else if (iscsv(cfg->input_file)) {
-      inFormat = CSV;
-      strcpy(informat_str, "csv");
-    }
-    else if (isxmlfile(cfg->input_file)) {
-      inFormat = TERRASAR_META;
-      strcpy(informat_str, "terrasar");
-    }
-    else if (isparfile(cfg->input_file)) {
-      inFormat = STF_META;
-      strcpy(informat_str, "stf");
-    }
-    else 
-      asfPrintError("Could not automatically determine input file format "
-		    "for %s.\nPlease use the -input-format option to "
-		    "explicitly select an input\nformat type.  Try "
-		    "convert2vector -help.\n", cfg->input_file);
-  }
-  else if (inFormat == GEOTIFF_META && !isgeotiff(cfg->input_file))
-    asfPrintError("Input TIFF file is not a GeoTIFF.\n");
-
-  // Input formats
-  if (inFormat == META)
-    asfPrintStatus("   Converting a metadata file ");
-  else if (inFormat == LEADER) 
-    asfPrintStatus("   Converting a leader file ");
-  else if (inFormat == STF_META)
-    asfPrintStatus("   Converting an STF file ");
-  else if (inFormat == CSV)
-    asfPrintStatus("   Converting a generic csv file ");
-  else if (inFormat == AUIG)
-    asfPrintStatus("   Converting an AUIG file ");
-  else if (inFormat == POINT) 
-    asfPrintStatus("   Converting a point file ");
-  else if (inFormat == POLYGON) 
-    asfPrintStatus("   Converting a polygon file ");
-  else if (inFormat == SHAPEFILE) 
-    asfPrintStatus("   Converting shape file ");
-  else if (inFormat == KMLFILE) 
-    asfPrintStatus("   Converting a KML file ");
-  else if (inFormat == GEOTIFF_META) 
-    asfPrintStatus("   Converting a geotiff file ");
-  else if (inFormat == TERRASAR_META)
-    asfPrintStatus("   Converting a Terrasar metadata file ");
-  else if (inFormat == URSA)
-    asfPrintStatus("   Converting a generic URSA CSV file ");
-  else if (inFormat == HAP)
-    asfPrintStatus("   Converting a high altitude photography file ");
-  else if (inFormat == SMAP_BOUNDARY)
-    asfPrintStatus("   Converting a SMAP file ");
-  else if (inFormat == LATLON)
-    asfPrintStatus("   Converting a geographic polygon file ");
-  else {
-    dbf_header_t *dbf;
-    int nCols;
-    char shape_type[25];
-
-    // Check whether you can find information about the format in the header
-    // list file in the share directory
-    if (read_header_config(uc(cfg->input_format), &dbf, &nCols, shape_type))
-      asfPrintStatus("   Converting a %s format file ", uc(cfg->input_format));
-    else
-      asfPrintError("   Unsupported input format (%s)\n", 
-		    uc(cfg->input_format));
-  }
+  sprintf(inFormat, "%s", uc(cfg->input_format));
+  sprintf(outFormat, "%s", uc(cfg->output_format));
   
-  // Output formats
-  if (outFormat == SHAPEFILE)
-    asfPrintStatus("into a shape file ...\n\n");
-  else if (outFormat == KMLFILE) 
-    asfPrintStatus("into a KML file ...\n\n");
-  else if (outFormat == CSV) 
-    asfPrintStatus("into a generic CSV file ...\n\n");
-  else if (outFormat == META)
-    asfPrintStatus("into a metatdata file ...\n\n");
-  else if (outFormat == POLYGON) 
-    asfPrintStatus("into a polygon file ...\n\n");
-  else if (outFormat == POINT)
-    asfPrintStatus("into a list of points ...\n\n");
-  else if (outFormat == AUIG) 
-    asfPrintStatus("into an AUIG CSV file ...\n");
-  else if (outFormat == URSA)
-    asfPrintStatus("into an URSA file ...\n");
-  else {
-    dbf_header_t *dbf;
-    int nCols;
-    char shape_type[25];
-
-    // Check whether you can find information about the format in the header
-    // list file in the share directory
-    if (read_header_config(uc(cfg->input_format), &dbf, &nCols, shape_type))
-      asfPrintStatus("into a %s format file ...\n\n", uc(cfg->output_format));
-    else
-      asfPrintError("   Unsupported input format (%s)\n", 
-		    uc(cfg->output_format));
-  }
-
+  // Check whether you can find information about the format in the header
+  // list file in the share directory
+  dbf_header_t *dbf;
+  int nCols;
+  char shape_type[25];
+  if (strcmp_case(inFormat, "CSV") == 0 ||
+    read_header_config(inFormat, &dbf, &nCols, shape_type))
+    asfPrintStatus("   Converting a %s format file to %s\n", 
+      inFormat, outFormat);
+  else
+    asfPrintError("   Unsupported input format (%s)\n", inFormat);
+  
   // Set output directory as the temporary directory -- where all temp files
   // created during import should be put
   char *tmpdir = get_dirname(cfg->output_file);
