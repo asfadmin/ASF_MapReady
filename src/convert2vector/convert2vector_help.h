@@ -26,7 +26,7 @@
 #endif
 #define TOOL_USAGE \
   TOOL_NAME" [-list] [-input-format <format>] [-output-format <format>]\n" \
-   "                  [-time] [-config <configuration file>]\n" \
+   "                  [-config <configuration file>]\n" \
    "                  <input filename> <output filename>\n" \
    "                  [-log <filename>] [-license] [-version] [-help]\n\n" \
    "   Where the input format is one of the following:\n" \
@@ -44,8 +44,7 @@
    "\n"\
    "   And the output format is one of the following:\n" \
    "        shape     (ESRI format shapefile output)\n" \
-   "        kml       (for viewing in Google Earth(tm) - DEFAULT)\n" \
-   "        text      (An ASF-style polygon CSV text file (.csv)\n"
+   "        kml       (for viewing in Google Earth(tm)\n"
 
 // TOOL_DESCRIPTION is required
 #ifdef  TOOL_DESCRIPTION
