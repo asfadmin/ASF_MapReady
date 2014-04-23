@@ -101,13 +101,14 @@ int main(int argc, char **argv)
         asfPrintStatus("\nFormat defined in %s_data_dictionary.csv\n\n", 
         format);
         catFile(data_dictionary);
+        asfPrintStatus("\n\n");
       }
       else
-        asfPrintWarning("Could not find a data dictionary for format (%s)!\n", 
+        asfPrintWarning("Could not find a data dictionary for format (%s)!\n\n", 
           format);
       exit(1);
     }
-    else if (strmatches(key, "-config", "--config", NULL)) {
+    else if (strmatches(key, "-config", "--config", "-c", NULL)) {
       CHECK_ARG(1);
       strcpy(configFile, GET_ARG(1));
       cfg = read_c2v_config(configFile);
@@ -127,7 +128,7 @@ int main(int argc, char **argv)
   NUM_ARGS = 2;
   while (currArg < (argc-NUM_ARGS)) {
     char *key = argv[currArg++];
-    if (strmatches(key, "-config", "--config", NULL)) { ; }
+    if (strmatches(key, "-config", "--config", "-c", NULL)) { ; }
     else if (strmatches(key, "-log", "--log", NULL)) {
       CHECK_ARG(1);
       strcpy(logFile,GET_ARG(1));
