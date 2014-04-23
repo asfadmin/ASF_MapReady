@@ -49,7 +49,8 @@ ALGORITHM REFERENCES
     U.S. Geological Survey Professional Paper 1453 , United State Government
     Printing Office, Washington D.C., 1989.
 *******************************************************************************/
-#include "cproj.h"
+
+#include <math.h>
 
 /* Convert DMS packed angle into deg 
 ----------------------------------*/

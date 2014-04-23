@@ -95,6 +95,9 @@ typedef struct {
 	char *rtc_VV_file;
 	char *rtc_log;
 	char *main_log;
+	char *mk_geo_radcal_2_log;
+	char *coreg_check_log;
+	char *mli_par_file;
 	char *gamma_version;
 	char *dem_source;
 } params_t;
@@ -301,6 +304,9 @@ params_t *params_init(char *type) {
     params->rtc_VH_file = NULL;
     params->rtc_VV_file = NULL;
     params->rtc_log = NULL;
+    params->mk_geo_radcal_2_log = NULL;
+    params->coreg_check_log = NULL;
+    params->mli_par_file = NULL;
     params->processing_log = NULL;
     params->main_log = NULL;
     params->browse_amplitude = NULL;
@@ -313,91 +319,57 @@ params_t *params_init(char *type) {
 }
 
 void params_free(params_t *params) {
-	if (params->granule)
-		FREE(params->granule);
-	if (params->master_meta_file)
-		FREE(params->master_meta_file);
-	if (params->slave_meta_file)
-		FREE(params->slave_meta_file);
-	if (params->master_metadata)
-		FREE(params->master_metadata);
-	if (params->slave_metadata)
-		FREE(params->slave_metadata);
-	if (params->doppler)
-		FREE(params->doppler);
-	if (params->processing_log)
-		FREE(params->processing_log);
-	if (params->baseline)
-		FREE(params->baseline);
-	if (params->wrapped_interferogram)
-		FREE(params->wrapped_interferogram);
-	if (params->unwrapped_interferogram)
-		FREE(params->unwrapped_interferogram);
-	if (params->correlation)
-		FREE(params->correlation);
-	if (params->incidence_angle)
-		FREE(params->incidence_angle);
-	if (params->layover_shadow_mask)
-	  FREE(params->layover_shadow_mask);
-	if (params->layover_shadow_stats)
-	  FREE(params->layover_shadow_stats);
-	if (params->dem_file)
-		FREE(params->dem_file);
-	if (params->dem_metadata)
-	  FREE(params->dem_metadata);
-	if (params->original_dem)
-	  FREE(params->original_dem);
-	if (params->dem_url)
-	  FREE(params->dem_url);
-	if (params->troposphere)
-		FREE(params->troposphere);
-	if (params->troposphere_url)
-	  FREE(params->troposphere_url);
-	if (params->browse_amplitude)
-		FREE(params->browse_amplitude);
-	if (params->browse_wrapped_interferogram)
-		FREE(params->browse_wrapped_interferogram);
-	if (params->browse_unwrapped_interferogram)
-		FREE(params->browse_unwrapped_interferogram);
-	if (params->browse_correlation)
-		FREE(params->browse_correlation);
-	if (params->kml_overlay)
-	  FREE(params->kml_overlay);
-	if (params->metadata)
-	  FREE(params->metadata);
-	if (params->input_HH_file)
-	  FREE(params->input_HH_file);
-	if (params->input_HV_file)
-	  FREE(params->input_HV_file);
-	if (params->input_VH_file)
-	  FREE(params->input_VH_file);
-	if (params->input_VV_file)
-	  FREE(params->input_VV_file);
-	if (params->rtc_HH_metadata)
-	  FREE(params->rtc_HH_metadata);
-	if (params->rtc_HV_metadata)
-	  FREE(params->rtc_HV_metadata);
-	if (params->rtc_VH_metadata)
-	  FREE(params->rtc_VH_metadata);
-	if (params->rtc_VV_metadata)
-	  FREE(params->rtc_VV_metadata);
-	if (params->rtc_HH_file)
-	  FREE(params->rtc_HH_file);
-	if (params->rtc_HV_file)
-	  FREE(params->rtc_HV_file);
-	if (params->rtc_VH_file)
-	  FREE(params->rtc_VH_file);
-	if (params->rtc_VV_file)
-	  FREE(params->rtc_VV_file);
-	if (params->rtc_log)
-	  FREE(params->rtc_log);
-	if (params->main_log)
-	  FREE(params->main_log);
-	if (params->gamma_version)
-	  FREE(params->gamma_version);
-	if (params->dem_source)
-	  FREE(params->dem_source);
-	FREE(params);
+  FREE(params->granule);
+  FREE(params->master_meta_file);
+  FREE(params->slave_meta_file);
+  FREE(params->master_metadata);
+  FREE(params->slave_metadata);
+  FREE(params->doppler);
+  FREE(params->processing_log);
+  FREE(params->baseline);
+  FREE(params->wrapped_interferogram);
+  FREE(params->unwrapped_interferogram);
+  FREE(params->correlation);
+  FREE(params->incidence_angle);
+  FREE(params->layover_shadow_mask);
+  FREE(params->layover_shadow_stats);
+  FREE(params->dem_file);
+  FREE(params->dem_metadata);
+  FREE(params->original_dem);
+  FREE(params->dem_url);
+  FREE(params->troposphere);
+  FREE(params->troposphere_url);
+  FREE(params->browse_amplitude);
+  FREE(params->browse_wrapped_interferogram);
+  FREE(params->browse_unwrapped_interferogram);
+  FREE(params->browse_correlation);
+  FREE(params->kml_overlay);
+  FREE(params->metadata);
+  FREE(params->input_HH_file);
+  FREE(params->input_HV_file);
+  FREE(params->input_VH_file);
+  FREE(params->input_VV_file);
+  FREE(params->rtc_HH_metadata);
+  FREE(params->rtc_HV_metadata);
+  FREE(params->rtc_VH_metadata);
+  FREE(params->rtc_VV_metadata);
+  FREE(params->rtc_HH_file);
+  FREE(params->rtc_HV_file);
+  FREE(params->rtc_VH_file);
+  FREE(params->rtc_VV_file);
+  FREE(params->rtc_log);
+  FREE(params->mk_geo_radcal_2_log);
+  FREE(params->coreg_check_log);
+  FREE(params->mli_par_file);
+  FREE(params->main_log);
+  FREE(params->gamma_version);
+  FREE(params->dem_source);
+  FREE(params);
+}
+
+static int matches_key(const char *line, const char *key)
+{
+  return strncmp(line, key, strlen(key)) == 0;
 }
 
 void read_filenames(const char * file, params_t **params, char *type)
@@ -592,6 +564,12 @@ void read_filenames(const char * file, params_t **params, char *type)
 				list->rtc_log = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->rtc_log, "%s", trim_spaces(value));
 			}
+			if (matches_key(line, "mk_geo_radcal_2 log"))
+				list->mk_geo_radcal_2_log = trim_spaces(value);
+			if (matches_key(line, "coreg_check log"))
+				list->coreg_check_log = trim_spaces(value);
+			if (matches_key(line, "mli.par file"))
+				list->mli_par_file = trim_spaces(value);
 			if (strncmp_case(line, "main log", 8) == 0) {
 				list->main_log = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->main_log, "%s", trim_spaces(value));
@@ -1912,7 +1890,7 @@ int main(int argc, char **argv)
         params->browse_amplitude);
     if (params->kml_overlay && !fileExists(params->kml_overlay))
       asfPrintError("KML overlay file (%s) is missing!\n", params->kml_overlay);
-    
+
     // Fill in the data section
     fprintf(fp, "  <data>\n");
     if (params->rtc_HH_file)
@@ -1940,11 +1918,91 @@ int main(int argc, char **argv)
     char *end = (char *) MALLOC(sizeof(char)*30);
     int year;
     fprintf(fp, "  <metadata>\n");
-    
+   
+    int range_looks=0, azimuth_looks=0;
+    double slant_spacing=0, azimuth_spacing=0;
+    fpFiles = FOPEN(params->processing_log, "r");
+    while (NULL != fgets(line, 255, fpFiles)) {
+      char *key, *value;
+      split2(line, ':', &key, &value);
+      if (strcmp(key, "range looks") == 0 && strstr(line, "azimuth looks") == NULL)
+        range_looks = atoi(value);
+      else if (strcmp(key, "azimuth looks") == 0)
+        azimuth_looks = atoi(value);
+      else if (strcmp(key, "MLI range sample spacing (m)") == 0)
+        slant_spacing = atof(value);
+      else if (strcmp(key, "MLI azimuth sample spacing (m)") == 0)
+        azimuth_spacing = atof(value);
+    }
+    FCLOSE(fpFiles);
+
+    double dop0=0, dop1=0, dop2=0, ddop0=0, ddop1=0, ddop2=0;
+    if (params->mli_par_file && fileExists(params->mli_par_file)) {
+      fpFiles = FOPEN(params->mli_par_file, "r");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        char *key, *value;
+        split2(line, ':', &key, &value);
+        if (strcmp(key, "doppler_polynomial") == 0) {
+          sscanf(value, "%lf %lf %lf", &dop0, &dop1, &dop2);
+        }
+        else if (strcmp(key, "doppler_poly_dot") == 0) {
+          sscanf(value, "%lf %lf %lf", &ddop0, &ddop1, &ddop2);
+        }
+      }
+      FCLOSE(fpFiles);
+    }
+    else {
+      asfPrintWarning("mli.par not found: %s\n", params->mli_par_file);
+    }
+
+    double range_offset=0, azimuth_offset=0;
+    double range_stddev=0, azimuth_stddev=0;
+    int patches_accepted=0, patches_attempted=0;
+    fpFiles = FOPEN(params->mk_geo_radcal_2_log, "r");
+    while (NULL != fgets(line, 255, fpFiles)) {
+      char *key, *value;
+      split2(line, ':', &key, &value);
+      if (strcmp(key, "final range offset poly. coeff.") == 0)
+        range_offset = atof(value);
+      else if (strcmp(key, "final azimuth offset poly. coeff.") == 0)
+        azimuth_offset = atof(value);
+      else if (strcmp(key, "final model fit std. dev. (samples) range") == 0)
+        sscanf(value, "%lf azimuth: %lf", &range_stddev, &azimuth_stddev);
+      else if (strcmp(key, "final solution") == 0 && strstr(value, "offset estimates accepted out of"))
+        sscanf(value, "%d offset estimates accepted out of %d samples", &patches_accepted, &patches_attempted);
+    }
+    FCLOSE(fpFiles);
+
+    int passed;
+    if (fileExists(params->coreg_check_log)) {
+      passed = -1;
+      fpFiles = FOPEN(params->coreg_check_log, "r");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        if (strstr(line, "passed coregistration")) {
+          passed = TRUE;
+        }
+        else if (strstr(line, "failed coregistration")) {
+          passed = FALSE;
+        }
+      }
+      FCLOSE(fpFiles);
+      if (passed == -1)
+        asfPrintError("Could not determine if this granule passed coregistration!");
+    }
+    else {
+      passed = FALSE;
+    }
+
     // Original input image
     char beam_mode[5];
     fprintf(fp, "    <input_image>\n");
+
     meta = meta_read(params->metadata);
+    int ns = meta->general->sample_count;
+    double xs = meta->general->x_pixel_size;
+    double slant_first = meta->sar->slant_range_first_pixel;
+    double slant_center = slant_first + ns*xs/2.0;
+    double slant_last = slant_first + ns*xs;
     strcpy(beam_mode, "FBS");
     strcpy(original_file, params->input_HH_file);
     if (params->input_HV_file) {
@@ -2027,6 +2085,35 @@ int main(int argc, char **argv)
       "time at the center of the image\">%s</center_datetime>\n", center);
     fprintf(fp, "      <end_datetime type=\"string\" definition=\"UTC "
       "time at the end of the image\">%s</end_datetime>\n", end);
+    fprintf(fp, "      <doppler_poly_0 type=\"double\" definition=\"Doppler "
+      "polynomial\" units=\"Hz\">%g</doppler_poly_0>\n", dop0);
+    fprintf(fp, "      <doppler_poly_1 type=\"double\" definition=\"Doppler "
+      "polynomial\" units=\"Hz/m\">%g</doppler_poly_1>\n", dop1);
+    fprintf(fp, "      <doppler_poly_2 type=\"double\" definition=\"Doppler "
+      "polynomial\" units=\"Hz/m^2\">%g</doppler_poly_2>\n", dop2);
+    fprintf(fp, "      <doppler_poly_dot_0 type=\"double\" definition=\"Doppler "
+      "polynomial dot\" units=\"Hz/s\">%g</doppler_poly_dot_0>\n", ddop0);
+    fprintf(fp, "      <doppler_poly_dot_1 type=\"double\" definition=\"Doppler "
+      "polynomial dot\" units=\"Hz/s/m\">%g</doppler_poly_dot_1>\n", ddop1);
+    fprintf(fp, "      <doppler_poly_dot_2 type=\"double\" definition=\"Doppler "
+      "polynomial dot\" units=\"Hz/s/m^2\">%g</doppler_poly_dot_2>\n", ddop2);
+    fprintf(fp, "      <range_looks type=\"int\" definition=\"Number of range "
+      "looks\">%d</range_looks>\n", range_looks);
+    fprintf(fp, "      <azimuth_looks type=\"int\" definition=\"Number of azimuth "
+      "looks\">%d</azimuth_looks>\n", azimuth_looks);
+    fprintf(fp, "      <slant_spacing type=\"double\" definition=\"Pixel size in "
+      "slant range\" units=\"m\">%g</slant_spacing>\n", slant_spacing);
+    fprintf(fp, "      <azimuth_spacing type=\"double\" definition=\"Pixel size in "
+      "azimuth\" units=\"m\">%g</azimuth_spacing>\n", azimuth_spacing);
+    fprintf(fp, "      <slant_to_first type=\"double\" definition=\"Slant range "
+      "distance to the near-range edge of the image\" units=\"m\">%.3f"
+      "</slant_to_first>\n", slant_first);
+    fprintf(fp, "      <slant_to_center type=\"double\" definition=\"Slant range "
+      "distance to the center of the image\" units=\"m\">%.3f"
+      "</slant_to_center>\n", slant_center);
+    fprintf(fp, "      <slant_to_last type=\"double\" definition=\"Slant range "
+      "distance to the far-range edge of the image\" units=\"m\">%.3f"
+      "</slant_to_last>\n", slant_last);
     strncpy(str, center, 4);
     year = atoi(str);
     FREE(begin);
@@ -2117,6 +2204,23 @@ int main(int argc, char **argv)
     fprintf(fp, "    </layover_shadow_mask>\n");
     meta_free(meta);
     fprintf(fp, "  </metadata>\n");
+
+    fprintf(fp, "  <terrain_correction>\n");
+    fprintf(fp, "    <patches_attempted type=\"int\" definition=\"number of patches used to coregister\""
+      ">%d</patches_attempted>\n", patches_attempted);
+    fprintf(fp, "    <patches_accepted type=\"int\" definition=\"number of patches successfully coregistered\""
+      ">%d</patches_accepted>\n", patches_accepted);
+    fprintf(fp, "    <coregistration_success type=\"string\" definition=\"Coregistration "
+      "success flag\">%s</coregistration_success>\n", passed ? "Y" : "N");
+    fprintf(fp, "    <offset_x type=\"double\" definition=\"Coregistration range offset\""
+      " units=\"pixels\">%g</offset_x>\n", range_offset);
+    fprintf(fp, "    <offset_y type=\"double\" definition=\"Coregistration azimuth offset\""
+      " units=\"pixels\">%g</offset_y>\n", azimuth_offset);
+    fprintf(fp, "    <residual_range_offset_stddev type=\"double\" definition=\"final model fit std. dev. range\""
+      " units=\"pixels\">%g</residual_range_offset_stddev>\n", range_stddev);
+    fprintf(fp, "    <residual_azimuth_offset_stddev type=\"double\" definition=\"final model fit std. dev. azimuth\""
+      " units=\"pixels\">%g</residual_azimuth_offset_stddev>\n", azimuth_stddev);
+    fprintf(fp, "  </terrain_correction>\n");
 
     // Browse image information
     if (browse) {

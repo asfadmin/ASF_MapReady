@@ -255,6 +255,10 @@ main (int argc, char *argv[])
         args[jj] = meta->general->line_count;
       } else if (strcmp_case(argv[ii], "ES") == 0) {
         args[jj] = meta->general->sample_count;
+      } else if (strcmp_case(argv[ii], "NL") == 0) {
+        args[jj] = meta->general->line_count;
+      } else if (strcmp_case(argv[ii], "NS") == 0) {
+        args[jj] = meta->general->sample_count;
       } else {
         args[jj] = atof(argv[ii]);
       }
