@@ -796,3 +796,11 @@ int remove_file(const char *file)
   return 0; // success, I guess
 }
 
+void catFile(char *file)
+{
+  FILE *fp = FOPEN(file, "r");
+  char line[1024];
+  while (fgets(line, 1024, fp))
+    asfPrintStatus(line);
+  FCLOSE(fp);
+}

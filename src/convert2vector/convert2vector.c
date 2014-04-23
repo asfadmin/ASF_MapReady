@@ -3,238 +3,165 @@
 #include "asf_vector.h"
 #include "asf_endian.h"
 #include "asf_license.h"
-#include "convert2vector_help.h"
 #include <stdio.h>
 #include <ctype.h>
 
 #define VERSION 3.0
 
-void usage()
+void usage(char *name)
 {
   printf("\n"
    "USAGE:\n"
-   "   convert2vector [-list] [-input-format <format>] [-output-format "
-   "<format>]\n" \
-   "                  [-config <configuration file>]\n" \
-   "                  [-log <filename>] [-license] [-version] [-help "
-   "[<input format>]]\n" \
-   "                  <input file> <output file>\n");
+   "   %s [-list] [-input-format <format>] [-output-format "
+   "<format>]\n"
+   "                   [-config <configuration file>]\n"
+   "                   [-log <filename>] [-help [<input format>]]\n"
+   "                   <input file> <output file>\n", name);
   printf("\n"
    "REQUIRED ARGUMENTS:\n"
-   "   snapshot      Basename of the output file.\n"
-   "                 cells: cells_<snapshot>, grid points: grid_<snapshot>\n");
+   "   input file      Name of the input file.\n"
+   "   output file     Name of the output file.\n"
+   "   If the -config option is used these two files are not required arguments"
+   ".\n");
   printf("\n"
    "OPTIONAL ARGUMENTS:\n"
-   "   -cells        Generates a data layer with the cell information.\n"
-   "   grid points   File name with grid point table.\n"
-   "   attributes    File name with cell attribute table.\n"
-   "   connectvity   File name with cell connectivity table.\n"
-   "   cell definition    File name with cell definition table.\n"
-   "   grid definition    File name with grid definition table.\n"
-   "   input type    input files can database files or backup text files.\n"
-   "                 database: 'db' or text file: 'txt'.\n"
-   "   -weather      Generates a data layer with weather information.\n"
-   "   table         File name with weather table.\n"
-   "   date          Date for which to extract the weather data\n");
+   "   -config         Name of the configuration file.\n"
+   "   -input-format   META - ASF internal .meta file, CEOS leader file,\n"
+   "                          Sky Telemetry Format (STF) file, GeoTIFF file,\n"
+   "                          TerraSAR-X XML file, Radarsat-2 XML file\n"
+   "                   SMAP - SMAP file in HDF format\n"
+   "                   GEOTIFF - GeoTIFF file\n"
+   "                   CSV - generic CSV file\n"
+   "                   POINT - point CSV file (ID,LAT,LON)\n"
+   "                   POLYGON - polygon CSV file (ID,LAT,LON)\n"
+   "                   LATLON - geographic polygon CSV file (ID,LAT/LON pairs)\n"
+   "                   URSA - URSA search output CSV file\n"
+   "                   DATAPOOL - DATAPOOL search results CSV file\n"
+   "                   GRANULE - ASF internal database table CSV file\n" 
+   "   -output-format  Two output format are supported:\n"
+   "                   SHAPE - ArcGIS shapefile\n"
+   "                   KML - Keyhole Markup Language file\n"
+   "   -log            Name of the logfile.\n"
+   "   -help           Returns the usage of the tool. If a known format is "
+   "defined,\n"
+   "                   the contents of the data dictionary is returned as well."
+   "\n");
   printf("\n"
    "DESCRIPTION:\n"
-   "   This program converts information out of the RGPS database into\n"
-   "   ArcGIS shape files and KML files.\n");
+   "   This program converts geospatial information into standard vector "
+   "formats.\n");
   printf("\n"
    "Version %.2f, ASF SAR Tools\n"
    "\n",VERSION);
-  exit(EXIT_FAILURE);
+  //exit(EXIT_FAILURE);
+}
+
+int strmatches(const char *key, ...)
+{
+    va_list ap;
+    char *arg = NULL;
+    int found = FALSE;
+
+    va_start(ap, key);
+    do {
+        arg = va_arg(ap, char *);
+        if (arg) {
+            if (strcmp(key, arg) == 0) {
+                found = TRUE;
+                break;
+            }
+        }
+    } while (arg);
+
+    return found;
 }
 
 int main(int argc, char **argv)
 {
   char inFormat[25], outFormat[25], configFile[255];
-  int listFlag=0;
-  int stackFlag=0;
-  int timeFlag=0;
-  int testFlag=0;
-  int inputFormatFlag=0;
-  int outputFormatFlag=0;
-  int configFlag=0;
-  int overlayFlag=0;
-  int transparencyFlag=0;
-  int northFlag=0, southFlag=0, eastFlag=0, westFlag=0;
-  int needed_args=3;
+  int currArg = 1, NUM_ARGS = 1, configFlag = FALSE;
   c2v_config *cfg=NULL;
 
-  if (argc > 1) {
-      check_for_help(argc, argv);
-      handle_common_asf_args(&argc, &argv, TOOL_NAME);
+  if (argc < 3) {
+    usage(argv[0]);
+    exit(1);
   }
-
-  // parse command line
-  configFlag =  
-    checkForOption("-config", argc, argv) ?
-    getStringOption("-config", argc, argv, configFile, NULL) :
-    checkForOption("--config", argc, argv) ?
-    getStringOption("--config", argc, argv, configFile, NULL) :
-    checkForOption("-c", argc, argv) ?
-    getStringOption("-c", argc, argv, configFile, NULL) : 0;
+    
+  // Check for configuration file option first
+  while (currArg < (argc-NUM_ARGS)) {
+    char *key = argv[currArg++];
+    if (strmatches(key, "-help", "--help", NULL)) {
+      usage(argv[0]);
+      char format[25], data_dictionary[512];
+      CHECK_ARG(1);
+      strcpy(format, GET_ARG(1));
+      sprintf(data_dictionary, "%s%c%s_data_dictionary.csv", 
+        get_asf_share_dir(), DIR_SEPARATOR, format);
+      if (fileExists(data_dictionary)) {
+        asfPrintStatus("\nFormat defined in %s_data_dictionary.csv\n\n", 
+        format);
+        catFile(data_dictionary);
+      }
+      else
+        asfPrintWarning("Could not find a data dictionary for format (%s)!\n", 
+          format);
+      exit(1);
+    }
+    else if (strmatches(key, "-config", "--config", NULL)) {
+      CHECK_ARG(1);
+      strcpy(configFile, GET_ARG(1));
+      cfg = read_c2v_config(configFile);
+      configFlag = TRUE;
+    }
+  }
   if (!configFlag) {
-    sprintf(configFile, "%s/convert2vector.config", get_asf_share_dir());
+    sprintf(configFile, "%s%cconvert2vector.config", 
+      get_asf_share_dir(), DIR_SEPARATOR);
     asfPrintStatus("\nReading parameters from default configuration file:\n"
 		   "%s\n", configFile);
     cfg = read_c2v_config(configFile);
   }
-  listFlag = checkForOption("-list", argc, argv)    ?
-               checkForOption("-list", argc, argv)  :
-             checkForOption("--list", argc, argv)   ?
-               checkForOption("--list", argc, argv) :
-             checkForOption("-l", argc, argv)       ?
-               checkForOption("-l", argc, argv)     :
-             0;
-  if (listFlag)
-    cfg->list = TRUE;
-  stackFlag = checkForOption("-stack", argc, argv)    ?
-    checkForOption("-stack", argc, argv)  :
-    checkForOption("--stack", argc, argv)   ?
-    checkForOption("--stack", argc, argv) :
-    checkForOption("-s", argc, argv)       ?
-    checkForOption("-s", argc, argv)     :
-             0;
-  if (stackFlag)
-    cfg->stack = TRUE;
-  timeFlag = checkForOption("-time", argc, argv);
-  if (timeFlag)
-    cfg->time = TRUE;
-  testFlag = checkForOption("-test", argc, argv)    ?
-               checkForOption("-test", argc, argv)  :
-             checkForOption("--test", argc, argv)   ?
-               checkForOption("--test", argc, argv) : 0;
-  overlayFlag =
-    checkForOption("-png", argc, argv) ?
-    getStringOption("-png", argc, argv, cfg->overlay, NULL) :
-    checkForOption("--png", argc, argv) ?
-    getStringOption("--png", argc, argv, cfg->overlay, NULL) : 0;
-  transparencyFlag =
-    checkForOption("-transparency", argc, argv) ?
-    getIntegerOption("-transparency", argc, argv, &cfg->transparency, 50) :
-    checkForOption("--transparency", argc, argv) ?
-    getIntegerOption("--transparency", argc, argv, &cfg->transparency, 50) : 0;
-  northFlag =  
-    checkForOption("-north", argc, argv) ?
-    getDoubleOption("-north", argc, argv, &cfg->north, MAGIC_UNSET_DOUBLE) :
-    checkForOption("--north", argc, argv) ?
-    getDoubleOption("--north", argc, argv, &cfg->north, MAGIC_UNSET_DOUBLE) :
-    checkForOption("-n", argc, argv) ?
-    getDoubleOption("-n", argc, argv, &cfg->north, MAGIC_UNSET_DOUBLE) : 0;
-  southFlag =  
-    checkForOption("-south", argc, argv) ?
-    getDoubleOption("-south", argc, argv, &cfg->south, MAGIC_UNSET_DOUBLE) :
-    checkForOption("--south", argc, argv) ?
-    getDoubleOption("--south", argc, argv, &cfg->south, MAGIC_UNSET_DOUBLE) :
-    checkForOption("-s", argc, argv) ?
-    getDoubleOption("-s", argc, argv, &cfg->south, MAGIC_UNSET_DOUBLE) : 0;
-  eastFlag =  
-    checkForOption("-east", argc, argv) ?
-    getDoubleOption("-east", argc, argv, &cfg->east, MAGIC_UNSET_DOUBLE) :
-    checkForOption("--east", argc, argv) ?
-    getDoubleOption("--east", argc, argv, &cfg->east, MAGIC_UNSET_DOUBLE) :
-    checkForOption("-e", argc, argv) ?
-    getDoubleOption("-e", argc, argv, &cfg->east, MAGIC_UNSET_DOUBLE) : 0;
-  westFlag =  
-    checkForOption("-west", argc, argv) ?
-    getDoubleOption("-west", argc, argv, &cfg->west, MAGIC_UNSET_DOUBLE) :
-    checkForOption("--west", argc, argv) ?
-    getDoubleOption("--west", argc, argv, &cfg->west, MAGIC_UNSET_DOUBLE) :
-    checkForOption("-w", argc, argv) ?
-    getDoubleOption("-w", argc, argv, &cfg->west, MAGIC_UNSET_DOUBLE) : 0;
-  inputFormatFlag =  
-    checkForOption("-input-format", argc, argv) ?
-    getStringOption("-input-format", argc, argv, cfg->input_format, NULL) :
-    checkForOption("--input-format", argc, argv) ?
-    getStringOption("--input-format", argc, argv, cfg->input_format, NULL) :
-    checkForOption("-i", argc, argv) ?
-    getStringOption("-i", argc, argv, cfg->input_format, NULL) : 0;
-  outputFormatFlag =  
-    checkForOption("-output-format", argc, argv) ?
-    getStringOption("-output-format", argc, argv, cfg->output_format, NULL) :
-    checkForOption("--output-format", argc, argv) ?
-    getStringOption("--output-format", argc, argv, cfg->output_format, NULL) :
-    checkForOption("-o", argc, argv) ?
-    getStringOption("-o", argc, argv, cfg->output_format, NULL) : 0;
-  needed_args += listFlag         ? 1 : 0; // No argument
-  needed_args += stackFlag        ? 1 : 0; // No argument
-  needed_args += testFlag         ? 1 : 0; // No argument
-  needed_args += timeFlag         ? 1 : 0; // No argument
-  needed_args += inputFormatFlag  ? 2 : 0; // w/Argument
-  needed_args += outputFormatFlag ? 2 : 0; // w/Argument
-  needed_args += overlayFlag      ? 2 : 0; // w/Argument
-  needed_args += transparencyFlag ? 2 : 0; // w/Argument
-  needed_args += northFlag        ? 2 : 0; // w/Argument
-  needed_args += southFlag        ? 2 : 0; // w/Argument
-  needed_args += eastFlag         ? 2 : 0; // w/Argument
-  needed_args += westFlag         ? 2 : 0; // w/Argument
-  if (argc < needed_args) {
-      usage("Insufficient arguments.");
-      exit(1);
+
+  // Pick up the rest of the arguments
+  currArg = 1;
+  NUM_ARGS = 2;
+  while (currArg < (argc-NUM_ARGS)) {
+    char *key = argv[currArg++];
+    if (strmatches(key, "-config", "--config", NULL)) { ; }
+    else if (strmatches(key, "-log", "--log", NULL)) {
+      CHECK_ARG(1);
+      strcpy(logFile,GET_ARG(1));
+      fLog = FOPEN(logFile, "a");
+      logflag = TRUE;
+    }
+    else if (strmatches(key, "-quiet", "--quiet", "-q", NULL))
+      quietflag = TRUE;
+    else if (strmatches(key, "-list", "--list", NULL))
+      cfg->list = TRUE;
+    else if (strmatches(key, "-input-format", "--input-format", "-i", NULL)) {
+      CHECK_ARG(1);
+      strcpy(cfg->input_format, GET_ARG(1));
+    }
+    else if (strmatches(key, "-output-format", "--output-format", "-o", NULL)) {
+      CHECK_ARG(1);
+      strcpy(cfg->output_format, GET_ARG(1));
+    }
+    else {
+      --currArg;
+      break;
+    }
   }
-  if (argc > needed_args) {
-      usage("Too many arguments.");
-      exit(1);
+  if ((argc-currArg) < NUM_ARGS) {
+    printf("Insufficient arguments.\n");
+    usage(argv[0]);
   }
-  if (listFlag         >= argc - 1  ||
-      stackFlag        >= argc - 1  ||
-      timeFlag         >= argc - 1  ||
-      inputFormatFlag  >= argc - 2  ||
-      outputFormatFlag >= argc - 2)
-  {
-      // Options other than -help, -version, and -license must precede the input and
-      // output filenames
-      usage(NULL);
-      exit(1);
-  }
+
   if (!configFlag) {
-    sprintf(cfg->input_file, "%s", argv[argc - 2]);
-    sprintf(cfg->output_file, "%s", argv[argc - 1]);
+    sprintf(cfg->input_file, "%s", argv[currArg++]);
+    sprintf(cfg->output_file, "%s", argv[currArg]);
   }
 
   asfSplashScreen (argc, argv);
-
-  // Read configuration file
-  if (configFlag) {
-    cfg = read_c2v_config(configFile);
-    if (cfg) {
-      asfPrintStatus("Reading parameters from configuration file.\n"
-		     "Input and output formats as well as the list flag, "
-		     "given on the command line,\nsupersede configuration file "
-		     "information.\n\n");
-      if (cfg->list)
-	    listFlag = TRUE;
-      // fix me: take care of directory
-    }
-    else
-      asfPrintError("Could not read configuration file '%s'.\n"
-		    "There is a sample configuration file located at\n"
-		    "'%s/convert2vector.config'.\n", 
-		    configFile, get_asf_share_dir());
-  }
-
-  // Check the lat/lon extents of the overlay
-  if (cfg->north < -90.0 || cfg->north > 90.0)
-    asfPrintError("Northern extent (%.4lf) outside the valid value range"
-		  " (-90 to 90)\n", cfg->north);
-  if (cfg->south < -90.0 || cfg->south > 90.0)
-    asfPrintError("Southern extent (%.4lf) outside the valid value range"
-		  " (-90 to 90)\n", cfg->south);
-  if (cfg->east < -180.0 || cfg->east > 180.0)
-    asfPrintError("Eastern extent (%.4lf) outside the valid value range"
-		  " (-180 to 180)\n", cfg->east);
-  if (cfg->west < -180.0 || cfg->west > 180.0)
-    asfPrintError("Western extent (%.4lf) outside the valid value range"
-		  " (-180 to 180)\n", cfg->west);
-  
-  // Check the opacity
-  if (cfg->transparency < 0 || cfg->transparency > 100) {
-    asfPrintWarning("Transparency (%d) outside the valid value range (0 to 100)\n"
-		    "Setting it to the default value of 50\n", cfg->transparency);
-    cfg->transparency = 50;
-  }
 
   sprintf(inFormat, "%s", uc(cfg->input_format));
   sprintf(outFormat, "%s", uc(cfg->output_format));

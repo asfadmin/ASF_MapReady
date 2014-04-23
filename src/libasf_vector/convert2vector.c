@@ -31,6 +31,12 @@ int convert2vector(c2v_config *cfg)
 
   free(outFile);
 
+  char *configFile = (char *) MALLOC(sizeof(char)*1024);
+  configFile = appendExt(outFile, ".cfg");
+  cfg->short_config = TRUE;
+  write_c2v_config(configFile, cfg);
+  FREE(configFile);
+
   if (ret==1)
     asfPrintStatus("Successful completion!\n");
   return ret;

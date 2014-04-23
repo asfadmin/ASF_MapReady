@@ -161,8 +161,6 @@ typedef struct
   double west;                   // western extent of the overlay
   int transparency;              // transparency of the overlay
   int list;                      // list of files flag
-  int time;                      // time series flag
-  int stack;                     // stacking flag
   char boundary[25];             // polygon/line
   char altitude[25];             // ref: clampToGround/relativeToGround/absolute
   int height;                    // height
@@ -170,7 +168,6 @@ typedef struct
   int width;                     // width of boundary line
   char color[25];                // color of boundary line
   int short_config;              // short configuration file flag
-  char header_file[512];         // header file location - for testing only    
 } c2v_config;
 
 int init_c2v_config(char *configFile);

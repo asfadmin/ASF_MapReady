@@ -26,7 +26,7 @@ CFLAGS += \
 	$(GEOTIFF_CFLAGS) \
 	$(TIFF_CFLAGS)
 
-OBJS  = convert2vector.o help.o
+OBJS  = convert2vector.o
 
 all: convert2vector clean
 
