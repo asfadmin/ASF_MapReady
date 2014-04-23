@@ -46,7 +46,6 @@ LIBS = \
 all: build_only
 	mv libasf_vector.a $(LIBDIR)
 	cp asf_vector.h $(ASF_INCLUDE_DIR)
-	cp ursa.h $(ASF_INCLUDE_DIR)
 	mkdir -p $(SHAREDIR)
 	cp header.lst $(SHAREDIR)
 	cp *_data_dictionary.csv $(SHAREDIR)
