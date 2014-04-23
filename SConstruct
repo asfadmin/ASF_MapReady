@@ -170,6 +170,8 @@ src_subs = lib_subs + [
     "color_browse",
     "annotate_image",
     "convert2vector",
+    "change_value",
+    "addapole",
     ]
 
 # paths where the libraries will be built
