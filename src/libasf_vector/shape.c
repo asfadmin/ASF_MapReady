@@ -38,6 +38,9 @@ void shapefile_init(char *inFile, char *outFile, char *format,
     if (strcmp_case(shape_type, "UNKNOWN") == 0)
       asfPrintError("Unknown shape type! Needs to be either 'POLYGON' or "
       "'POINT'!\n");
+    if (strcmp_case(format, "POINT") == 0 || 
+      strcmp_case(format, "POLYGON") == 0)
+      nCols = 1;
   }
 
   // Open database for initialization
@@ -951,52 +954,40 @@ int point2shape(char *inFile, char *outFile)
 {
   DBFHandle dbase;
   SHPHandle shape;
-  dbf_header_t *dbf;
-  char line[8192], id[255], shape_type[25], **coords;
-  int ii, idx, n = 0, start = 0, nCols, nCoords;
-
-  // Read CSV file
-  FILE *ifp = FOPEN(inFile, "r");
+  char line[1024], **coords;
+  int nCols;
 
   // Initialize the database file
-  shapefile_init(NULL, outFile, "LATLON", NULL);
+  shapefile_init(NULL, outFile, "POINT", NULL);
   open_shape(outFile, &dbase, &shape);
-  read_header_config("LATLON", &dbf, &nCols, shape_type);
 
-  while (fgets(line, 8192, ifp) != NULL) {
+  // Read the CSV file and keep writing location information
+  char *id;
+  double lat, lon;
+  int n = 0;
+  FILE *fp = FOPEN(inFile, "r");
+  fgets(line, 1024, fp);
+  while (fgets(line, 1024, fp) != NULL) {
     chomp(line);
     split_into_array(line, ',', &nCols, &coords);
-    nCoords = nCols/2 + 1;
-    if (nCols % 2 != 0) {
-      start = 1;
-      strcpy(id, coords[0]);
-    }
-    else
-      sprintf(id, "%d", n);
-    printf("Found %d coordinate pairs\n", nCoords-1);
-    double *lat = (double *) MALLOC(sizeof(double)*nCoords);
-    double *lon = (double *) MALLOC(sizeof(double)*nCoords);
-    for (ii=start; ii<nCols; ii+=2) {
-      idx = ii/2;
-      lat[idx] = atof(coords[ii]);
-      lon[idx] = atof(coords[ii+1]);
-    }
-    lat[idx+1] = lat[0];
-    lon[idx+1] = lon[0];
-    dbf[ii].sValue = STRDUP(id);
-    write_shape_attributes(dbase, nCoords, n, dbf);
-    write_shape_object(shape, nCoords, lat, lon);
-    FREE(lat);
-    FREE(lon);
+    id = STRDUP(coords[0]);
+    lat = atof(coords[1]);
+    lon = atof(coords[2]);
     FREE(coords);
-    n++; 
+    //write_shape_attributes(dbase, 1, n, dbf);
+    //write_shape_object(shape, 1, &lat, &lon);
+    DBFWriteStringAttribute(dbase, n, 0, id);
+    SHPObject *shapeObject = NULL;
+    shapeObject = SHPCreateSimpleObject(SHPT_POINT, 1, &lon, &lat, NULL);
+    SHPWriteObject(shape, -1, shapeObject);
+    SHPDestroyObject(shapeObject);
+    n++;
   }
+  FCLOSE(fp);
 
   // Clean up
   close_shape(dbase, shape);
   write_esri_proj_file(outFile);
-
-  FCLOSE(ifp);
 
   return TRUE;
 }
@@ -1324,6 +1315,15 @@ int convert2shape(char *inFile, char *outFile, char *format, int list)
       shapefile_init(NULL, outFile, format, meta);
       open_shape(outFile, &dbase, &shape);
       geotiff2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
+      write_shape_attributes(dbase, nAttr, 0, dbf);
+      write_shape_object(shape, nCoords, lat, lon);
+      close_shape(dbase, shape);
+      write_esri_proj_file(outFile);
+    }
+    else if (strcmp_case(format, "POLYGON") == 0) {
+      shapefile_init(NULL, outFile, format, meta);
+      open_shape(outFile, &dbase, &shape);
+      polygon2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
       write_shape_attributes(dbase, nAttr, 0, dbf);
       write_shape_object(shape, nCoords, lat, lon);
       close_shape(dbase, shape);

@@ -17,7 +17,6 @@ OBJS = \
 	convert2vector.o \
 	vector.o \
 	utils.o \
-	header.o \
 	rgps.o \
 	kml.o \
 	shape.o \

@@ -28,7 +28,6 @@ libs = localenv.SharedLibrary("libasf_vector", [
         "convert2vector.c",
         "vector.c"
         "utils.c",
-        "header.c",
         "kml.c",
         "shape.c",
         "config.c",

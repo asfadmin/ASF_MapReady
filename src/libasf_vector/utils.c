@@ -17,153 +17,6 @@
 #define FILENAME_LEN        (256)
 #define LINE_MAX_LEN        (1024)
 
-// Convert metadata to text
-// NOTE: inFile will either be a leader data file, a geotiff,
-// or an ASF metadata file
-void meta2text(char *inFile, FILE *outFP)
-{
-    double ulLong=0.0, urLong=0.0, lrLong=0.0, llLong=0.0; // Clockwise polygon
-    double ulLat=0.0, urLat=0.0, lrLat=0.0, llLat=0.0;
-    int no_location_info=1;
-    meta_parameters *meta = NULL;
-
-    if (isgeotiff(inFile)) {
-        int i, ignore[MAX_BANDS];
-        for (i=0; i<MAX_BANDS; i++) ignore[i] = 0; // Default to ignoring no bands
-        meta = read_generic_geotiff_metadata(inFile, ignore, NULL);
-    }
-    else if (isleader(inFile)) {
-        meta = meta_create(inFile);
-    }
-    else if (ismetadata(inFile)) {
-        meta = meta_read(inFile);
-    }
-    if (meta && meta->location) {
-        meta_location *ml = meta->location; // Convenience pointer
-        no_location_info = 0; // false ...location info was found
-        ulLong = ml->lon_start_near_range;
-        ulLat  = ml->lat_start_near_range;
-        urLong = ml->lon_start_far_range;
-        urLat  = ml->lat_start_far_range;
-        lrLong = ml->lon_end_far_range;
-        lrLat  = ml->lat_end_far_range;
-        llLong = ml->lon_end_near_range;
-        llLat  = ml->lat_end_near_range;
-    }
-    meta_free(meta);
-
-    if (no_location_info)
-      asfPrintWarning("No location coordinates found in %s\n", inFile);
-    fprintf(outFP, "# File type        , polygon\n");
-    // Use inFile for name ...for lack of a better idea
-    fprintf(outFP, "# Polygon ID (name), %s\n", inFile);
-    fprintf(outFP, "#\n");
-    fprintf(outFP, "# Latitude, Longitude\n");
-    if (no_location_info) {
-      fprintf(outFP, "# WARNING: No location information found in "
-              "source file (%s)\n", inFile);
-      fprintf(outFP, "#          Values shown below are invalid\n");
-    }
-    fprintf(outFP, "%f, %f\n", ulLat, ulLong);
-    fprintf(outFP, "%f, %f\n", urLat, urLong);
-    fprintf(outFP, "%f, %f\n", lrLat, lrLong);
-    fprintf(outFP, "%f, %f\n", llLat, llLong);
-    fprintf(outFP, "\n");
-    // FCLOSE() is called by the calling function
-
-    return;
-}
-
-void geotiff2text(char *inFile, FILE *outFP)
-{
-    meta2text(inFile, outFP);
-
-    return;
-}
-
-int ismetadata(char *inFile)
-{
-    int isMetadata=0;
-    int foundGeneral=0;
-    char *line=NULL, *s;
-    FILE *fp = NULL;
-
-    fp = fopen(inFile, "r");
-    if (!fp) {
-        char n[1024];
-        sprintf(n, "%s.meta", inFile);
-        fp = fopen(n, "r");
-    }
-    if (!fp) {
-        char *basename = get_basename(inFile);
-        char n[1024];
-        sprintf(n, "%s.meta", basename);
-        fp = fopen(n, "r");
-        FREE(basename);
-    }
-    if (fp) {
-        int line_count = 0;
-        line = (char*)MALLOC(sizeof(char)*(1+LINE_MAX_LEN));
-        while (fgets(line, LINE_MAX_LEN, fp)) {
-            line[strlen(line)-1] = '\0';
-            s=line;
-            while(isspace((int)(*s))) ++s;
-            if (s && strlen(s) && strncmp(uc(s), "GENERAL {", 9) == 0) {
-                foundGeneral = 1;
-            }
-            if (foundGeneral && s && strlen(s) && strncmp_case(s, "NAME:", 5) == 0) {
-                isMetadata = 1;
-                break;
-            }
-            // avoid scanning the entire contents of a huge file
-            if (++line_count>100)
-              break;
-        }
-    }
-    FREE(line);
-    FCLOSE(fp);
-
-    return isMetadata;
-}
-
-int isparfile(char *file)
-{
-  char *inFile = STRDUP(file);
-  int isParfile=0;
-  char *line=NULL, *s;
-  FILE *fp = NULL;
-
-  if (findExt(inFile) && (strcmp_case(findExt(inFile), ".PAR") != 0)) {
-    strcat(inFile, ".par");
-    if (!fileExists(inFile))
-      return FALSE;
-  }
-
-  fp = fopen(inFile, "r");
-  if (fp) {
-    int line_count = 0;
-    line = (char*)MALLOC(sizeof(char)*(1+LINE_MAX_LEN));
-    while (fgets(line, LINE_MAX_LEN, fp)) {
-      line[strlen(line)-1] = '\0';
-      s=line;
-      while(isspace((int)(*s))) ++s;
-      if (s && strlen(s) && 
-	  strncmp_case(s, "processor_name: SKY", 19) == 0) {
-	isParfile = 1;
-	break;
-      }
-      // avoid scanning the entire contents of a huge file
-      if (++line_count>10000)
-	break;
-    }
-  }
-  FREE(line);
-  FREE(inFile);
-  FCLOSE(fp);
-  
-  return isParfile;
-}
-
 int isleader(char *inFile)
 {
     int isLeader = 0;
@@ -177,112 +30,6 @@ int isleader(char *inFile)
     }
 
     return isLeader;
-}
-
-int ispoint(char *inFile)
-{
-    int isPoint=0;
-    char *line=NULL, *s;
-    FILE *fp;
-
-    fp = fopen(inFile, "r");
-    if (!fp) {
-        char n[1024];
-        sprintf(n, "%s.csv", inFile);
-        fp = fopen(n, "r");
-    }
-    if (!fp) {
-        char *basename = get_basename(inFile);
-        char n[1024];
-        sprintf(n, "%s.csv", basename);
-        fp = fopen(n, "r");
-        FREE(basename);
-    }
-    if (fp) {
-        line = (char*)MALLOC(sizeof(char)*(1+LINE_MAX_LEN));
-        int line_count=0;
-        while (fgets(line, LINE_MAX_LEN, fp)) {
-            line[strlen(line)-1] = '\0';
-            s=line;
-            while(isspace((int)(*s))) ++s;
-            if (*s == '#') {
-                char *tok = strtok(s,",");
-                if (tok) {
-                    s = strstr(uc(tok), "FILE");
-                    if (s && strncmp(uc(s), "FILE", 4) == 0) {
-                        tok = strtok(NULL, ",");
-                        if (tok) {
-                            s = strstr(uc(tok), "POINT");
-                            if (s && strncmp(uc(s), "POINT", 5) == 0) {
-                                isPoint = 1;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            // avoid scanning the entire contents of a huge file
-            if (++line_count>100)
-              break;
-        }
-    }
-    FREE(line);
-    FCLOSE(fp);
-
-    return isPoint;
-}
-
-int ispolygon(char *inFile)
-{
-    int isPolygon=0;
-    char *line=NULL, *s;
-    FILE *fp;
-
-    fp = fopen(inFile, "r");
-    if (!fp) {
-        char n[1024];
-        sprintf(n, "%s.csv", inFile);
-        fp = fopen(n, "r");
-    }
-    if (!fp) {
-        char *basename = get_basename(inFile);
-        char n[1024];
-        sprintf(n, "%s.csv", basename);
-        fp = fopen(n, "r");
-        FREE(basename);
-    }
-    if (fp) {
-        line = (char*)MALLOC(sizeof(char)*(1+LINE_MAX_LEN));
-        int line_count=0;
-        while (fgets(line, LINE_MAX_LEN, fp)) {
-            line[strlen(line)-1] = '\0';
-            s=line;
-            while(isspace((int)(*s))) ++s;
-            if (*s == '#') {
-                char *tok = strtok(s,",");
-                if (tok) {
-                    s = strstr(uc(tok), "FILE");
-                    if (s && strncmp(uc(s), "FILE", 4) == 0) {
-                        tok = strtok(NULL, ",");
-                        if (tok) {
-                            s = strstr(uc(tok), "POLYGON");
-                            if (s && strncmp(uc(s), "POLYGON", 7) == 0) {
-                                isPolygon = 1;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            // avoid scanning the entire contents of a huge file
-            if (++line_count>100)
-              break;
-        }
-    }
-    FREE(line);
-    FCLOSE(fp);
-
-    return isPolygon;
 }
 
 int isshape(char *inFile)
@@ -390,14 +137,6 @@ int isgeotiff(char *inFile)
     return isGeotiff;
 }
 
-int isrgps(char *inFile)
-{
-    // FIXME: Don't know how to check this yet ...Rudi?
-    int isRGPS = 0;
-
-    return isRGPS;
-}
-
 int isterrasar(char *inFile)
 {
   int found = FALSE;
@@ -420,6 +159,89 @@ int isterrasar(char *inFile)
       FREE(satellite);
   }
   return found;
+}
+
+int read_header_config(const char *format, dbf_header_t **dbf, 
+	int *nAttr, char *shape_type)
+{
+  if (!format)
+    return FALSE;
+  strcpy(shape_type, "UNKNOWN");
+
+  char header_file[1024];
+  sprintf(header_file, "%s%c%s", 
+	  get_asf_share_dir(), DIR_SEPARATOR, "header.lst");
+  
+  FILE *fp;
+  char line[1024], params[255], format_str[255], dictionary[255], *str;
+  int found_format=FALSE;
+  sprintf(format_str, "[%s]", uc(format));
+
+  // Check how many parameters we have in the section
+  fp = FOPEN(header_file, "r");
+  while (fgets(line, 255, fp)) {
+    if (strncmp_case(line, format_str, strlen(format_str)-1) == 0)
+      strcpy(params, format);
+    if (strcmp_case(params, format) == 0) {
+      found_format = TRUE;
+      str = strstr(line, "=");
+      if (strncmp_case(line, "type =", 6) == 0 && str) 
+	      sprintf(shape_type, "%s", trim_spaces(str+1));
+      str = strstr(line, "=");
+      if (strncmp_case(line, "dictionary =", 12) == 0 && str)
+        sprintf(dictionary, "%s", trim_spaces(str+1));
+      if (line[0] == '[' && 
+        strncmp(line, format_str, strlen(format_str)-1) != 0) {
+	      break;
+      }
+    }
+  }
+  FCLOSE(fp);
+
+  // Return if we can't find the format we are looking for
+  if (!found_format)
+    return FALSE;
+
+  // Fill the header information
+  char dictionary_file[1024], type[25];
+  sprintf(dictionary_file, "%s%c%s", 
+    get_asf_share_dir(), DIR_SEPARATOR, dictionary);
+  fp = FOPEN(dictionary_file, "r");
+  fgets(line, 1024, fp);
+  int n = 0;
+  while (fgets(line, 1024, fp))
+    n++;
+  FCLOSE(fp);
+  dbf_header_t *header = (dbf_header_t *) MALLOC(sizeof(dbf_header_t)*n);
+
+  fp = FOPEN(dictionary_file, "r");
+  fgets(line, 1024, fp);
+  n = 0;
+  int nCols;
+  char **column;
+  while (fgets(line, 1024, fp)) {
+    chomp(line);
+    split_into_array(line, ',', &nCols, &column);
+    header[n].meta = STRDUP(column[0]);
+    header[n].shape = STRDUP(column[1]);
+    sprintf(type, "%s", column[2]);
+    if (strncmp_case(type, "DOUBLE", 6) == 0)
+      header[n].format = DBF_DOUBLE;
+    else if(strncmp_case(type, "INTEGER", 7) == 0)
+      header[n].format = DBF_INTEGER;
+    else
+      header[n].format = DBF_STRING;
+    header[n].length = atoi(column[3]);
+    header[n].decimals = atoi(column[4]);
+    header[n].definition = STRDUP(column[5]); 
+  	n++;
+  }
+  FCLOSE(fp);
+
+  *dbf = header;
+  *nAttr = n;
+
+  return TRUE;
 }
 
 void split_polygon(double *lat, double *lon, int nCoords, 

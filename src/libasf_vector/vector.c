@@ -20,6 +20,16 @@ meta_parameters *meta2vector(char *inFile, dbf_header_t **dbf, int *nAttr,
       for (i=0; i<MAX_BANDS; i++) ignore[i] = 0; // Default to ignoring no bands
       meta = read_generic_geotiff_metadata(inFile, ignore, NULL);
   }
+  else if (isterrasar(inFile)) {
+    terrasar = read_terrasar_meta(inFile);
+    meta = terrasar2meta(terrasar);
+    FREE(terrasar);
+  }
+  else if (isRadarsat2_ext(inFile, FALSE, &error)) {
+    radarsat2 = read_radarsat2_meta_ext(inFile, FALSE);
+    meta = radarsat2meta(radarsat2);
+    FREE(radarsat2);
+  }
   else if (isleader(inFile)) {
     ceos_description *ceos = 
       get_ceos_description_ext(inFile, REPORT_LEVEL_NONE, FALSE);
@@ -27,19 +37,6 @@ meta_parameters *meta2vector(char *inFile, dbf_header_t **dbf, int *nAttr,
       meta = meta_read_raw(inFile);
     else
       meta = meta_read_only(inFile);
-  }
-  else if (isparfile(inFile)) {
-    meta = meta_read_stf(inFile);
-  }
-  else if (isterrasar(inFile)) {
-    terrasar = read_terrasar_meta(inFile);
-    meta = terrasar2meta(terrasar);
-    FREE(terrasar);
-  }
-  else if (isRadarsat2(inFile, &error)) {
-    radarsat2 = read_radarsat2_meta(inFile);
-    meta = radarsat2meta(radarsat2);
-    FREE(radarsat2);
   }
   else
     meta = meta_read(inFile);
