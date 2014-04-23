@@ -964,6 +964,9 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta);
 void read_proj_file(char * file, project_parameters_t * pps,
 		    projection_type_t * proj_type, datum_type_t *datum,
 		    spheroid_type_t *spheroid);
+void write_esri_proj_file(char *inFile);
+void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile);
+char *meta2esri_proj(meta_parameters *meta, char *projFile);
 
 /***************************************************************************
   Misc projection-related functions
@@ -1047,16 +1050,12 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
 meta_parameters *read_generic_geotiff_metadata(const char *inFileName,
 					       int *ignore, ...);
 
-typedef struct {
-  int num;
-  int line;
-  int sample;
-  float diff;
-} latlon_pixel;
-
 // Prototypes for meta2uavsar.c
 int parse_annotation_line(char *line, char *key, char *value);
 meta_parameters* uavsar_polsar2meta(uavsar_polsar *params);
 meta_parameters* uavsar_insar2meta(uavsar_insar *params);
+
+// Prototypes for gamma_dem2meta.c
+meta_parameters *gamma_dem2meta(char *demFile, char *demPar);
 
 #endif

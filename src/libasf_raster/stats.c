@@ -16,11 +16,14 @@
 void calc_stats(float *data, long long pixel_count, double mask, double *min,
 		double *max, double *mean, double *stdDev)
 {
-  return calc_stats_ext(data, pixel_count, mask, TRUE, min, max, mean, stdDev);
+  double percentValid;
+  return calc_stats_ext(data, pixel_count, mask, TRUE, min, max, mean, stdDev,
+    &percentValid);
 }
 
 void calc_stats_ext(float *data, long long pixel_count, double mask, int report,
-		    double *min, double *max, double *mean, double *stdDev)
+		                double *min, double *max, double *mean, double *stdDev,
+		                double *percentValid)
 {
     long long ii, pix;
 
@@ -56,6 +59,7 @@ void calc_stats_ext(float *data, long long pixel_count, double mask, int report,
     if (report)
       asfPercentMeter(1.0);
     *mean /= pix;
+    *percentValid = (double)pix*100.0/pixel_count;
 
     if (report)
       asfPrintStatus("\nCalculating standard deviation...\n");
@@ -448,7 +452,10 @@ calc_stats_rmse_from_file_ext(const char *inFile, char *band, double mask,
     // Initialize the histogram.
     const int num_bins = 256;
     gsl_histogram *hist = gsl_histogram_alloc (num_bins);
-    gsl_histogram_set_ranges_uniform (hist, *min, *max);
+    if (meta->general->data_type == ASF_BYTE)
+      gsl_histogram_set_ranges_uniform (hist, 0, 255);
+    else
+      gsl_histogram_set_ranges_uniform (hist, *min, *max);
     *stdDev = 0.0;
 
     // pass 2 -- update histogram, calculate standard deviation

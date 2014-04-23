@@ -39,37 +39,6 @@ typedef int unproject_arr_t(project_parameters_t *pps, double *x, double *y,
       double *z, double **lat, double **lon,
       double **height, long length, datum_type_t dtm);
 
-static void location_minmax(meta_location *loc, double *minLat, double *maxLat,
-		     double *minLon, double *maxLon)
-{
-  int ii;
-  double corner_lat[4], corner_lon[4], min_x, max_x, min_y, max_y;
-  min_x = min_y = 9999999;
-  max_x = max_y = -9999999;
-  corner_lat[0] = loc->lat_start_near_range;
-  corner_lat[1] = loc->lat_start_far_range;
-  corner_lat[2] = loc->lat_end_near_range;
-  corner_lat[3] = loc->lat_end_far_range;
-  corner_lon[0] = loc->lon_start_near_range;
-  corner_lon[1] = loc->lon_start_far_range;
-  corner_lon[2] = loc->lon_end_near_range;
-  corner_lon[3] = loc->lon_end_far_range;
-  for (ii=0; ii<4; ii++) {
-    if (corner_lat[ii] < min_y)
-      min_y = corner_lat[ii];
-    if (corner_lat[ii] > max_y)
-      max_y = corner_lat[ii];
-    if (corner_lon[ii] < min_x)
-      min_x = corner_lon[ii];
-    if (corner_lon[ii] > max_x)
-      max_x = corner_lon[ii];
-  }
-  *minLat = min_y;
-  *maxLat = max_y;
-  *minLon = min_x;
-  *maxLon = max_x;
-}
-
 char *proj_info_as_string(projection_type_t projection_type,
                           project_parameters_t *pp, datum_type_t *datum)
 {
@@ -891,7 +860,7 @@ static int symmetry_test(meta_parameters *imd, double stpx, double stpy,
 int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                int force_flag, resample_method_t resample_method,
                double average_height, datum_type_t datum, 
-	       spheroid_type_t spheroid, double pixel_size,
+							 spheroid_type_t spheroid, double pixel_size,
                int multiband, int band_num, char **in_base_names,
                char *out_base_name, float background_val, double lat_min,
                double lat_max, double lon_min, double lon_max,
@@ -1130,10 +1099,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // Old Scansar data needs a 400m height adjustment.
     if (imd->sar && imd->sar->image_type == 'P' &&
         imd->projection && imd->projection->type == SCANSAR_PROJECTION &&
-    strncmp(imd->general->processor, "ASF", 3) == 0) {
-        asfPrintStatus("Will apply 400m height correction for SCANSAR data.\n");
-        average_height -= 400;
-        height_correction = 400;
+				strncmp(imd->general->processor, "ASF", 3) == 0) {
+			asfPrintStatus("Will apply 400m height correction for SCANSAR data.\n");
+			average_height -= 400;
+			height_correction = 400;
     }
 
     project_set_avg_height (average_height);
@@ -1226,7 +1195,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                 ret = meta_get_latLon (imd, (double)jj, (double)ii, average_height,
                     &(lats[current_edge_point]),
                     &(lons[current_edge_point]));
-                //g_assert (ret == 0);
                 asfRequire(ret == 0, "Unable to determine latitude and longitude "
                     "from current edge point\n");
                 lats[current_edge_point] *= D2R;
@@ -1304,47 +1272,47 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         }
         g_assert (current_edge_point == edge_point_count);
 	
-	if (projection_type != LAT_LONG_PSEUDO_PROJECTION) {
-	  // Pointers to arrays of projected coordinates to be filled in.
-	  // The projection function will allocate this memory itself.
-	  double *x = NULL, *y = NULL;
-	  x = y = NULL;
-	  // Project all the edge pixels.
-	  ret = project_arr (pp, lats, lons, NULL, &x, &y, NULL,
-			     edge_point_count, datum);
-	  if (!ret) {
-            asfPrintError("Non-forceable projection library error occurred.  Using\n"
-                          "the -force or \"Ignore projection errors\" checkbox or \n"
-                          "\"force = 1\" in a MapReady configuration file will\n"
-                          "not work with the current settings and geographical area.\n");
-	  }
-	  // Find the extents of the image in projection coordinates.
-	  for ( ii = 0 ; ii < edge_point_count ; ii++ ) {
-            if ( x[ii] < min_x ) { min_x = x[ii]; }
-            if ( x[ii] > max_x ) { max_x = x[ii]; }
-            if ( y[ii] < min_y ) { min_y = y[ii]; }
-            if ( y[ii] > max_y ) { max_y = y[ii]; }
-	  }
+				if (projection_type != LAT_LONG_PSEUDO_PROJECTION) {
+					// Pointers to arrays of projected coordinates to be filled in.
+					// The projection function will allocate this memory itself.
+					double *x = NULL, *y = NULL;
+					x = y = NULL;
+					// Project all the edge pixels.
+					ret = project_arr (pp, lats, lons, NULL, &x, &y, NULL,
+								 edge_point_count, datum);
+					if (!ret) {
+						asfPrintError("Non-forceable projection library error occurred.  Using\n"
+													"the -force or \"Ignore projection errors\" checkbox or \n"
+													"\"force = 1\" in a MapReady configuration file will\n"
+													"not work with the current settings and geographical area.\n");
+					}
+					// Find the extents of the image in projection coordinates.
+					for ( ii = 0 ; ii < edge_point_count ; ii++ ) {
+									if ( x[ii] < min_x ) { min_x = x[ii]; }
+									if ( x[ii] > max_x ) { max_x = x[ii]; }
+									if ( y[ii] < min_y ) { min_y = y[ii]; }
+									if ( y[ii] > max_y ) { max_y = y[ii]; }
+					}
 
-	  free (y);
-	  free (x);
-	}
-	else {
-	  for (ii=0; ii<edge_point_count; ii++) {
-	    lats[ii] *= R2D;
-	    lons[ii] *= R2D;
-	  }
-	  for (ii=0; ii<edge_point_count; ii++) {
-            if (meta_is_valid_double(lons[ii]) && lons[ii] < min_x) 
-	      min_x = lons[ii];
-            if (meta_is_valid_double(lons[ii]) && lons[ii] > max_x) 
-	      max_x = lons[ii];
-            if (meta_is_valid_double(lats[ii]) && lats[ii] < min_y) 
-	      min_y = lats[ii];
-            if (meta_is_valid_double(lats[ii]) && lats[ii] > max_y)
-	      max_y = lats[ii];
-	  }
-	}
+					free (y);
+					free (x);
+				}
+				else {
+					for (ii=0; ii<edge_point_count; ii++) {
+						lats[ii] *= R2D;
+						lons[ii] *= R2D;
+					}
+					for (ii=0; ii<edge_point_count; ii++) {
+									if (meta_is_valid_double(lons[ii]) && lons[ii] < min_x) 
+							min_x = lons[ii];
+									if (meta_is_valid_double(lons[ii]) && lons[ii] > max_x) 
+							max_x = lons[ii];
+									if (meta_is_valid_double(lats[ii]) && lats[ii] < min_y) 
+							min_y = lats[ii];
+									if (meta_is_valid_double(lats[ii]) && lats[ii] > max_y)
+							max_y = lats[ii];
+					}
+				}
         g_free (lons);
         g_free (lats);
     }
@@ -1361,15 +1329,15 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // We still assume square pixels for non-projected data
     // Deal with special case of geographic coordinates
     if (pixel_size < 0 && projection_type == LAT_LONG_PSEUDO_PROJECTION &&
-	(!imd->projection || 
-	 imd->projection->type != LAT_LONG_PSEUDO_PROJECTION))
-      pixel_size_x = pixel_size_y = 
-	MAX(imd->general->x_pixel_size, imd->general->y_pixel_size)/ 108000.0;
+				(!imd->projection || 
+				 imd->projection->type != LAT_LONG_PSEUDO_PROJECTION))
+			pixel_size_x = pixel_size_y = 
+				MAX(imd->general->x_pixel_size, imd->general->y_pixel_size)/ 108000.0;
     else if (pixel_size < 0 && !input_projected)
     {
         g_assert(i==0);
         pixel_size_x = pixel_size_y = 
-	  MAX(imd->general->x_pixel_size, imd->general->y_pixel_size);
+					MAX(imd->general->x_pixel_size, imd->general->y_pixel_size);
         asfPrintStatus("No pixel size specified.\n"
                        "Defaulting to larger of range or azimuth pixel size "
                        "from %smetadata: %f (%s pixel size)\n",
@@ -1398,11 +1366,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
           "turn out greater than 255 will be set to 255.\n"
           "RECOMMENDATION: Select a different resampling method for geocoding.\n");
     }
-
-    // In case of geographic information that is provided by lat/lon bands,
-    // the boundary needs to be extracted from the location block
-    if (imd->latlon)
-      location_minmax(imd->location, &min_y, &max_y, &min_x, &max_x);
 
     // done with this image's metadata
     meta_free(imd);
@@ -1804,20 +1767,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         height_correction = 400;
     }
 
-    /* Confused more than it helped. RG
-
-    // Issue a warning when the chosen pixel size is smaller than the
-    // input pixel size.
-    if ( MAX(imd->general->x_pixel_size,
-          imd->general->y_pixel_size) > pixel_size )
-    {
-        asfPrintWarning
-        ("Requested pixel size %f is smaller than the input image resolution "
-        "(%0.1f meters).\n", pixel_size,
-        MAX (imd->general->x_pixel_size, imd->general->y_pixel_size));
-    }
-    */
-
     // We will call "resample" on the input data if the geocoding
     // will significantly downsample.  This is because asf_geocode will
     // (with bilinear) use just 4 input pixels, which will throw away a
@@ -1832,7 +1781,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // Geographic coordinates need to be converted to meters for pixel size
     // comparison
     if (imd->projection && 
-	imd->projection->type == LAT_LONG_PSEUDO_PROJECTION) {
+				imd->projection->type == LAT_LONG_PSEUDO_PROJECTION) {
       imd->general->x_pixel_size *= 108000.0;
       imd->general->y_pixel_size *= 108000.0;
     }
@@ -1874,14 +1823,14 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     int output_is_latlon = projection_type == LAT_LONG_PSEUDO_PROJECTION;
     if (!input_is_latlon && !output_is_latlon) {
       if (!force_flag &&
-	  imd->general->x_pixel_size > (2*pixel_size_x) ) {
+					imd->general->x_pixel_size > (2*pixel_size_x) ) {
         report_func("Requested pixel size x %f is smaller than the minimum "
                     "implied by half \nthe input image resolution "
                     "(%le meters), this is not supported.\n",
                     pixel_size_x, imd->general->x_pixel_size);
       }
       if (!force_flag &&
-	  imd->general->x_pixel_size > (2*pixel_size_y) ) {
+				imd->general->x_pixel_size > (2*pixel_size_y) ) {
         report_func("Requested pixel size y %f is smaller than the minimum "
                     "implied by half \nthe input image resolution "
                     "(%le meters), this is not supported.\n",
@@ -1915,112 +1864,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
           &unproject_input, NULL);
     }
 
-    if (imd->latlon) {
-      // This geocoding method does not require establishing a mapping function.
-      // It is rather a look up of values for a given lat/lon location.
-      int ii, kk, nsIn, nlIn, nsOut, nlOut, oix, oiy, nLine, nSample;
-      int minSample, maxSample, minLine, maxLine;
-      float inc, *inValues, *outValues, *lines, *samples, fValue;
-      float diff, minDiff;
-      double lat, lon, yLine, xSample;
-
-      nsIn = imd->general->sample_count;
-      nsOut = omd->general->sample_count;
-      nlOut = omd->general->line_count;
-      inc = omd->general->x_pixel_size;
-      location_minmax(omd->location, &min_y, &max_y, &min_x, &max_x);
-      /*
-      min_y = omd->location->lat_start_near_range;
-      min_x = omd->location->lon_start_near_range;	    
-      */
-      lines = (float *) MALLOC(sizeof(float)*nsOut*nlOut);
-      samples = (float *) MALLOC(sizeof(float)*nsOut*nlOut);
-      asfPrintStatus("Establishing mapping scheme ...\n");
-      for (oiy=0; oiy<nlOut; oiy++) {
-
-	lat = min_y - oiy*inc;
-	lon = min_x;
-	meta_get_lineSamp(imd, lat, lon, 0.0, &yLine, &xSample);
-	nLine = (int)(yLine);
-	nSample = (int)(xSample);
-
-	for (oix=0; oix<nsOut; oix++) {
-	  lon = min_x + oix*inc;	  
-	  minLine = nLine - 4;
-	  maxLine = nLine + 4;
-	  minSample = nSample - 4;
-	  maxSample = nSample + 4;
-	  if (minLine < 0)
-	    minLine = 0;
-	  if (maxLine >= nlOut)
-	    maxLine = nlOut - 1;
-	  if (minSample < 0)
-	    minSample = 0;
-	  if (maxSample >= nsIn)
-	    maxSample = nsIn - 1;
-	  minDiff=9999999;
-	  for (ii=minLine; ii<maxLine; ii++) {
-	    for (kk=minSample; kk<maxSample; kk++) {
-	      diff = fabs(imd->latlon->lat[ii*nsIn + kk] - lat) +
-		fabs(imd->latlon->lon[ii*nsIn + kk] - lon);
-	      if (diff < minDiff) {
-		minDiff = diff;
-		nLine = ii;
-		nSample = kk;
-	      }
-	    }
-	  }
-	  lines[oiy*nsOut+oix] = nLine;
-	  samples[oiy*nsOut+oix] = nSample;
-	}
-	/*
-	for (oix=0; oix<nsOut; oix++) {
-	  lat = min_y - oiy*inc;
-	  lon = min_x + oix*inc;
-	  meta_get_lineSamp(imd, lat, lon, 0.0, &yLine, &xSample);
-	  lines[oiy*nsOut+oix] = (int)(yLine + 0.5);
-	  samples[oiy*nsOut+oix] = (int)(xSample + 0.5);
-	}
-	*/
-	asfPercentMeter((double)oiy/nlOut);
-      }
-      asfPrintStatus("\rProcessed 100%\n");
-
-      for (kk=0; kk<imd->general->band_count; kk++) {
-	if (multiband || kk == band_num) {
-	  if (n_bands > 1) {
-
-	    FILE *fpIn = FOPEN(input_image, "rb");
-	    nsIn = imd->general->sample_count;
-	    nlIn = imd->general->line_count;
-	    inValues = (float *) MALLOC(sizeof(float)*nsIn*nlIn);
-	    get_band_float_lines(fpIn, imd, kk, 0, nlIn, inValues);
-	    FCLOSE(fpIn);
-
-	    FILE *fpOut = FOPEN(output_image, kk>0 ? "ab" : "wb");
-	    outValues = (float *) MALLOC(sizeof(float)*nsOut);
-	    asfPrintStatus("Geocoding band: %s\n", band_name[kk]);
-	    for (oiy=0; oiy<nlOut; oiy++) {
-	      for (oix=0; oix<nsOut; oix++) {
-		nLine = lines[oiy*nsOut+oix];
-		nSample = samples[oiy*nsOut+oix];
-		fValue = inValues[nLine*nsIn + nSample];
-		outValues[oix] = fValue;
-	      }
-	      put_band_float_line(fpOut, omd, kk, oiy, outValues);
-	      asfLineMeter(oiy, nlOut);
-	    }
-	    FCLOSE(fpOut);
-	    
-	    FREE(inValues);
-	    FREE(outValues);
-	  }
-	}
-      }
-      FREE(lines);
-      FREE(samples);
-    }
-    else {
       // This would be the place to do the resampling of geocoded images
       // that happen to be in the same map projection as the mosaic but don't
       // have the same pixel size.
@@ -2047,7 +1890,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       if ( ii_size_x / grid_size < 10 && ii_size_y / grid_size < 10 ) {
         grid_size = MAX (ii_size_x, ii_size_y) / 10;
         if ( grid_size % 2 != 1 )
-	  grid_size++;
+				  grid_size++;
       }
       g_assert (grid_size % 2 == 1);
       size_t mapping_count = grid_size * grid_size;
@@ -2079,87 +1922,89 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       for ( ii = 0 ; ii < grid_size ; ii++ ) {
         size_t jj;
         for ( jj = 0 ; jj < grid_size ; jj++ ) {
-	  g_assert (sizeof (long int) >= sizeof (size_t));
-	  // Projection coordinates for the current grid point.
-	  double cxproj = min_x + x_spacing * jj;
-	  double cyproj = min_y + y_spacing * ii;
-	  
-	  // Corresponding latitude and longitude.
-	  double lat, lon;
-	  ret = unproject (pp, cxproj, cyproj, ASF_PROJ_NO_HEIGHT,
-			   &lat, &lon, NULL, datum);
-	  if ( !ret ) {
-	    // Details of the error should have already been printed.
-	    asfPrintError ("Projection Error!\n");
-	  }
-	  else if ( !meta_is_valid_double(lat) || !meta_is_valid_double(lon)) {
-	    asfPrintError ("unproject nan: %d,%d: %f, %f -> %f, %f\n",
-                           ii, jj, cxproj, cyproj, lat, lon);
-          } 
-	  lat *= R2D;
-	  lon *= R2D;
-          //printf("%d,%d: %f %f -> %f %f\n", ii, jj, cxproj, cyproj, lat, lon); 
+					g_assert (sizeof (long int) >= sizeof (size_t));
+					// Projection coordinates for the current grid point.
+					double cxproj = min_x + x_spacing * jj;
+					double cyproj = min_y + y_spacing * ii;
+		
+					// Corresponding latitude and longitude.
+					double lat, lon;
+					ret = unproject (pp, cxproj, cyproj, ASF_PROJ_NO_HEIGHT,
+							 &lat, &lon, NULL, datum);
+					if ( !ret ) {
+						// Details of the error should have already been printed.
+						asfPrintError ("Projection Error!\n");
+					}
+					else if ( !meta_is_valid_double(lat) || !meta_is_valid_double(lon)) {
+						asfPrintError ("unproject nan: %d,%d: %f, %f -> %f, %f\n",
+																 ii, jj, cxproj, cyproj, lat, lon);
+								} 
+					lat *= R2D;
+					lon *= R2D;
+					//printf("%zu,%zu: %f %f -> %f %f\n", ii, jj, cxproj, cyproj, lat, lon); 
 
-	  // here we have some kludgery to handle crossing the meridian
-	  if (fabs(lon-lon_0) > 300) {
-	    if (lon_0 < 0 && lon > 0) lon -= 360;
-	    if (lon_0 > 0 && lon < 0) lon += 360;
-	  }
-	  
-	  // Corresponding pixel indicies in input image.
-	  double x_pix, y_pix;
-	  if ( input_projected ) {
-	    // Input projection coordinates of the current pixel.
-	    double ipcx, ipcy, ipcz;
-	    ret = project_input (ipp, D2R*lat, D2R*lon, average_height,
-				 &ipcx, &ipcy, &ipcz, imd->projection->datum);
-	    if ( ret == 0 ) {
-	      asfPrintError ("Projection Error!\n");
-	    }
-	    else if ( !meta_is_valid_double(ipcx) || !meta_is_valid_double(ipcy)) {
-	      asfPrintError ("project nan: %d,%d: %f, %f -> %f, %f\n",
-                             ii, jj, lat, lon, ipcx, ipcy);
-            } 
-	    g_assert (ret);
-	    // Find the input image pixel indicies corresponding to input
-	    // projection coordinates.
-	    x_pix = (ipcx - ipb->startX) / ipb->perX;
-	    y_pix = (ipcy - ipb->startY) / ipb->perY;
-            //printf("%d,%d: %f %f -> %f %f\n", ii, jj, lat, lon, x_pix, y_pix); 
-	  }
-	  else {
-	    ret = meta_get_lineSamp (imd, lat, lon, average_height,
-				     &y_pix, &x_pix);
-	    //g_assert (ret == 0);
-	    if (ret != 0) {
-	      asfPrintError("Failed to determine line and sample from "
-			    "latitude and longitude\n"
-			    "Lat: %f, Lon: %f\n", lat, lon);
-	    }
-	    else if ( !meta_is_valid_double(x_pix) || !meta_is_valid_double(y_pix)) {
-	      asfPrintError ("meta_get_lineSamp nan: %d,%d: %f, %f -> %f, %f\n",
-                             ii, jj, lat, lon, x_pix, y_pix);
-            } 
-	  }
-	  
-	  g_assert(current_mapping < mapping_count);
-	  dtf.x_proj[current_mapping] = cxproj;
-	  dtf.y_proj[current_mapping] = cyproj;
-	  dtf.x_pix[current_mapping] = x_pix;
-	  dtf.y_pix[current_mapping] = y_pix;
+					// here we have some kludgery to handle crossing the meridian
+					if (fabs(lon-lon_0) > 300) {
+						if (lon_0 < 0 && lon > 0) lon -= 360;
+						if (lon_0 > 0 && lon < 0) lon += 360;
+					}
+		
+					// Corresponding pixel indicies in input image.
+					double x_pix, y_pix;
+					if ( input_projected ) {
+						// Input projection coordinates of the current pixel.
+						double ipcx, ipcy, ipcz;
+						ret = project_input (ipp, D2R*lat, D2R*lon, average_height,
+							 &ipcx, &ipcy, &ipcz, imd->projection->datum);
+						if ( ret == 0 ) {
+							asfPrintError ("Projection Error!\n");
+						}
+						else if ( !meta_is_valid_double(ipcx) || !meta_is_valid_double(ipcy)) {
+							asfPrintError ("project nan: %d,%d: %f, %f -> %f, %f\n",
+																	 ii, jj, lat, lon, ipcx, ipcy);
+									} 
+						g_assert (ret);
+						// Find the input image pixel indicies corresponding to input
+						// projection coordinates.
+						x_pix = (ipcx - ipb->startX) / ipb->perX;
+						y_pix = (ipcy - ipb->startY) / ipb->perY;
+						//printf("%zu,%zu: %f %f -> %f %f\n", ii, jj, lat, lon, x_pix, y_pix); 
+					}
+					else {
+						ret = meta_get_lineSamp (imd, lat, lon, average_height,
+									 &y_pix, &x_pix);
+						//printf("lat: %f, lon: %f, x_pix: %f, y_pix: %f\n", 
+						//	lat, lon, x_pix, y_pix);
+						//g_assert (ret == 0);
+						if (ret != 0) {
+							asfPrintError("Failed to determine line and sample from "
+								"latitude and longitude\n"
+								"Lat: %f, Lon: %f\n", lat, lon);
+						}
+						else if ( !meta_is_valid_double(x_pix) || !meta_is_valid_double(y_pix)) {
+							asfPrintError ("meta_get_lineSamp nan: %d,%d: %f, %f -> %f, %f\n",
+																	 ii, jj, lat, lon, x_pix, y_pix);
+						} 
+					}
+		
+					g_assert(current_mapping < mapping_count);
+					dtf.x_proj[current_mapping] = cxproj;
+					dtf.y_proj[current_mapping] = cyproj;
+					dtf.x_pix[current_mapping] = x_pix;
+					dtf.y_pix[current_mapping] = y_pix;
 
-	  if ( ii % sparse_grid_sample_stride == 0 &&
-	       jj % sparse_grid_sample_stride == 0 ) {
-	    g_assert(current_sparse_mapping < sparse_mapping_count);
-	    dtf.sparse_x_proj[current_sparse_mapping] = cxproj;
-	    dtf.sparse_y_proj[current_sparse_mapping] = cyproj;
-	    dtf.sparse_x_pix[current_sparse_mapping] = x_pix;
-	    dtf.sparse_y_pix[current_sparse_mapping] = y_pix;
-	    current_sparse_mapping++;
-	  }
-	  current_mapping++;
-	  
-	  asfPercentMeter((float)current_mapping / (float)(grid_size*grid_size));
+					if ( ii % sparse_grid_sample_stride == 0 &&
+							 jj % sparse_grid_sample_stride == 0 ) {
+						g_assert(current_sparse_mapping < sparse_mapping_count);
+						dtf.sparse_x_proj[current_sparse_mapping] = cxproj;
+						dtf.sparse_y_proj[current_sparse_mapping] = cyproj;
+						dtf.sparse_x_pix[current_sparse_mapping] = x_pix;
+						dtf.sparse_y_pix[current_sparse_mapping] = y_pix;
+						current_sparse_mapping++;
+					}
+					current_mapping++;
+		
+					asfPercentMeter((float)current_mapping / (float)(grid_size*grid_size));
         }
       }
       
@@ -2183,53 +2028,53 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         gsl_vector *model_y_errors = gsl_vector_alloc (dtf.n);
         gsl_vector *model_errors = gsl_vector_alloc (dtf.n);
         for ( ii = 0 ; ii < dtf.n ; ii++ ) {
-	  // x pixel index in input image as predicted by model.
-	  double xpfm = X_PIXEL (dtf.x_proj[ii], dtf.y_proj[ii]);
-	  double ypfm = Y_PIXEL (dtf.x_proj[ii], dtf.y_proj[ii]);
-	  double x_error = xpfm - dtf.x_pix[ii];
-	  double y_error = ypfm - dtf.y_pix[ii];
-	  double error_distance = sqrt (x_error*x_error + y_error*y_error);
+					// x pixel index in input image as predicted by model.
+					double xpfm = X_PIXEL (dtf.x_proj[ii], dtf.y_proj[ii]);
+					double ypfm = Y_PIXEL (dtf.x_proj[ii], dtf.y_proj[ii]);
+					double x_error = xpfm - dtf.x_pix[ii];
+					double y_error = ypfm - dtf.y_pix[ii];
+					double error_distance = sqrt (x_error*x_error + y_error*y_error);
 
-	  float_image_set_pixel (error_map, ii % grid_size, ii / grid_size,
-				 error_distance);
-	  gsl_vector_set (model_x_errors, ii, x_error);
-	  gsl_vector_set (model_y_errors, ii, y_error);
-	  gsl_vector_set (model_errors, ii, error_distance);
+					float_image_set_pixel (error_map, ii % grid_size, ii / grid_size,
+							 error_distance);
+					gsl_vector_set (model_x_errors, ii, x_error);
+					gsl_vector_set (model_y_errors, ii, y_error);
+					gsl_vector_set (model_errors, ii, error_distance);
         }
         // Uncomment the following 2 lines to get an image showing the
         // distribution of errors in the approximating grid.
         //float_image_export_as_jpeg (error_map, "error_map.jpg", grid_size, 0);
         float_image_free (error_map);
         double mean_error
-	  = gsl_stats_mean (model_errors->data, model_errors->stride,
-			    model_errors->size);
+					= gsl_stats_mean (model_errors->data, model_errors->stride,
+								model_errors->size);
         double error_standard_deviation
-	  = gsl_stats_sd_m (model_errors->data, model_errors->stride,
-			    model_errors->size, mean_error);
+					= gsl_stats_sd_m (model_errors->data, model_errors->stride,
+								model_errors->size, mean_error);
 	
         double max_x_error = gsl_vector_max (model_x_errors);
         double min_x_error = gsl_vector_min (model_x_errors);
         double largest_x_error;
         if ( fabs (max_x_error) > fabs (min_x_error) ) {
-	  largest_x_error = max_x_error;
+					largest_x_error = max_x_error;
         }
         else {
-	  largest_x_error = min_x_error;
+					largest_x_error = min_x_error;
         }
 	
         double max_y_error = gsl_vector_max (model_y_errors);
         double min_y_error = gsl_vector_min (model_y_errors);
         double largest_y_error;
         if ( fabs (max_y_error) > fabs (min_y_error) ) {
-	  largest_y_error = max_y_error;
+					largest_y_error = max_y_error;
         }
         else {
-	  largest_y_error = min_y_error;
+					largest_y_error = min_y_error;
         }
 	
         double largest_error = gsl_vector_max (model_errors);
         if ( largest_error > max_allowable_error ) {
-	  print_large_error_blurb(force_flag);
+					print_large_error_blurb(force_flag);
           report_func("Largest error was larger than maximum allowed! "
 		      "%f > %f\n", largest_error, max_allowable_error);
         }
@@ -2266,11 +2111,11 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         // asymmetry or meta_get_latLon and meta_get_lineSamp).
         // FIXME: Fix the broken scansar crap *HARD*.
         if ( imd->sar && imd->sar->image_type == 'P' ) {
-	  //g_assert (imd->projection->type == SCANSAR_PROJECTION);
-	  max_corner_error = 3 * max_allowable_error;
+					//g_assert (imd->projection->type == SCANSAR_PROJECTION);
+					max_corner_error = 3 * max_allowable_error;
         }
         else {
-	  max_corner_error = max_allowable_error;
+					max_corner_error = max_allowable_error;
         }
 	
         // Upper left corner.
@@ -2285,12 +2130,12 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         // problem is somewhere else I want to know.  Skip this test for
         // data with a transform block.
         if (imd->sar && imd->sar->image_type != 'P' && !imd->transform) {
-	  double start_tol = 0.2;
-	  meta_set_lineSamp_tolerance(start_tol);
-	  int niter=1;
+					double start_tol = 0.2;
+					meta_set_lineSamp_tolerance(start_tol);
+					int niter=1;
 	  
           while (1) {
-	    asfPrintStatus ("Symmetry testing latLong vs. lineSamp...\n");
+						asfPrintStatus ("Symmetry testing latLong vs. lineSamp...\n");
             asfPrintStatus ("tolerance  = %f\n", meta_get_lineSamp_tolerance());
 	    
             int ok1,ok2,ok3,ok4,ok5,ok6,ok7,ok8,ok9;
@@ -2364,27 +2209,27 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 	
         double ul_x, ul_y;
         project (pp, D2R * ul_lat, D2R * ul_lon, ASF_PROJ_NO_HEIGHT,
-		 &ul_x, &ul_y, NULL, datum);
+					 &ul_x, &ul_y, NULL, datum);
         double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
         if (fabs (ul_x_pix_approx) > max_corner_error ) {
-	  print_large_error_blurb(force_flag);
-	  report_func("Upper left x corner error was too large!  %f > %f\n",
+					print_large_error_blurb(force_flag);
+					report_func("Upper left x corner error was too large!  %f > %f\n",
 		      fabs (ul_x_pix_approx), max_corner_error );
         }
         else {
-	  asfPrintStatus ("Upper left x corner error: %f\n",
-			  fabs (ul_x_pix_approx));
+					asfPrintStatus ("Upper left x corner error: %f\n",
+					fabs (ul_x_pix_approx));
         }
 	
         double ul_y_pix_approx = Y_PIXEL (ul_x, ul_y);
         if (fabs (ul_y_pix_approx) > max_corner_error ) {
-	  print_large_error_blurb(force_flag);
-	  report_func ("Upper left y corner error was too large! %f > %f\n",
-		       fabs (ul_y_pix_approx), max_corner_error );
+					print_large_error_blurb(force_flag);
+					report_func ("Upper left y corner error was too large! %f > %f\n",
+	      	fabs (ul_y_pix_approx), max_corner_error );
         }
         else {
-	  asfPrintStatus ("Upper left y corner error: %f\n",
-			  fabs (ul_y_pix_approx));
+					asfPrintStatus ("Upper left y corner error: %f\n",
+				  fabs (ul_y_pix_approx));
         }
 	
         // Lower right corner.
@@ -2396,26 +2241,26 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 	
         double lr_x, lr_y;
         project (pp, D2R * lr_lat, D2R * lr_lon, ASF_PROJ_NO_HEIGHT,
-		 &lr_x, &lr_y, NULL, datum);
+					 &lr_x, &lr_y, NULL, datum);
         double lr_x_pix_approx = X_PIXEL (lr_x, lr_y);
         double lr_x_corner_error = fabs (lr_x_pix_approx - (ii_size_x - 1));
         if ( lr_x_corner_error > max_corner_error ) {
-	  print_large_error_blurb(force_flag);
-	  report_func ("Lower right x corner error was too large! %f > %f\n",
-		       lr_x_corner_error, max_corner_error);
+					print_large_error_blurb(force_flag);
+					report_func ("Lower right x corner error was too large! %f > %f\n",
+		      lr_x_corner_error, max_corner_error);
         }
         else {
-	  asfPrintStatus ("Lower right x corner error: %f\n", lr_x_corner_error);
+					asfPrintStatus ("Lower right x corner error: %f\n", lr_x_corner_error);
         }
         double lr_y_pix_approx = Y_PIXEL (lr_x, lr_y);
         double lr_y_corner_error = fabs (lr_y_pix_approx - (ii_size_y - 1));
         if ( lr_y_corner_error > max_corner_error ) {
-	  print_large_error_blurb(force_flag);
-	  report_func ("Lower right Y corner error was too large! %f > %f\n",
-		       lr_y_corner_error, max_corner_error);
+					print_large_error_blurb(force_flag);
+					report_func ("Lower right Y corner error was too large! %f > %f\n",
+		      lr_y_corner_error, max_corner_error);
         }
         else {
-	  asfPrintStatus ("Lower right y corner error: %f\n", lr_y_corner_error);
+					asfPrintStatus ("Lower right y corner error: %f\n", lr_y_corner_error);
         }
       }
       
@@ -2429,242 +2274,242 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       // will mosaic with fewer bands.
       int kk;
       for (kk=0; kk<imd->general->band_count; kk++) {
-	if (multiband || kk == band_num) {
-	  if (n_bands > 1)
-	    asfPrintStatus("Geocoding band: %s\n", band_name[kk]);
-	  
-	  // Complain if we're not using Nearest Neighbor when we shouldn't
-	  if (kk==0 && resample_method != RESAMPLE_NEAREST_NEIGHBOR) {
-	    if (strncmp_case(band_name[kk],"Cloude-Pottier",14)==0) {
-	      asfPrintWarning("When geocoding Cloude-Pottier, you should be "
-			      "using\nthe resampling method NEAREST_NEIGHBOR.\n"
-			      "Results may not be as expected!\n");
-	    }
-	    else if (strncmp_case(band_name[kk],"LAYOVER_MASK",12)==0) {
-	      asfPrintWarning("When geocoding a Layover/Shadow mask, you should "
-			      "be using\nthe resampling method "
-			      "NEAREST_NEIGHBOR.\n"
-			      "Results may not be as expected!\n");
-	    }
-	  }
-	  
-	  // Set up the line/sample mapping files, if requested to do so
-	  FILE *outLineFp=NULL, *outSampFp=NULL;
-	  float *line_out=NULL, *samp_out=NULL;
-	  if (save_line_sample_mapping) {
-	    asfPrintStatus("Setting up line/sample mapping files...\n");
-	    
-	    char *line_filename = appendToBasename(output_image, "_lines");
-	    char *line_metaname = appendExt(line_filename, ".meta");
-	    outLineFp = FOPEN(line_filename, "wb");
-	    meta_write(omd, line_metaname);
-	    FREE(line_filename);
-	    FREE(line_metaname);
-	    
-	    char *sample_filename = appendToBasename(output_image, "_samples");
-	    char *sample_metaname = appendExt(sample_filename, ".meta");
-	    outSampFp = FOPEN(sample_filename, "wb");
-	    meta_write(omd, sample_metaname);
-	    FREE(sample_filename);
-	    FREE(sample_metaname);
-	    
-	    line_out = MALLOC(sizeof(float)*oix_max);
-	    samp_out = MALLOC(sizeof(float)*oix_max);
-	    
-	    // prevent doing the line/sample file again
-	    save_line_sample_mapping = FALSE;
-	  }
-	  
-	  // For optical data -- we'll do processing as BYTE, to save memory
-	  // So, only one of the {Float/UInt8}Image will be non-null
-	  FloatImage *iim = NULL;
-	  UInt8Image *iim_b = NULL;
-	  
-	  asfPrintStatus("Creating tiles for the input image ...\n");
-	  
-	  // open up the input image
-	  if (process_as_byte)
-	    iim_b = uint8_image_band_new_from_metadata(imd, kk, input_image);
-	  else
-	    iim = float_image_band_new_from_metadata(imd, kk, input_image);
-	  
-	  asfPrintStatus("Resampling input image into output image "
-			 "coordinate space...\n");
-	  
-	  FILE *outFp = NULL; // only used in the line-by-line output case
-	  if (output_by_line) {
-	    // open for append, if multiband && this isn't the first band
-	    outFp = FOPEN(output_image, multiband && kk>0 ? "ab" : "wb");
-	  }
-	  
-	  if (output_by_line)
-	    g_assert(outFp && output_line && !output_bfi);
-	  else
-	    g_assert(!outFp && !output_line && output_bfi);
-	  
-	  // Set the pixels of the output image.
-	  size_t oix, oiy;    // Output image pixel indicies.
-	  for (oiy = 0 ; oiy < oiy_max ; oiy++) {
-	    
-	    asfLineMeter(oiy, oiy_max);
-	    
-	    int oix_first_valid = -1;
-	    int oix_last_valid = -1;
-	    
-	    for ( oix = 0 ; oix < oix_max ; oix++ ) {
-
-	      // Projection coordinates for the center of this pixel.
-              double oix_pc = omd->projection->startX + oix * omd->projection->perX;
-              double oiy_pc = omd->projection->startY + oiy * omd->projection->perY;
-
-	      projX[oix] = oix_pc;
-	      projY[oix] = oiy_pc;
-	      
-	      // Determine pixel of interest in input image.  The fractional
-	      // part is desired, we will use some sampling method to
-	      // interpolate between pixel values.
-	      double input_x_pixel = X_PIXEL (oix_pc, oiy_pc);
-	      double input_y_pixel = Y_PIXEL (oix_pc, oiy_pc);
-  
-	      if (line_out) {
-                if (input_y_pixel < 0 || input_x_pixel < 0)
-		  line_out[oix] = 0;
-                else if (input_y_pixel > (ssize_t) ii_size_y - 1.0 ||
-                         input_x_pixel > (ssize_t) ii_size_x - 1.0)
-		  line_out[oix] = 0;
-                else
-		  line_out[oix] = input_y_pixel;
-	      }
-	      
-	      if (samp_out) {
-                if (input_y_pixel < 0 || input_x_pixel < 0)
-		  samp_out[oix] = 0;
-                else if (input_y_pixel > (ssize_t) ii_size_y - 1.0 ||
-                         input_x_pixel > (ssize_t) ii_size_x - 1.0)
-		  samp_out[oix] = 0;
-                else
-		  samp_out[oix] = input_x_pixel;
-	      }
-	      
-	      g_assert (ii_size_x <= SSIZE_MAX);
-	      g_assert (ii_size_y <= SSIZE_MAX);
-	      
-	      float value, ref_value, power;
-	      
-	      // If we are outside the extent of the input image, set to the
-	      // fill value.  We do this only on the first image -- subsequent
-	      // images will work out the overlap with real data.
-	      if (input_x_pixel < 0 || 
-		  input_x_pixel > (ssize_t) ii_size_x - 1.0 || 
-		  input_y_pixel < 0 || 
-		  input_y_pixel > (ssize_t) ii_size_y - 1.0 ) {
-		if (i == 0) { // first image
-		  if (output_by_line)
-		    output_line[oix] = background_val;
-		  else
-		    banded_float_image_set_pixel(output_bfi, kk, oix, oiy,
-						 background_val);
-		}
-	      }
-	      // Otherwise, set to the value from the appropriate position in
-	      // the input image.
-	      else {
-		if (process_as_byte) {
-		  value = 
-		    uint8_image_sample(iim_b, input_x_pixel, input_y_pixel,
-				       uint8_image_sample_method);
-		}
-		else if ( imd->general->image_data_type == DEM ) {
-		  value = dem_sample(iim, input_x_pixel, input_y_pixel,
-				     float_image_sample_method);
-		}
-		else {
-		  if (imd->general->radiometry >= r_SIGMA_DB &&
-		      imd->general->radiometry <= r_GAMMA_DB) {
-		    power = 
-		      float_image_sample(iim, input_x_pixel, input_y_pixel,
-					 float_image_sample_method);
-		    value = 10.0 * log10(power);
-		  }
-		  else
-		    value = 
-		      float_image_sample(iim, input_x_pixel, input_y_pixel,
-					 float_image_sample_method);		
-		  
-		  if (omd->general->data_type == ASF_BYTE && value < 0.0) {
-		    value = 0.0;
-		    out_of_range_negative++;
-		  }
-		  if (omd->general->data_type == ASF_BYTE && value > 255.0) {
-		    value = 255.0;
-		    out_of_range_positive++;
-		  }
-		}
+				if (multiband || kk == band_num) {
+					if (n_bands > 1)
+						asfPrintStatus("Geocoding band: %s\n", band_name[kk]);
 		
-		// Now we are ready to put the pixel value into the output image
-		if (i > 0 && imd->general->image_data_type == DEM &&
-		    (value == 0 || value < -900)) {
-		  // Special case for DEMs -- we don't want to overwrite
-		  // "good" elevations with 0s, or "no data" values
-		  // (<-900 means "no data" for DEMs)
-		  // So, in this situation, we don't do anything
-		  ;
-		}
-		else if (meta_is_valid_double(imd->general->no_data) &&
-			 value == imd->general->no_data) {
-		  // pixel is the "no data" value -- only the first image
-		  // will set this in the output image, otherwise we risk
-		  // overwriting real data with background.
-		  if (i==0) {
-		    if (output_by_line)
-		      output_line[oix] = value;
-		    else {
-		      banded_float_image_set_pixel(output_bfi, kk, oix, oiy, 
-						   value);
-		      //uint8_image_set_pixel(tbi, oix, oiy, 1);
-		    }
-		  }
-		}
-		else {
-		  // Normal case, set the output pixel value
-		  oix_last_valid = oix;
-		  if (oix_first_valid == -1) oix_first_valid = oix;
-		  
-		  // FIXME: AVERAGE and NEAR RANGE overlap need some work
-		  // Have to track some values in a second image
-		  
-		  // Overlap option: OVERLAY
-		  // No action needed, just overwrite previous value
-		  
-		  // New images are intialized with zeros (at least float_image
-		  // does that). So we need to check for that when looking for
-		  // values.
-		  if (output_by_line) {
-		    output_line[oix] = value;
-		  }
-		  else {
-                    ref_value = 
-		      banded_float_image_get_pixel(output_bfi, kk, oix, oiy);
-                    if (overlap == MIN_OVERLAP && ref_value != 0 && 
-			ref_value < value) {
-		      value = ref_value;
-                    }
-                    else if (overlap == MAX_OVERLAP && ref_value != 0 && 
-			     ref_value > value) {
-		      value = ref_value;
-                    }
-                    else if (overlap == AVG_OVERLAP) {
-		      value += ref_value;
-		      uint8_t byte_value = uint8_image_get_pixel(tbi, oix, oiy);
-		      if (value != 0.0) {
-			byte_value++;
-		      }
-		      uint8_image_set_pixel(tbi, oix, oiy, byte_value);
-                    }
-                    banded_float_image_set_pixel(output_bfi, kk, oix, oiy, 
-						 value);
-		  }
-		}
+					// Complain if we're not using Nearest Neighbor when we shouldn't
+					if (kk==0 && resample_method != RESAMPLE_NEAREST_NEIGHBOR) {
+						if (strncmp_case(band_name[kk],"Cloude-Pottier",14)==0) {
+							asfPrintWarning("When geocoding Cloude-Pottier, you should be "
+									"using\nthe resampling method NEAREST_NEIGHBOR.\n"
+									"Results may not be as expected!\n");
+						}
+						else if (strncmp_case(band_name[kk],"LAYOVER_MASK",12)==0) {
+							asfPrintWarning("When geocoding a Layover/Shadow mask, you should "
+									"be using\nthe resampling method "
+									"NEAREST_NEIGHBOR.\n"
+									"Results may not be as expected!\n");
+						}
+					}
+		
+					// Set up the line/sample mapping files, if requested to do so
+					FILE *outLineFp=NULL, *outSampFp=NULL;
+					float *line_out=NULL, *samp_out=NULL;
+					if (save_line_sample_mapping) {
+						asfPrintStatus("Setting up line/sample mapping files...\n");
+			
+						char *line_filename = appendToBasename(output_image, "_lines");
+						char *line_metaname = appendExt(line_filename, ".meta");
+						outLineFp = FOPEN(line_filename, "wb");
+						meta_write(omd, line_metaname);
+						FREE(line_filename);
+						FREE(line_metaname);
+			
+						char *sample_filename = appendToBasename(output_image, "_samples");
+						char *sample_metaname = appendExt(sample_filename, ".meta");
+						outSampFp = FOPEN(sample_filename, "wb");
+						meta_write(omd, sample_metaname);
+						FREE(sample_filename);
+						FREE(sample_metaname);
+			
+						line_out = MALLOC(sizeof(float)*oix_max);
+						samp_out = MALLOC(sizeof(float)*oix_max);
+			
+						// prevent doing the line/sample file again
+						save_line_sample_mapping = FALSE;
+					}
+		
+					// For optical data -- we'll do processing as BYTE, to save memory
+					// So, only one of the {Float/UInt8}Image will be non-null
+					FloatImage *iim = NULL;
+					UInt8Image *iim_b = NULL;
+		
+					asfPrintStatus("Creating tiles for the input image ...\n");
+		
+					// open up the input image
+					if (process_as_byte)
+						iim_b = uint8_image_band_new_from_metadata(imd, kk, input_image);
+					else
+						iim = float_image_band_new_from_metadata(imd, kk, input_image);
+		
+					asfPrintStatus("Resampling input image into output image "
+						 "coordinate space...\n");
+		
+					FILE *outFp = NULL; // only used in the line-by-line output case
+					if (output_by_line) {
+						// open for append, if multiband && this isn't the first band
+						outFp = FOPEN(output_image, multiband && kk>0 ? "ab" : "wb");
+					}
+		
+					if (output_by_line)
+						g_assert(outFp && output_line && !output_bfi);
+					else
+						g_assert(!outFp && !output_line && output_bfi);
+		
+					// Set the pixels of the output image.
+					size_t oix, oiy;    // Output image pixel indicies.
+					for (oiy = 0 ; oiy < oiy_max ; oiy++) {
+			
+						asfLineMeter(oiy, oiy_max);
+			
+						int oix_first_valid = -1;
+						int oix_last_valid = -1;
+			
+						for ( oix = 0 ; oix < oix_max ; oix++ ) {
+
+							// Projection coordinates for the center of this pixel.
+										double oix_pc = omd->projection->startX + oix * omd->projection->perX;
+										double oiy_pc = omd->projection->startY + oiy * omd->projection->perY;
+
+							projX[oix] = oix_pc;
+							projY[oix] = oiy_pc;
+				
+							// Determine pixel of interest in input image.  The fractional
+							// part is desired, we will use some sampling method to
+							// interpolate between pixel values.
+							double input_x_pixel = X_PIXEL (oix_pc, oiy_pc);
+							double input_y_pixel = Y_PIXEL (oix_pc, oiy_pc);
+	
+							if (line_out) {
+								if (input_y_pixel < 0 || input_x_pixel < 0)
+									line_out[oix] = 0;
+								else if (input_y_pixel > (ssize_t) ii_size_y - 1.0 ||
+												 input_x_pixel > (ssize_t) ii_size_x - 1.0)
+									line_out[oix] = 0;
+								else
+									line_out[oix] = input_y_pixel;
+							}
+				
+							if (samp_out) {
+								if (input_y_pixel < 0 || input_x_pixel < 0)
+									samp_out[oix] = 0;
+								else if (input_y_pixel > (ssize_t) ii_size_y - 1.0 ||
+												 input_x_pixel > (ssize_t) ii_size_x - 1.0)
+									samp_out[oix] = 0;
+								else
+									samp_out[oix] = input_x_pixel;
+							}
+				
+							g_assert (ii_size_x <= SSIZE_MAX);
+							g_assert (ii_size_y <= SSIZE_MAX);
+				
+							float value, ref_value, power;
+				
+							// If we are outside the extent of the input image, set to the
+							// fill value.  We do this only on the first image -- subsequent
+							// images will work out the overlap with real data.
+							if (input_x_pixel < 0 || 
+									input_x_pixel > (ssize_t) ii_size_x - 1.0 || 
+									input_y_pixel < 0 || 
+									input_y_pixel > (ssize_t) ii_size_y - 1.0 ) {
+								if (i == 0) { // first image
+									if (output_by_line)
+										output_line[oix] = background_val;
+									else
+										banded_float_image_set_pixel(output_bfi, kk, oix, oiy,
+												 background_val);
+								}
+							}
+							// Otherwise, set to the value from the appropriate position in
+							// the input image.
+							else {
+					if (process_as_byte) {
+						value = 
+							uint8_image_sample(iim_b, input_x_pixel, input_y_pixel,
+										 uint8_image_sample_method);
+					}
+					else if ( imd->general->image_data_type == DEM ) {
+						value = dem_sample(iim, input_x_pixel, input_y_pixel,
+									 float_image_sample_method);
+					}
+					else {
+						if (imd->general->radiometry >= r_SIGMA_DB &&
+								imd->general->radiometry <= r_GAMMA_DB) {
+							power = 
+								float_image_sample(iim, input_x_pixel, input_y_pixel,
+								 float_image_sample_method);
+							value = 10.0 * log10(power);
+						}
+						else
+							value = 
+								float_image_sample(iim, input_x_pixel, input_y_pixel,
+								 float_image_sample_method);		
+			
+						if (omd->general->data_type == ASF_BYTE && value < 0.0) {
+							value = 0.0;
+							out_of_range_negative++;
+						}
+						if (omd->general->data_type == ASF_BYTE && value > 255.0) {
+							value = 255.0;
+							out_of_range_positive++;
+						}
+					}
+		
+					// Now we are ready to put the pixel value into the output image
+					if (i > 0 && imd->general->image_data_type == DEM &&
+							(value == 0 || value < -900)) {
+						// Special case for DEMs -- we don't want to overwrite
+						// "good" elevations with 0s, or "no data" values
+						// (<-900 means "no data" for DEMs)
+						// So, in this situation, we don't do anything
+						;
+					}
+					else if (meta_is_valid_double(imd->general->no_data) &&
+						 value == imd->general->no_data) {
+						// pixel is the "no data" value -- only the first image
+						// will set this in the output image, otherwise we risk
+						// overwriting real data with background.
+						if (i==0) {
+							if (output_by_line)
+								output_line[oix] = value;
+							else {
+								banded_float_image_set_pixel(output_bfi, kk, oix, oiy, 
+										 value);
+								//uint8_image_set_pixel(tbi, oix, oiy, 1);
+							}
+						}
+					}
+					else {
+						// Normal case, set the output pixel value
+						oix_last_valid = oix;
+						if (oix_first_valid == -1) oix_first_valid = oix;
+			
+						// FIXME: AVERAGE and NEAR RANGE overlap need some work
+						// Have to track some values in a second image
+			
+						// Overlap option: OVERLAY
+						// No action needed, just overwrite previous value
+			
+						// New images are intialized with zeros (at least float_image
+						// does that). So we need to check for that when looking for
+						// values.
+						if (output_by_line) {
+							output_line[oix] = value;
+						}
+						else {
+													ref_value = 
+								banded_float_image_get_pixel(output_bfi, kk, oix, oiy);
+													if (overlap == MIN_OVERLAP && ref_value != 0 && 
+						ref_value < value) {
+								value = ref_value;
+													}
+													else if (overlap == MAX_OVERLAP && ref_value != 0 && 
+								 ref_value > value) {
+								value = ref_value;
+													}
+													else if (overlap == AVG_OVERLAP) {
+								value += ref_value;
+								uint8_t byte_value = uint8_image_get_pixel(tbi, oix, oiy);
+								if (value != 0.0) {
+						byte_value++;
+								}
+								uint8_image_set_pixel(tbi, oix, oiy, byte_value);
+													}
+													banded_float_image_set_pixel(output_bfi, kk, oix, oiy, 
+									 value);
+						}
+					}
 	      }
 	    } // end of for-each-sample-in-line set output values
 	    
@@ -2696,19 +2541,19 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 	      // the outer if guards against the case where no valid pixels
 	      // were on this line (i.e., both are -1)
 	      if (oix_first_valid > 0 && oix_last_valid > 0) {
-		if (output_by_line) {
-		  for (oix = oix_first_valid; (int)oix <= oix_last_valid; ++oix) {
-		    output_line[oix] +=
-		      get_geoid_height(lat[oix]*R2D, lon[oix]*R2D);
-		  }
-		}
-		else {
-		  for (oix = oix_first_valid; (int)oix <= oix_last_valid; ++oix) {
-		    float value = banded_float_image_get_pixel(output_bfi, kk, oix, oiy);
-		    banded_float_image_set_pixel(output_bfi, kk, oix, oiy,
-						 value + get_geoid_height(lat[oix]*R2D, lon[oix]*R2D));
-		  }
-		}
+					if (output_by_line) {
+						for (oix = oix_first_valid; (int)oix <= oix_last_valid; ++oix) {
+							output_line[oix] +=
+								get_geoid_height(lat[oix]*R2D, lon[oix]*R2D);
+						}
+					}
+					else {
+						for (oix = oix_first_valid; (int)oix <= oix_last_valid; ++oix) {
+							float value = banded_float_image_get_pixel(output_bfi, kk, oix, oiy);
+							banded_float_image_set_pixel(output_bfi, kk, oix, oiy,
+									 value + get_geoid_height(lat[oix]*R2D, lon[oix]*R2D));
+						}
+					}
 	      }
 	      
 	      free(lat);
@@ -2778,10 +2623,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       first_time_through_rmx = TRUE;
       first_time_through_rmy = TRUE;
       for ( ii = 0 ; ii < sgs ; ii++ ) {
-	gsl_interp_accel_free (y_accel_rmx[ii]);
-	gsl_interp_accel_free (y_accel_rmy[ii]);
-	gsl_spline_free (y_spline_rmx[ii]);
-	gsl_spline_free (y_spline_rmy[ii]);
+				gsl_interp_accel_free (y_accel_rmx[ii]);
+				gsl_interp_accel_free (y_accel_rmy[ii]);
+				gsl_spline_free (y_spline_rmx[ii]);
+				gsl_spline_free (y_spline_rmy[ii]);
       }
       g_free (y_accel_rmx);
       g_free (y_accel_rmy);
@@ -2811,7 +2656,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       
       // reset average_height (avoid double correction for scansar 400m)
       average_height += height_correction;
-    } //else regular geocoding
   }
   if (band_name) {
     int kk;
@@ -2831,24 +2675,24 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     asfPrintStatus("\nGenerating final output.\n");
     for (kk=0; kk<omd->general->band_count; ++kk) {
       if (overlap == AVG_OVERLAP) {
-    size_t oix, oiy;
-    for (oiy = 0 ; oiy <= oiy_max ; oiy++)
-      for ( oix = 0 ; oix <= oix_max ; oix++ ) {
-        float value = banded_float_image_get_pixel(output_bfi, kk, oix, oiy);
-        //uint8_t num = uint8_image_get_pixel(tbi, oix, oiy);
-        //if (num > 0)
-          //value /= num;
-        banded_float_image_set_pixel(output_bfi, kk, oix, oiy, value);
-      }
-      }
-      FloatImage *fi = banded_float_image_get_band(output_bfi, kk);
-      float_image_band_store(fi, output_image, omd, kk>0);
-    }
-    banded_float_image_free(output_bfi);
-    if (tbi) {
-      uint8_image_free(tbi);
-    }
-  }
+				size_t oix, oiy;
+				for (oiy = 0 ; oiy <= oiy_max ; oiy++)
+					for ( oix = 0 ; oix <= oix_max ; oix++ ) {
+						float value = banded_float_image_get_pixel(output_bfi, kk, oix, oiy);
+						//uint8_t num = uint8_image_get_pixel(tbi, oix, oiy);
+						//if (num > 0)
+							//value /= num;
+						banded_float_image_set_pixel(output_bfi, kk, oix, oiy, value);
+					}
+			}
+			FloatImage *fi = banded_float_image_get_band(output_bfi, kk);
+			float_image_band_store(fi, output_image, omd, kk>0);
+		}
+		banded_float_image_free(output_bfi);
+		if (tbi) {
+			uint8_image_free(tbi);
+		}
+	}
 
   if (resample_method == RESAMPLE_BICUBIC &&
       omd->general->data_type == ASF_BYTE &&

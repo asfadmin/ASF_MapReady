@@ -131,7 +131,7 @@ else
 
 ### Begin Unix Section
 
-CFLAGS += -Werror \
+CFLAGS += $(W_ERROR) \
 	$(GTK_CFLAGS) \
 	$(shell /usr/bin/pkg-config --cflags libglade-2.0) \
 	$(GSL_CFLAGS) \
@@ -139,6 +139,7 @@ CFLAGS += -Werror \
 	$(TIFF_CFLAGS) \
 	$(GEOTIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
+	$(PNG_CFLAGS) \
 	$(HDF5_CFLAGS)
 
 LDLIBS = \

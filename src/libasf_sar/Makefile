@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := -Wall -Werror $(CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS)
+CFLAGS := -Wall $(W_ERROR) $(CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS)
 
 OBJS = \
 	gr2sr.o \
@@ -45,9 +45,9 @@ all: build_only
 	cp polarimetry.cfg $(SHAREDIR)
 	cp point_target_analysis.cfg $(SHAREDIR)
 	mkdir -p $(SHAREDIR)/classifications
-	cp cloude8.cla cloude16.cla $(SHAREDIR)/classifications
+	cp classifications/cloude*.cla $(SHAREDIR)/classifications
 	mkdir -p $(SHAREDIR)/look_up_tables
-	cp cloude8.lut cloude16.lut $(SHAREDIR)/look_up_tables
+	cp look_up_tables/cloude*.lut $(SHAREDIR)/look_up_tables
 	cp jasc_palettes/* $(SHAREDIR)/look_up_tables
 	-cp ea_boundary.txt $(SHAREDIR)/classifications
 

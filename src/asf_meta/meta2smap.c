@@ -17,27 +17,25 @@ meta_parameters* smap2meta(smap_meta *smap)
   meta = raw_init();
 
   // General block
-  strcpy(meta->general->basename, smap->granule_name);
-  strcpy(meta->general->sensor, smap->project_id);
+  strcpy(meta->general->basename, smap->file_name);
+  strcpy(meta->general->sensor, "SMAP");
   strcpy(meta->general->sensor_name, "L-band radar");
   strcpy(meta->general->mode, smap->short_name);
-  // meta->general->processor;
+  // meta->general->processor
   meta->general->data_type = REAL32;
   meta->general->image_data_type = AMPLITUDE_IMAGE;
-  meta->general->radiometry = r_SIGMA_DB;
-  sscanf(smap->range_beginning_date, "%4d-%2d-%2d", 
-	 &imgStartDate.year, &imgStartDate.month, &imgStartDate.day);
-  sscanf(smap->range_beginning_time, "%2d:%2d:%lfZ",
-	 &imgStartTime.hour, &imgStartTime.min, &imgStartTime.sec);
-  sscanf(smap->range_ending_date, "%4d-%2d-%2d", 
-	 &imgStopDate.year, &imgStopDate.month, &imgStopDate.day);
-  sscanf(smap->range_ending_time, "%2d:%2d:%lfZ",
-	 &imgStopTime.hour, &imgStopTime.min, &imgStopTime.sec);
+  meta->general->radiometry = r_AMP;
+  sscanf(smap->orbit_start_date_time, "%4d-%2d-%2dT%2d:%2d:%lfZ", 
+		&imgStartDate.year, &imgStartDate.month, &imgStartDate.day,
+  	&imgStartTime.hour, &imgStartTime.min, &imgStartTime.sec);
+  sscanf(smap->orbit_stop_date_time, "%4d-%2d-%2dT%2d:%2d:%lfZ", 
+		&imgStopDate.year, &imgStopDate.month, &imgStopDate.day,
+  	&imgStopTime.hour, &imgStopTime.min, &imgStopTime.sec);
   average_ymdTimes(&imgStartDate, &imgStopDate, &imgStartTime, &imgStopTime,
-		   &date, &time);
+		&date, &time);
   sprintf(meta->general->acquisition_date, "%02d-%s-%4d %02d:%02d:%02.0f",
 	  date.day, mon[date.month], date.year, time.hour, time.min, time.sec);
-  meta->general->orbit = smap->start_orbit_number;
+  // meta->general->orbit
   if (strcmp_case(smap->orbit_direction, "ASCENDING") == 0)
     meta->general->orbit_direction = 'A';
   else if (strcmp_case(smap->orbit_direction, "DESCENDING") == 0)
@@ -47,14 +45,14 @@ meta_parameters* smap2meta(smap_meta *smap)
   meta->general->sample_scaling = 1;
   meta->general->start_line = 0;
   meta->general->start_sample = 0;
-  meta->general->x_pixel_size = smap->grid_spacing * 1000;
-  meta->general->y_pixel_size = smap->grid_spacing * 1000;
+  meta->general->x_pixel_size = 1000;
+  meta->general->y_pixel_size = 1000;
   meta->general->re_major = 6371228.0; // apparently constant earth radius
   meta->general->re_minor = 6371228.0;
 
   // SAR block
   meta->sar = meta_sar_init();
-  meta->sar->image_type = 'P'; // geographic but nevertheless
+  meta->sar->image_type = 'R';
   meta->sar->look_direction = 'R';
   // No constant look count information - rotating antenna
   meta->sar->deskewed = 1; // assumption

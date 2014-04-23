@@ -257,6 +257,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   datum_type_t datum;
   va_list ap;
 
+  _XTIFFInitialize();
+
   /***** INITIALIZE PARAMETERS *****/
   /*                               */
   // Create a new metadata object for the image.
@@ -1415,7 +1417,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     asfPrintError("Invalid height and width parameters in TIFF file,\n"
         "Height = %ld, Width = %ld\n", height, width);
   }
-
+  
   /***** FILL IN THE REST OF THE META DATA (Projection parms should already exist) *****/
   /*                                                                                   */
   char image_data_type[256];
@@ -1660,7 +1662,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   double mask_value = MAGIC_UNSET_DOUBLE;
 
   // Look for a non-standard GDAL tag that contains the no data value
-  char* charDummy = NULL;
+  char *charDummy;
   if (TIFFGetField(input_tiff,TIFFTAG_GDAL_NODATA,&charDummy)) {
     if (strcmp_case( charDummy, "nan" ) != 0) {
       mg->no_data = (double)atof(charDummy);
@@ -3407,7 +3409,7 @@ void classify_geotiff(GTIF *input_gtif,
             if (r &&
                 *raster_type != RasterPixelIsArea)
             {
-                asfPrintError("Only map-projected GeoTIFFs with pixels that represent area are supported.");
+                asfPrintWarning("Only map-projected GeoTIFFs with pixels that represent area are supported.");
             }
             if (a && !l) {
                 asfPrintWarning("Invalid map-projected GeoTIFF found ...angular units set to %s and\n"

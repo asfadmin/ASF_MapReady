@@ -7,7 +7,7 @@
 void usage()
 {
     printf("Usage:\n"
-           "    addapole [-sinc | -pole | -pyr] <line> <sample> <radius> "
+           "    addapole [-sinc | -pole | -pyr | -cone] <line> <sample> <radius> "
            "<height> <infile> <outfile>\n");
     exit(1);
 }
@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 {
     if (argc != 8) usage();
 
-    int type = 0; // 0=?, 1=sinc, 2=pole, 3=pyr
+    int type = 0; // 0=?, 1=sinc, 2=pole, 3=pyr, 4=cone
 
     char *in = argv[6];
     char *out = argv[7];
@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
     if (strcmp(argv[1], "-sinc")==0) type=1;
     if (strcmp(argv[1], "-pole")==0) type=2;
     if (strcmp(argv[1], "-pyr")==0) type=3;
+    if (strcmp(argv[1], "-cone")==0) type=4;
     if (type==0) { printf("Unknown pole type.\n"); usage(); }
 
     printf("Adding a pole:\n");
@@ -61,9 +62,9 @@ int main(int argc, char *argv[])
         for (i = 0; i < ns; ++i) {
             double x=0.0;
 
-            // sinc and pole use circular posts, real distance
+            // sinc, pole and cone use circular posts, real distance
             // pyr uses distance measured along the gridlines
-            if (type==1 || type==2)
+            if (type==1 || type==2 || type==4)
                 x = hypot(i-samp, l-line);
             else if (type == 3)
                 x = dmax(fabs(i-samp),fabs(l-line));
@@ -78,7 +79,7 @@ int main(int argc, char *argv[])
                     }
                 } else if (type==2) { // pole
                     demLine[i] = height;
-                } else if (type==3) { // pyr
+                } else if (type==3 || type==4) { // pyr or cone
                     demLine[i] += height * (radius-x)/radius;
                 } else {
                     printf("Impossible: type=%d\n", type);

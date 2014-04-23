@@ -14,7 +14,7 @@ OBJS = CLA.o \
 	writer.o \
 	remap.o
 
-CFLAGS += -Wall -Werror
+CFLAGS += -Wall $(W_ERROR)
 
 all: lib clean
 

@@ -26,7 +26,7 @@ SOURCES := asf_export.c
 #
 ###############################################################################
 
-CFLAGS += -Werror \
+CFLAGS += $(W_ERROR) \
 	$(GEOTIFF_CFLAGS) \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
@@ -56,7 +56,6 @@ LIBS  = \
 	$(GSL_LIBS) \
 	$(NETCDF_LIBS) \
 	$(HDF5_LIBS) \
-	$(HDFEOS5_LIBS) \
 	$(ZLIB_LIBS) \
 	-lm \
 

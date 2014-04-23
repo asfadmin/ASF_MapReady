@@ -60,38 +60,41 @@ static float filter(      /****************************************/
            total  =0,                      /* valid kernel values */
            i, j;                           /* loop counters       */
                                            /***********************/
-                                           
-    if (nn_flag) {
 
-      if (base>=0 && base<nl*ns)
-        return inbuf[base];
-      else if (base<0)
-        return inbuf[0];
-      else if (base>=nl*ns)
-        return inbuf[ns*nl-1];
-      asfPrintError("Not reached.\n");
 
-    }
-    else {
-      for (i = 0; i < nl; i++)
-      {
-        for (j = x-half; j <= x+half; j++)
-        {
-          if (base>=0 && base<nl*ns && inbuf[base] != 0 && j < ns)
-          {
-            kersum += inbuf[base];
-            total++;
+    if (nn_flag == 1) {  /* Use nearest neighbor value */
+      	if (base>=0 && base<nl*ns) 
+          return inbuf[base];
+	else if (base<0) 
+          return inbuf[0];
+      	else if (base>=nl*ns) 
+          return inbuf[ns*nl-1];
+      	asfPrintError("Not reached.\n");
+    } else if (nn_flag == 2) { /* Use logical OR of values */
+      	for (i = 0; i < nl; i++) {
+      	  for (j = x-half; j <= x+half; j++) {
+      	    if (base>=0 && base<nl*ns && inbuf[base] != 0 && j < ns) { kersum = (int) ((int) kersum | (int) inbuf[base]); }
+      	    base++;
+      	  }
+      	  base += ns;
+      	  base -= nsk;
+      	}
+       	return (kersum);
+    } else {
+        for (i = 0; i < nl; i++) {
+          for (j = x-half; j <= x+half; j++) {
+            if (base>=0 && base<nl*ns && inbuf[base] != 0 && j < ns) {
+              kersum += inbuf[base];
+              total++;
+            }
+            base++;
           }
-          base++;
+          base += ns;
+          base -= nsk;
         }
-        base += ns;
-        base -= nsk;
-      }
-
-      if (total != 0)
-        kersum /= (float) total;
-
-      return (kersum);
+        if (total != 0)
+          kersum /= (float) total;
+        return (kersum);
     }
 
     asfPrintError("Not reached");

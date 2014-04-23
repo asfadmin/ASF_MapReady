@@ -76,7 +76,6 @@ BUGS:
 *									      *
 ******************************************************************************/
 
-#include "cproj.h"
 #include "asf.h"
 #include "asf_meta.h"
 #include "proj.h"
@@ -154,7 +153,7 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
       double lat,lon; /*This is how we go between SAR and DEM images.*/
       double demProj_x,demProj_y; /*These are the projection coordinates for the DEM.*/
       double demProj_z;
-      int grid_x, grid_y;
+      int grid_x=0, grid_y=0;
 
       getNextSarPt(metaSar,gridCount,&grid_x,&grid_y,
 		   metaSar->general->sample_count,

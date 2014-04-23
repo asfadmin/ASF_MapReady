@@ -127,6 +127,7 @@ int main(argc,argv)
     meta_parameters *metaIn;
     double  xscalfact=1;              /* x scale factor                  */
     double  yscalfact=1;              /* y scale factor                  */
+    int size=0;
 
     handle_common_asf_args(&argc, &argv, "resample");
 
@@ -134,17 +135,29 @@ int main(argc,argv)
                                       "-nearest_neighbor", "-nn",
                                       "--nearest_neighbor", "--nn",
                                       NULL);
+    int use_lo = extract_flag_options(&argc, &argv,
+				      "-logical_or", "-lo", 
+   				      "--logical_or", "--lo",
+				      NULL);
     int is_square_pixsiz = extract_flag_options(&argc, &argv, "-square", NULL);
     int is_scaling = extract_flag_options(&argc, &argv, "-scale", NULL);
     int is_scalex = extract_double_options(&argc, &argv, &xscalfact,
                                           "-scalex", NULL);
     int is_scaley = extract_double_options(&argc, &argv, &yscalfact,
                                           "-scaley", NULL);
+    int is_size = extract_int_options(&argc, &argv, &size, "-size", NULL);
 
-    if ((is_square_pixsiz + is_scaling + is_scalex > 1) ||
-        (is_square_pixsiz + is_scaling + is_scaley > 1) ||
+    if ((is_square_pixsiz + is_scaling + is_scalex + is_size > 1) ||
+        (is_square_pixsiz + is_scaling + is_scaley + is_size > 1) ||
         (is_scalex == 1 && is_scaley == 0) ||
         (is_scaley == 1 && is_scalex == 0))
+    {
+       asfPrintStatus("*** Invalid combination of arguments.\n");
+       usage();
+       return 1;
+    }
+
+    if (use_nn + use_lo > 1) 
     {
        asfPrintStatus("*** Invalid combination of arguments.\n");
        usage();
@@ -163,6 +176,8 @@ int main(argc,argv)
     else if (is_scaling)
         args_required = 4; // resample <scale_factor> infile outfile
     else if (is_scalex || is_scaley)
+        args_required = 3; // resample infile outfile
+    else if (is_size)
         args_required = 3; // resample infile outfile
     else
         args_required = 5; // resample <x pixsiz> <y pixsiz> infile outfile 
@@ -211,6 +226,19 @@ int main(argc,argv)
             asfPrintError("Invalid y scale factor: %f\n", yscalfact);
         //yscalfact = 1.0/yscalfact;
     }
+    else if (is_size) {
+        asfPrintStatus("Making larger output size: %d\n", size);
+        if (size<=0)
+            asfPrintError("Invalid size: %d\n", size);
+        int nl = metaIn->general->line_count;
+        int ns = metaIn->general->sample_count;
+        if (nl > ns) {
+            xscalfact = yscalfact = (double)size / (double)(nl+1);
+        }
+        else {
+            xscalfact = yscalfact = (double)size / (double)(ns+1);
+        }
+    }
     else {
         double xpixsiz = atof(argv[1]);
         if (xpixsiz<=0)
@@ -227,7 +255,7 @@ int main(argc,argv)
     }
 
     // finally ready
-    resample_ext(infile, outfile, xscalfact, yscalfact, use_nn);
+    resample_ext(infile, outfile, xscalfact, yscalfact, use_nn+2*use_lo);
     
     meta_free(metaIn);
     return(0);
