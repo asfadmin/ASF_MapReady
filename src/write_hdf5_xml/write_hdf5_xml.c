@@ -2203,24 +2203,24 @@ int main(int argc, char **argv)
       "direction\">%g</y_spacing>\n", meta->general->y_pixel_size);
     fprintf(fp, "    </layover_shadow_mask>\n");
     meta_free(meta);
-    fprintf(fp, "  </metadata>\n");
 
-    fprintf(fp, "  <terrain_correction>\n");
-    fprintf(fp, "    <patches_attempted type=\"int\" definition=\"number of patches used to coregister\""
+    fprintf(fp, "    <terrain_correction>\n");
+    fprintf(fp, "      <patches_attempted type=\"int\" definition=\"number of patches used to coregister\""
       ">%d</patches_attempted>\n", patches_attempted);
-    fprintf(fp, "    <patches_accepted type=\"int\" definition=\"number of patches successfully coregistered\""
+    fprintf(fp, "      <patches_accepted type=\"int\" definition=\"number of patches successfully coregistered\""
       ">%d</patches_accepted>\n", patches_accepted);
-    fprintf(fp, "    <coregistration_success type=\"string\" definition=\"Coregistration "
+    fprintf(fp, "      <coregistration_success type=\"string\" definition=\"Coregistration "
       "success flag\">%s</coregistration_success>\n", passed ? "Y" : "N");
-    fprintf(fp, "    <offset_x type=\"double\" definition=\"Coregistration range offset\""
+    fprintf(fp, "      <offset_x type=\"double\" definition=\"Coregistration range offset\""
       " units=\"pixels\">%g</offset_x>\n", range_offset);
-    fprintf(fp, "    <offset_y type=\"double\" definition=\"Coregistration azimuth offset\""
+    fprintf(fp, "      <offset_y type=\"double\" definition=\"Coregistration azimuth offset\""
       " units=\"pixels\">%g</offset_y>\n", azimuth_offset);
-    fprintf(fp, "    <residual_range_offset_stddev type=\"double\" definition=\"final model fit std. dev. range\""
+    fprintf(fp, "      <residual_range_offset_stddev type=\"double\" definition=\"final model fit std. dev. range\""
       " units=\"pixels\">%g</residual_range_offset_stddev>\n", range_stddev);
-    fprintf(fp, "    <residual_azimuth_offset_stddev type=\"double\" definition=\"final model fit std. dev. azimuth\""
+    fprintf(fp, "      <residual_azimuth_offset_stddev type=\"double\" definition=\"final model fit std. dev. azimuth\""
       " units=\"pixels\">%g</residual_azimuth_offset_stddev>\n", azimuth_stddev);
-    fprintf(fp, "  </terrain_correction>\n");
+    fprintf(fp, "    </terrain_correction>\n");
+    fprintf(fp, "  </metadata>\n");
 
     // Browse image information
     if (browse) {
@@ -2450,25 +2450,25 @@ int main(int argc, char **argv)
     // Terrain correction
     fpFiles = FOPEN(params->rtc_log, "rt");
     while (NULL != fgets(line, 255, fpFiles)) {
-      if (strstr(line, "mk_geo_radcal processing start:") &&
+      if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
           strstr(line, "mode: 0")) {
         p = strstr(line, "processing start:");
         gamma2iso_date(p+18, str);
         fprintf(fp, "    <simulate_sar>%s</simulate_sar>\n", str);
       }
-      if (strstr(line, "mk_geo_radcal processing start:") &&
+      if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
           strstr(line, "mode: 1")) {
         p = strstr(line, "processing start:");
         gamma2iso_date(p+18, str);
         fprintf(fp, "    <initial_offset>%s</initial_offset>\n", str);
       }
-      if (strstr(line, "mk_geo_radcal processing start:") &&
+      if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
           strstr(line, "mode: 2")) {
         p = strstr(line, "processing start:");
         gamma2iso_date(p+18, str);
         fprintf(fp, "    <refined_offset>%s</refined_offset>\n", str);
       }
-      if (strstr(line, "mk_geo_radcal processing start:") &&
+      if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
           strstr(line, "mode: 3")) {
         p = strstr(line, "processing start:");
         gamma2iso_date(p+18, str);
