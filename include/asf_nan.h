@@ -20,13 +20,7 @@
 # define NAN __nan_union.__d
 #endif /* NAN */
 
-/* Specify necessary headers for the isnan() function/macro */
-#if defined (linux) || defined(darwin) || defined (win32)
 # include <math.h>
-#else
-# include <ieeefp.h>
-# include <math.h>
-#endif /* defined (linux) || defined(darwin) || defined (win32) */
 
 #define ISNAN(X) (isnan(X))
 
