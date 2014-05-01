@@ -736,7 +736,7 @@ int ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     FSEEK(fpIn, offset, SEEK_SET);
     for (ii=0; ii<meta->general->line_count; ii++) {
       for (kk=0; kk<meta->general->sample_count; kk++) {
-	FREAD(byteBuf, sizeof(char), 10, fpIn);
+	ASF_FREAD(byteBuf, sizeof(char), 10, fpIn);
 /*
         float m11, m12, m13, m14, m22, m23, m24, m33, m34, m44;
 	m11 = ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);

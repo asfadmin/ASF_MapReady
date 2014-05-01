@@ -62,7 +62,7 @@ int read_generic_client(int row_start, int n_rows_to_get,
         if (data_type==GREYSCALE_BYTE) {
             // reading byte data directly into the byte cache
             FSEEK64(info->fp, ns*row_start, SEEK_SET);
-            FREAD(dest, sizeof(unsigned char), n_rows_to_get*ns, info->fp);
+            ASF_FREAD(dest, sizeof(unsigned char), n_rows_to_get*ns, info->fp);
         }
         else {
             assert(FALSE);

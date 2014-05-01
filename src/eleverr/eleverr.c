@@ -178,7 +178,7 @@ int main(int argc, char **argv)
 
 		/* read in data */
 		if (maskflag)
-			FREAD(mask,sizeof(unsigned char),ncols,fmask);
+			ASF_FREAD(mask,sizeof(unsigned char),ncols,fmask);
 		get_float_line(fdata, meta, y, f_coh);
 		
 		/* calculate baseline for this row*/

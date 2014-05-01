@@ -259,7 +259,7 @@ int read_uavsar_client(int row_start, int n_rows_to_get,
         unsigned char *dest = (unsigned char*)dest_void;
         if (data_type==GREYSCALE_BYTE) {
             FSEEK64(info->fp, ns*row_start, SEEK_SET);
-            FREAD(dest, sizeof(unsigned char), n_rows_to_get*ns, info->fp);
+            ASF_FREAD(dest, sizeof(unsigned char), n_rows_to_get*ns, info->fp);
         }
         else {
             assert(FALSE);

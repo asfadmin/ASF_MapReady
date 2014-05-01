@@ -286,7 +286,7 @@ void import_gridfloat(char *inBaseName, char *outBaseName)
     FILE *out = FOPEN(data_filename, "wb");
 
     for (i=0; i<row_count; ++i) {
-        FREAD(floats, sizeof(float), column_count, fp);
+        ASF_FREAD(floats, sizeof(float), column_count, fp);
 	//if (msbfirst) {
             for (j=0; j<column_count; ++j) {
                 big32(floats[j]);

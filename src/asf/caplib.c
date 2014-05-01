@@ -300,15 +300,15 @@ FILE *FOPEN(const char *file,const char *mode)
 }
 
 
-size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
+size_t ASF_FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
 {
     size_t ret;
     char error_message[1024];
 
     if (ptr==NULL)
-        programmer_error("NULL data buffer passed to FREAD.\n");
+        programmer_error("NULL data buffer passed to ASF_FREAD.\n");
     if (stream==NULL)
-        programmer_error("NULL file pointer passed to FREAD.\n");
+        programmer_error("NULL file pointer passed to ASF_FREAD.\n");
     ret=fread(ptr,size,nitems,stream);
     if (ret < nitems)
     {

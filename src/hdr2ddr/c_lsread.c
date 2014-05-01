@@ -116,7 +116,7 @@ do
     	    }
 	if (charlen > 0)                         /* read character portion    */
 	    {
-	    obyte = FREAD(cbuf,sizeof(char),charlen,fp);
+	    obyte = ASF_FREAD(cbuf,sizeof(char),charlen,fp);
 	    *clen = obyte;
 	    *(cbuf + *clen) = '\0';  
 	    }
@@ -124,7 +124,7 @@ do
 	    *clen = 0;
 	if (datalen > 0)                         /* read data portion         */
 	    {
-	    obyte = FREAD(dbuf,sizeof(char),datalen,fp);
+	    obyte = ASF_FREAD(dbuf,sizeof(char),datalen,fp);
 	    *dlen = obyte;
 	    }
 	else

@@ -115,7 +115,7 @@ void dumpLineHeader(const char *inName, const char *template, int line_number)
     
     // Read the header information
     FSEEK64(fpData, offset, SEEK_SET);
-    FREAD(&hdr, 1, 12, fpData);
+    ASF_FREAD(&hdr, 1, 12, fpData);
     subtype[0] = hdr.rectyp[0];
     itype = hdr.rectyp[1];
     subtype[1] = hdr.rectyp[2];
@@ -170,13 +170,13 @@ void dumpLineHeader(const char *inName, const char *template, int line_number)
 	switch (format_length)
 	  {
 	  case (1):
-	    FREAD(&byteValue, 1, 1, fpData);
+	    ASF_FREAD(&byteValue, 1, 1, fpData);
 	    break;
 	  case (2):
-	    FREAD(&value, 1, 2, fpData);
+	    ASF_FREAD(&value, 1, 2, fpData);
 	    break;
 	  case (4):
-	    FREAD(&value, 1, 4, fpData);
+	    ASF_FREAD(&value, 1, 4, fpData);
 	    break;
 	  default:
 	    asfPrintError("Unknown template format (%s)\n", format);

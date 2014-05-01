@@ -1005,7 +1005,7 @@ make_complex_thumb(meta_parameters* imd,
                 long long offset =
                   (long long)headerBytes+line*(long long)image_fdr.reclen;
                 FSEEK64(fpIn, offset, SEEK_SET);
-                FREAD(shorts + kk*ns*2, sizeof(short), ns*2, fpIn);
+                ASF_FREAD(shorts + kk*ns*2, sizeof(short), ns*2, fpIn);
             }
 
             // proper endianness for all those int16s
@@ -1035,7 +1035,7 @@ make_complex_thumb(meta_parameters* imd,
                 long long offset =
                   (long long)headerBytes+line*(long long)image_fdr.reclen;
                 FSEEK64(fpIn, offset, SEEK_SET);
-                FREAD(chars + kk*ns*2, sizeof(unsigned char), ns*2, fpIn);
+                ASF_FREAD(chars + kk*ns*2, sizeof(unsigned char), ns*2, fpIn);
             }
 
             // now multilook and convert to amplitude
@@ -1059,7 +1059,7 @@ make_complex_thumb(meta_parameters* imd,
                 long long offset =
                   (long long)headerBytes+line*(long long)image_fdr.reclen;
                 FSEEK64(fpIn, offset, SEEK_SET);
-                FREAD(floats + kk*ns*2, sizeof(float), ns*2, fpIn);
+                ASF_FREAD(floats + kk*ns*2, sizeof(float), ns*2, fpIn);
             }
 
             // proper endianness for all those real32s
@@ -1383,7 +1383,7 @@ make_uavsar_thumb(meta_parameters *meta, const char *input_data,
   double avg = 0.0;
   for ( ii = 0 ; ii < tsy ; ii++ ) {
       FSEEK64(fp, ii*sf*sizeof(float)*meta->general->sample_count, SEEK_SET);
-      FREAD(line, sizeof(float), meta->general->sample_count, fp);
+      ASF_FREAD(line, sizeof(float), meta->general->sample_count, fp);
 
       for (jj = 0; jj < tsx; ++jj) {
           if(is_complex) {
@@ -1644,7 +1644,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         FSEEK64(fpIn, offset, SEEK_SET);
         if (imd->general->data_type == INTEGER16)
         {
-          FREAD(line, sizeof(unsigned short), imd->general->sample_count,
+          ASF_FREAD(line, sizeof(unsigned short), imd->general->sample_count,
                 fpIn);
 
           for (jj = 0; jj < imd->general->sample_count; ++jj)
@@ -1652,7 +1652,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         }
         else if (imd->general->data_type == ASF_BYTE)
         {
-          FREAD(bytes, sizeof(unsigned char), imd->general->sample_count,
+          ASF_FREAD(bytes, sizeof(unsigned char), imd->general->sample_count,
                 fpIn);
 
           for (jj = 0; jj < imd->general->sample_count; ++jj)
