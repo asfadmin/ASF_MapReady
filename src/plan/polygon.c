@@ -1,3 +1,4 @@
+#include "asf_raster.h"
 #include "polygon.h"
 #include "asf.h"
 #include <assert.h>

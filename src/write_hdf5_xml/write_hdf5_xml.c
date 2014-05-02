@@ -64,6 +64,7 @@ typedef struct {
 	char *wrapped_interferogram;
 	char *unwrapped_interferogram;
 	char *correlation;
+	char *browse_overview;
 	char *browse_amplitude;
 	char *browse_wrapped_interferogram;
 	char *browse_unwrapped_interferogram;
@@ -276,6 +277,7 @@ params_t *params_init(char *type) {
     params->dem_url = NULL;
     params->troposphere = NULL;
     params->troposphere_url = NULL;
+    params->browse_overview = NULL;
     params->browse_amplitude = NULL;
     params->browse_wrapped_interferogram = NULL;
     params->browse_unwrapped_interferogram = NULL;
@@ -451,6 +453,10 @@ void read_filenames(const char * file, params_t **params, char *type)
 			if (strncmp_case(line, "troposphere url", 15) == 0) {
 				list->troposphere_url = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->troposphere_url, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "browse overview", 15) == 0) {
+				list->browse_overview = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->browse_overview, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "browse amplitude", 16) == 0) {
 				list->browse_amplitude = (char *) MALLOC(sizeof(char)*n);
@@ -1102,9 +1108,12 @@ int main(int argc, char **argv)
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "wrapped interferogram\">%s</file>\n", filename);
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">Alaska Satellite Facility</source>\n");				
-      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-        "projection of the data\">geographic</map_projection>\n");
+        "data\">Alaska Satellite Facility</source>\n");
+      fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection as well known text\">GEOGCS[\"GCS_WGS_1984\",DATUM[\""
+      "D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\""
+      "Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      "</projection_string>\n");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "WIDTH", 5) == 0)
@@ -1193,9 +1202,12 @@ int main(int argc, char **argv)
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "unwrapped interferogram\">%s</file>\n", filename);
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">Alaska Satellite Facility</source>\n");				
-      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-        "projection of the data\">geographic</map_projection>\n");
+        "data\">Alaska Satellite Facility</source>\n");
+      fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection as well known text\">GEOGCS[\"GCS_WGS_1984\",DATUM[\""
+      "D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\""
+      "Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      "</projection_string>\n");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "WIDTH", 5) == 0) {
@@ -1306,9 +1318,12 @@ int main(int argc, char **argv)
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "correlation image\">%s</file>\n", filename);
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">Alaska Satellite Facility</source>\n");				
-      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-        "projection of the data\">geographic</map_projection>\n");
+        "data\">Alaska Satellite Facility</source>\n");
+      fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection as well known text\">GEOGCS[\"GCS_WGS_1984\",DATUM[\""
+      "D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\""
+      "Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      "</projection_string>\n");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "WIDTH", 5) == 0)
@@ -1399,9 +1414,12 @@ int main(int argc, char **argv)
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "incidence angle map\">%s</file>\n", filename);
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">Alaska Satellite Facility</source>\n");				
-      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-        "projection of the data\">geographic</map_projection>\n");
+        "data\">Alaska Satellite Facility</source>\n");
+      fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection as well known text\">GEOGCS[\"GCS_WGS_1984\",DATUM[\""
+      "D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\""
+      "Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      "</projection_string>\n");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "WIDTH", 5) == 0)
@@ -1452,9 +1470,12 @@ int main(int argc, char **argv)
           sprintf(str, "%s", line+13);
           if (strncmp_case(line, "PROJECTION", 10) == 0) {
             sprintf(map_projection, "%s", trim_spaces(str));
-            if (strcmp_case(map_projection, "LATLON") == 0)
-              fprintf(fp, "      <map_projection type=\"string\" definition=\""
-              "map projection of the data\">geographic</map_projection>\n");
+            if (strcmp_case(map_projection, "LATLON") == 0)            
+              fprintf(fp, "      <projection_string type=\"string\" definition"
+              "=\"map projection as well known text\">GEOGCS[\"GCS_WGS_1984\","
+              "DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563"
+              "]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295"
+              "]]</projection_string>\n");
           }
           if (strncmp_case(line, "WIDTH", 5) == 0) {
             dem_width = atoi(trim_spaces(str));
@@ -1519,8 +1540,11 @@ int main(int argc, char **argv)
           if (strncmp_case(line, "PROJECTION", 10) == 0) {
             sprintf(map_projection, "%s", trim_spaces(str));
             if (strcmp_case(map_projection, "LATLON") == 0)
-              fprintf(fp, "      <map_projection type=\"string\" definition=\""
-              "map projection of the data\">geographic</map_projection>\n");
+              fprintf(fp, "      <projection_string type=\"string\" definition"
+              "=\"map projection as well known text\">GEOGCS[\"GCS_WGS_1984\","
+              "DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563"
+              "]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295"
+              "]]</projection_string>\n");
           }
           if (strncmp_case(line, "WIDTH", 5) == 0) {
             tropo_width = atoi(trim_spaces(str));

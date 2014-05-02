@@ -1,6 +1,7 @@
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_raster.h"
+#include "meta_project.h"
 
 #define VERSION 1.3
 #define MINI(a,b) (((a)<(b))?(a):(b))
@@ -263,4 +264,262 @@ void trim_zeros_ext(char *infile, char *outfile, int update_meta,
   }
 
   meta_free(metaIn);
+}
+
+void subset_by_map(char *infile, char *outfile, double minX, double maxX,
+  double minY, double maxY) 
+{
+  meta_parameters *meta = meta_read(infile);
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+  int nCoords = 4;
+  long long startX, startY, sizeX, sizeY;
+  double line, sample, height;
+  double minSample = ns, maxSample = 0.0, minLine = nl, maxLine = 0.0;
+  double minLat = 90.0, maxLat = -90.0, minLon = 180.0, maxLon = -180.0;
+  double *lat = (double *) MALLOC(sizeof(double)*nCoords);
+  double *lon = (double *) MALLOC(sizeof(double)*nCoords);
+  proj_to_latlon(meta->projection, minX, minY, 0.0, &lat[0], &lon[0], &height);
+  proj_to_latlon(meta->projection, minX, maxY, 0.0, &lat[1], &lon[1], &height);
+  proj_to_latlon(meta->projection, maxX, minY, 0.0, &lat[2], &lon[2], &height);
+  proj_to_latlon(meta->projection, maxX, maxY, 0.0, &lat[3], &lon[3], &height);
+  int dateline = crosses_dateline(lon, 0, nCoords);
+  int ii;
+  for (ii=0; ii<nCoords; ii++) {
+    if (dateline && lon[ii] < 0)
+      lon[ii] += 360.0;
+    if (lat[ii] > maxLat)
+      maxLat = lat[ii];
+    if (lat[ii] < minLat)
+      minLat = lat[ii];
+    if (lon[ii] > maxLon)
+      maxLon = lon[ii];
+    if (lon[ii] < minLon)
+      minLon = lon[ii];
+  }
+  meta_get_lineSamp(meta, minLat, minLon, 0.0, &line, &sample);
+  if (line < minLine)
+    minLine = line;
+  if (line > maxLine)
+    maxLine = line;
+  if (sample < minSample)
+    minSample = sample;
+  if (sample > maxSample)
+    maxSample = sample;
+  meta_get_lineSamp(meta, minLat, maxLon, 0.0, &line, &sample);
+  if (line < minLine)
+    minLine = line;
+  if (line > maxLine)
+    maxLine = line;
+  if (sample < minSample)
+    minSample = sample;
+  if (sample > maxSample)
+    maxSample = sample;
+  meta_get_lineSamp(meta, maxLat, minLon, 0.0, &line, &sample);
+  if (line < minLine)
+    minLine = line;
+  if (line > maxLine)
+    maxLine = line;
+  if (sample < minSample)
+    minSample = sample;
+  if (sample > maxSample)
+    maxSample = sample;
+  meta_get_lineSamp(meta, maxLat, maxLon, 0.0, &line, &sample);
+  if (line < minLine)
+    minLine = line;
+  if (line > maxLine)
+    maxLine = line;
+  if (sample < minSample)
+    minSample = sample;
+  if (sample > maxSample)
+    maxSample = sample;
+  startX = (int) (minSample + 0.5);
+  startY = (int) (minLine + 0.5);
+  sizeX = (int) (maxSample - minSample);
+  sizeY = (int) (maxLine - minLine);
+  trim(infile, outfile, startX, startY, sizeX, sizeY);
+  meta_free(meta); 
+}
+
+void subset_by_latlon(char *infile, char *outfile, double *lat, double *lon, 
+  int nCoords) 
+{
+  meta_parameters *meta = meta_read(infile);
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+  long long startX, startY, sizeX, sizeY;
+  double line, sample;
+  double minSample = ns, maxSample = 0.0, minLine = nl, maxLine = 0.0;
+  double minLat = 90.0, maxLat = -90.0, minLon = 180.0, maxLon = -180.0;
+  int ii;
+
+  int dateline = crosses_dateline(lon, 0, nCoords);
+  asfPrintStatus("Subset does %scross the dateline\n", dateline ? "" : "not ");
+  for (ii=0; ii<nCoords; ii++) {
+    if (dateline && lon[ii] < 0)
+      lon[ii] += 360.0;
+    if (lat[ii] > maxLat)
+      maxLat = lat[ii];
+    if (lat[ii] < minLat)
+      minLat = lat[ii];
+    if (lon[ii] > maxLon)
+      maxLon = lon[ii];
+    if (lon[ii] < minLon)
+      minLon = lon[ii];
+  }
+  meta_get_lineSamp(meta, minLat, minLon, 0.0, &line, &sample);
+  if (line < minLine)
+    minLine = line;
+  if (line > maxLine)
+    maxLine = line;
+  if (sample < minSample)
+    minSample = sample;
+  if (sample > maxSample)
+    maxSample = sample;
+  meta_get_lineSamp(meta, minLat, maxLon, 0.0, &line, &sample);
+  if (line < minLine)
+    minLine = line;
+  if (line > maxLine)
+    maxLine = line;
+  if (sample < minSample)
+    minSample = sample;
+  if (sample > maxSample)
+    maxSample = sample;
+  meta_get_lineSamp(meta, maxLat, minLon, 0.0, &line, &sample);
+  if (line < minLine)
+    minLine = line;
+  if (line > maxLine)
+    maxLine = line;
+  if (sample < minSample)
+    minSample = sample;
+  if (sample > maxSample)
+    maxSample = sample;
+  meta_get_lineSamp(meta, maxLat, maxLon, 0.0, &line, &sample);
+  if (line < minLine)
+    minLine = line;
+  if (line > maxLine)
+    maxLine = line;
+  if (sample < minSample)
+    minSample = sample;
+  if (sample > maxSample)
+    maxSample = sample;
+  startX = (int) (minSample + 0.5);
+  startY = (int) (minLine + 0.5);
+  sizeX = (int) (maxSample - minSample);
+  sizeY = (int) (maxLine - minLine);
+  trim(infile, outfile, startX, startY, sizeX, sizeY);
+  meta_free(meta); 
+}
+
+Poly *polygon_new(double *x, double *y, int start, int end)
+{
+  Poly *self = MALLOC(sizeof(Poly));
+  int n = end - start;
+  self->n = n;
+  self->x = MALLOC(sizeof(double)*n);
+  self->y = MALLOC(sizeof(double)*n);
+  self->dateline = crosses_dateline(x, 0, end);
+
+  int i;
+  for (i=start; i<end; ++i) {
+    if (self->dateline && (x[i] < 0))
+      self->x[i-start] = x[i] + 360.0;
+    else
+      self->x[i-start] = x[i];
+    self->y[i-start] = y[i];
+  }
+
+  return self;
+}
+
+void polygon_free(Poly *self)
+{
+  if (self) {
+    if (self->x)
+      free(self->x);
+    if (self->y)
+      free(self->y);
+    free(self);
+  }
+}
+
+// this is from the comp.graphics.algorithms FAQ
+// see http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+int point_in_polygon(Poly *self, double x, double y)
+{
+  int i, j, c = 0;
+  for (i = 0, j = self->n-1; i < self->n; j = i++) {
+    if ((((self->y[i]<=y) && (y<self->y[j])) ||
+      ((self->y[j]<=y) && (y<self->y[i]))) &&
+      (x < (self->x[j] - self->x[i]) * (y - self->y[i]) /
+       (self->y[j] - self->y[i]) + self->x[i]))
+      c = !c;
+  }
+  return c;
+}
+
+void clip_to_polygon(char *inFile, char *outFile, double *lat, double *lon, 
+  int *start, int nParts, int nVertices)
+{
+  int ii, jj, kk;
+  double pLat, pLon;
+    
+  // Grab some metadata
+  meta_parameters *meta = meta_read(inFile);
+  int nb = meta->general->band_count;
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+  char **bands = extract_band_names(meta->general->bands, nb);
+  
+  // Set things up for polygon tests
+  int dateline = crosses_dateline(lon, 0, nVertices);
+  int *factor = (int *) MALLOC(sizeof(int)*ns);
+  float *values = (float *) MALLOC(sizeof(float)*ns);
+  int begin, end;
+
+  // Load polygon
+  Poly **p = (Poly**) MALLOC(sizeof(Poly*)*nParts); 
+  for (ii=0; ii<nParts; ii++) {
+    begin = start[ii];
+    end = start[ii+1];
+    p[ii] = polygon_new(lon, lat, begin, end);
+  }
+  
+  // Go through image and update values outside polygon
+  FILE *fpIn = FOPEN(inFile, "rb");
+  FILE *fpOut = FOPEN(outFile, "wb");
+  for (kk=0; kk<nl; kk++) {
+    for (ii=0; ii<ns; ii++) {
+      factor[ii] = 0;
+      meta_get_latLon(meta, (double) kk, (double) ii, 0.0, &pLat, &pLon);
+      if (dateline && pLon<0)
+        pLon += 360;
+      for (jj=0; jj<nParts; jj++) {
+        if (point_in_polygon(p[jj], pLon, pLat))
+          factor[ii] = 1;
+      } 
+    }
+    for (jj=0; jj<nb; jj++) {
+      get_band_float_line(fpIn, meta, jj, kk, values);    
+      if (strcmp_case(bands[jj], "lat") != 0 && 
+        strcmp_case(bands[jj], "lon") != 0) {
+        for (ii=0; ii<ns; ii++)
+          values[ii] *= (float) factor[ii];
+      }
+      put_band_float_line(fpOut, meta, jj, kk, values);
+    }
+    asfLineMeter(kk, nl);
+  }
+  FCLOSE(fpIn);
+  FCLOSE(fpOut);
+  meta_write(meta, outFile);
+  meta_free(meta);
+  for (ii=0; ii<nParts; ii++)
+    polygon_free(p[ii]);
+  FREE(p);
+  FREE(factor);
+  FREE(values);
+  for (ii=0; ii<nb; ii++)
+    FREE(bands[ii]);
+  FREE(bands);
 }

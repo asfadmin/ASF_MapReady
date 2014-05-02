@@ -4,6 +4,701 @@
 #include "libasf_proj.h"
 #include "asf.h"
 
+void shapefile_init(char *inFile, char *outFile, char *format, 
+  meta_parameters *meta)
+{
+  char *dbaseFile;
+  DBFHandle dbase;
+  SHPHandle shape = NULL;
+  
+  // Read configuration file
+  dbf_header_t *dbf;
+  int ii, nCols;
+  char shape_type[25];
+  if (strcmp_case(format, "CSV") == 0) {
+    char line[1024], **cols;
+    FILE *fpIn = FOPEN(inFile, "r");
+    fgets(line, 1024, fpIn); // header line
+    FCLOSE(fpIn);
+    chomp(line);
+    split_into_array(line, ',', &nCols, &cols);
+    dbf = (dbf_header_t *) MALLOC(sizeof(dbf_header_t)*nCols);
+    for (ii=0; ii<nCols; ii++) {
+      dbf[ii].shape = STRDUP(cols[ii]);
+      dbf[ii].format = DBF_STRING;
+      dbf[ii].length = 100;
+      dbf[ii].decimals = 0;
+    }
+    FREE(cols);
+    strcpy(shape_type, "polygon");
+  }
+  else {
+    if (!read_header_config(format, &dbf, &nCols, shape_type))
+      asfPrintError("Could not find format (%s) information\n", format);
+    if (strcmp_case(shape_type, "UNKNOWN") == 0)
+      asfPrintError("Unknown shape type! Needs to be either 'POLYGON' or "
+      "'POINT'!\n");
+    if (strcmp_case(format, "POINT") == 0 || 
+      strcmp_case(format, "POLYGON") == 0)
+      nCols = 1;
+  }
+
+  // Open database for initialization
+  dbaseFile = (char *) MALLOC(sizeof(char)*(strlen(outFile)+5));
+  sprintf(dbaseFile, "%s.dbf", outFile);
+  dbase = DBFCreate(dbaseFile);
+  if (!dbase)
+    asfPrintError("Could not create database file '%s'\n", dbaseFile);
+
+  if (meta) {
+    for (ii=0; ii<nCols; ii++) {
+
+      // General block
+      if (meta->general) {
+        if (strcmp_case(dbf[ii].meta, "meta.general.basename") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.sensor") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.sensor_name") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.mode") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, 
+          "meta.general.receiving_station") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.processor") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.data_type") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.image_data_type") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.radiometry") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, 
+          "meta.general.acquisition_date") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.orbit") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.orbit_direction") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.frame") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.band_count") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.bands") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.line_count") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.sample_count") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.start_line") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.start_sample") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.x_pixel_size") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.y_pixel_size") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.center_latitude") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.center_longitude") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.re_major") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.re_minor") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.bit_error_rate") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.missing_lines") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        else if (strcmp_case(dbf[ii].meta, "meta.general.no_data") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+      }
+      // SAR block
+      if (meta->sar) {
+        if (strcmp_case(dbf[ii].meta, "meta.sar.image_type") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.look_direction") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.azimuth_look_count") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.range_look_count") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.deskewed") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.original_line_count") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.original_sample_count") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.line_increment") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.sample_increment") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.range_time_per_pixel") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.azimuth_time_per_pixel") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.slant_shift") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.time_shift") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.slant_range_first_pixel") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.wavelength") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.prf") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.earth_radius") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.earth_radius_pp") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.satellite_height") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.satellite_binary_time") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.satellite_clock_time") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.sar.range_doppler_coefficients[0]") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.sar.range_doppler_coefficients[1]") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.sar.range_doppler_coefficients[2]") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.sar.azimuth_doppler_coefficients[0]") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.sar.azimuth_doppler_coefficients[1]") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.sar.azimuth_doppler_coefficients[2]") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.sar.azimuth_processing_bandwidth") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.chirp_rate") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.pulse_duration") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.range_sampling_rate") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.polarization") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.multilook") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' integer field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.pitch") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.roll") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.sar.yaw") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+      }
+      // Optical block
+      if (meta->optical) {
+        if (strcmp_case(dbf[ii].meta, "meta.optical.pointing_direction") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.optical.off_nadir_angle") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.optical.correction_level") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.optical.cloud_percentage") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.optical.sun_azimuth_angle") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.optical.sun_elevation_angle") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+      }
+      // AirSAR block
+      if (meta->airsar) {
+        if (strcmp_case(dbf[ii].meta, "meta.airsar.scale_factor") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.airsar.gps_altitude") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.airsar.lat_peg_point") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.airsar.lon_peg_point") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.airsar.head_peg_point") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.airsar.along_track_offset") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.airsar.cross_track_offset") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+      }
+      // UAVSAR block
+      if (meta->uavsar) {
+        if (strcmp_case(dbf[ii].meta, "meta.uavsar.id") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.uavsar.scale_factor") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.uavsar.gps_altitude") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.uavsar.lat_peg_point") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.uavsar.lon_peg_point") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.uavsar.head_peg_point") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.uavsar.along_track_offset") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.uavsar.cross_track_offset") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+      }
+      // Map projection block
+      if (meta->projection && meta->projection->type != SCANSAR_PROJECTION) {
+        if (strcmp_case(dbf[ii].meta, "meta.projection") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' string field to database file\n",
+              dbf[ii].meta);
+        }
+      }
+      // Location block
+      if (meta->location) {
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.location.lat_start_near_range") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.location.lon_start_near_range") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.location.lat_start_far_range") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.location.lon_start_far_range") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.location.lat_end_near_range") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, 
+          "meta.location.lon_end_near_range") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.location.lat_end_far_range") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+        if (strcmp_case(dbf[ii].meta, "meta.location.lon_end_far_range") == 0) {
+          if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+            dbf[ii].decimals) == -1)
+            asfPrintError("Could not add '%s' double field to database file\n",
+              dbf[ii].meta);
+        }
+      }   
+    }
+  }
+  else {
+    // Add fields to database
+    for (ii=0; ii<nCols; ii++) {
+      if (dbf[ii].format == DBF_STRING) {
+        if (DBFAddField(dbase, dbf[ii].shape, FTString, dbf[ii].length, 
+          dbf[ii].decimals) == -1)
+          asfPrintError("Could not add '%s' string field to database file\n",
+            dbf[ii].meta);
+      }
+      else if (dbf[ii].format == DBF_DOUBLE) {
+        if (DBFAddField(dbase, dbf[ii].shape, FTDouble, dbf[ii].length, 
+          dbf[ii].decimals) == -1)
+          asfPrintError("Could not add '%s' double field to database file\n",
+            dbf[ii].meta);
+      }
+      else if (dbf[ii].format == DBF_INTEGER) {
+        if (DBFAddField(dbase, dbf[ii].shape, FTInteger, dbf[ii].length, 
+          dbf[ii].decimals) == -1)
+          asfPrintError("Could not add '%s' integer field to database file\n",
+            dbf[ii].meta);
+      }
+    }
+  }
+
+  // Close the database for initialization
+  DBFClose(dbase);
+
+  // Open shapefile for initialization
+  if (strcmp_case(shape_type, "POINT") == 0)
+    shape = SHPCreate(outFile, SHPT_POINT);
+  else if (strcmp_case(shape_type, "POLYGON") == 0)
+    shape = SHPCreate(outFile, SHPT_POLYGON);
+  if (!shape)
+    asfPrintError("Could not create shapefile '%s'\n", outFile);
+
+  // Close shapefile for initialization
+  SHPClose(shape);
+
+  FREE(dbaseFile);
+
+  return;
+}
+
 // Initialize internal format such as RGPS and MULTIMATCH
 void shape_init(char *inFile, format_type_t format)
 {
@@ -97,108 +792,6 @@ void shape_init(char *inFile, format_type_t format)
     if (DBFAddField(dbase, "Pressure", FTDouble, 6, 1) == -1)
       asfPrintError("Could not add 'Pressure' field to database file\n");
   }
-  else if (format == MULTIMATCH) {
-    if (DBFAddField(dbase, "Ref_x", FTDouble, 9, 2) == -1)
-      asfPrintError("Could not add 'Ref_x' field to database file\n");
-    if (DBFAddField(dbase, "Ref_y", FTDouble, 9, 2) == -1)
-      asfPrintError("Could not add 'Ref_y' field to database file\n");
-    if (DBFAddField(dbase, "Ref_z", FTDouble, 9, 2) == -1)
-      asfPrintError("Could not add 'Ref_z' field to database file\n");
-    if (DBFAddField(dbase, "Search_x", FTDouble, 9, 2) == -1)
-      asfPrintError("Could not add 'Ref_x' field to database file\n");
-    if (DBFAddField(dbase, "Search_y", FTDouble, 9, 2) == -1)
-      asfPrintError("Could not add 'Ref_y' field to database file\n");
-    if (DBFAddField(dbase, "Search_z", FTDouble, 9, 2) == -1)
-      asfPrintError("Could not add 'Ref_z' field to database file\n");
-    if (DBFAddField(dbase, "dx", FTDouble, 7, 2) == -1)
-      asfPrintError("Could not add 'dx' field to database file\n");
-    if (DBFAddField(dbase, "dy", FTDouble, 7, 2) == -1)
-      asfPrintError("Could not add 'dy' field to database file\n");
-    if (DBFAddField(dbase, "dh", FTDouble, 7, 3) == -1)
-      asfPrintError("Could not add 'dh' field to database file\n");
-    if (DBFAddField(dbase, "Direction", FTDouble, 9, 4) == -1)
-      asfPrintError("Could not add 'Direction' field to database file\n");
-    if (DBFAddField(dbase, "Speed", FTDouble, 6, 1) == -1)
-      asfPrintError("Could not add 'Speed' field to database file\n");
-  }
-  else if (format == GRANULE_COUNT) {
-    if (DBFAddField(dbase, "FRAMES", FTInteger, 4, 0) == -1)
-      asfPrintError("Could not add 'FRAMES' field to database file\n");
-  }
-  else if (format == GRANULE_LIST) {
-    if (DBFAddField(dbase, "STACK_ID", FTInteger, 5, 0) == -1)
-      asfPrintError("Could not add 'STACK_ID' field to database file\n");
-    if (DBFAddField(dbase, "GRANULE", FTString, 20, 0) == -1)
-      asfPrintError("Could not add 'GRANULE' field to database file\n");
-    if (DBFAddField(dbase, "FRAMES", FTInteger, 4, 0) == -1)
-      asfPrintError("Could not add 'FRAMES' field to database file\n");
-  }
-  else if (format == GRANULE_DETAILS_A3) {
-    if (DBFAddField(dbase, "STACK_ID", FTInteger, 5, 0) == -1)
-      asfPrintError("Could not add 'STACK_ID' field to database file\n");
-    if (DBFAddField(dbase, "GRANULE", FTString, 20, 0) == -1)
-      asfPrintError("Could not add 'GRANULE' field to database file\n");
-    if (DBFAddField(dbase, "SATELLITE", FTString, 5, 0) == -1)
-      asfPrintError("Could not add 'SATELLITE' field to database file\n");
-    if (DBFAddField(dbase, "BEAM_MODE", FTString, 5, 0) == -1)
-      asfPrintError("Could not add 'BEAM_MODE' field to database file\n");
-    if (DBFAddField(dbase, "OFF_NADIR", FTDouble, 5, 1) == -1)
-      asfPrintError("Could not add 'OFF_NADIR' field to database file\n");
-    if (DBFAddField(dbase, "ORBIT", FTInteger, 5, 0) == -1)
-      asfPrintError("Could not add 'ORBIT' field to database file\n");
-    if (DBFAddField(dbase, "FRAME", FTInteger, 4, 0) == -1)
-      asfPrintError("Could not add 'FRAME' field to database file\n");
-    if (DBFAddField(dbase, "DATE", FTString, 20, 0) == -1)
-      asfPrintError("Could not add 'DATE' field to database file\n");
-    if (DBFAddField(dbase, "NSTART_LAT", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add NSTART_LAT field to database file\n");
-    if (DBFAddField(dbase, "NSTART_LON", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add NSTART_LON field to database file\n");
-    if (DBFAddField(dbase, "FSTART_LAT", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add FSTART_LAT field to database file\n");
-    if (DBFAddField(dbase, "FSTART_LON", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add FSTART_LON field to database file\n");
-    if (DBFAddField(dbase, "N_END_LAT", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add N_END_LAT field to database file\n");
-    if (DBFAddField(dbase, "N_END_LON", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add N_END_LON field to database file\n");
-    if (DBFAddField(dbase, "F_END_LAT", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add F_END_LAT field to database file\n");
-    if (DBFAddField(dbase, "F_END_LON", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add F_END_LON field to database file\n");
-  }
-  else if (format == GRANULE_DETAILS) {
-    if (DBFAddField(dbase, "STACK_ID", FTInteger, 5, 0) == -1)
-      asfPrintError("Could not add 'STACK_ID' field to database file\n");
-    if (DBFAddField(dbase, "GRANULE", FTString, 20, 0) == -1)
-      asfPrintError("Could not add 'GRANULE' field to database file\n");
-    if (DBFAddField(dbase, "SATELLITE", FTString, 5, 0) == -1)
-      asfPrintError("Could not add 'SATELLITE' field to database file\n");
-    if (DBFAddField(dbase, "BEAM_MODE", FTString, 5, 0) == -1)
-      asfPrintError("Could not add 'BEAM_MODE' field to database file\n");
-    if (DBFAddField(dbase, "ORBIT", FTInteger, 5, 0) == -1)
-      asfPrintError("Could not add 'ORBIT' field to database file\n");
-    if (DBFAddField(dbase, "FRAME", FTInteger, 4, 0) == -1)
-      asfPrintError("Could not add 'FRAME' field to database file\n");
-    if (DBFAddField(dbase, "DATE", FTString, 20, 0) == -1)
-      asfPrintError("Could not add 'DATE' field to database file\n");
-    if (DBFAddField(dbase, "NSTART_LAT", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add NSTART_LAT field to database file\n");
-    if (DBFAddField(dbase, "NSTART_LON", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add NSTART_LON field to database file\n");
-    if (DBFAddField(dbase, "FSTART_LAT", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add FSTART_LAT field to database file\n");
-    if (DBFAddField(dbase, "FSTART_LON", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add FSTART_LON field to database file\n");
-    if (DBFAddField(dbase, "N_END_LAT", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add N_END_LAT field to database file\n");
-    if (DBFAddField(dbase, "N_END_LON", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add N_END_LON field to database file\n");
-    if (DBFAddField(dbase, "F_END_LAT", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add F_END_LAT field to database file\n");
-    if (DBFAddField(dbase, "F_END_LON", FTDouble, 10, 4) == -1)
-      asfPrintError("Could not add F_END_LON field to database file\n");
-  }
   else if (format == FOOT_PRINT) {
     if (DBFAddField(dbase, "STACK_ID", FTInteger, 5, 0) == -1)
       asfPrintError("Could not add 'STACK_ID' field to database file\n");
@@ -242,32 +835,6 @@ void shape_init(char *inFile, format_type_t format)
       asfPrintError("Could not add F_END_LAT field to database file\n");
     if (DBFAddField(dbase, "F_END_LON", FTDouble, 10, 4) == -1)
       asfPrintError("Could not add F_END_LON field to database file\n");
-  }
-  else if (format == GRANULE) {
-    if (DBFAddField(dbase, "STACK_ID", FTInteger, 5, 0) == -1)
-      asfPrintError("Could not add 'STACK_ID' field to database file\n");
-    if (DBFAddField(dbase, "GRANULE", FTString, 20, 0) == -1)
-      asfPrintError("Could not add 'GRANULE' field to database file\n");
-    if (DBFAddField(dbase, "SATELLITE", FTString, 5, 0) == -1)
-      asfPrintError("Could not add 'SATELLITE' field to database file\n");
-    if (DBFAddField(dbase, "BEAM_MODE", FTString, 5, 0) == -1)
-      asfPrintError("Could not add 'BEAM_MODE' field to database file\n");
-    if (DBFAddField(dbase, "OFF_NADIR", FTDouble, 5, 1) == -1)
-      asfPrintError("Could not add 'OFF_NADIR' field to database file\n");
-    if (DBFAddField(dbase, "ORBIT", FTInteger, 5, 0) == -1)
-      asfPrintError("Could not add 'ORBIT' field to database file\n");
-    if (DBFAddField(dbase, "FRAME", FTInteger, 4, 0) == -1)
-      asfPrintError("Could not add 'FRAME' field to database file\n");
-    if (DBFAddField(dbase, "ACQ_DATE", FTString, 25, 0) == -1)
-      asfPrintError("Could not add 'ACQ_DATE' field to database file\n");
-    if (DBFAddField(dbase, "ORBIT_DIR", FTString, 15, 0) == -1)
-      asfPrintError("Could not add 'ORBIT_DIR' field to database file\n");
-    if (DBFAddField(dbase, "PATH", FTInteger, 5, 0) == -1)
-      asfPrintError("Could not add 'PATH' field to database file\n");
-    if (DBFAddField(dbase, "TERRAIN", FTInteger, 2, 0) == -1)
-      asfPrintError("Could not add 'TERRAIN' field to database file\n");
-    if (DBFAddField(dbase, "INSAR", FTInteger, 2, 0) == -1)
-      asfPrintError("Could not add 'INSAR' field to database file\n");
   }
 
   // Close the database for initialization
@@ -328,6 +895,50 @@ void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape)
   }
 }
 
+void write_shape_attributes(DBFHandle dbase, int nAttr, int n,
+  dbf_header_t *dbf)
+{
+  int ii;
+
+  // Write fields into the database
+  for (ii=0; ii<nAttr; ii++) {
+    if (dbf[ii].format == DBF_STRING)
+      DBFWriteStringAttribute(dbase, n, ii, dbf[ii].sValue);
+    else if (dbf[ii].format == DBF_INTEGER)
+      DBFWriteIntegerAttribute(dbase, n, ii, dbf[ii].nValue);
+    else if (dbf[ii].format == DBF_DOUBLE)
+      DBFWriteDoubleAttribute(dbase, n, ii, dbf[ii].fValue);
+  }
+} 
+
+void write_shape_object(SHPHandle shape, int nCoords, double *lat, double *lon)
+{
+  // Check whether we need to split up the polygon
+  if (crosses_dateline(lon, 0, nCoords)) {
+    int *start = (int *) MALLOC(sizeof(int)*2);
+    double *mLat = (double *) MALLOC(sizeof(double)*(nCoords+5));
+    double *mLon = (double *) MALLOC(sizeof(double)*(nCoords+5));
+
+    split_polygon(lat, lon, nCoords, start, mLat, mLon);
+    
+    SHPObject *shapeObject=NULL;
+    shapeObject = SHPCreateObject(SHPT_POLYGON, -1, 2, start, NULL, nCoords+5, 
+      mLon, mLat, NULL, NULL);
+    SHPWriteObject(shape, -1, shapeObject);
+    SHPDestroyObject(shapeObject);
+
+    FREE(mLat);
+    FREE(mLon);
+    FREE(start);
+  }
+  else {
+    SHPObject *shapeObject=NULL;
+    shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, nCoords, lon, lat, NULL);
+    SHPWriteObject(shape, -1, shapeObject);
+    SHPDestroyObject(shapeObject);
+  }
+}
+
 void close_shape(DBFHandle dbase, SHPHandle shape)
 {
   // Close database
@@ -339,478 +950,390 @@ void close_shape(DBFHandle dbase, SHPHandle shape)
   return;
 }
 
-// Convert shape to point file
-int shape2point(char *inFile, char *outFile, int listFlag)
+int point2shape(char *inFile, char *outFile)
 {
-  FILE *fp = NULL;
   DBFHandle dbase;
   SHPHandle shape;
-  SHPObject *shapeObject;
-  int ii, kk, nEntities, nVertices, pointType;
+  char line[1024], **coords;
+  int nCols;
 
-  // Open shapefile
-  open_shape(inFile, &dbase, &shape);
+  // Initialize the database file
+  shapefile_init(NULL, outFile, "POINT", NULL);
+  open_shape(outFile, &dbase, &shape);
 
-  // Extract the vital information out of the shapefile
-  SHPGetInfo(shape, &nEntities, &pointType, NULL, NULL);
-  switch (pointType) {
-  case SHPT_POLYGON:
-    asfPrintError("Shape file contains point information!\n"
-                  "Use output format 'polygon'\n");
-    break;
-  case SHPT_POINT:
-    break;
-  case SHPT_ARC:
-    asfPrintError("Shape file data type 'Arc' not supported\n");
-    break;
-  case SHPT_MULTIPOINT:
-    asfPrintError("Shape file data type 'Multipoint' not supported\n");
-    break;
-  default:
-    asfPrintError("Unexpected or unrecognized shape file data format\n");
-    break;
-  }
-
-  // Write file
-  fp = FOPEN(outFile, "w");
-  fprintf(fp, "# Format: POINT (generated by %s)", version_string("convert2vector"));
-  fprintf(fp, "#\n");
-  fprintf(fp, "# ID,Latitude,Longitude\n");
-
-  for (ii=0; ii<nEntities; ii++) {
-
-    // Read object for the number of vertices
-    shapeObject = SHPReadObject(shape, ii);
-    nVertices = shapeObject->nVertices;
-
-    for (kk=0; kk<nVertices; kk++) {
-      fprintf(fp, "%d,%.4f,%.4f\n",
-              ii+1, shapeObject->padfY[kk], shapeObject->padfX[kk]);
-    }
-
+  // Read the CSV file and keep writing location information
+  char *id;
+  double lat, lon;
+  int n = 0;
+  FILE *fp = FOPEN(inFile, "r");
+  fgets(line, 1024, fp);
+  while (fgets(line, 1024, fp) != NULL) {
+    chomp(line);
+    split_into_array(line, ',', &nCols, &coords);
+    id = STRDUP(coords[0]);
+    lat = atof(coords[1]);
+    lon = atof(coords[2]);
+    FREE(coords);
+    //write_shape_attributes(dbase, 1, n, dbf);
+    //write_shape_object(shape, 1, &lat, &lon);
+    DBFWriteStringAttribute(dbase, n, 0, id);
+    SHPObject *shapeObject = NULL;
+    shapeObject = SHPCreateSimpleObject(SHPT_POINT, 1, &lon, &lat, NULL);
+    SHPWriteObject(shape, -1, shapeObject);
     SHPDestroyObject(shapeObject);
+    n++;
   }
   FCLOSE(fp);
-
-  // Close shapefile
-  close_shape(dbase, shape);
-
-  return 1;
-}
-
-// Convert shape to polygon file
-int shape2polygon(char *inFile, char *outfile, int listFlag)
-{
-  FILE *fp = NULL;
-  DBFHandle dbase;
-  SHPHandle shape;
-  SHPObject *shapeObject;
-  int ii, kk, nEntities, nVertices, pointType;
-
-  // Open shapefile
-  open_shape(inFile, &dbase, &shape);
-
-  // Extract the vital information out of the shapefile
-  SHPGetInfo(shape, &nEntities, &pointType, NULL, NULL);
-  switch (pointType) {
-  case SHPT_POLYGON:
-    break;
-  case SHPT_POINT:
-    asfPrintError("Shape file contains point information!\n"
-                  "Use output format 'point'\n");
-    break;
-  case SHPT_ARC:
-    asfPrintError("Shape file data type 'Arc' not supported\n");
-    break;
-  case SHPT_MULTIPOINT:
-    asfPrintError("Shape file data type 'Multipoint' not supported\n");
-    break;
-  default:
-    asfPrintError("Unexpected or unrecognized shape file data format\n");
-    break;
-  }
-
-  // Open file
-  fp = FOPEN(outfile, "w");
-  fprintf(fp, "# Format: POLYGON (generated by %s) -->\n", version_string("convert2vector"));
-  fprintf(fp, "#\n");
-  fprintf(fp, "# Polygon,ID,Latitude,Longitude\n");
-
-  // Write the text file
-  for (ii=0; ii<nEntities; ii++) {
-
-    // Read object for the number of vertices
-    shapeObject = SHPReadObject(shape, ii);
-    nVertices = shapeObject->nVertices;
-
-    for (kk=0; kk<nVertices-1; kk++) {
-      fprintf(fp, "%d,%d,%.4f,%.4f\n",
-              ii+1, kk+1, shapeObject->padfY[kk], shapeObject->padfX[kk]);
-    }
-
-    SHPDestroyObject(shapeObject);
-  }
-
-  // Close shapefile
-  close_shape(dbase, shape);
-  FCLOSE(fp);
-
-  return 1;
-}
-
-static void write_dbase_field_to_csv(DBFHandle dbase, int record,
-                                     int field, char *line)
-{
-  DBFFieldType dbaseType;
-  char fieldName[25], *str=NULL;
-  int nWidth, nDecimals, nValue;
-  double fValue;
-  const char *sValue;
-
-  dbaseType = DBFGetFieldInfo(dbase, field, fieldName,
-                              &nWidth, &nDecimals);
-  switch (dbaseType)
-    {
-    case FTString:
-      sValue = DBFReadStringAttribute(dbase, record, field);
-      str = MALLOC(sizeof(char)*(strlen(sValue)+10));
-      sprintf(str, "\"%s\",", sValue);
-      break;
-    case FTInteger:
-      nValue = DBFReadIntegerAttribute(dbase, record, field);
-      str = MALLOC(sizeof(char)*64);
-      sprintf(str, "%d,", nValue);
-      break;
-    case FTDouble:
-      fValue = DBFReadDoubleAttribute(dbase, record, field);
-      str = MALLOC(sizeof(char)*64);
-      sprintf(str, "%s,", lf(fValue));
-      break;
-    case FTLogical:
-    case FTInvalid:
-      break;
-    }
-  strcat(line, str);
-  FREE(str);
-
-}
-
-static void write_name_field_to_csv(DBFHandle dbase, int record, char *header)
-{
-  char fieldName[25], str[50];
-  int nWidth, nDecimals;
-
-  DBFGetFieldInfo(dbase, record, fieldName, &nWidth, &nDecimals);
-  sprintf(str, "%s,", fieldName);
-  strcat(header, str);
-}
-
-// Convert shape to generic csv file
-int shape2csv(char *inFile, char *outFile, int listFlag)
-{
-  FILE *fp;
-  DBFHandle dbase;
-  SHPHandle shape;
-  SHPObject *shapeObject;
-  char *line = (char *) MALLOC(sizeof(char)*4096);
-  char *header = (char *) MALLOC(sizeof(char)*4096);
-  int ii, kk, ll, nEntities, nVertices, nParts, *part;
-  int nFields, pointType;
-
-  // Open shapefile
-  open_shape(inFile, &dbase, &shape);
-
-  // Extract the vital information out of the shapefile
-  SHPGetInfo(shape, &nEntities, &pointType, NULL, NULL);
-  switch (pointType)
-    {
-    case SHPT_POLYGON:
-    case SHPT_POINT:
-      break;
-    case SHPT_ARC:
-      asfPrintError
-        ("Conversion does not support shape type 'Arc'\n");
-      break;
-    case SHPT_MULTIPOINT:
-      asfPrintError
-        ("Conversion does not support shape type 'Multipoint'\n");
-      break;
-    }
-
-  // Determine the number of fields in the database file
-  nFields = DBFGetFieldCount(dbase);
-
-  // Open csv file
-  fp = FOPEN(outFile, "w");
-  strcpy(header, "");
-  for (ii=0; ii<nFields; ii++)
-    write_name_field_to_csv(dbase, ii, header);
-  header[strlen(header)-1] = '\0';
-  fprintf(fp, "%s\n", header);
-
-  for (ii=0; ii<nEntities; ii++) {
-
-    // Read lat/lon from shape object
-    shapeObject = SHPReadObject(shape, ii);
-    nVertices = shapeObject->nVertices;
-    nParts = shapeObject->nParts;
-    part = (int *) MALLOC(sizeof(int)*(nParts+1));
-    for (kk=0; kk<nParts; kk++)
-      part[kk] = shapeObject->panPartStart[kk];
-    part[nParts] = nVertices;
-    SHPDestroyObject(shapeObject);
-    if (nParts == 0)
-      nParts++;
-
-    strcpy(line, "");
-    for (ll=0; ll<nParts; ll++) {
-      for (kk=0; kk<nFields; kk++)
-        write_dbase_field_to_csv(dbase, ii, kk, line);
-    }
-    line[strlen(line)-1] = '\0';
-    fprintf(fp, "%s\n", line);
-  }
-
-  // Close shapefile
-  close_shape(dbase, shape);
 
   // Clean up
-  FREE(line);
-  FREE(header);
-  FCLOSE(fp);
+  close_shape(dbase, shape);
+  write_esri_proj_file(outFile);
 
-  return 1;
+  return TRUE;
 }
 
-static void write_dbase_field_to_kml(DBFHandle dbase, int record,
-                     int field, FILE *fp)
+int latlon2shape(char *inFile, char *outFile)
 {
-  DBFFieldType dbaseType;
-  char fieldName[25], str[50];
-  int nWidth, nDecimals, nValue;
-  double fValue;
-  const char *sValue;
-
-  dbaseType = DBFGetFieldInfo(dbase, field, fieldName,
-                  &nWidth, &nDecimals);
-  switch (dbaseType)
-    {
-    case FTString:
-      sValue = DBFReadStringAttribute(dbase, record, field);
-      fprintf(fp, "<strong>%s</strong>: %s <br>\n",
-          fieldName, sValue);
-      break;
-    case FTInteger:
-      nValue = DBFReadIntegerAttribute(dbase, record, field);
-      fprintf(fp, "<strong>%s</strong>: %d <br>\n",
-          fieldName, nValue);
-      break;
-    case FTDouble:
-      fValue = DBFReadDoubleAttribute(dbase, record, field);
-      sprintf(str, "<strong>%%s</strong>: %%%d.%df <br>\n",
-          nWidth, nDecimals);
-      fprintf(fp, str, fieldName, fValue);
-      break;
-    case FTLogical:
-    case FTInvalid:
-      break;
-    }
-}
-
-static void write_name_field_to_kml(DBFHandle dbase, int record, FILE *fp)
-{
-  DBFFieldType dbaseType;
-  char fieldName[25], str[50];
-  int nWidth, nDecimals, nValue;
-  double fValue;
-  const char *sValue;
-
-  dbaseType = DBFGetFieldInfo(dbase, 0, fieldName, &nWidth, &nDecimals);
-  switch (dbaseType)
-    {
-    case FTString:
-      sValue = DBFReadStringAttribute(dbase, record, 0);
-      fprintf(fp, "<name>%s</name>\n", sValue);
-      break;
-    case FTInteger:
-      nValue = DBFReadIntegerAttribute(dbase, record, 0);
-      fprintf(fp, "<name>%d</name>\n", nValue);
-      break;
-    case FTDouble:
-      fValue = DBFReadDoubleAttribute(dbase, record, 0);
-      sprintf(str, "<name>%%%d.%df</name>\n", nWidth, nDecimals);
-      fprintf(fp, str, fValue);
-      break;
-    case FTLogical:
-    case FTInvalid:
-      break;
-    }
-}
-
-// Convert shape to kml file
-int shape2kml(char *inFile, char *outFile, int listFlag)
-{
-  FILE *fp;
   DBFHandle dbase;
   SHPHandle shape;
-  SHPObject *shapeObject;
-  int ii, kk, ll, nEntities, nVertices, nParts, *part;
-  int nFields, pointType;
-  double *lat, *lon, *height, *min, *max, clat, clon;
+  dbf_header_t *dbf;
+  char line[8192], id[255], shape_type[25], **coords;
+  int ii, idx, n = 0, start = 0, nCols, nCoords;
 
-  // Open shapefile
-  open_shape(inFile, &dbase, &shape);
+  // Read CSV file
+  FILE *ifp = FOPEN(inFile, "r");
 
-  // Open kmlfile
-  fp = FOPEN(outFile, "w");
-  kml_header(fp);
+  // Initialize the database file
+  shapefile_init(NULL, outFile, "LATLON", NULL);
+  open_shape(outFile, &dbase, &shape);
+  read_header_config("LATLON", &dbf, &nCols, shape_type);
 
-  // Extract the vital information out of the shapefile
-  min = (double *) MALLOC(sizeof(double)*4);
-  max = (double *) MALLOC(sizeof(double)*4);
-  SHPGetInfo(shape, &nEntities, &pointType, min, max);
-  switch (pointType)
-    {
-    // 2D shape types
-    case SHPT_POLYGON:
-    case SHPT_ARC:
-    case SHPT_POINT:
-      break;
-    case SHPT_MULTIPOINT:
-      asfPrintError("Conversion does not support shape type 'Multipoint'\n");
-      break;
-    // 3D shape types
-    case SHPT_POLYGONZ:
-    case SHPT_ARCZ:
-    case SHPT_POINTZ:
-      break;
-    case SHPT_MULTIPOINTZ:
-      asfPrintError("Conversion does not support shape type 'Multipoint'\n");
-      break;
-    // 2D + measure types
-    case SHPT_POINTM:
-      asfPrintError("Conversion does not support shape type 'PointM'\n");
-      break;
-    case SHPT_ARCM:
-      asfPrintError("Conversion does not support shape type 'ArcM'\n");
-      break;
-    case SHPT_POLYGONM:
-      asfPrintError("Conversion does not support shape type 'PolygonM'\n");
-      break;
-    case SHPT_MULTIPOINTM:
-      asfPrintError("Conversion does not support shape type 'MultipointM'\n");
-      break;
-    case SHPT_MULTIPATCH:
-      asfPrintError("Conversion does not support shape type 'Multipatch'\n");
+  while (fgets(line, 8192, ifp) != NULL) {
+    chomp(line);
+    split_into_array(line, ',', &nCols, &coords);
+    nCoords = nCols/2 + 1;
+    if (nCols % 2 != 0) {
+      start = 1;
+      strcpy(id, coords[0]);
     }
-  // Ball park center for <LookAt> position  - does not have to be accurate
-  clat = min[1] + (max[1]-min[1])/2;
-  clon = min[0] + (max[0]-min[0])/2;
+    else
+      sprintf(id, "%d", n);
+    printf("Found %d coordinate pairs\n", nCoords-1);
+    double *lat = (double *) MALLOC(sizeof(double)*nCoords);
+    double *lon = (double *) MALLOC(sizeof(double)*nCoords);
+    for (ii=start; ii<nCols; ii+=2) {
+      idx = ii/2;
+      lat[idx] = atof(coords[ii]);
+      lon[idx] = atof(coords[ii+1]);
+    }
+    lat[idx+1] = lat[0];
+    lon[idx+1] = lon[0];
+    dbf[ii].sValue = STRDUP(id);
+    write_shape_attributes(dbase, nCoords, n, dbf);
+    write_shape_object(shape, nCoords, lat, lon);
+    FREE(lat);
+    FREE(lon);
+    FREE(coords);
+    n++; 
+  }
 
-  for (ii=0; ii<nEntities; ii++) {
+  // Clean up
+  close_shape(dbase, shape);
+  write_esri_proj_file(outFile);
 
-    // Read lat/lon from shape object
-    shapeObject = SHPReadObject(shape, ii);
-    nVertices = shapeObject->nVertices;
-    lat = (double *) MALLOC(sizeof(double)*(nVertices+1));
-    lon = (double *) MALLOC(sizeof(double)*(nVertices+1));
-    height = (double *) MALLOC(sizeof(double)*(nVertices+1));
-    for (kk=0; kk<nVertices; kk++) {
-      lat[kk] = shapeObject->padfY[kk];
-      lon[kk] = shapeObject->padfX[kk];
-      if (shapeObject->padfZ)
-	height[kk] = shapeObject->padfZ[kk];
+  FCLOSE(ifp);
+
+  return TRUE;
+}
+
+void csv2shape(char *inFile, char *format, char *outFile)
+{  
+  DBFHandle dbase;
+  SHPHandle shape;
+  
+  // Read header file
+  FILE *fpIn;
+  dbf_header_t *header;
+  char shape_type[25], **cols, str[10], line[1024];
+  int ii, kk, nCols;
+  if (strcmp_case(format, "CSV") == 0) {
+    fpIn = FOPEN(inFile, "r");
+    fgets(line, 1024, fpIn); // header line
+    chomp(line);
+    split_into_array(line, ',', &nCols, &cols);
+    header = (dbf_header_t *) MALLOC(sizeof(dbf_header_t)*nCols);
+    strcpy(shape_type, "polygon");
+    for (ii=0; ii<nCols; ii++) {
+      header[ii].meta = STRDUP(cols[ii]);
+      header[ii].shape = STRDUP(cols[ii]);
+      header[ii].format = DBF_STRING;
+      header[ii].length = 50;
+      header[ii].decimals = 0;
+      header[ii].definition = STRDUP(cols[ii]);
+      header[ii].column = ii; 
+    }
+    FREE(cols);
+  }
+  else
+    read_header_config(format, &header, &nCols, shape_type);
+  
+  // Figure out how many vertices we got
+  int nColumns, nVertices = 0, nLat = 0, nLon = 0;
+  fpIn = FOPEN(inFile, "r");
+  fgets(line, 1024, fpIn); // header line
+  chomp(line);
+  split_into_array(line, ',', &nColumns, &cols);
+  
+  for (ii=0; ii<nCols; ii++) {
+  
+    // Assign the column we need to read from
+    for (kk=0; kk<nColumns; kk++) {
+      if (strcmp_case(header[ii].meta, cols[kk]) == 0)
+        header[ii].column = kk;
+    }
+    
+    // Assuming that we don't have more than 12 vertices
+    for (kk=1; kk<13; kk++) {
+      sprintf(str, "LAT%d", kk);
+      if (strcmp_case(header[ii].shape, str) == 0)
+        nLat++;
+      sprintf(str, "LON%d", kk);
+      if (strcmp_case(header[ii].shape, str) == 0)
+        nLon++;
+    }
+
+    // Alternative column names - only things that we already know
+    if (strcmp_case(header[ii].shape, "NEAR START LAT") == 0 ||
+      strcmp_case(header[ii].shape, "NEAR_START_LAT") == 0)
+      nLat++;
+    else if (strcmp_case(header[ii].shape, "NEAR START LON") == 0 ||
+      strcmp_case(header[ii].shape, "NEAR_START_LON") == 0)
+      nLon++;
+    else if (strcmp_case(header[ii].shape, "FAR START LAT") == 0 ||
+      strcmp_case(header[ii].shape, "FAR_START_LAT") == 0)
+      nLat++;
+    else if (strcmp_case(header[ii].shape, "FAR START LON") == 0 ||
+      strcmp_case(header[ii].shape, "FAR_START_LON") == 0)
+      nLon++;
+    else if (strcmp_case(header[ii].shape, "NEAR END LAT") == 0 ||
+      strcmp_case(header[ii].shape, "NEAR_END_LAT") == 0)
+      nLat++;
+    else if (strcmp_case(header[ii].shape, "NEAR END LON") == 0 ||
+      strcmp_case(header[ii].shape, "NEAR_END_LON") == 0)
+      nLon++;
+    else if (strcmp_case(header[ii].shape, "FAR END LAT") == 0 ||
+      strcmp_case(header[ii].shape, "FAR_END_LAT") == 0)
+      nLat++;
+    else if (strcmp_case(header[ii].shape, "FAR END LON") == 0 ||
+      strcmp_case(header[ii].shape, "FAR_END_LON") == 0)
+      nLon++;
+  }
+  if (nLat != nLon)
+    asfPrintError("Found %d latitude and %d longitude columns.\n"
+      "Can't convert this information properly!\n", nLat, nLon);
+  else {
+    nVertices = nLat;
+    asfPrintStatus("Found %d vertices of a polygon.\n", nVertices);
+  }
+
+  // Initialize shapefile
+  shapefile_init(inFile, outFile, format, NULL);
+  open_shape(outFile, &dbase, &shape);
+  
+  // Read polygon information
+  double *lat = (double *) MALLOC(sizeof(double)*(nVertices+1));
+  double *lon = (double *) MALLOC(sizeof(double)*(nVertices+1)); 
+  int column, n = 0;
+  while (fgets(line, 1024, fpIn)) {
+    chomp(line);
+    split_into_array(line, ',', &nColumns, &cols);
+    for (ii=0; ii<nCols; ii++) {
+      column = header[ii].column;
+      if (header[ii].format == DBF_STRING)
+        header[ii].sValue = STRDUP(cols[column]);
+      else if (header[ii].format == DBF_INTEGER)
+        header[ii].nValue = atoi(cols[column]);
+      else if (header[ii].format == DBF_DOUBLE)
+        header[ii].fValue = atof(cols[column]);
+        
+      // Standard LAT/LON columns - mentioned in the documentation
+      for (kk=0; kk<nVertices; kk++) {
+        sprintf(str, "LAT%d", kk+1);
+        if (strcmp_case(header[ii].shape, str) == 0)
+          lat[kk] = atof(cols[column]);
+        sprintf(str, "LON%d", kk+1);
+        if (strcmp_case(header[ii].shape, str) == 0)
+          lon[kk] = atof(cols[column]);
+      }
+      
+      // Alternative column names - only things that we already know
+      if (strcmp_case(header[ii].shape, "NEAR START LAT") == 0 ||
+        strcmp_case(header[ii].shape, "NEAR_START_LAT") == 0)
+        lat[0] = atof(cols[column]);
+      else if (strcmp_case(header[ii].shape, "NEAR START LON") == 0 ||
+        strcmp_case(header[ii].shape, "NEAR_START_LON") == 0)
+        lon[0] = atof(cols[column]);
+      else if (strcmp_case(header[ii].shape, "FAR START LAT") == 0 ||
+        strcmp_case(header[ii].shape, "FAR_START_LAT") == 0)
+        lat[1] = atof(cols[column]);
+      else if (strcmp_case(header[ii].shape, "FAR START LON") == 0 ||
+        strcmp_case(header[ii].shape, "FAR_START_LON") == 0)
+        lon[1] = atof(cols[column]);
+      else if (strcmp_case(header[ii].shape, "NEAR END LAT") == 0 ||
+        strcmp_case(header[ii].shape, "NEAR_END_LAT") == 0)
+        lat[3] = atof(cols[column]);
+      else if (strcmp_case(header[ii].shape, "NEAR END LON") == 0 ||
+        strcmp_case(header[ii].shape, "NEAR_END_LON") == 0)
+        lon[3] = atof(cols[column]);
+      else if (strcmp_case(header[ii].shape, "FAR END LAT") == 0 ||
+        strcmp_case(header[ii].shape, "FAR_END_LAT") == 0)
+        lat[2] = atof(cols[column]);
+      else if (strcmp_case(header[ii].shape, "FAR END LON") == 0 ||
+        strcmp_case(header[ii].shape, "FAR_END_LON") == 0)
+        lon[2] = atof(cols[column]);
     }
     lat[nVertices] = lat[0];
     lon[nVertices] = lon[0];
-    height[nVertices] = height[0];
-    nParts = shapeObject->nParts;
-    part = (int *) MALLOC(sizeof(int)*(nParts+1));
-    for (kk=0; kk<nParts; kk++)
-      part[kk] = shapeObject->panPartStart[kk];
-    part[nParts] = nVertices;
-    SHPDestroyObject(shapeObject);
-    if (nParts == 0)
-      nParts++;
-
-    // Extract the attributes out of the database file
-    nFields = DBFGetFieldCount(dbase);
-
-    for (ll=0; ll<nParts; ll++) {
-
-      // Write information in kml file
-      fprintf(fp, "<Placemark>\n");
-      fprintf(fp, "<description><![CDATA[\n");
-      fprintf(fp, "<!-- Format: SHAPE (generated by %s) -->\n", version_string("convert2vector"));
-      for (kk=1; kk<nFields; kk++)
-	write_dbase_field_to_kml(dbase, ii, kk, fp);
-      fprintf(fp, "]]></description>\n");
-      write_name_field_to_kml(dbase, ii, fp);
-      fprintf(fp, "<LookAt>\n");
-      fprintf(fp, "<longitude>%9.4f</longitude>\n", clon);
-      fprintf(fp, "<latitude>%9.4f</latitude>\n", clat);
-      fprintf(fp, "<range>400000</range>\n");
-      fprintf(fp, "</LookAt>\n");
-      if (pointType == SHPT_POINT) {
-	fprintf(fp, "<Point>\n");
-	fprintf(fp, "<coordinates>%.12f,%.12f,4000</coordinates>",
-		lon[0], lat[0]);
-	fprintf(fp, "</Point>\n");
-      }
-      else if (pointType == SHPT_POLYGON) {
-	write_kml_style_keys(fp);
-	fprintf(fp, "<Polygon>\n");
-	fprintf(fp, "<outerBoundaryIs>\n");
-	fprintf(fp, "<LinearRing>\n");
-	fprintf(fp, "<coordinates>\n");
-	for (kk=part[ll]; kk<part[ll+1]; kk++)
-	  fprintf(fp, "%.6f,%.6f,4000\n", lon[kk], lat[kk]);
-	fprintf(fp, "</coordinates>\n");
-	fprintf(fp, "</LinearRing>\n");
-	fprintf(fp, "</outerBoundaryIs>\n");
-	fprintf(fp, "</Polygon>\n");
-      }
-      else if (pointType == SHPT_POINTZ) {
-	fprintf(fp, "<Point>\n");
-	fprintf(fp, "<coordinates>%.6f,%.6f,%.3f</coordinates>",
-		lon[0], lat[0], height[0]);
-	fprintf(fp, "</Point>\n");
-      }
-      else if (pointType == SHPT_ARCZ) {
-	fprintf(fp, "<styleUrl>#yellowLineGreenPoly</styleUrl>\n");
-	fprintf(fp, "<LineString>\n");
-        fprintf(fp, "<extrude>1</extrude>\n");
-        fprintf(fp, "<tessellate>1</tessellate>\n");
-        fprintf(fp, "<altitudeMode>%s</altitudeMode>\n", altitude_mode());
-        fprintf(fp, "<coordinates>\n");
- 	for (kk=part[ll]; kk<part[ll+1]; kk++)
-	  fprintf(fp, "%.6f,%.6f,%.3f\n", lon[kk], lat[kk], height[kk]);
-	fprintf(fp, "</coordinates>\n");
-	fprintf(fp, "</LineString>\n");
-      }
-      else if (pointType == SHPT_POLYGONZ) {
-	write_kml_style_keys(fp);
-	fprintf(fp, "<Polygon>\n");
-	fprintf(fp, "<outerBoundaryIs>\n");
-	fprintf(fp, "<LinearRing>\n");
-	fprintf(fp, "<coordinates>\n");
-	for (kk=part[ll]; kk<part[ll+1]; kk++)
-	  fprintf(fp, "%.6f,%.6f,%.3f\n", lon[kk], lat[kk], height[kk]);
-	fprintf(fp, "</coordinates>\n");
-	fprintf(fp, "</LinearRing>\n");
-	fprintf(fp, "</outerBoundaryIs>\n");
-	fprintf(fp, "</Polygon>\n");
-      }
-      fprintf(fp, "</Placemark>\n");
-    }
+    FREE(cols);
+    write_shape_attributes(dbase, nCols, n, header);
+    write_shape_object(shape, nVertices+1, lat, lon);
+    n++;
   }
 
-  // Close shapefile
+  // Close shapefile  
   close_shape(dbase, shape);
+  write_esri_proj_file(outFile);      
+}
 
-  // Clean up
-  kml_footer(fp);
-  FCLOSE(fp);
+void shape2latlon(char *infile, double **latArray, double **lonArray, 
+  int **startArray, int *nPoly, int *nCoords)
+{
+  DBFHandle dbase;
+  SHPHandle shape;
+  SHPObject *shapeObject;
+  int ii, nEntities, nParts, nVertices, pointType;
 
-  return 1;
+  open_shape(infile, &dbase, &shape);
+  SHPGetInfo(shape, &nEntities, &pointType, NULL, NULL);
+  if (pointType != SHPT_POLYGON)
+    asfPrintError("Only polygon shapefiles supported for subsetting!\n");
+  shapeObject = SHPReadObject(shape, 0);
+  nVertices = shapeObject->nVertices;
+  nParts = shapeObject->nParts;
+  int *start = (int *) MALLOC(sizeof(int)*(nParts+1));
+  for (ii=0; ii<nParts; ii++)
+    start[ii] = shapeObject->panPartStart[ii];
+  start[nParts] = nVertices;
+  double *lat = (double *) MALLOC(sizeof(double)*nVertices);
+  double *lon = (double *) MALLOC(sizeof(double)*nVertices);
+  for (ii=0; ii<nVertices; ii++) {
+    lat[ii] = shapeObject->padfY[ii];
+    lon[ii] = shapeObject->padfX[ii];
+  }
+  SHPDestroyObject(shapeObject);
+  close_shape(dbase, shape);
+  
+  *latArray = lat;
+  *lonArray = lon;
+  *startArray = start;
+  *nPoly = nParts;
+  *nCoords = nVertices;
+}
+
+// Convert to shapefile
+int convert2shape(char *inFile, char *outFile, char *format, int list)
+{
+  DBFHandle dbase;
+  SHPHandle shape;
+  dbf_header_t *dbf = NULL;
+  char line[1024];
+  int n = 0, nAttr = 0, nCoords = 0;
+  double *lat = NULL, *lon = NULL;
+  meta_parameters *meta = NULL;
+  
+  if (list) {
+    FILE *fp = FOPEN(inFile, "r");
+    if (strcmp_case(format, "META") != 0) {
+      shapefile_init(NULL, outFile, format, meta);
+      open_shape(outFile, &dbase, &shape);
+    }
+    while (fgets(line, 1024, fp)) {
+      chomp(line);
+      if (strcmp_case(format, "META") == 0) {
+        meta = meta2vector(line, &dbf, &nAttr, &lat, &lon, &nCoords);
+        if (n == 0) {
+          shapefile_init(NULL, outFile, format, meta);
+          open_shape(outFile, &dbase, &shape);
+        }
+        write_shape_attributes(dbase, nAttr, n, dbf);
+        write_shape_object(shape, nCoords, lat, lon);
+      }      
+      else if (strcmp_case(format, "SMAP") == 0) {
+        smap2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
+        write_shape_attributes(dbase, nAttr, n, dbf);
+        write_shape_object(shape, nCoords, lat, lon);
+      }
+      else if (strcmp_case(format, "GEOTIFF") == 0) {
+        geotiff2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
+        write_shape_attributes(dbase, nAttr, n, dbf);
+        write_shape_object(shape, nCoords, lat, lon);
+      }
+      else
+        asfPrintError("List option for %s format not supported\n", format);
+      n++;
+    }
+    FCLOSE(fp);
+    close_shape(dbase, shape);
+    if (meta && meta->projection) {
+      write_asf2esri_proj(meta, NULL, outFile);
+      meta_free(meta);
+    }
+    else
+      write_esri_proj_file(outFile);
+  }
+  else {
+    if (strcmp_case(format, "META") == 0) {
+      meta = meta2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
+      shapefile_init(NULL, outFile, format, meta);
+      meta_free(meta);
+      open_shape(outFile, &dbase, &shape);
+      write_shape_attributes(dbase, nAttr, 0, dbf);
+      write_shape_object(shape, nCoords, lat, lon);
+      close_shape(dbase, shape);
+      write_esri_proj_file(outFile);
+    }
+    else if (strcmp_case(format, "SMAP") == 0) {
+      shapefile_init(NULL, outFile, format, meta);
+      open_shape(outFile, &dbase, &shape);
+      smap2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
+      write_shape_attributes(dbase, nAttr, 0, dbf);
+      write_shape_object(shape, nCoords, lat, lon);
+      close_shape(dbase, shape);
+      write_esri_proj_file(outFile);
+    }
+    else if (strcmp_case(format, "GEOTIFF") == 0) {
+      shapefile_init(NULL, outFile, format, meta);
+      open_shape(outFile, &dbase, &shape);
+      geotiff2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
+      write_shape_attributes(dbase, nAttr, 0, dbf);
+      write_shape_object(shape, nCoords, lat, lon);
+      close_shape(dbase, shape);
+      write_esri_proj_file(outFile);
+    }
+    else if (strcmp_case(format, "POLYGON") == 0) {
+      shapefile_init(NULL, outFile, format, meta);
+      open_shape(outFile, &dbase, &shape);
+      polygon2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
+      write_shape_attributes(dbase, nAttr, 0, dbf);
+      write_shape_object(shape, nCoords, lat, lon);
+      close_shape(dbase, shape);
+      write_esri_proj_file(outFile);
+    }
+    else // must be some CSV type file
+      csv2shape(inFile, format, outFile);
+  }
+  FREE(lat);
+  FREE(lon);
+
+  return TRUE;
 }
