@@ -264,9 +264,9 @@ int main(int argc,char *argv[])
     cbuf2 = my_floats_to_bytes(buf2,(long long) pixel_count, 0.0,SIGMA3,-30.0,-10.0);
     cbuf3 = my_floats_to_bytes(buf3,(long long) pixel_count, 0.0,SIGMA3,-30.0,-10.0);
 
-    meta1->general->data_type=ASF_BYTE;
-    meta2->general->data_type=ASF_BYTE;
-    meta3->general->data_type=ASF_BYTE;
+    meta1->general->data_type=REAL32;
+    //meta2->general->data_type=ASF_BYTE;
+    //meta3->general->data_type=ASF_BYTE;
 
     sample_count = 0;
     for (i=0; i<meta1->general->line_count; ++i) {
