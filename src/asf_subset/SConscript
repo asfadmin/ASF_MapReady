@@ -18,6 +18,7 @@ localenv.AppendUnique(LIBS = [
     "asf",
     "asf_meta",
     "asf_raster",
+    "asf_vector",
 ])
 
 bins = localenv.Program("asf_subset", Glob("*.c"))
