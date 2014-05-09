@@ -13,6 +13,7 @@ localenv.AppendUnique(CPPPATH = [
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
 
 localenv.AppendUnique(LIBS = [
     "m",
@@ -26,7 +27,7 @@ localenv.AppendUnique(LIBS = [
 
 libs = localenv.SharedLibrary("libasf_vector", [
         "convert2vector.c",
-        "vector.c"
+        "vector.c",
         "utils.c",
         "kml.c",
         "shape.c",
