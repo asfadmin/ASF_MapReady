@@ -97,6 +97,7 @@ lib_subs = [
     "libasf_terrcorr",
     "libasf_ardop",
     "libasf_raster",
+    "plan",
     "asf",
     "libasf_sar",
     "libasf_geocode",
