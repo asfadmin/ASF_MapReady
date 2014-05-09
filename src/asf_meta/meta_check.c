@@ -241,7 +241,11 @@ int isTerrasar(char *dataFile, char **error)
   return isTerrasar_ext(dataFile, FALSE, error);
 }
 
-int isRadarsat2(char *dataFile, char **error)
+int isRadarsat2(char *dataFile, char **error) {
+  return isRadarsat2_ext(dataFile, TRUE, error);
+}
+
+int isRadarsat2_ext(char *dataFile, int check_data, char **error)
 {
   char dataType[25];
   char *message = NULL;
@@ -282,7 +286,8 @@ int isRadarsat2(char *dataFile, char **error)
 	  sprintf(tmp, "Wrong data type!\n"
 		  "Polarimetric processing requires SLC data!\n");
 	  strcat(message, tmp);
-	  found = FALSE;
+	  if (check_data)
+  	  found = FALSE;
 	}
 	
 	// path from the xml (metadata) file
@@ -317,7 +322,8 @@ int isRadarsat2(char *dataFile, char **error)
 	      message = (char *) MALLOC(sizeof(char)*1024);
 	    sprintf(tmp, "Data file (%s) does not exist!\n", inDataName);
 	    strcat(message, tmp);
-	    found = FALSE;
+	    if (check_data)
+  	    found = FALSE;
 	  }
 	}
       }

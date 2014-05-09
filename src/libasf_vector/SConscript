@@ -26,32 +26,18 @@ localenv.AppendUnique(LIBS = [
 
 libs = localenv.SharedLibrary("libasf_vector", [
         "convert2vector.c",
-        "convert2vector.t.c",
+        "vector.c"
         "utils.c",
-        "header.c",
-        "geotiff.c",
-        "polygon.c",
-        "point.c",
-        "auig.c",
-        "multimatch.c",
-        "meta.c",
-        "terrasar.c",
         "kml.c",
         "shape.c",
-        "generic_csv.c",
-        "ursa.c",
-        "datapool.c",
-        "high_altitude_photography.c",
-        "smap.c",
-        "custom.c",
         "config.c",
-        "granule.c",
         "rgps.c",
         ])
 
 shares = localenv.File([
     "header.lst",
     "convert2vector.config",
+    "*_data_dictionary.csv"
 ])
 
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)

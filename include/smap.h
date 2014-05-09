@@ -38,5 +38,6 @@ typedef struct {
 // Function prototypes
 meta_parameters* smap2meta(smap_meta *smap);
 smap_meta *read_smap_meta(const char *dataFile);
+void update_smap_geolocation(char *inDataName, char *outDataName);
 
 #endif

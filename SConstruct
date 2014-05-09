@@ -131,6 +131,7 @@ src_subs = lib_subs + [
     "diffimage",
     "diffmeta",
     "trim",
+    "asf_subset",
     "make_overlay",
     "asf_kml_overlay",
     "sample_plugin",

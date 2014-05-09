@@ -64,6 +64,7 @@ typedef struct {
 	char *wrapped_interferogram;
 	char *unwrapped_interferogram;
 	char *correlation;
+	char *browse_overview;
 	char *browse_amplitude;
 	char *browse_wrapped_interferogram;
 	char *browse_unwrapped_interferogram;
@@ -95,10 +96,14 @@ typedef struct {
 	char *rtc_VV_file;
 	char *rtc_log;
 	char *main_log;
+	char *mk_geo_radcal_0_log;
+	char *mk_geo_radcal_1_log;
 	char *mk_geo_radcal_2_log;
+	char *mk_geo_radcal_3_log;
 	char *coreg_check_log;
 	char *mli_par_file;
 	char *gamma_version;
+	char *gap_rtc;
 	char *dem_source;
 } params_t;
 
@@ -276,6 +281,7 @@ params_t *params_init(char *type) {
     params->dem_url = NULL;
     params->troposphere = NULL;
     params->troposphere_url = NULL;
+    params->browse_overview = NULL;
     params->browse_amplitude = NULL;
     params->browse_wrapped_interferogram = NULL;
     params->browse_unwrapped_interferogram = NULL;
@@ -304,7 +310,10 @@ params_t *params_init(char *type) {
     params->rtc_VH_file = NULL;
     params->rtc_VV_file = NULL;
     params->rtc_log = NULL;
+    params->mk_geo_radcal_0_log = NULL;
+    params->mk_geo_radcal_1_log = NULL;
     params->mk_geo_radcal_2_log = NULL;
+    params->mk_geo_radcal_3_log = NULL;
     params->coreg_check_log = NULL;
     params->mli_par_file = NULL;
     params->processing_log = NULL;
@@ -312,6 +321,7 @@ params_t *params_init(char *type) {
     params->browse_amplitude = NULL;
     params->kml_overlay = NULL;
     params->gamma_version = NULL;
+    params->gap_rtc = NULL;
     params->dem_source = NULL;
 	}
 	
@@ -358,11 +368,15 @@ void params_free(params_t *params) {
   FREE(params->rtc_VH_file);
   FREE(params->rtc_VV_file);
   FREE(params->rtc_log);
+  FREE(params->mk_geo_radcal_0_log);
+  FREE(params->mk_geo_radcal_1_log);
   FREE(params->mk_geo_radcal_2_log);
+  FREE(params->mk_geo_radcal_3_log);
   FREE(params->coreg_check_log);
   FREE(params->mli_par_file);
   FREE(params->main_log);
   FREE(params->gamma_version);
+  FREE(params->gap_rtc);
   FREE(params->dem_source);
   FREE(params);
 }
@@ -451,6 +465,10 @@ void read_filenames(const char * file, params_t **params, char *type)
 			if (strncmp_case(line, "troposphere url", 15) == 0) {
 				list->troposphere_url = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->troposphere_url, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "browse overview", 15) == 0) {
+				list->browse_overview = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->browse_overview, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "browse amplitude", 16) == 0) {
 				list->browse_amplitude = (char *) MALLOC(sizeof(char)*n);
@@ -564,8 +582,14 @@ void read_filenames(const char * file, params_t **params, char *type)
 				list->rtc_log = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->rtc_log, "%s", trim_spaces(value));
 			}
+			if (matches_key(line, "mk_geo_radcal_0 log"))
+				list->mk_geo_radcal_0_log = trim_spaces(value);
+			if (matches_key(line, "mk_geo_radcal_1 log"))
+				list->mk_geo_radcal_1_log = trim_spaces(value);
 			if (matches_key(line, "mk_geo_radcal_2 log"))
 				list->mk_geo_radcal_2_log = trim_spaces(value);
+			if (matches_key(line, "mk_geo_radcal_3 log"))
+				list->mk_geo_radcal_3_log = trim_spaces(value);
 			if (matches_key(line, "coreg_check log"))
 				list->coreg_check_log = trim_spaces(value);
 			if (matches_key(line, "mli.par file"))
@@ -577,6 +601,10 @@ void read_filenames(const char * file, params_t **params, char *type)
 			if (strncmp_case(line, "gamma version", 13) == 0) {
 				list->gamma_version = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->gamma_version, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "gap_rtc version", 15) == 0) {
+			  list->gap_rtc = (char *) MALLOC(sizeof(char)*n);
+			  sprintf(list->gap_rtc, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "dem source", 10) == 0) {
 				list->dem_source = (char *) MALLOC(sizeof(char)*n);
@@ -1102,9 +1130,12 @@ int main(int argc, char **argv)
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "wrapped interferogram\">%s</file>\n", filename);
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">Alaska Satellite Facility</source>\n");				
-      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-        "projection of the data\">geographic</map_projection>\n");
+        "data\">Alaska Satellite Facility</source>\n");
+      fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection as well known text\">GEOGCS[\"GCS_WGS_1984\",DATUM[\""
+      "D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\""
+      "Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      "</projection_string>\n");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "WIDTH", 5) == 0)
@@ -1193,9 +1224,12 @@ int main(int argc, char **argv)
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "unwrapped interferogram\">%s</file>\n", filename);
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">Alaska Satellite Facility</source>\n");				
-      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-        "projection of the data\">geographic</map_projection>\n");
+        "data\">Alaska Satellite Facility</source>\n");
+      fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection as well known text\">GEOGCS[\"GCS_WGS_1984\",DATUM[\""
+      "D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\""
+      "Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      "</projection_string>\n");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "WIDTH", 5) == 0) {
@@ -1306,9 +1340,12 @@ int main(int argc, char **argv)
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "correlation image\">%s</file>\n", filename);
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">Alaska Satellite Facility</source>\n");				
-      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-        "projection of the data\">geographic</map_projection>\n");
+        "data\">Alaska Satellite Facility</source>\n");
+      fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection as well known text\">GEOGCS[\"GCS_WGS_1984\",DATUM[\""
+      "D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\""
+      "Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      "</projection_string>\n");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "WIDTH", 5) == 0)
@@ -1399,9 +1436,12 @@ int main(int argc, char **argv)
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "incidence angle map\">%s</file>\n", filename);
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">Alaska Satellite Facility</source>\n");				
-      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-        "projection of the data\">geographic</map_projection>\n");
+        "data\">Alaska Satellite Facility</source>\n");
+      fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection as well known text\">GEOGCS[\"GCS_WGS_1984\",DATUM[\""
+      "D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\""
+      "Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      "</projection_string>\n");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "WIDTH", 5) == 0)
@@ -1452,9 +1492,12 @@ int main(int argc, char **argv)
           sprintf(str, "%s", line+13);
           if (strncmp_case(line, "PROJECTION", 10) == 0) {
             sprintf(map_projection, "%s", trim_spaces(str));
-            if (strcmp_case(map_projection, "LATLON") == 0)
-              fprintf(fp, "      <map_projection type=\"string\" definition=\""
-              "map projection of the data\">geographic</map_projection>\n");
+            if (strcmp_case(map_projection, "LATLON") == 0)            
+              fprintf(fp, "      <projection_string type=\"string\" definition"
+              "=\"map projection as well known text\">GEOGCS[\"GCS_WGS_1984\","
+              "DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563"
+              "]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295"
+              "]]</projection_string>\n");
           }
           if (strncmp_case(line, "WIDTH", 5) == 0) {
             dem_width = atoi(trim_spaces(str));
@@ -1519,8 +1562,11 @@ int main(int argc, char **argv)
           if (strncmp_case(line, "PROJECTION", 10) == 0) {
             sprintf(map_projection, "%s", trim_spaces(str));
             if (strcmp_case(map_projection, "LATLON") == 0)
-              fprintf(fp, "      <map_projection type=\"string\" definition=\""
-              "map projection of the data\">geographic</map_projection>\n");
+              fprintf(fp, "      <projection_string type=\"string\" definition"
+              "=\"map projection as well known text\">GEOGCS[\"GCS_WGS_1984\","
+              "DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563"
+              "]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295"
+              "]]</projection_string>\n");
           }
           if (strncmp_case(line, "WIDTH", 5) == 0) {
             tropo_width = atoi(trim_spaces(str));
@@ -2205,6 +2251,12 @@ int main(int argc, char **argv)
     meta_free(meta);
 
     fprintf(fp, "    <terrain_correction>\n");
+    fprintf(fp, "      <gamma_version type=\"string\" definition=\"version "
+      "number of the GAMMA software used for processing\">%s</gamma_version>\n",
+      params->gamma_version);
+    fprintf(fp, "      <gap_rtc_version type=\"string\" definition=\"version "
+      "number of gap_rtc script used for terrain correction processing\">%s"
+      "</gap_rtc_version>\n", params->gap_rtc);
     fprintf(fp, "      <patches_attempted type=\"int\" definition=\"number of patches used to coregister\""
       ">%d</patches_attempted>\n", patches_attempted);
     fprintf(fp, "      <patches_accepted type=\"int\" definition=\"number of patches successfully coregistered\""
@@ -2448,7 +2500,7 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);
 
     // Terrain correction
-    fpFiles = FOPEN(params->rtc_log, "rt");
+    fpFiles = FOPEN(params->mk_geo_radcal_0_log, "rt");
     while (NULL != fgets(line, 255, fpFiles)) {
       if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
           strstr(line, "mode: 0")) {
@@ -2456,18 +2508,30 @@ int main(int argc, char **argv)
         gamma2iso_date(p+18, str);
         fprintf(fp, "    <simulate_sar>%s</simulate_sar>\n", str);
       }
+    }
+    FCLOSE(fpFiles);
+    fpFiles = FOPEN(params->mk_geo_radcal_1_log, "rt");
+    while (NULL != fgets(line, 255, fpFiles)) {
       if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
           strstr(line, "mode: 1")) {
         p = strstr(line, "processing start:");
         gamma2iso_date(p+18, str);
         fprintf(fp, "    <initial_offset>%s</initial_offset>\n", str);
       }
+    }
+    FCLOSE(fpFiles);
+    fpFiles = FOPEN(params->mk_geo_radcal_2_log, "rt");
+    while (NULL != fgets(line, 255, fpFiles)) {
       if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
           strstr(line, "mode: 2")) {
         p = strstr(line, "processing start:");
         gamma2iso_date(p+18, str);
         fprintf(fp, "    <refined_offset>%s</refined_offset>\n", str);
       }
+    }
+    FCLOSE(fpFiles);
+    fpFiles = FOPEN(params->mk_geo_radcal_3_log, "rt");
+    while (NULL != fgets(line, 255, fpFiles)) {
       if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
           strstr(line, "mode: 3")) {
         p = strstr(line, "processing start:");
