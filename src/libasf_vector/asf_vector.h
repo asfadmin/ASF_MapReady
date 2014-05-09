@@ -168,6 +168,8 @@ typedef struct
   int width;                     // width of boundary line
   char color[25];                // color of boundary line
   int short_config;              // short configuration file flag
+  int nosplit;                   // no splitting of vectors at the dateline
+  int debug;                     // debugging flag
 } c2v_config;
 
 int init_c2v_config(char *configFile);
@@ -177,17 +179,6 @@ int write_c2v_config(char *configFile, c2v_config *cfg);
 
 // Prototypes from convert2vector.c
 int convert2vector(c2v_config *cfg);
-
-// Prototypes from kml_utils.c
-void kml_entry_with_overlay(FILE *kml_file, meta_parameters *meta,
-                            char *name, char *ceos_fileame,
-                            char *jpeg_dir);
-void kml_entry(FILE *kml_file, meta_parameters *meta, char *name);
-void kml_entry_ext(FILE *kml_file, meta_parameters *meta, char *name, 
-		   c2v_config *cfg);
-void kml_point_entry(FILE *kml_file, char *name, float lat, float lon);
-void kml_polygon_entry(FILE *kml_file, char *name, char **id, float *lat,
-               float *lon, int n);
 
 // Prototypes from utils.c
 int ismetadata(char *inFile);
@@ -230,10 +221,11 @@ void close_shape(DBFHandle dbase, SHPHandle shape);
 int latlon2shape(char *inFile, char *outFile);
 int smap2shape(char *inFile, char *outFile);
 int point2shape(char *inFile, char *outFile);
-void csv2shape(char *inFile, char *format, char *outFile);
+void csv2shape(char *inFile, char *format, char *outFile, c2v_config *cfg);
 void shape2latlon(char *infile, double **latArray, double **lonArray, 
   int **startArray, int *nPoly, int *nCoords);
-int convert2shape(char *inFile, char *outFile, char *format, int list);
+int convert2shape(char *inFile, char *outFile, char *format, int list,
+  c2v_config *cfg);
 
 // Prototypes from rgps.c
 void rgps2kml(cell_t cell, double *lat, double *lon, FILE *fp);

@@ -97,6 +97,7 @@ static int parse_val(char * inbuf, char * key, double * val)
 		}
 		ii++;
 	      }
+		if (!match) {
 	      ii=0;
 	      while (ii < UNKNOWN_SPHEROID) {
 		if (strcmp_case(p, spheroid_toString(ii)) == 0) {
@@ -104,6 +105,7 @@ static int parse_val(char * inbuf, char * key, double * val)
 		  match = TRUE;
 		}
 		ii++;
+	      }
 	      }
 	      if (!match)
 		asfPrintWarning("Illegal value found for key '%s': %s\n",
@@ -321,7 +323,6 @@ void read_proj_file(char * file, project_parameters_t * pps,
     }
   else if (strcmp_case(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
     {
-      //char area[10];
       double is_north_pole;
       *proj_type = POLAR_STEREOGRAPHIC;
       get_fields(fp,
