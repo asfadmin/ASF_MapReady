@@ -74,6 +74,14 @@ typedef struct {
   gsl_histogram_pdf *hist_pdf;
 } channel_stats_t;
 
+typedef struct
+{
+  int n;
+  double *x;
+  double *y;
+  int dateline;
+} Poly;
+
 typedef double calc_stats_formula_t(double band_values[], double no_data_value);
 
 // Prototypes from arithmetic.c
@@ -142,6 +150,12 @@ int trim(char *infile, char *outfile, long long startX, long long startY,
 void trim_zeros(char *infile, char *outfile, int *startX, int *endX);
 void trim_zeros_ext(char *infile, char *outfile, int update_meta,
                     int do_top, int do_left);
+void subset_by_latlon(char *infile, char *outfile, double *lat, double *lon, 
+  int nCoords);
+void subset_by_map(char *infile, char *outfile, double minX, double maxX,
+  double minY, double maxY);
+void clip_to_polygon(char *inFile, char *outFile, double *lat, double *lon, 
+  int *start, int nParts, int nVertices);
 
 // Prototypes from raster_calc.c
 int raster_calc(char *outFile, char *expression, int input_count, 

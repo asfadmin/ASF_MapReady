@@ -1224,7 +1224,17 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
         }
         free(dirname);
 
-        meta_parameters *meta = meta_read(metadata_name);
+        dbf_header_t *dbf;
+        int nAttr, nCoords;
+        double *lat, *lon, center_lat, center_lon;
+        char configFile[255], *name;
+        meta_parameters *meta;
+
+        sprintf(configFile, "%s/convert2vector.config", get_asf_share_dir());
+        c2v_config *cfg = read_c2v_config(configFile);
+
+        //meta_parameters *meta = meta_read(metadata_name);
+        meta = meta2vector(metadata_name, &dbf, &nAttr, &lat, &lon, &nCoords);
         if (meta && meta->general &&
             meta_is_valid_double(meta->general->center_latitude) &&
             meta_is_valid_double(meta->general->center_longitude))
@@ -1237,13 +1247,24 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
             // Here is where we actually generate the KML file
             kml_header(kf);
 
+            /*
             char *basename = get_basename(kml_tmp);
             kml_entry(kf, meta, basename);
+            */
+
+            name = get_basename(kml_tmp);
+            center_lat = meta->general->center_latitude;
+            center_lon = meta->general->center_longitude;
+            write_kml_placemark(kf, name, center_lat, center_lon, NULL, 
+              dbf, nAttr, lat, lon, nCoords, cfg);
+            FREE(lat);
+            FREE(lon);
+            FREE(dbf);
 
             kml_footer(kf);
 
             fclose(kf);
-            free(basename);
+            //free(basename);
           }
         }
         else {

@@ -305,6 +305,7 @@ int remove_file(const char *file);
 /* delete image and metadata files given a basename */
 void removeImgAndMeta(const char *base);
 
+void catFile(char *file);
 
 /***************************************************************************
  * Get the location of the ASF Share Directory, (and some other stuff) */
