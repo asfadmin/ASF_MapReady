@@ -7,7 +7,7 @@ LIB_DIR := $(ROOT_DIR)/lib
 INCLUDE_DIR := $(ROOT_DIR)/include
 
 # These variables specify the tarball and what it unpacks into.
-UNPACK_DIR := gdal-1.6.3
+UNPACK_DIR := gdal-1.11.0
 TARFILE := $(UNPACK_DIR).tar
 ZIPFILE := $(TARFILE).gz
 

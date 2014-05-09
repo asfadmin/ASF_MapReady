@@ -131,7 +131,7 @@ void write_kml_object(FILE *kml_file, c2v_config *cfg, char *png_filename,
     if (strcmp_case(cfg->altitude, "RELATIVETOGROUND") != 0 &&
         strcmp_case(cfg->altitude, "CLAMPTOGROUND") != 0 &&
         strcmp_case(cfg->altitude, "ABSOLUTE") != 0)
-      strcpy(cfg->altitude, "clampToGround");
+      strcpy(cfg->altitude, "absolute");
   }
   if (cfg && strcmp_case(cfg->boundary, "LINE") == 0) {
     write_kml_style_keys_ext(kml_file, cfg);

@@ -1,5 +1,6 @@
 [Polar Stereographic]
 Area = South
+Datum = Hughes
 Spheroid = Hughes
 Standard parallel = -70
 Central meridian = 0

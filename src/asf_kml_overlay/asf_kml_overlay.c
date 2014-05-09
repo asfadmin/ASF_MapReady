@@ -30,7 +30,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-reduction_factor <factor>] [-transparency <factor>]\n"\
 "                [-colormap <look up table>] [-rgb <red>,<green>,<blue>]\n"\
-"                [-polsarpro <type>] [-band <band name>] [-log <logFile>]\n"\
+"                [-polsarpro <type>] [-band <band name>]\n"\
+"                [-byte_conversion <method>] [-log <logFile>]\n"\
 "                [-quiet] [-license] [-version] [-help]\n"\
 "                <inFile> <outFile>\n"
 
@@ -61,6 +62,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        Values are: segmentation, decomposition and parameter.\n"\
 "   -band <band name>\n"\
 "        Defines the band name to to used from a multi-band image.\n"\
+"   -byte_conversion <method>\n"\
+"        Set the byte conversion for exporting the image to PNG\n"\
 "   -log <logFile>\n"\
 "        Set the name and location of the log file. Default behavior is to\n"\
 "        log to tmp<processIDnumber>.log\n"\
@@ -142,7 +145,7 @@ static int checkForOption(char* key, int argc, char* argv[])
 int main(int argc, char *argv[])
 {
   char inFile[512], outFile[512], *colormap=NULL;
-  char *polsarpro=NULL, *band=NULL, *rgb=NULL;
+  char *polsarpro=NULL, *band=NULL, *rgb=NULL, *byteConversion=NULL;
   const int pid = getpid();
   extern int logflag, quietflag;
   int reduction = 8;
@@ -154,6 +157,7 @@ int main(int argc, char *argv[])
   int rgbFlag = FLAG_NOT_SET; // RGB flag
   int polFlag = FLAG_NOT_SET; // polarimetry type flag
   int bandFlag = FLAG_NOT_SET; // band flag
+  int byteConversionFlag = FLAG_NOT_SET; // byte conversion flag
 
   logflag = quietflag = FALSE;
   log_f = quiet_f = FLAG_NOT_SET;
@@ -176,6 +180,7 @@ int main(int argc, char *argv[])
   rgbFlag = checkForOption("-rgb", argc, argv);
   polFlag = checkForOption("-polsarpro", argc, argv);
   bandFlag = checkForOption("-band", argc, argv);
+  byteConversionFlag = checkForOption("-byte_conversion", argc, argv);
 
   // We need to make sure the user specified the proper number of arguments
   int needed_args = 1 + REQUIRED_ARGS; // command & REQUIRED_ARGS
@@ -188,6 +193,7 @@ int main(int argc, char *argv[])
   if (rgbFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
   if (polFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
   if (bandFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
+  if (byteConversionFlag != FLAG_NOT_SET) {needed_args += 2; num_flags++;}
 
   // Make sure we have the right number of args
   if(argc != needed_args) {
@@ -231,6 +237,12 @@ int main(int argc, char *argv[])
       print_usage();
     }
   }
+  if (byteConversionFlag != FLAG_NOT_SET) {
+    if ( (argv[byteConversionFlag+1][0]=='-') || 
+      (byteConversionFlag>=(argc-REQUIRED_ARGS)) ) {
+      print_usage();
+    }
+  }
 
   // Make sure all options occur before the config file name argument
   if (num_flags == 1 &&
@@ -241,7 +253,8 @@ int main(int argc, char *argv[])
        colorFlag > 1 ||
        rgbFlag   > 1 ||
        polFlag   > 1 ||
-       bandFlag  > 1))
+       bandFlag  > 1 ||
+       byteConversionFlag > 1))
   {
     print_usage();
   }
@@ -253,7 +266,8 @@ int main(int argc, char *argv[])
 	    colorFlag >= argc - REQUIRED_ARGS - 1 ||
 	    rgbFlag   >= argc - REQUIRED_ARGS - 1 ||
 	    polFlag   >= argc - REQUIRED_ARGS - 1 ||
-	    bandFlag  >= argc - REQUIRED_ARGS - 1))
+	    bandFlag  >= argc - REQUIRED_ARGS - 1 ||
+	    byteConversionFlag >= argc - REQUIRED_ARGS -1))
   {
     print_usage();
   }
@@ -281,6 +295,10 @@ int main(int argc, char *argv[])
     band = (char *) MALLOC(sizeof(char)*1024);
     strcpy(band, argv[bandFlag+1]);
   }
+  if (byteConversionFlag != FLAG_NOT_SET) {
+    byteConversion = (char *) MALLOC(sizeof(char)*256);
+    strcpy(byteConversion, argv[bandFlag+1]);
+  }
   if (log_f != FLAG_NOT_SET) {
     strcpy(logFile, argv[log_f+1]);
   }
@@ -305,7 +323,7 @@ int main(int argc, char *argv[])
 		 "available.\nFor the moment the KML and PNG files need to "
 		 "be manually zipped together.\n\n");
   kml_overlay_ext(inFile, outFile, reduction, transparency, colormap, rgb, 
-		  polsarpro, band, FALSE);
+		  polsarpro, band, FALSE, byteConversion);
 
   asfPrintStatus("\nSuccessful completion!\n\n");
 

@@ -247,12 +247,17 @@ int read_header_config(const char *format, dbf_header_t **dbf,
 void split_polygon(double *lat, double *lon, int nCoords, 
   int *start, double *mLat, double *mLon)
 {
+  double projX1, projY1, projX2, projY2, mProjX, mProjY;
+  double dateX1, dateY1, dateX2, dateY2, m, mDate, height, maxLat = 0.0;
   int nCols = nCoords + 5;
   int ii, nNegative = 0;
-  double m;
   for (ii=0; ii<nCoords-1; ii++) {
     if (lon[ii] < 0)
       nNegative++;
+    if (lat[ii] > 0 && lat[ii] > maxLat)
+      maxLat = lat[ii];
+    else if (lat[ii] < 0 && lat[ii] < maxLat)
+      maxLat = lat[ii];
   }
   int nNeg = start[0] = 0;
   int nPos = start[1] = nNegative + 3;
@@ -269,22 +274,57 @@ void split_polygon(double *lat, double *lon, int nCoords,
       nNeg++;
     }
     // crossing dateline
-    if (lon[ii] < 0 && lon[ii+1] > 0) { 
-      m = (lat[ii+1] - lat[ii])/(fabs(lon[ii+1] - lon[ii]) - 360.0);
-      mLat[nPos] = mLat[nNeg] = m*(180.0 - lon[ii+1]) + lat[ii+1];
+    if ((lon[ii] < 0 && lon[ii+1] > 0) || (lon[ii] > 0 && lon[ii+1] < 0)) {
+      char projFile[255];
+      datum_type_t datum = WGS84_DATUM;
+      spheroid_type_t spheroid = WGS84_SPHEROID;
+      project_parameters_t pps;
+      projection_type_t proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
+      meta_projection *proj = meta_projection_init();
+      if (fabs(maxLat < 83.0)) {
+        pps.utm.zone = 60;
+        pps.utm.scale_factor = 0.9996;
+        pps.utm.lat0 = 0.0;
+        pps.utm.lon0 = (double) (pps.utm.zone - 1) * 6.0 - 177.0;
+        if (maxLat > 0.0)
+          pps.utm.false_northing = 0.0;
+        else
+          pps.utm.false_northing = 10000000.0;
+      }
+      else {
+        proj->type = POLAR_STEREOGRAPHIC;
+        if (maxLat > 0) {
+          strcpy(projFile, "polar_stereographic_north_ssmi.proj");
+        }
+        else
+          strcpy(projFile, "polar_stereographic_south_ssmi.proj");
+        read_proj_file(projFile, &pps, &proj_type, &datum, &spheroid);
+      }      
+      proj->type = proj_type;
+      proj->datum = datum;
+      proj->spheroid = spheroid;
+      proj->param = pps;
+      latlon_to_proj(proj, 'R', lat[ii]*D2R, 180.0*D2R, 0.0, 
+        &dateX1, &dateY1, &height);
+      latlon_to_proj(proj, 'R', lat[ii+1]*D2R, 180.0*D2R, 0.0, 
+        &dateX2, &dateY2, &height);
+      mDate = (dateY2 - dateY1)/(dateX2 - dateX1);
+      latlon_to_proj(proj, 'R', lat[ii]*D2R, lon[ii]*D2R, 0.0, 
+        &projX1, &projY1, &height);
+      latlon_to_proj(proj, 'R', lat[ii+1]*D2R, lon[ii+1]*D2R, 0.0, 
+        &projX2, &projY2, &height);
+      m = (projY1 - projY2)/(projX1 - projX2);
+      mProjX = (m*projX2 - mDate*dateX2 + dateY2 - projY2)/(m - mDate);
+      mProjY = m*(mProjX - projX2) + projY2;
+      proj_to_latlon(proj, mProjX, mProjY, 0.0, 
+        &mLat[nPos], &mLon[nPos], &height);
+      mLat[nPos] *= R2D;
+      mLat[nNeg] = mLat[nPos];
       mLon[nPos] = 180.0;
       mLon[nNeg] = -180.0;
       nPos++;
       nNeg++;
-    }
-    else if (lon[ii] > 0 && lon[ii+1] < 0) {
-      m = (lat[ii+1] - lat[ii])/(360.0 - fabs(lon[ii+1] - lon[ii]));
-      mLat[nPos] = mLat[nNeg] = m*(180.0 - lon[ii]) + lat[ii];
-      mLon[nPos] = 180.0;
-      mLon[nNeg] = -180.0;
-      nPos++;
-      nNeg++;
-    }
+    } 
   }
   mLat[nNegative+2] = mLat[0];
   mLon[nNegative+2] = mLon[0];

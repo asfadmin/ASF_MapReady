@@ -713,86 +713,7 @@ void shape_init(char *inFile, format_type_t format)
   if (!dbase)
     asfPrintError("Could not create database file '%s'\n", dbaseFile);
 
-  // Add fields to database
-  if (format == RGPS) {
-    if (DBFAddField(dbase, "Cell_ID", FTInteger, 6, 0) == -1)
-      asfPrintError("Could not add 'Cell_ID' field to database file\n");
-    if (DBFAddField(dbase, "Vertices", FTInteger, 2, 0) == -1)
-      asfPrintError("Could not add 'Vertices' field to database file\n");
-    if (DBFAddField(dbase, "Date", FTString, 25, 0) == -1)
-      asfPrintError("Could not add 'Date' field to database file\n");
-    if (DBFAddField(dbase, "SrcImage", FTString, 25, 0) == -1)
-      asfPrintError("Could not add 'SrcImage' field to database file\n");
-    if (DBFAddField(dbase, "TrgImage", FTString, 25, 0) == -1)
-      asfPrintError("Could not add 'TrgImage' field to database file\n");
-    if (DBFAddField(dbase, "Stream", FTString, 3, 0) == -1)
-      asfPrintError("Could not add 'Stream' field to database file\n");
-    if (DBFAddField(dbase, "Area", FTDouble, 12, 3) == -1)
-      asfPrintError("Could not add 'Area' field to database file\n");
-    if (DBFAddField(dbase, "MY_ice", FTDouble, 12, 3) == -1)
-      asfPrintError("Could not add 'MY_ice' field to database file\n");
-    if (DBFAddField(dbase, "OpenWater", FTDouble, 12, 3) == -1)
-      asfPrintError("Could not add 'OpenWater' field to database file\n");
-    if (DBFAddField(dbase, "IncidAngle", FTDouble, 9, 4) == -1)
-      asfPrintError("Could not add 'IncidAngle' field to database file\n");
-    if (DBFAddField(dbase, "Cell_x", FTDouble, 12, 3) == -1)
-      asfPrintError("Could not add 'Cell_x' field to database file\n");
-    if (DBFAddField(dbase, "Cell_y", FTDouble, 12, 3) == -1)
-      asfPrintError("Could not add 'Cell_y' field to database file\n");
-    if (DBFAddField(dbase, "dudx", FTDouble, 12, 6) == -1)
-      asfPrintError("Could not add 'dudx' field to database file\n");
-    if (DBFAddField(dbase, "dudy", FTDouble, 12, 6) == -1)
-      asfPrintError("Could not add 'dudy' field to database file\n");
-    if (DBFAddField(dbase, "dvdx", FTDouble, 12, 6) == -1)
-      asfPrintError("Could not add 'dvdx' field to database file\n");
-    if (DBFAddField(dbase, "dvdy", FTDouble, 12, 6) == -1)
-      asfPrintError("Could not add 'dvdy' field to database file\n");
-    if (DBFAddField(dbase, "dtp", FTDouble, 12, 6) == -1)
-      asfPrintError("Could not add 'dtp' field to database file\n");
-    if (DBFAddField(dbase, "Temp", FTDouble, 12, 3) == -1)
-      asfPrintError("Could not add 'Temp' field to database file\n");
-    if (DBFAddField(dbase, "u_wind", FTDouble, 12, 6) == -1)
-      asfPrintError("Could not add 'u_wind' field to database file\n");
-    if (DBFAddField(dbase, "v_wind", FTDouble, 12, 6) == -1)
-      asfPrintError("Could not add 'v_wind' field to database file\n");
-  }
-  else if (format == RGPS_GRID) {
-    if (DBFAddField(dbase, "Grid_ID", FTInteger, 6, 0) == -1)
-      asfPrintError("Could not add 'Grid_ID' field to database file\n");
-    if (DBFAddField(dbase, "Date", FTString, 12, 0) == -1)
-      asfPrintError("Could not add 'Date' field to database file\n");
-    if (DBFAddField(dbase, "Day", FTDouble, 9, 4) == -1)
-      asfPrintError("Could not add 'Grid_x' field to database file\n");
-    if (DBFAddField(dbase, "Grid_x", FTDouble, 12, 3) == -1)
-      asfPrintError("Could not add 'Grid_x' field to database file\n");
-    if (DBFAddField(dbase, "Grid_y", FTDouble, 12, 3) == -1)
-      asfPrintError("Could not add 'Grid_y' field to database file\n");
-    if (DBFAddField(dbase, "SrcImage", FTString, 25, 0) == -1)
-      asfPrintError("Could not add 'SrcImage' field to database file\n");
-    if (DBFAddField(dbase, "TrgImage", FTString, 25, 0) == -1)
-      asfPrintError("Could not add 'TrgImage' field to database file\n");
-    if (DBFAddField(dbase, "Stream", FTString, 3, 0) == -1)
-      asfPrintError("Could not add 'Stream' field to database file\n");
-    if (DBFAddField(dbase, "Quality", FTInteger, 3, 0) == -1)
-      asfPrintError("Could not add 'Quality' field to database file\n");
-  }
-  else if (format == RGPS_WEATHER) {
-    if (DBFAddField(dbase, "Date", FTString, 12, 0) == -1)
-      asfPrintError("Could not add 'Date' field to database file\n");
-    if (DBFAddField(dbase, "Lat", FTDouble, 9, 4) == -1)
-      asfPrintError("Could not add 'Lat' field to database file\n");
-    if (DBFAddField(dbase, "Lon", FTDouble, 9, 4) == -1)
-      asfPrintError("Could not add 'Lon' field to database file\n");
-    if (DBFAddField(dbase, "Direction", FTDouble, 9, 4) == -1)
-      asfPrintError("Could not add 'Direction' field to database file\n");
-    if (DBFAddField(dbase, "Speed", FTDouble, 5, 1) == -1)
-      asfPrintError("Could not add 'Speed' field to database file\n");
-    if (DBFAddField(dbase, "Temp", FTDouble, 5, 1) == -1)
-      asfPrintError("Could not add 'Temp' field to database file\n");
-    if (DBFAddField(dbase, "Pressure", FTDouble, 6, 1) == -1)
-      asfPrintError("Could not add 'Pressure' field to database file\n");
-  }
-  else if (format == FOOT_PRINT) {
+  if (format == FOOT_PRINT) {
     if (DBFAddField(dbase, "STACK_ID", FTInteger, 5, 0) == -1)
       asfPrintError("Could not add 'STACK_ID' field to database file\n");
     if (DBFAddField(dbase, "FRAME_CNT", FTInteger, 5, 0) == -1)
@@ -911,10 +832,11 @@ void write_shape_attributes(DBFHandle dbase, int nAttr, int n,
   }
 } 
 
-void write_shape_object(SHPHandle shape, int nCoords, double *lat, double *lon)
+void write_shape_object_ext(SHPHandle shape, int nCoords, double *lat, 
+  double *lon, int nosplit)
 {
   // Check whether we need to split up the polygon
-  if (crosses_dateline(lon, 0, nCoords)) {
+  if (crosses_dateline(lon, 0, nCoords) && !nosplit) {
     int *start = (int *) MALLOC(sizeof(int)*2);
     double *mLat = (double *) MALLOC(sizeof(double)*(nCoords+5));
     double *mLon = (double *) MALLOC(sizeof(double)*(nCoords+5));
@@ -937,6 +859,11 @@ void write_shape_object(SHPHandle shape, int nCoords, double *lat, double *lon)
     SHPWriteObject(shape, -1, shapeObject);
     SHPDestroyObject(shapeObject);
   }
+}
+
+void write_shape_object(SHPHandle shape, int nCoords, double *lat, double *lon)
+{
+  write_shape_object_ext(shape, nCoords, lat, lon, FALSE);
 }
 
 void close_shape(DBFHandle dbase, SHPHandle shape)
@@ -974,8 +901,6 @@ int point2shape(char *inFile, char *outFile)
     lat = atof(coords[1]);
     lon = atof(coords[2]);
     FREE(coords);
-    //write_shape_attributes(dbase, 1, n, dbf);
-    //write_shape_object(shape, 1, &lat, &lon);
     DBFWriteStringAttribute(dbase, n, 0, id);
     SHPObject *shapeObject = NULL;
     shapeObject = SHPCreateSimpleObject(SHPT_POINT, 1, &lon, &lat, NULL);
@@ -1046,11 +971,11 @@ int latlon2shape(char *inFile, char *outFile)
   return TRUE;
 }
 
-void csv2shape(char *inFile, char *format, char *outFile)
+void csv2shape(char *inFile, char *format, char *outFile, c2v_config *cfg)
 {  
-  DBFHandle dbase;
-  SHPHandle shape;
-  
+  DBFHandle dbase = NULL;
+  SHPHandle shape = NULL;
+ 
   // Read header file
   FILE *fpIn;
   dbf_header_t *header;
@@ -1077,127 +1002,196 @@ void csv2shape(char *inFile, char *format, char *outFile)
   else
     read_header_config(format, &header, &nCols, shape_type);
   
-  // Figure out how many vertices we got
-  int nColumns, nVertices = 0, nLat = 0, nLon = 0;
-  fpIn = FOPEN(inFile, "r");
-  fgets(line, 1024, fpIn); // header line
-  chomp(line);
-  split_into_array(line, ',', &nColumns, &cols);
-  
-  for (ii=0; ii<nCols; ii++) {
-  
-    // Assign the column we need to read from
-    for (kk=0; kk<nColumns; kk++) {
-      if (strcmp_case(header[ii].meta, cols[kk]) == 0)
-        header[ii].column = kk;
-    }
-    
-    // Assuming that we don't have more than 12 vertices
-    for (kk=1; kk<13; kk++) {
-      sprintf(str, "LAT%d", kk);
-      if (strcmp_case(header[ii].shape, str) == 0)
-        nLat++;
-      sprintf(str, "LON%d", kk);
-      if (strcmp_case(header[ii].shape, str) == 0)
-        nLon++;
-    }
+  if (strcmp_case(shape_type, "POINT") == 0) {
 
-    // Alternative column names - only things that we already know
-    if (strcmp_case(header[ii].shape, "NEAR START LAT") == 0 ||
-      strcmp_case(header[ii].shape, "NEAR_START_LAT") == 0)
-      nLat++;
-    else if (strcmp_case(header[ii].shape, "NEAR START LON") == 0 ||
-      strcmp_case(header[ii].shape, "NEAR_START_LON") == 0)
-      nLon++;
-    else if (strcmp_case(header[ii].shape, "FAR START LAT") == 0 ||
-      strcmp_case(header[ii].shape, "FAR_START_LAT") == 0)
-      nLat++;
-    else if (strcmp_case(header[ii].shape, "FAR START LON") == 0 ||
-      strcmp_case(header[ii].shape, "FAR_START_LON") == 0)
-      nLon++;
-    else if (strcmp_case(header[ii].shape, "NEAR END LAT") == 0 ||
-      strcmp_case(header[ii].shape, "NEAR_END_LAT") == 0)
-      nLat++;
-    else if (strcmp_case(header[ii].shape, "NEAR END LON") == 0 ||
-      strcmp_case(header[ii].shape, "NEAR_END_LON") == 0)
-      nLon++;
-    else if (strcmp_case(header[ii].shape, "FAR END LAT") == 0 ||
-      strcmp_case(header[ii].shape, "FAR_END_LAT") == 0)
-      nLat++;
-    else if (strcmp_case(header[ii].shape, "FAR END LON") == 0 ||
-      strcmp_case(header[ii].shape, "FAR_END_LON") == 0)
-      nLon++;
-  }
-  if (nLat != nLon)
-    asfPrintError("Found %d latitude and %d longitude columns.\n"
-      "Can't convert this information properly!\n", nLat, nLon);
-  else {
-    nVertices = nLat;
-    asfPrintStatus("Found %d vertices of a polygon.\n", nVertices);
-  }
-
-  // Initialize shapefile
-  shapefile_init(inFile, outFile, format, NULL);
-  open_shape(outFile, &dbase, &shape);
-  
-  // Read polygon information
-  double *lat = (double *) MALLOC(sizeof(double)*(nVertices+1));
-  double *lon = (double *) MALLOC(sizeof(double)*(nVertices+1)); 
-  int column, n = 0;
-  while (fgets(line, 1024, fpIn)) {
+    // We only need check whether a LAT/LON pair is in the file
+    int nColumns, nLat = 0, nLon = 0;
+    fpIn = FOPEN(inFile, "r");
+    fgets(line, 1024, fpIn); // header line
+    if (cfg->debug)
+      asfPrintStatus("%s", line);
     chomp(line);
     split_into_array(line, ',', &nColumns, &cols);
+  
     for (ii=0; ii<nCols; ii++) {
-      column = header[ii].column;
-      if (header[ii].format == DBF_STRING)
-        header[ii].sValue = STRDUP(cols[column]);
-      else if (header[ii].format == DBF_INTEGER)
-        header[ii].nValue = atoi(cols[column]);
-      else if (header[ii].format == DBF_DOUBLE)
-        header[ii].fValue = atof(cols[column]);
-        
-      // Standard LAT/LON columns - mentioned in the documentation
-      for (kk=0; kk<nVertices; kk++) {
-        sprintf(str, "LAT%d", kk+1);
-        if (strcmp_case(header[ii].shape, str) == 0)
-          lat[kk] = atof(cols[column]);
-        sprintf(str, "LON%d", kk+1);
-        if (strcmp_case(header[ii].shape, str) == 0)
-          lon[kk] = atof(cols[column]);
+
+      // Assign the column we need to read from
+      for (kk=0; kk<nColumns; kk++) {
+        if (strcmp_case(header[ii].meta, cols[kk]) == 0)
+          header[ii].column = kk;
       }
-      
+    
+      // Checking for LAT/LON columns
+      if (strcmp_case(header[ii].shape, "LAT") == 0)
+        nLat++;
+      if (strcmp_case(header[ii].shape, "LON") == 0)
+        nLon++;
+    }
+    if (nLat != 1 || nLon != 1)
+      asfPrintError("Found %d latitude and %d longitude columns!\n", 
+        nLat, nLon);
+
+    // Initialize shapefile
+    shapefile_init(inFile, outFile, format, NULL);
+    open_shape(outFile, &dbase, &shape);
+
+    // Read point information
+    double lat, lon; 
+    int column, n = 0;
+    while (fgets(line, 1024, fpIn)) {
+      if (cfg->debug)
+        asfPrintStatus("%s", line);
+      chomp(line);
+      split_into_array(line, ',', &nColumns, &cols);
+      for (ii=0; ii<nCols; ii++) {
+        column = header[ii].column;
+        if (header[ii].format == DBF_STRING)
+          header[ii].sValue = STRDUP(cols[column]);
+        else if (header[ii].format == DBF_INTEGER)
+          header[ii].nValue = atoi(cols[column]);
+        else if (header[ii].format == DBF_DOUBLE)
+          header[ii].fValue = atof(cols[column]);
+        
+        // Assign lat/lon coordinates
+        if (strcmp_case(header[ii].shape, "LAT") == 0)
+          lat = atof(cols[column]);
+        if (strcmp_case(header[ii].shape, "LON") == 0)
+          lon = atof(cols[column]);
+      }
+      FREE(cols);
+      write_shape_attributes(dbase, nCols, n, header);
+      //write_shape_object(shape, 1, &lat, &lon);
+      SHPObject *shapeObject = NULL;
+      shapeObject = SHPCreateSimpleObject(SHPT_POINT, 1, &lon, &lat, NULL);
+      SHPWriteObject(shape, -1, shapeObject);
+      SHPDestroyObject(shapeObject);
+      n++;
+    }
+  }
+  else if (strcmp_case(shape_type, "POLYGON") == 0) {
+  
+    // Figure out how many vertices we got
+    int nColumns, nVertices = 0, nLat = 0, nLon = 0;
+    fpIn = FOPEN(inFile, "r");
+    fgets(line, 1024, fpIn); // header line
+    chomp(line);
+    split_into_array(line, ',', &nColumns, &cols);
+  
+    for (ii=0; ii<nCols; ii++) {
+  
+      // Assign the column we need to read from
+      for (kk=0; kk<nColumns; kk++) {
+        if (strcmp_case(header[ii].meta, cols[kk]) == 0)
+          header[ii].column = kk;
+      }
+    
+      // Assuming that we don't have more than 12 vertices
+      for (kk=1; kk<13; kk++) {
+        sprintf(str, "LAT%d", kk);
+        if (strcmp_case(header[ii].shape, str) == 0)
+          nLat++;
+        sprintf(str, "LON%d", kk);
+        if (strcmp_case(header[ii].shape, str) == 0)
+          nLon++;
+      }
+
       // Alternative column names - only things that we already know
       if (strcmp_case(header[ii].shape, "NEAR START LAT") == 0 ||
         strcmp_case(header[ii].shape, "NEAR_START_LAT") == 0)
-        lat[0] = atof(cols[column]);
+        nLat++;
       else if (strcmp_case(header[ii].shape, "NEAR START LON") == 0 ||
         strcmp_case(header[ii].shape, "NEAR_START_LON") == 0)
-        lon[0] = atof(cols[column]);
+        nLon++;
       else if (strcmp_case(header[ii].shape, "FAR START LAT") == 0 ||
         strcmp_case(header[ii].shape, "FAR_START_LAT") == 0)
-        lat[1] = atof(cols[column]);
+        nLat++;
       else if (strcmp_case(header[ii].shape, "FAR START LON") == 0 ||
         strcmp_case(header[ii].shape, "FAR_START_LON") == 0)
-        lon[1] = atof(cols[column]);
+        nLon++;
       else if (strcmp_case(header[ii].shape, "NEAR END LAT") == 0 ||
         strcmp_case(header[ii].shape, "NEAR_END_LAT") == 0)
-        lat[3] = atof(cols[column]);
+        nLat++;
       else if (strcmp_case(header[ii].shape, "NEAR END LON") == 0 ||
         strcmp_case(header[ii].shape, "NEAR_END_LON") == 0)
-        lon[3] = atof(cols[column]);
+        nLon++;
       else if (strcmp_case(header[ii].shape, "FAR END LAT") == 0 ||
         strcmp_case(header[ii].shape, "FAR_END_LAT") == 0)
-        lat[2] = atof(cols[column]);
+        nLat++;
       else if (strcmp_case(header[ii].shape, "FAR END LON") == 0 ||
         strcmp_case(header[ii].shape, "FAR_END_LON") == 0)
-        lon[2] = atof(cols[column]);
+        nLon++;
     }
-    lat[nVertices] = lat[0];
-    lon[nVertices] = lon[0];
-    FREE(cols);
-    write_shape_attributes(dbase, nCols, n, header);
-    write_shape_object(shape, nVertices+1, lat, lon);
-    n++;
+    if (nLat != nLon)
+      asfPrintError("Found %d latitude and %d longitude columns.\n"
+        "Can't convert this information properly!\n", nLat, nLon);
+    else {
+      nVertices = nLat;
+      asfPrintStatus("Found %d vertices of a polygon.\n", nVertices);
+    }
+
+    // Initialize shapefile
+    shapefile_init(inFile, outFile, format, NULL);
+    open_shape(outFile, &dbase, &shape);
+  
+    // Read polygon information
+    double *lat = (double *) MALLOC(sizeof(double)*(nVertices+1));
+    double *lon = (double *) MALLOC(sizeof(double)*(nVertices+1)); 
+    int column, n = 0;
+    while (fgets(line, 1024, fpIn)) {
+      chomp(line);
+      split_into_array(line, ',', &nColumns, &cols);
+      for (ii=0; ii<nCols; ii++) {
+        column = header[ii].column;
+        if (header[ii].format == DBF_STRING)
+          header[ii].sValue = STRDUP(cols[column]);
+        else if (header[ii].format == DBF_INTEGER)
+          header[ii].nValue = atoi(cols[column]);
+        else if (header[ii].format == DBF_DOUBLE)
+          header[ii].fValue = atof(cols[column]);
+        
+        // Standard LAT/LON columns - mentioned in the documentation
+        for (kk=0; kk<nVertices; kk++) {
+          sprintf(str, "LAT%d", kk+1);
+          if (strcmp_case(header[ii].shape, str) == 0)
+            lat[kk] = atof(cols[column]);
+          sprintf(str, "LON%d", kk+1);
+          if (strcmp_case(header[ii].shape, str) == 0)
+            lon[kk] = atof(cols[column]);
+        }
+      
+        // Alternative column names - only things that we already know
+        if (strcmp_case(header[ii].shape, "NEAR START LAT") == 0 ||
+          strcmp_case(header[ii].shape, "NEAR_START_LAT") == 0)
+          lat[0] = atof(cols[column]);
+        else if (strcmp_case(header[ii].shape, "NEAR START LON") == 0 ||
+          strcmp_case(header[ii].shape, "NEAR_START_LON") == 0)
+          lon[0] = atof(cols[column]);
+        else if (strcmp_case(header[ii].shape, "FAR START LAT") == 0 ||
+          strcmp_case(header[ii].shape, "FAR_START_LAT") == 0)
+          lat[1] = atof(cols[column]);
+        else if (strcmp_case(header[ii].shape, "FAR START LON") == 0 ||
+          strcmp_case(header[ii].shape, "FAR_START_LON") == 0)
+          lon[1] = atof(cols[column]);
+        else if (strcmp_case(header[ii].shape, "NEAR END LAT") == 0 ||
+          strcmp_case(header[ii].shape, "NEAR_END_LAT") == 0)
+          lat[3] = atof(cols[column]);
+        else if (strcmp_case(header[ii].shape, "NEAR END LON") == 0 ||
+          strcmp_case(header[ii].shape, "NEAR_END_LON") == 0)
+          lon[3] = atof(cols[column]);
+        else if (strcmp_case(header[ii].shape, "FAR END LAT") == 0 ||
+          strcmp_case(header[ii].shape, "FAR_END_LAT") == 0)
+          lat[2] = atof(cols[column]);
+        else if (strcmp_case(header[ii].shape, "FAR END LON") == 0 ||
+          strcmp_case(header[ii].shape, "FAR_END_LON") == 0)
+          lon[2] = atof(cols[column]);
+      }
+      lat[nVertices] = lat[0];
+      lon[nVertices] = lon[0];
+      FREE(cols);
+      write_shape_attributes(dbase, nCols, n, header);
+      write_shape_object(shape, nVertices+1, lat, lon);
+      n++;
+    }
   }
 
   // Close shapefile  
@@ -1241,7 +1235,8 @@ void shape2latlon(char *infile, double **latArray, double **lonArray,
 }
 
 // Convert to shapefile
-int convert2shape(char *inFile, char *outFile, char *format, int list)
+int convert2shape(char *inFile, char *outFile, char *format, int list,
+  c2v_config *cfg)
 {
   DBFHandle dbase;
   SHPHandle shape;
@@ -1271,7 +1266,7 @@ int convert2shape(char *inFile, char *outFile, char *format, int list)
       else if (strcmp_case(format, "SMAP") == 0) {
         smap2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
         write_shape_attributes(dbase, nAttr, n, dbf);
-        write_shape_object(shape, nCoords, lat, lon);
+        write_shape_object_ext(shape, nCoords, lat, lon, cfg->nosplit);
       }
       else if (strcmp_case(format, "GEOTIFF") == 0) {
         geotiff2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
@@ -1330,7 +1325,7 @@ int convert2shape(char *inFile, char *outFile, char *format, int list)
       write_esri_proj_file(outFile);
     }
     else // must be some CSV type file
-      csv2shape(inFile, format, outFile);
+      csv2shape(inFile, format, outFile, cfg);
   }
   FREE(lat);
   FREE(lon);

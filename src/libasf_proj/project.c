@@ -574,7 +574,8 @@ char *ps_projection_desc(project_parameters_t *pps, datum_type_t datum)
   static char ps_projection_description[128];
 
   /* Establish description of output projection. */
-  if (datum == WGS84_DATUM || datum == NAD27_DATUM || datum == NAD83_DATUM) {
+  if (datum == WGS84_DATUM || datum == NAD27_DATUM || datum == NAD83_DATUM ||
+    datum == ITRF97_DATUM) {
     sprintf(ps_projection_description,
       "+proj=stere +lat_0=%s +lat_ts=%f +lon_0=%f "
         "+k_0=%f +datum=%s",

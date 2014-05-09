@@ -106,10 +106,10 @@ int init_c2v_config(char *configFile)
   fprintf(fConfig, "# The list flag indicates whether the input is a file (value set to 0)\n");
   fprintf(fConfig, "# or a list of files (value set to 1). The default value is 0\n\n");
   fprintf(fConfig, "list = 0\n\n");
-  // stack
-  fprintf(fConfig, "# The stacking flag indicates whether the input is a polygon stack\n");
+  // nosplit
+  fprintf(fConfig, "# The nosplit flag indicates whether vectors should be split at the dateline or not.\n");
   fprintf(fConfig, "# The default value is 0\n\n");
-  fprintf(fConfig, "stack = 0\n\n");
+  fprintf(fConfig, "nosplit = 0\n\n");
   // short configuration file flag
   fprintf(fConfig, "# The short configuration file flag allows the experienced user to generate\n"
           "# configuration files without the verbose comments that explain all entries for\n"
@@ -189,13 +189,15 @@ c2v_config *init_fill_c2v_config()
   cfg->west = 0;
   cfg->transparency = 50;
   cfg->list = 0;
+  cfg->nosplit = 0;
   strcpy(cfg->boundary, "polygon");
-  strcpy(cfg->altitude, "clampToGround");
+  strcpy(cfg->altitude, "absolute");
   cfg->height = 7000;
   cfg->range = 400000;
   cfg->width = 5;
   strcpy(cfg->color, "ffff9900");
   cfg->short_config = 0;
+  cfg->debug = 0;
 
   return cfg;
 }
@@ -229,6 +231,10 @@ c2v_config *read_c2v_config(char *configFile)
       	strcpy(cfg->output_format, read_str(line, "output format"));
       if (strncmp(test, "list", 4)==0) 
       	cfg->list = read_int(line, "list");
+      if (strncmp(test, "nosplit", 7)==0) 
+      	cfg->nosplit = read_int(line, "nosplit");
+      if (strncmp(test, "debug", 5)==0)
+        cfg->debug = read_int(line, "debug");
       FREE(test);
     }
     if (strncmp(line, "[KML]", 5)==0) strcpy(params, "kml");

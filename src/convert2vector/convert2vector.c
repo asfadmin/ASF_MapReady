@@ -14,7 +14,7 @@ void usage(char *name)
    "USAGE:\n"
    "   %s [-list] [-input-format <format>] [-output-format "
    "<format>]\n"
-   "                   [-config <configuration file>]\n"
+   "                   [-config <configuration file>] [-nosplit]\n"
    "                   [-log <filename>] [-help [<input format>]]\n"
    "                   <input file> <output file>\n", name);
   printf("\n"
@@ -41,6 +41,7 @@ void usage(char *name)
    "   -output-format  Two output format are supported:\n"
    "                   SHAPE - ArcGIS shapefile\n"
    "                   KML - Keyhole Markup Language file\n"
+   "   -nosplit        No splitting of vectors at the dateline (SMAP only)\n"
    "   -log            Name of the logfile.\n"
    "   -help           Returns the usage of the tool. If a known format is "
    "defined,\n"
@@ -139,6 +140,8 @@ int main(int argc, char **argv)
       quietflag = TRUE;
     else if (strmatches(key, "-list", "--list", NULL))
       cfg->list = TRUE;
+    else if (strmatches(key, "-nosplit", "--nosplit", "-ns", NULL))
+      cfg->nosplit = TRUE;
     else if (strmatches(key, "-input-format", "--input-format", "-i", NULL)) {
       CHECK_ARG(1);
       strcpy(cfg->input_format, GET_ARG(1));
