@@ -24,7 +24,7 @@ void writePixelLine(FILE *out, struct DDR *outDDR,int y,int bandNo, float *thisL
 		if (outDDR->dtype==DTYPE_COMPLEXIMAG)
 		{/*Fetch the  existing pixels...*/
 			FSEEK64(out,(long long) maxOutX*outPixelSize*y,0);
-			FREAD(outBuf,(unsigned int)outPixelSize,(unsigned int)maxOutX,out);
+			ASF_FREAD(outBuf,(unsigned int)outPixelSize,(unsigned int)maxOutX,out);
 		}
 		switch(outDDR->dtype)
 		{

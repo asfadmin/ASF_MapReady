@@ -236,7 +236,7 @@ void import_alos_mosaic(const char *inBaseName, radiometry_t radiometry,
   // Input is 16-bit data that needs to be swapped.
   for (ii=0; ii<meta->general->line_count; ii++) {
     for (kk=0; kk<meta->general->sample_count; kk++) {
-      FREAD(shortValue, 1, 2, fpIn);
+      ASF_FREAD(shortValue, 1, 2, fpIn);
       // Only sigma values are valid in mosaics (no incidence angle)
       if (radiometry == r_SIGMA)
 	floatBuf[kk] = 

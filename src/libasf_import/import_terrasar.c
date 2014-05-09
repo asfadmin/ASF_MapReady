@@ -154,21 +154,21 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
       if (ii == 0)
 	fpOut = FOPEN(outDataName, "wb");
       
-      FREAD(&intValue, 1, 4, fpIn);
+      ASF_FREAD(&intValue, 1, 4, fpIn);
       int bytes_in_burst = bigInt32(intValue);
-      FREAD(&intValue, 1, 4, fpIn);
+      ASF_FREAD(&intValue, 1, 4, fpIn);
       int range_sample_relative_index = bigInt32(intValue);;
-      FREAD(&intValue, 1, 4, fpIn);
+      ASF_FREAD(&intValue, 1, 4, fpIn);
       int range_samples = bigInt32(intValue);
-      FREAD(&intValue, 1, 4, fpIn);
+      ASF_FREAD(&intValue, 1, 4, fpIn);
       int azimuth_samples = bigInt32(intValue);
-      FREAD(&intValue, 1, 4, fpIn);
+      ASF_FREAD(&intValue, 1, 4, fpIn);
       int burst_index = bigInt32(intValue);
-      FREAD(&intValue, 1, 4, fpIn);
+      ASF_FREAD(&intValue, 1, 4, fpIn);
       int rangeline_total_number_bytes = bigInt32(intValue);
-      FREAD(&intValue, 1, 4, fpIn);
+      ASF_FREAD(&intValue, 1, 4, fpIn);
       int total_number_lines = bigInt32(intValue);
-      FREAD(&intValue, 1, 4, fpIn);
+      ASF_FREAD(&intValue, 1, 4, fpIn);
    
       if (0) {
         asfPrintStatus("burst index: %d\n", burst_index);
@@ -185,10 +185,10 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
       // Check valid range samples
       for (kk=4; kk<total_number_lines; kk++) {
 	FSEEK(fpIn, 4*rangeline_total_number_bytes, SEEK_SET);
-	FREAD(&intValue, 1, 4, fpIn);
+	ASF_FREAD(&intValue, 1, 4, fpIn);
 	if (bigInt32(intValue) > rsfv)
 	  rsfv = bigInt32(intValue);
-	FREAD(&intValue, 1, 4, fpIn);
+	ASF_FREAD(&intValue, 1, 4, fpIn);
 	if (bigInt32(intValue) < rslv)
 	  rslv = bigInt32(intValue);
       }
@@ -196,7 +196,7 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
       // Check first valid azimuth sample
       FSEEK(fpIn, 2*rangeline_total_number_bytes+8, SEEK_SET);
       for (kk=2; kk<rslv; kk++) {
-	FREAD(&intValue, 1, 4, fpIn);
+	ASF_FREAD(&intValue, 1, 4, fpIn);
 	if (bigInt32(intValue) > asfv)
 	  asfv = bigInt32(intValue);
       }
@@ -204,7 +204,7 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
       // Check last valid azimuth sample
       FSEEK(fpIn, 3*rangeline_total_number_bytes+8, SEEK_SET);
       for (kk=2; kk<rslv; kk++) {
-	FREAD(&intValue, 1, 4, fpIn);
+	ASF_FREAD(&intValue, 1, 4, fpIn);
 	if (bigInt32(intValue) < aslv)
 	  rslv = kk - 1;
       }
@@ -223,9 +223,9 @@ void import_terrasar(const char *inBaseName, radiometry_t radiometry,
       for (ll=asfv+3; ll<aslv+3; ll++) {
 	FSEEK(fpIn, ll*rangeline_total_number_bytes+8, SEEK_SET);
 	for (kk=rsfv; kk<=rslv; kk++) {
-	  FREAD(&shortReal, 2, 1, fpIn);
+	  ASF_FREAD(&shortReal, 2, 1, fpIn);
 	  re = (float) shortReal;
-	  FREAD(&shortImaginary, 2, 1, fpIn);
+	  ASF_FREAD(&shortImaginary, 2, 1, fpIn);
 	  im = (float) shortImaginary;
 	  amp[kk-rsfv] = sqrt(re*re + im*im);
 	  phase[kk-rsfv] = atan2(im, re);

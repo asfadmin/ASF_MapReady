@@ -49,7 +49,7 @@ PROGRAM HISTORY:
     1.0	    5/00   M. Ayers
     1.5     6/03   P. Denny     Standardize usage()
                                   Use meta struct instead of DDR
-                                  Use get_*_lines instead of FREAD
+                                  Use get_*_lines instead of ASF_FREAD
                                   Use complexFloat type instead of FCMPLX
 
 HARDWARE/SOFTWARE LIMITATIONS:
