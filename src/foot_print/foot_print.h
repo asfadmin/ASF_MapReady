@@ -83,12 +83,11 @@ typedef struct {
   int track;
   int orbit;
   int frame;
-  char date[25];
+  char acq_start[35];
+  char acq_end[35];
   char orbit_dir[20];
   int path;
   int terrain; // 1 land, 0 water
-  double center_lat;
-  double center_lon;
   double near_start_lat;
   double near_start_lon;
   double far_start_lat;

@@ -105,6 +105,8 @@ typedef struct {
 	char *gamma_version;
 	char *gap_rtc;
 	char *dem_source;
+	char *incidence_angle_file;
+	char *incidence_angle_meta;
 } params_t;
 
 void usage(char *name)
@@ -323,6 +325,8 @@ params_t *params_init(char *type) {
     params->gamma_version = NULL;
     params->gap_rtc = NULL;
     params->dem_source = NULL;
+    params->incidence_angle_file = NULL;
+    params->incidence_angle_meta = NULL;
 	}
 	
 	return params;
@@ -378,6 +382,8 @@ void params_free(params_t *params) {
   FREE(params->gamma_version);
   FREE(params->gap_rtc);
   FREE(params->dem_source);
+  FREE(params->incidence_angle_file);
+  FREE(params->incidence_angle_meta);
   FREE(params);
 }
 
@@ -618,6 +624,10 @@ void read_filenames(const char * file, params_t **params, char *type)
 				list->kml_overlay = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->kml_overlay, "%s", trim_spaces(value));
 			}
+			if (matches_key(line, "incidence angle file"))
+				list->incidence_angle_file = trim_spaces(value);
+			if (matches_key(line, "incidence angle meta"))
+				list->incidence_angle_meta = trim_spaces(value);
 		}
   }
   *params = list;
@@ -1928,6 +1938,10 @@ int main(int argc, char **argv)
     if (params->rtc_HH_file && !fileExists(params->rtc_HH_file))
       asfPrintError("Terrain corrected file (%s) is missing!\n", 
         params->rtc_HH_file);
+    if (params->incidence_angle_file && 
+      !fileExists(params->incidence_angle_file))
+      asfPrintError("Incidence angle map (%s) is missing!\n", 
+        params->incidence_angle_file);
     if ((params->browse_amplitude && fileExists(params->browse_amplitude)) ||
       (params->kml_overlay && fileExists(params->kml_overlay)))
         browse = TRUE;
@@ -1955,6 +1969,8 @@ int main(int argc, char **argv)
       params->original_dem);
     fprintf(fp, "    <layover_shadow_mask>%s</layover_shadow_mask>\n",
       params->layover_shadow_mask);
+    fprintf(fp, "    <incidence_angle_map>%s</incidence_angle_map>\n",
+      params->incidence_angle_file);
     fprintf(fp, "  </data>\n");
 
     // Add metadata
@@ -2479,6 +2495,23 @@ int main(int argc, char **argv)
         fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
           valid_values*100.0);
         fprintf(fp, "    </layover_shadow_mask>\n");
+      }
+      if (params->incidence_angle_meta) {
+        meta = meta_read(params->incidence_angle_meta);
+        if (meta->stats) {
+          fprintf(fp, "    <incidence_angle_map>\n");
+          fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+            meta->stats->band_stats[0].min);
+          fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+            meta->stats->band_stats[0].max);
+          fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+            meta->stats->band_stats[0].mean);
+          fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+            meta->stats->band_stats[0].std_deviation);
+          fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+            meta->stats->band_stats[0].percent_valid);
+          fprintf(fp, "    </incidence_angle_map>\n");
+        }
       }
       fprintf(fp, "  </statistics>\n");
       meta_free(dem_meta);

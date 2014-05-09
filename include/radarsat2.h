@@ -74,5 +74,6 @@ typedef struct {
 // Function prototypes
 meta_parameters* radarsat2meta(radarsat2_meta *radarsat2);
 radarsat2_meta *read_radarsat2_meta(const char *dataFile);
+radarsat2_meta *read_radarsat2_meta_ext(const char *dataFile, int cal);
 
 #endif

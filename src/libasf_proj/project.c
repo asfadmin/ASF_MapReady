@@ -574,7 +574,8 @@ char *ps_projection_desc(project_parameters_t *pps, datum_type_t datum)
   static char ps_projection_description[128];
 
   /* Establish description of output projection. */
-  if (datum == WGS84_DATUM || datum == NAD27_DATUM || datum == NAD83_DATUM) {
+  if (datum == WGS84_DATUM || datum == NAD27_DATUM || datum == NAD83_DATUM ||
+    datum == ITRF97_DATUM) {
     sprintf(ps_projection_description,
       "+proj=stere +lat_0=%s +lat_ts=%f +lon_0=%f "
         "+k_0=%f +datum=%s",
@@ -1310,4 +1311,22 @@ int utm_zone(double lon)
 {
     double lon_nudged = utm_nudge(lon);
     return (int) ((lon_nudged + 180.0) / 6.0 + 1.0);
+}
+
+int crosses_dateline(double *lon, int start, int end)
+{
+  int ii, dateline = FALSE;
+  double value, min = 360.0, max = 180.0;
+  for (ii=start; ii<end; ii++) {
+    value = lon[ii];
+    if (value < 0)
+      value += 360.0;
+    if (value < min)
+      min = value;
+    if (value > max)
+      max = value;
+  }
+  if (min < 180.0 && max > 180)
+    dateline = TRUE;
+  return dateline;
 }

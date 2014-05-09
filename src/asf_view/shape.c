@@ -51,7 +51,6 @@ static void add_kml(meta_parameters *meta, const char *kml_file)
 
   asfPrintError("Not implemented yet.\n");
 }
-*/
 
 static void add_generic_csv(meta_parameters *meta, const char *csv_file,
                             int auto_close_polys)
@@ -190,6 +189,7 @@ static void add_generic_csv(meta_parameters *meta, const char *csv_file,
   FREE(data_column_info);
   // do not free meta_column_info -- pointed to by g_shape now
 }
+*/
 
 static void add_shapefile(meta_parameters *meta, char *inFile)
 {
@@ -381,11 +381,13 @@ static void add_overlay_file(char *overlay_file)
       fill_big(curr);
       return;
     }
+    /*
     else if (strcmp_case(ext, ".CSV") == 0) {
       add_generic_csv(curr->meta, overlay_file, FALSE);
       fill_big(curr);
       return;
     }
+    */
   }
 
   // if we got here, must have failed to find a handler
