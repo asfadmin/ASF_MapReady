@@ -9,7 +9,6 @@
 #include "float_image.h"
 #include "ceos_io.h"
 #include "libasf_proj.h"
-#include "ursa.h"
 #include <stdio.h>
 #include <math.h>
 
