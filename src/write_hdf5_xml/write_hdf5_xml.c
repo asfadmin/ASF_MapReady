@@ -2266,6 +2266,24 @@ int main(int argc, char **argv)
     fprintf(fp, "    </layover_shadow_mask>\n");
     meta_free(meta);
 
+    // Incidence angle map
+    split_dir_and_file(params->incidence_angle_file, directory, filename);
+    meta = meta_read(params->rtc_HH_metadata);
+    fprintf(fp, "    <incidence_angle_map>\n");
+    fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
+      "incidence angle map\">%s</file>\n", filename);
+    fprintf(fp, "      <width type=\"int\" definition=\"width of the image\">"
+      "%d</width>\n", meta->general->sample_count);
+    fprintf(fp, "      <height type=\"int\" definition=\"height of the image\">"
+      "%d</height>\n", meta->general->line_count);
+    fprintf(fp, "      <x_spacing type=\"double\" definition=\"spacing in x "
+      "direction\">%g</x_spacing>\n", meta->general->x_pixel_size);
+    fprintf(fp, "      <y_spacing type=\"double\" definition=\"spacing in y "
+      "direction\">%g</y_spacing>\n", meta->general->y_pixel_size);
+    fprintf(fp, "    </incidence_angle_map>\n");
+    meta_free(meta);
+
+    // Terrain correction processing parameters
     fprintf(fp, "    <terrain_correction>\n");
     fprintf(fp, "      <gamma_version type=\"string\" definition=\"version "
       "number of the GAMMA software used for processing\">%s</gamma_version>\n",
