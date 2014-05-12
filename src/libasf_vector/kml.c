@@ -196,6 +196,7 @@ void write_kml_placemark(FILE *kml_file, char *name, double center_lat,
   }
   else
     write_kml_object(kml_file, cfg, png_filename, 0, 5, lat, lon);
+  fprintf(kml_file, "</Placemark>\n");
     
   if (png_filename) {
     fprintf(kml_file, "<GroundOverlay>\n");
@@ -216,9 +217,7 @@ void write_kml_placemark(FILE *kml_file, char *name, double center_lat,
       fprintf(kml_file, "  </LatLonBox>\n");
     }
     fprintf(kml_file, "</GroundOverlay>\n");
-  }
-  
-  fprintf(kml_file, "</Placemark>\n");
+  }  
 }
 
 void csv2kml(char *inFile, char *outFile, char *format, c2v_config *cfg)
