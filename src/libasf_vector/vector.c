@@ -684,6 +684,8 @@ void polygon2vector(char *inFile, dbf_header_t **dbf, int *nAttr,
   // Read polygon information
   double *lat = (double *) MALLOC(sizeof(double)*nVertices);
   double *lon = (double *) MALLOC(sizeof(double)*nVertices); 
+
+  fpIn = FOPEN(inFile, "r");
   fgets(line, 1024, fpIn); // header line
   nVertices = 0;
   while (fgets(line, 1024, fpIn)) {
@@ -692,8 +694,10 @@ void polygon2vector(char *inFile, dbf_header_t **dbf, int *nAttr,
     lon[nVertices] = atof(get_str(line, 2));
     nVertices++;
   }
-  lat[n] = lat[0];
-  lon[n] = lon[0];
+  FCLOSE(fpIn);
+  
+  lat[nVertices] = lat[0];
+  lon[nVertices] = lon[0];
   
   // Assign values
   header[0].sValue = STRDUP(inFile);
@@ -702,7 +706,7 @@ void polygon2vector(char *inFile, dbf_header_t **dbf, int *nAttr,
   *nAttr = n;
   *latArray = lat;
   *lonArray = lon;
-  *nCoords = nVertices;
+  *nCoords = nVertices+1;
 
 }
 
@@ -863,9 +867,10 @@ void smap2vector(char *inFile, dbf_header_t **dbf, int *nAttr,
   read_header_config("SMAP", &header, &n, shape_type);
 
   // Assign values
-  smap_meta *smap = read_smap_meta(inFile);	
+  smap_meta *smap = read_smap_meta(inFile);
   int ii;
   for (ii=0; ii<n; ii++) {
+    // proof of concept - structure is still changing
     if (strcmp_case(header[ii].meta, "file_name") == 0)
       header[ii].sValue = STRDUP(smap->file_name);
     else if (strcmp_case(header[ii].meta, "start_time") == 0)

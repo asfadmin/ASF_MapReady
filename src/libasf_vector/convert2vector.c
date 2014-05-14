@@ -18,11 +18,18 @@ int convert2vector(c2v_config *cfg)
     if (strcmp_case(ext, ".shp")==0) *ext = '\0';
   }
 
-  if (strcmp_case(inFormat, "SMAP") == 0 && strcmp_case(outFormat, "KML") == 0)
-    asfPrintError("Conversion of SMAP to KML not supported!\n");
-  if (strncmp_case(inFormat, "RGPS", 4) == 0 && 
-    strcmp_case(outFormat, "KML") == 0)
-    asfPrintError("Conversion of %s to KML not supported!\n", inFormat);
+  if (strcmp_case(inFormat, "SMAP") == 0) {
+    if (strcmp_case(outFormat, "SHAPE") == 0)
+      ret = convert2shape(inFile, outFile, inFormat, listFlag, cfg);      
+    else if (strcmp_case(outFormat, "KML") == 0)
+      asfPrintError("Conversion of SMAP to KML not supported!\n");
+  }
+  if (strncmp_case(inFormat, "RGPS", 4) == 0) {
+    if (strcmp_case(outFormat, "SHAPE") == 0)
+      ret = convert2shape(inFile, outFile, inFormat, listFlag, cfg);      
+    else if (strcmp_case(outFormat, "KML") == 0)
+      asfPrintError("Conversion of %s to KML not supported!\n", inFormat);
+  }
   else if (strcmp_case(inFormat, "LATLON") == 0) {
     if (strcmp_case(outFormat, "SHAPE") == 0)
       ret = latlon2shape(inFile, outFile);
@@ -40,6 +47,10 @@ int convert2vector(c2v_config *cfg)
   else if (strcmp_case(inFormat, "POLYGON") == 0) {
     if (listFlag)
       asfPrintError("List option not supported for POLYGON format!\n");
+    else if (strcmp_case(outFormat, "SHAPE") == 0)
+      ret = convert2shape(inFile, outFile, inFormat, listFlag, cfg);
+    else if (strcmp_case(outFormat, "KML") == 0)
+      ret = convert2kml(inFile, outFile, inFormat, listFlag, cfg);
   }
   else if (strcmp_case(outFormat, "SHAPE") == 0)
     ret = convert2shape(inFile, outFile, inFormat, listFlag, cfg);
