@@ -1316,17 +1316,22 @@ int utm_zone(double lon)
 int crosses_dateline(double *lon, int start, int end)
 {
   int ii, dateline = FALSE;
-  double value, min = 360.0, max = 180.0;
-  for (ii=start; ii<end; ii++) {
-    value = lon[ii];
-    if (value < 0)
-      value += 360.0;
-    if (value < min)
-      min = value;
-    if (value > max)
-      max = value;
+  double left, right, diff;
+  for (ii=start; ii<end-1; ii++) {
+    left = lon[ii];
+    right = lon[ii+1];
+    if (left < 0)
+      left += 360.0;
+    if (right < 0)
+      right += 360.0;
+    diff = fabs(right - left);
+    
+    // We allow a maximum difference in longitude of 2.0 degrees
+    // between neighboring vertices
+    if ((left < 180.0 && right > 180.0 && diff < 2.0) ||
+      (left > 180.0 && right < 180.0 && diff < 2.0))
+      dateline = TRUE;
   }
-  if (min < 180.0 && max > 180)
-    dateline = TRUE;
+
   return dateline;
 }

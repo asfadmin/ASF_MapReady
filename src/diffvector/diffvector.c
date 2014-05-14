@@ -15,7 +15,7 @@ void usage(char *name)
   printf("\n"
    "REQUIRED ARGUMENTS:\n"
    "   refFile    Name of the reference vector file\n"
-   "   testFile		Name of the vector file to compare\n");
+   "   testFile   Name of the vector file to compare\n");
   printf("\n"
    "OPTIONAL ARGUMENTS:\n");
   printf("\n"
@@ -96,6 +96,7 @@ int main(int argc, char **argv)
   char pass = TRUE;
   int currArg = 1;
   int NUM_ARGS = 2;
+  report_level_t level = REPORT_LEVEL_STATUS;
 
   if (argc<=1)
     usage(argv[0]);
@@ -107,6 +108,7 @@ int main(int argc, char **argv)
       strcpy(logFile,GET_ARG(1));
       fLog = FOPEN(logFile, "a");
       logflag = TRUE;
+      level = REPORT_LEVEL_LOG;
     }
     else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
       quietflag = TRUE;
@@ -143,13 +145,13 @@ int main(int argc, char **argv)
   int refLayerCount = OGR_DS_GetLayerCount(hSourceRef);
   int testLayerCount = OGR_DS_GetLayerCount(hSourceTest);
   if (refLayerCount == testLayerCount)
-    asfPrintStatus("Identical layer counts: %d -> passed\n", refLayerCount);
+    asfReport(level, "Identical layer counts: %d -> passed\n", refLayerCount);
   else {
     pass = FALSE;
-    asfPrintStatus("Different layer counts! -> failed\n");
-    asfPrintStatus("Reference - file: %s, layer count: %d\n", 
+    asfReport(level, "Different layer counts! -> failed\n");
+    asfReport(level, "Reference - file: %s, layer count: %d\n", 
       refFile, refLayerCount);
-    asfPrintStatus("Test - file: %s, layer count: %d\n", 
+    asfReport(level, "Test - file: %s, layer count: %d\n", 
       testFile, testLayerCount);
   }
 
@@ -173,13 +175,13 @@ int main(int argc, char **argv)
       sprintf(testGeometry, "%s",
         OGRGeometryTypeToName(OGR_FD_GetGeomType(hFeatureDefTest)));
       if (strcmp_case(refGeometry, testGeometry) == 0)
-        asfPrintStatus("Identical geometry type: %s -> passed\n", refGeometry);
+        asfReport(level, "Identical geometry type: %s -> passed\n", refGeometry);
       else {
         pass = FALSE;
-        asfPrintStatus("Different layer geometry! -> failed\n");
-        asfPrintStatus("Reference - file: %s, layer geometry: %s\n", 
+        asfReport(level, "Different layer geometry! -> failed\n");
+        asfReport(level, "Reference - file: %s, layer geometry: %s\n", 
           refFile, refGeometry);
-        asfPrintStatus("Test - file: %s, layer geometry: %s\n", 
+        asfReport(level, "Test - file: %s, layer geometry: %s\n", 
           testFile, testGeometry);
       }
 
@@ -193,27 +195,27 @@ int main(int argc, char **argv)
       sprintf(testExtent, "((%.6f,%.6f)(%.6f,%.6f))", 
         testEnv.MinX, testEnv.MinY, testEnv.MaxX, testEnv.MaxY);
       if (strcmp_case(refExtent, testExtent) == 0)
-        asfPrintStatus("Identical extents: %s -> passed\n", refExtent);
+        asfReport(level, "Identical extents: %s -> passed\n", refExtent);
       else {
         pass = FALSE;
-        asfPrintStatus("Different extents! -> failed\n");
-        asfPrintStatus("Reference - file: %s, extent: %s\n", 
+        asfReport(level, "Different extents! -> failed\n");
+        asfReport(level, "Reference - file: %s, extent: %s\n", 
           refFile, refExtent);
-        asfPrintStatus("Test - file: %s, extent: %s\n", testFile, testExtent);
+        asfReport(level, "Test - file: %s, extent: %s\n", testFile, testExtent);
       }
 
       // Check feature count
       int refFeatureCount = OGR_L_GetFeatureCount(hLayerRef, TRUE);
       int testFeatureCount = OGR_L_GetFeatureCount(hLayerTest, TRUE);
       if (refFeatureCount == testFeatureCount)
-        asfPrintStatus("Identical feature count: %d -> passed\n", 
+        asfReport(level, "Identical feature count: %d -> passed\n", 
           refFeatureCount);
       else {
         pass = FALSE;
-        asfPrintStatus("Different feature count! -> failed\n");
-        asfPrintStatus("Reference - file: %s, feature count: %d\n",
+        asfReport(level, "Different feature count! -> failed\n");
+        asfReport(level, "Reference - file: %s, feature count: %d\n",
           refFile, refFeatureCount);
-        asfPrintStatus("Test - file: %s, feature count: %d\n",
+        asfReport(level, "Test - file: %s, feature count: %d\n",
           testFile, testFeatureCount);
       }
 
@@ -224,15 +226,15 @@ int main(int argc, char **argv)
       OSRExportToPrettyWkt(hSpatialRef, &refSpatialRef, FALSE); 
       OSRExportToPrettyWkt(hSpatialTest, &testSpatialRef, FALSE); 
       if (strcmp_case(refSpatialRef, testSpatialRef) == 0) {
-        asfPrintStatus("Identical spatial reference -> passed\n");
-        asfPrintStatus("%s\n", refSpatialRef);
+        asfReport(level, "Identical spatial reference -> passed\n");
+        asfReport(level, "%s\n", refSpatialRef);
       }
       else {
         pass = FALSE;
-        asfPrintStatus("Different spatial reference! -> failed\n");
-        asfPrintStatus("Reference - file: %s, spatial reference:\n%s\n", 
+        asfReport(level, "Different spatial reference! -> failed\n");
+        asfReport(level, "Reference - file: %s, spatial reference:\n%s\n", 
           refFile, refSpatialRef);
-        asfPrintStatus("Test - file: %s, spatial reference:\n%s\n", 
+        asfReport(level, "Test - file: %s, spatial reference:\n%s\n", 
         testFile, testSpatialRef);
       }
       OGRFree(refSpatialRef);
@@ -251,14 +253,14 @@ int main(int argc, char **argv)
           int refFieldCount = OGR_FD_GetFieldCount(hFeatureDefRef);
           int testFieldCount = OGR_FD_GetFieldCount(hFeatureDefTest);
           if (refFieldCount == testFieldCount)
-            asfPrintStatus("Identical field count: %d -> passed\n\n",
+            asfReport(level, "Identical field count: %d -> passed\n\n",
               refFieldCount);
           else {
             pass = FALSE;
-            asfPrintStatus("Different field count! -> failed\n");
-            asfPrintStatus("Reference - file: %s, field count: %d\n",
+            asfReport(level, "Different field count! -> failed\n");
+            asfReport(level, "Reference - file: %s, field count: %d\n",
               refFile, refFieldCount);
-            asfPrintStatus("Test - file: %s, field count: %d\n\n",
+            asfReport(level, "Test - file: %s, field count: %d\n\n",
               testFile, testFieldCount);
           }
       
@@ -279,11 +281,11 @@ int main(int argc, char **argv)
               sprintf(testFieldName, "%s", OGR_Fld_GetNameRef(hFieldDefTest));
               if (strcmp_case(refFieldName, testFieldName) != 0) {
                 pass = FALSE;
-                asfPrintStatus("Different field names! -> failed\n");
-                asfPrintStatus("Field - %d\n", ii+1);
-                asfPrintStatus("Reference - file: %s, field name: %s\n",
+                asfReport(level, "Different field names! -> failed\n");
+                asfReport(level, "Field - %d\n", ii+1);
+                asfReport(level, "Reference - file: %s, field name: %s\n",
                   refFile, refFieldName);
-                asfPrintStatus("Test - file: %s, field name: %s\n",
+                asfReport(level, "Test - file: %s, field name: %s\n",
                   testFile, testFieldName);
               }
 
@@ -295,11 +297,11 @@ int main(int argc, char **argv)
               sprintf(testFieldType, "%s", fieldType2str(fieldType));
               if (strcmp_case(refFieldType, testFieldType) != 0) {
                 pass = FALSE;
-                asfPrintStatus("Different field type! -> failed\n");
-                asfPrintStatus("Field - %s\n", refFieldName);
-                asfPrintStatus("Reference - file: %s, field type: %s\n",
+                asfReport(level, "Different field type! -> failed\n");
+                asfReport(level, "Field - %s\n", refFieldName);
+                asfReport(level, "Reference - file: %s, field type: %s\n",
                   refFile, refFieldType);
-                asfPrintStatus("Test - file: %s, field type: %s\n",
+                asfReport(level, "Test - file: %s, field type: %s\n",
                   testFile, testFieldType);
               }
         
@@ -308,11 +310,11 @@ int main(int argc, char **argv)
               int testFieldWidth = OGR_Fld_GetWidth(hFieldDefTest);
               if (refFieldWidth != testFieldWidth) {
                 pass = FALSE;
-                asfPrintStatus("Different field widths! -> failed\n");
-                asfPrintStatus("Field: %s\n", refFieldName);
-                asfPrintStatus("Reference - file: %s, field width: %d\n",
+                asfReport(level, "Different field widths! -> failed\n");
+                asfReport(level, "Field: %s\n", refFieldName);
+                asfReport(level, "Reference - file: %s, field width: %d\n",
                   refFile, refFieldWidth);
-                asfPrintStatus("Test - file: %s, field width: %d\n",
+                asfReport(level, "Test - file: %s, field width: %d\n",
                   testFile, testFieldWidth);
               }
         
@@ -321,11 +323,11 @@ int main(int argc, char **argv)
               int testFieldPrecision = OGR_Fld_GetPrecision(hFieldDefTest);
               if (refFieldPrecision != testFieldPrecision) {
                 pass = FALSE;
-                asfPrintStatus("Different field precisions! -> failed\n");
-                asfPrintStatus("Field - %s\n", refFieldName);
-                asfPrintStatus("Reference - file: %s, field precision: %d\n",
+                asfReport(level, "Different field precisions! -> failed\n");
+                asfReport(level, "Field - %s\n", refFieldName);
+                asfReport(level, "Reference - file: %s, field precision: %d\n",
                   refFile, refFieldPrecision);
-                asfPrintStatus("Test - file: %s, field precision: %d\n",
+                asfReport(level, "Test - file: %s, field precision: %d\n",
                   testFile, testFieldPrecision);
               }
               
@@ -337,45 +339,88 @@ int main(int argc, char **argv)
                 testFieldWidth, testFieldPrecision));
               if (strcmp_case(refValue, testValue) != 0) {
                 pass = FALSE;
-                asfPrintStatus("Different field value! -> failed\n");
-                asfPrintStatus("Field - %s\n", refValue);
-                asfPrintStatus("Reference - file: %s, field value: %s\n",
+                asfReport(level, "Different field value! -> failed\n");
+                asfReport(level, "Field - %s\n", refValue);
+                asfReport(level, "Reference - file: %s, field value: %s\n",
                   refFile, refValue);
-                asfPrintStatus("Test - file: %s, field value: %s\n",
+                asfReport(level, "Test - file: %s, field value: %s\n",
                   testFile, testValue);
               }
               if (pass)
-                asfPrintStatus("%s: %s [%s (%d,%d)] -> passed\n", 
+                asfReport(level, "%s: %s [%s (%d,%d)] -> passed\n", 
                   refFieldName, refValue, fieldType2str(fieldType), 
                   refFieldWidth, refFieldPrecision);
             }
 
             // Check geometry
-            OGRGeometryH hGeometryRef = OGR_F_GetGeometryRef(hFeatureRef);
-            OGRGeometryH hGeometryTest = OGR_F_GetGeometryRef(hFeatureTest);
-            char *refGeometry, *testGeometry;
-            OGR_G_ExportToWkt(hGeometryRef, &refGeometry);
-            OGR_G_ExportToWkt(hGeometryTest, &testGeometry);
-            if (strcmp_case(refGeometry, testGeometry) == 0) {
-              asfPrintStatus("\nIdentical geometry info -> passed\n");
-              asfPrintStatus("%s\n\n", refGeometry);
+            OGRGeometryH hGeomContRef = OGR_F_GetGeometryRef(hFeatureRef);
+            OGRGeometryH hGeomContTest = OGR_F_GetGeometryRef(hFeatureTest);
+            int refContCount = OGR_G_GetGeometryCount(hGeomContRef);
+            int testContCount = OGR_G_GetGeometryCount(hGeomContTest);
+            if (refContCount == testContCount) {
+              asfReport(level, "\nIdentical geometry info -> passed\n");
+              asfReport(level, "Geometry contains %d elements\n", refContCount);
+              int hh;
+              for (hh=0; hh<refContCount; hh++) {
+                OGRGeometryH hGeometryRef = 
+                  OGR_G_GetGeometryRef(hGeomContRef, hh);
+                OGRGeometryH hGeometryTest = 
+                  OGR_G_GetGeometryRef(hGeomContTest, hh);
+                int refCount = OGR_G_GetPointCount(hGeometryRef);
+                int testCount = OGR_G_GetPointCount(hGeometryTest);
+                if (refCount == testCount) {
+                  asfReport(level, "\nIdentical vertex count -> passed\n");
+                  asfReport(level, "Geometry[%d] contains %d vertices\n",
+                    hh+1, refCount);
+                  int gg;
+                  double refLat, refLon, refHeight;
+                  double testLat, testLon, testHeight;
+                  char refVertexStr[50], testVertexStr[50];
+                  for (gg=0; gg<refCount; gg++) {
+                    OGR_G_GetPoint(hGeometryRef, gg, 
+                      &refLat, &refLon, &refHeight);
+                    sprintf(refVertexStr, "Lat: %.5f, Lon: %.5f\n",
+                      refLat, refLon);
+                    OGR_G_GetPoint(hGeometryTest, gg, 
+                      &testLat, &testLon, &testHeight);
+                    sprintf(testVertexStr, "Lat: %.5f, Lon: %.5f\n",
+                      testLat, testLon);
+                    if (strcmp_case(refVertexStr, testVertexStr) != 0) {
+                      pass = FALSE;
+                      asfReport(level, "\nDifferent coordinates! -> failed\n");
+                      asfReport(level, "Reference - %s\n", refVertexStr);
+                      asfReport(level, "Test - %s\n", testVertexStr);
+                    }
+                  }
+                  if (pass)
+                    asfReport(level, "\nIdentical coordinates -> passed\n");          
+                }
+                else {
+                  pass = FALSE;
+                  asfReport(level, "Different vertex count! -> failed\n");
+                  asfReport(level, "Reference - Geometry contains %d vertices\n", 
+                    refCount);
+                  asfReport(level, "Test - Geometry contains %d vertices\n", 
+                    testCount);
+                }
+              }
             }
             else {
               pass = FALSE;
-              asfPrintStatus("Different map projections! -> failed\n");
-              asfPrintStatus("Reference - map projection: %s\n", refGeometry);
-              asfPrintStatus("Test - map projection: %s\n", testGeometry);
+              asfReport(level, "Different geometries! -> failed\n");
+              asfReport(level, "Reference - Geometry contains %d elements\n", 
+                refContCount);
+              asfReport(level, "Test - Geometry contains %d elements\n", 
+                testContCount);
             }
-            OGRFree(refGeometry);
-            OGRFree(testGeometry);
           }
         }
       }
     }
     if (pass)
-      asfPrintStatus("\nPASS: passed all tests outlined above\n");
+      asfReport(level, "\nPASS: passed all tests outlined above\n");
     else
-      asfPrintStatus("\nFAIL: failed one or more tests as reported above\n");
+      asfReport(level, "\nFAIL: failed one or more tests as reported above\n");
     FCLOSE(fLog);
     OGR_DS_Destroy(hSourceRef);
   }
