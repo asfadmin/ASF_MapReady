@@ -7,6 +7,26 @@
 #define MINI(a,b) (((a)<(b))?(a):(b))
 #define MAXI(a,b) (((a)>(b))?(a):(b))
 
+static double min2(double a, double b)
+{
+    return a<b ? a : b;
+}
+
+static double min4(double a, double b, double c, double d)
+{
+    return min2(min2(a,b), min2(c,d));
+}
+
+static double max2(double a, double b)
+{
+    return a>b ? a : b;
+}
+
+static double max4(double a, double b, double c, double d)
+{
+    return max2(max2(a,b), max2(c,d));
+}
+
 int trim(char *infile, char *outfile,
          long long startX, long long startY,
          long long sizeX, long long sizeY)
@@ -475,6 +495,49 @@ void trim_wedges(char *infile, char *outfile)
 
   trim(infile, outfile, start_sample, start_line, width, height);
   meta_free(metaIn);
+}
+
+void trim_to(char *infile, char *outfile, char *metadata_file)
+{
+  char *mf = appendExt(metadata_file, ".meta");
+  if (!fileExists(mf))
+    asfPrintError("Metadata file not found: %s\n", mf);
+
+  meta_parameters *meta_section = meta_read(mf);
+  meta_get_corner_coords(meta_section);
+  meta_location *ml = meta_section->location;
+
+  char *infile_meta = appendExt(infile, ".meta");
+  if (!fileExists(infile_meta))
+    asfPrintError("Metadata file not found: %s\n", infile_meta);
+
+  meta_parameters *meta = meta_read(infile_meta);
+
+  double l1, l2, l3, l4, s1, s2, s3, s4;
+  meta_get_lineSamp(meta, ml->lat_start_near_range, ml->lon_start_near_range, 0, &l1, &s1);
+  meta_get_lineSamp(meta, ml->lat_start_far_range, ml->lon_start_far_range, 0, &l2, &s2);
+  meta_get_lineSamp(meta, ml->lat_end_near_range, ml->lon_end_near_range, 0, &l3, &s3);
+  meta_get_lineSamp(meta, ml->lat_end_far_range, ml->lon_end_far_range, 0, &l4, &s4);
+
+  double start_line = min4(l1,l2,l3,l4);
+  double start_sample = min4(s1,s2,s3,s4);
+  double end_line = max4(l1,l2,l3,l4);
+  double end_sample = max4(s1,s2,s3,s4);
+
+  double height = end_line - start_line;
+  double width = end_sample - start_sample;
+
+  int startX = (int)floor(start_sample);
+  int startY = (int)floor(start_line);
+  int sizeX = (int)floor(width);
+  int sizeY = (int)floor(height);
+
+  meta_free(meta);
+  meta_free(meta_section);
+  FREE(mf);
+  FREE(infile_meta);
+
+  trim(infile, outfile, startX, startY, sizeX, sizeY);
 }
 
 void subset_by_map(char *infile, char *outfile, double minX, double maxX,
