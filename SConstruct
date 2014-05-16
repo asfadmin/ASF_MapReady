@@ -172,6 +172,7 @@ src_subs = lib_subs + [
     "convert2vector",
     "change_value",
     "addapole",
+    "trim_wedges",
     ]
 
 # paths where the libraries will be built
