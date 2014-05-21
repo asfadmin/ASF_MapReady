@@ -5,6 +5,7 @@ Release: %{buildnumber}
 License: GPLv3
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Prefix: /usr/local
+AutoProv: 0
 
 BuildRequires: scons
 
