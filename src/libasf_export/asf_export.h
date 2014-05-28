@@ -195,13 +195,8 @@ void dump_palette_tiff_color_map(unsigned short *colors, int map_size);
 int meta_colormap_to_tiff_palette(unsigned short **colors, int *byte_image, meta_colormap *colormap);
 
 // Prototypes from export_netcdf.c
-netcdf_t *initialize_netcdf_file(const char *output_file, 
-				 meta_parameters *meta);
-void finalize_netcdf_file(netcdf_t *netcdf, meta_parameters *md);
-void export_netcdf(const char *metadata_file_name, 
-		   const char *image_data_file_name,
-		   char *output_file_name, char **band_name,
-		   int *noutputs,char ***output_names);
+void export_netcdf(const char *in_base_name, char *output_file_name,
+  int *noutputs, char ***output_names);
 
 // Prototypes from export_hdf.c
 void export_hdf(const char *in_base_name, char *output_file_name,
