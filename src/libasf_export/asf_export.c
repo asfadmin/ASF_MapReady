@@ -32,7 +32,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   int i, nouts = 0, is_polsarpro = 0, is_matrix = 0;
   char **outs = NULL;
 
-  if (format != HDF) {
+  if (format != HDF && format != NC) {
     in_data_name = appendExt(in_base_name, ".img");
     in_meta_name = appendExt(in_base_name, ".meta");
     md = meta_read(in_meta_name);
@@ -176,11 +176,10 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   else if ( format == NC ) {
     out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
     strcpy(out_name, output_name);
-    export_netcdf(in_meta_name, in_data_name, out_name, band_name,
-		  &nouts, &outs);
+    export_netcdf(in_base_name, out_name, &nouts, &outs);
   }
 
-  if (format != HDF) {
+  if (format != HDF && format != NC) {
     if (should_write_insar_rgb(md->general->bands)) {
         write_insar_rgb(format, in_meta_name, in_data_name, out_name);
     }
