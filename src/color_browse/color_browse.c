@@ -147,8 +147,8 @@ int main(int argc,char *argv[])
     ofp1 = FOPEN(ofile1, "w");
     ofp2 = FOPEN(ofile2, "w");
 
-    meta1->general->data_type=ASF_BYTE;
-    meta2->general->data_type=ASF_BYTE;
+    meta1->general->data_type=REAL32;
+    meta2->general->data_type=REAL32;
 
     sample_count = 0;
     for (i=0; i<meta1->general->line_count; ++i) {

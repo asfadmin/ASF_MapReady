@@ -532,18 +532,21 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   else {
     *avgLocX = 0;
     *avgLocY = 0;
+    *certainty = 0;
     int n = 0;
     for (ii=0; ii<len; ++ii) {
       if (matches[ii].valid) {
         *avgLocX += matches[ii].x_offset;
         *avgLocY += matches[ii].y_offset;
+        *certainty += matches[ii].cert;
         ++n;
       }
     }
 
     *avgLocX /= (float)n;
     *avgLocY /= (float)n;
-    *certainty = (float)n / (float)len;
+    //*certainty = (float)n / (float)len;
+    *certainty /= (float)n;
   }
 
   asfPrintStatus("Found %d offsets.\n", valid_points);

@@ -26,8 +26,8 @@
 #endif
 #define TOOL_USAGE \
     TOOL_NAME" [-log <logfile>] [-height height] [-width width] \n "\
-    "        [-license] [-version] [-help]\n"\
-    "        <infile> <outfile> <new_top_line> <new_left_sample>"
+    "        [-to <metadata file>] [-license] [-version] [-help]\n"\
+    "        <infile> <outfile> <new_top_line> <new_left_sample>\n"
 
 // TOOL_DESCRIPTION is required
 #ifdef  TOOL_DESCRIPTION
@@ -47,7 +47,9 @@
     "   <new_top_line> Line in input that will be the top of output.  Can be\n"\
     "        negative, the top lines in the output image will be zeros.\n"\
     "   <new_top_sample> Sample in input that will be left side of output.  Can\n"\
-    "        be negative, the left side of the output will be zeros."
+    "        be negative, the left side of the output will be zeros.\n"\
+    "   When the -to option is used, the new_top_line and new_top_sample arguments\n"\
+    "   are not needed.\n"
 
 // TOOL_OUTPUT is required but is allowed to be an empty string
 #ifdef  TOOL_OUTPUT
@@ -70,6 +72,10 @@
     "   -width <width>\n" \
     "        Width of the output file.  If the width extends beyond the right\n" \
     "        edge of the image, it is padded with zeros.\n" \
+    "   -to <metadata file>\n" \
+    "        Trims the input file to the extent of the metadata file.  With this\n" \
+    "        option you would not use -width, -height, or the new start line and\n" \
+    "        sample values.\n"\
     "   -license\n" \
     "        Print copyright and license for this software then exit.\n" \
     "   -version\n" \
@@ -84,7 +90,10 @@
 #define TOOL_EXAMPLES \
     "   Remove a 100x100 section, starting at line 50, sample 200\n"\
     "   from the file \"test.img\", and \"test.meta\".\n"\
-    "   > trim -width 100 -height 100 test test_trimmed 50 200"
+    "   > trim -width 100 -height 100 test test_trimmed 50 200\n"\
+    "\n"\
+    "   Trim test.img to the extent of \"section.meta\".\n"\
+    "   > trim -to section test test_trimmed\n"
 
 // TOOL_LIMITATIONS is required but is allowed to be an empty string
 #ifdef  TOOL_LIMITATIONS
