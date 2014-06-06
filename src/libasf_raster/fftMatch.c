@@ -529,7 +529,7 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
     }
   }
 
-  if (valid_points < 10) {
+  if (valid_points < 1) {
      asfPrintStatus("Too few points for a good match.\n");
   
      *avgLocX = 0;
