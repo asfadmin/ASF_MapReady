@@ -416,7 +416,8 @@ static void print_matches(offset_point_t *matches, int num_x, int num_y, FILE *f
 }
 
 int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
-          float *avgLocX, float *avgLocY, float *certainty)
+                     float *avgLocX, float *avgLocY, float *certainty,
+                     int size, double tol, int overlap)
 {
   meta_parameters *meta1 = meta_read(inFile1);
   meta_parameters *meta2 = meta_read(inFile2);
@@ -424,15 +425,21 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   int nl = mini(meta1->general->line_count, meta2->general->line_count);
   int ns = mini(meta1->general->sample_count, meta2->general->sample_count);
 
-  const int size = 512;
-  const int overlap = 256;
-  const double tol = .28;
+  if (size<0) size = 512;
+  if (overlap<0) overlap = 256;
+  if (tol<0) tol = .28;
+
+  asfPrintStatus("Tile size is %dx%d pixels\n", size, size);
+  asfPrintStatus("Tile overlap is %d pixels\n", overlap);
+  asfPrintStatus("Match tolerance is %.2f\n", tol);
 
   long long lsz = (long long)size;
 
   int num_x = (ns - size) / (size - overlap);
   int num_y = (nl - size) / (size - overlap);
   int len = num_x*num_y;
+
+  asfPrintStatus("Number of tiles is %dx%d\n", num_x, num_y);
 
   offset_point_t *matches = MALLOC(sizeof(offset_point_t)*len); 
 

@@ -169,7 +169,8 @@ int fftMatch(char *inFile1, char *inFile2, char *corrFile,
 void fftMatch_withOffsetFile(char *inFile1, char *inFile2, char *corrFile,
 			     char *offsetFileName);
 int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
-	     float *dx, float *dy, float *certainty);
+	     float *dx, float *dy, float *certainty,
+             int size, double tolerance, int overlap);
 int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY);
 
          
