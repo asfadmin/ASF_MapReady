@@ -107,7 +107,7 @@ fftMatchQ(char *file1, char *file2, float *dx, float *dy, float *cert,
   if (use_grid_matching) {
     char match_file[256];
     strcpy(match_file,"fft_match.txt");
-    fftMatch_gridded(file1, file2, match_file, dx, dy, cert);
+    fftMatch_gridded(file1, file2, match_file, dx, dy, cert, -1, -1, -1);
   }
   else {
     fftMatch(file1, file2, NULL, dx, dy, cert);
