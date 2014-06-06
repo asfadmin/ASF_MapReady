@@ -20,6 +20,7 @@ localenv.AppendUnique(LIBS = [
 bins = [
     localenv.Program("fftMatch", ["fftMatch.c"]),
     localenv.Program("fftMatchGrid", ["fftMatchGrid.c"]),
+    localenv.Program("fftMatchProj", ["fftMatchProj.c"]),
 ]
 
 docs = localenv.File("fftMatch.man")

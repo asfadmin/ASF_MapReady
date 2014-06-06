@@ -572,6 +572,48 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   return (0);
 }
 
+int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
+{
+  // Determine the offsets based on metadata
+  meta_parameters *refMeta = meta_read(inFile1);
+  if (!refMeta->projection)
+    asfPrintError("File (%s) is not map projected!\n", inFile1);
+  meta_parameters *testMeta = meta_read(inFile2);
+  if (!testMeta->projection)
+    asfPrintError("File (%s) is not map projected!\n", inFile2);
+  float diffX = (testMeta->projection->startX - refMeta->projection->startX) /
+    testMeta->projection->perX;
+  float diffY = (testMeta->projection->startY - refMeta->projection->startY) /
+    testMeta->projection->perY;
+  meta_free(refMeta);
+  meta_free(testMeta);
+
+  // Figure out what FFT parameters are going to be
+  int size = 512;
+  double tol = -1;
+  float diff; 
+  if (fabs(diffX) > fabs(diffY))
+    diff = fabs(diffX);
+  else
+    diff = fabs(diffY);
+  while ((size/4) < diff) {
+    size *= 2; 
+  }
+  int overlap = size / 2;
+
+  // Determine the offsets based on mapping
+  float offX, offY, cert;
+  asfPrintStatus("Determing offsets by FFT matching\n\n");
+  fftMatch_gridded(inFile1, inFile2, NULL, &offX, &offY, &cert, size, tol, 
+    overlap);
+
+  // Compare both offsets
+  *offsetX = diffX - offX;
+  *offsetY = diffY - offY;
+
+  return (0);
+}
+
 int fftMatch(char *inFile1, char *inFile2, char *corrFile,
           float *bestLocX, float *bestLocY, float *certainty)
 {

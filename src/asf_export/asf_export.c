@@ -468,7 +468,8 @@ main (int argc, char *argv[])
   strcpy (command_line.in_meta_name, in_base_name);
   strcat (command_line.in_meta_name, ".meta");
 
-  if (strcmp_case(command_line.format, "HDF5") != 0) { 
+  if (strcmp_case(command_line.format, "HDF5") != 0 &&
+    strcmp_case(command_line.format, "NETCDF") != 0) { 
     // for some validation, need the metadata
     md = meta_read (command_line.in_meta_name);
 

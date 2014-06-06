@@ -171,6 +171,8 @@ void fftMatch_withOffsetFile(char *inFile1, char *inFile2, char *corrFile,
 int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
 	     float *dx, float *dy, float *certainty,
              int size, double tolerance, int overlap);
+int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY);
+
          
 /* Prototypes from shaded_relief.c *******************************************/
 void shaded_relief(char *inFile, char *outFile, int addSpeckle, int water);
