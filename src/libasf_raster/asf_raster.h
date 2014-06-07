@@ -150,6 +150,8 @@ int trim(char *infile, char *outfile, long long startX, long long startY,
 void trim_zeros(char *infile, char *outfile, int *startX, int *endX);
 void trim_zeros_ext(char *infile, char *outfile, int update_meta,
                     int do_top, int do_left);
+void trim_wedges(char *infile, char *outfile);
+void trim_to(char *infile, char *outfile, char *metadata_file);
 void subset_by_latlon(char *infile, char *outfile, double *lat, double *lon, 
   int nCoords);
 void subset_by_map(char *infile, char *outfile, double minX, double maxX,
@@ -167,7 +169,10 @@ int fftMatch(char *inFile1, char *inFile2, char *corrFile,
 void fftMatch_withOffsetFile(char *inFile1, char *inFile2, char *corrFile,
 			     char *offsetFileName);
 int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
-	     float *dx, float *dy, float *certainty);
+	     float *dx, float *dy, float *certainty,
+             int size, double tolerance, int overlap);
+int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY);
+
          
 /* Prototypes from shaded_relief.c *******************************************/
 void shaded_relief(char *inFile, char *outFile, int addSpeckle, int water);

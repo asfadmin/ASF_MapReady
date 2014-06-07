@@ -416,7 +416,8 @@ static void print_matches(offset_point_t *matches, int num_x, int num_y, FILE *f
 }
 
 int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
-          float *avgLocX, float *avgLocY, float *certainty)
+                     float *avgLocX, float *avgLocY, float *certainty,
+                     int size, double tol, int overlap)
 {
   meta_parameters *meta1 = meta_read(inFile1);
   meta_parameters *meta2 = meta_read(inFile2);
@@ -424,15 +425,21 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   int nl = mini(meta1->general->line_count, meta2->general->line_count);
   int ns = mini(meta1->general->sample_count, meta2->general->sample_count);
 
-  const int size = 512;
-  const int overlap = 256;
-  const double tol = .28;
+  if (size<0) size = 512;
+  if (overlap<0) overlap = 256;
+  if (tol<0) tol = .28;
+
+  asfPrintStatus("Tile size is %dx%d pixels\n", size, size);
+  asfPrintStatus("Tile overlap is %d pixels\n", overlap);
+  asfPrintStatus("Match tolerance is %.2f\n", tol);
 
   long long lsz = (long long)size;
 
   int num_x = (ns - size) / (size - overlap);
   int num_y = (nl - size) / (size - overlap);
   int len = num_x*num_y;
+
+  asfPrintStatus("Number of tiles is %dx%d\n", num_x, num_y);
 
   offset_point_t *matches = MALLOC(sizeof(offset_point_t)*len); 
 
@@ -522,7 +529,7 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
     }
   }
 
-  if (valid_points < 10) {
+  if (valid_points < 1) {
      asfPrintStatus("Too few points for a good match.\n");
   
      *avgLocX = 0;
@@ -532,18 +539,21 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   else {
     *avgLocX = 0;
     *avgLocY = 0;
+    *certainty = 0;
     int n = 0;
     for (ii=0; ii<len; ++ii) {
       if (matches[ii].valid) {
         *avgLocX += matches[ii].x_offset;
         *avgLocY += matches[ii].y_offset;
+        *certainty += matches[ii].cert;
         ++n;
       }
     }
 
     *avgLocX /= (float)n;
     *avgLocY /= (float)n;
-    *certainty = (float)n / (float)len;
+    //*certainty = (float)n / (float)len;
+    *certainty /= (float)n;
   }
 
   asfPrintStatus("Found %d offsets.\n", valid_points);
@@ -558,6 +568,48 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
 
   FREE(matches);
   FREE(name);
+
+  return (0);
+}
+
+int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
+{
+  // Determine the offsets based on metadata
+  meta_parameters *refMeta = meta_read(inFile1);
+  if (!refMeta->projection)
+    asfPrintError("File (%s) is not map projected!\n", inFile1);
+  meta_parameters *testMeta = meta_read(inFile2);
+  if (!testMeta->projection)
+    asfPrintError("File (%s) is not map projected!\n", inFile2);
+  float diffX = (testMeta->projection->startX - refMeta->projection->startX) /
+    testMeta->projection->perX;
+  float diffY = (testMeta->projection->startY - refMeta->projection->startY) /
+    testMeta->projection->perY;
+  meta_free(refMeta);
+  meta_free(testMeta);
+
+  // Figure out what FFT parameters are going to be
+  int size = 512;
+  double tol = -1;
+  float diff; 
+  if (fabs(diffX) > fabs(diffY))
+    diff = fabs(diffX);
+  else
+    diff = fabs(diffY);
+  while ((size/4) < diff) {
+    size *= 2; 
+  }
+  int overlap = size / 2;
+
+  // Determine the offsets based on mapping
+  float offX, offY, cert;
+  asfPrintStatus("Determing offsets by FFT matching\n\n");
+  fftMatch_gridded(inFile1, inFile2, NULL, &offX, &offY, &cert, size, tol, 
+    overlap);
+
+  // Compare both offsets
+  *offsetX = diffX - offX;
+  *offsetY = diffY - offY;
 
   return (0);
 }

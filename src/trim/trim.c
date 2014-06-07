@@ -111,8 +111,9 @@ BUGS: none known
 int main(int argc, char *argv[])
 {
   long long startX,startY,sizeX=-1,sizeY=-1;
-  char *infile,*outfile;
-
+  char *infile,*outfile,trim_to_metafile[512];
+  
+  strcpy(trim_to_metafile,"");
   logflag=0;
   currArg=1;      /* from cla.h in asf.h, points to current argv string */
   printf("Program: trim\n\n");
@@ -128,6 +129,8 @@ int main(int argc, char *argv[])
     return 0;
   }
 
+  extract_string_options(&argc, &argv, trim_to_metafile, "-to", "--to", NULL);
+  
   while (currArg < (argc-4))
   {
     char *key=argv[currArg++];
@@ -153,18 +156,28 @@ int main(int argc, char *argv[])
       usage(argv[0]);
     }
   }
-  if ((argc-currArg) < 4) {
-    printf("   Insufficient arguments.\n"); usage(argv[0]);
+
+  if (trim_to_metafile && strlen(trim_to_metafile)>0) {
+    if (argc-currArg < 2) { 
+      printf("   Insufficient arguments.\n"); usage(argv[0]);
+    }
+
+    trim_to(argv[currArg], argv[currArg+1], trim_to_metafile); 
   }
+  else { 
+    if ((argc-currArg) < 4) {
+      printf("   Insufficient arguments.\n"); usage(argv[0]);
+    }
 
- /*Compute filenames*/
-  infile=argv[currArg];
-  outfile=argv[currArg+1];
-  startX=atoi(argv[currArg+3]);
-  startY=atoi(argv[currArg+2]);
+    /*Compute filenames*/
+    infile=argv[currArg];
+    outfile=argv[currArg+1];
+    startX=atoi(argv[currArg+3]);
+    startY=atoi(argv[currArg+2]);
 
-  /* Call library function */
-  trim(infile, outfile, startX, startY, sizeX, sizeY);
+    /* Call library function */
+    trim(infile, outfile, startX, startY, sizeX, sizeY);
+  }
 
   return(0);
 }
