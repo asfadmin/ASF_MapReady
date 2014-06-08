@@ -614,6 +614,88 @@ int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
   return (0);
 }
 
+double distance_to(int index, float *x, float *y, int num)
+{
+  int i;
+  double d=0;
+
+  float xref = index >= 0 ? x[index] : 0;
+  float yref = index >= 0 ? y[index] : 0;
+
+  for (i=0; i<num; ++i)
+    d += hypot((double)(x[i] - xref), (double)(y[i] - yref));
+
+  return d + hypot(xref,yref);
+}
+
+int fftMatch_projList(char *inFile, char *descFile)
+{
+  FILE *fp = FOPEN(inFile, "r");
+  if (!fp) asfPrintError("Failed to open %s\n", inFile);
+
+  char line[255], master[255];
+  float x_offs[255], y_offs[255];
+  int n=0;
+
+  while (NULL != fgets(line, 255, fp)) {
+    if (line[strlen(line)-1]=='\n')
+      line[strlen(line)-1] = '\0';
+    if (line[0] == '#' || line[0] == '\0')
+      continue;
+
+    if (n==0) {
+      strcpy(master, line);
+    }
+    else {
+      fftMatch_proj(master, line, &x_offs[n-1], &y_offs[n-1]);
+    }
+
+    ++n;
+    if (n>=255)
+      asfPrintError("Too many granules: max 255");
+  }
+
+  FCLOSE(fp);
+
+  FILE *fpd=NULL;
+  if (descFile) {
+    fpd = FOPEN(descFile, "w");
+    fprintf(fpd, "master,slave,offsetX,offsetY,total offsets\n");
+  }
+
+  int num=n-1;
+  n=0;
+
+  fp = FOPEN(inFile, "r");
+  while (NULL != fgets(line, 255, fp)) {
+    if (line[strlen(line)-1]=='\n')
+      line[strlen(line)-1] = '\0';
+    if (line[0] == '#' || line[0] == '\0')
+      continue;
+
+    if (n==0) {
+      fprintf(fpd ? fpd : stdout, "%s,%s,%.5f,%.5f,%.5f\n",
+              master, master, 0., 0.,
+              distance_to(-1, x_offs, y_offs, num));
+    }
+    else {
+      fprintf(fpd ? fpd : stdout, "%s,%s,%.5f,%.5f,%.5f\n",
+              master, line, x_offs[n-1], y_offs[n-1],
+              distance_to(n-1, x_offs, y_offs, num));
+    }
+
+    ++n;
+  }
+
+  if (descFile) {
+    asfPrintStatus("Generated match file (%s)!\n", descFile);
+    FCLOSE(fpd);
+  }
+
+  FCLOSE(fp);
+  return 0;
+}
+
 int fftMatch(char *inFile1, char *inFile2, char *corrFile,
           float *bestLocX, float *bestLocY, float *certainty)
 {
