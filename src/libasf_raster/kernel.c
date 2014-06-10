@@ -85,10 +85,10 @@ double calc_std_dev(float *inbuf, int nSamples, int xSample, int kernel_size,
 float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples, 
 	     int yLine, int xSample, int kernel_size, float damping_factor, 
 	     int nLooks)
-{                    
+{
   double sum = 0.0, mean, standard_deviation, weight, value = 0.0;         
   int half = (kernel_size-1)/2;
-  int base = xSample-half+(nLines-half)*nSamples;
+  int base = xSample-half; //+(nLines-half)*nSamples;
   int total = 0, sigmsq=4;
   double ci, cu, cmax, center, a, b, d, rf = 0.0, x, y, m;
   float *pix;
@@ -154,7 +154,6 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
                   -1  0  1     -1 -2 -1
 
                       x            y      */
-
       x = -inbuf[base] + inbuf[base+2] - 2*inbuf[base+nSamples] 
         + 2*inbuf[base+2+nSamples] - inbuf[base+2*nSamples]
         + inbuf[base+2+2*nSamples];
@@ -162,6 +161,18 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
         - inbuf[base+2*nSamples] - 2*inbuf[base+1+2*nSamples] 
         - inbuf[base+2+2*nSamples];
       value = hypot(x,y);
+      if (!meta_is_valid_double(value)) {
+        printf("nLines=%d\n", nLines);
+        printf("nSamples=%d\n", nSamples);
+        printf("yLine=%d\n", yLine);
+        printf("xSample=%d\n", xSample);                    
+        printf("base=%d\n", base);
+        printf("%f %f %f\n", inbuf[base], inbuf[base+1], inbuf[base+2]);
+        printf("%f %f %f\n", inbuf[base+nSamples], inbuf[base+1+nSamples], inbuf[base+2+nSamples]);
+        printf("%f %f %f\n", inbuf[base+2*nSamples], inbuf[base+1+2*nSamples], inbuf[base+2+2*nSamples]);
+        printf("x,y,value = %f %f %f\n",x,y,value);
+        exit(-1);
+      }
       break;
 
     case SOBEL_X:
