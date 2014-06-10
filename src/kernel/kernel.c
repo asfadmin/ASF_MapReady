@@ -19,8 +19,9 @@ void usage()
   printf("Valid kernel types:\n");
   printf("  Name      Description (options used)\n");
   printf("  ----      --------------------------\n");
-  printf("  SOBEL     An edge detection kernel (none)\n");
   printf("  AVERAGE   Averages pixels (size, default is 3)\n");
+  printf("  GAUSSIAN  Weighted-averages pixels (size, default is 3)\n");
+  printf("  SOBEL     An edge detection kernel (none)\n");
   printf("\n");
   exit(1);
 }
