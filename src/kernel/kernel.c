@@ -22,6 +22,7 @@ void usage()
   printf("  AVERAGE   Averages pixels (size, default is 3)\n");
   printf("  GAUSSIAN  Weighted-averages pixels (size, default is 3)\n");
   printf("  SOBEL     An edge detection kernel (none)\n");
+  printf("  GAMMA_MAP A speckle filter (nlooks)\n");
   printf("\n");
   exit(1);
 }
@@ -79,6 +80,19 @@ int main(int argc, char *argv[])
     if (size_given) asfPrintWarning("Kernel size option was ignored.\n");
     if (damping_given) asfPrintWarning("Damping factor option was ignored.\n");
     if (looks_given) asfPrintWarning("Number of looks option was ignored.\n");
+  }
+  else if (strcmp_case(type, "GAMMA_MAP") == 0) {
+    ktype = GAMMA_MAP;
+    if (!size_given) {
+      asfPrintStatus("Kernel size not specified, defaulting to 3.");
+      size = 3;
+    }
+    if (size%2 != 1)
+      asfPrintError("Kernel size must be odd.\n");
+    if (damping_given)
+      asfPrintWarning("Damping factor option was ignored.\n");
+    if (!looks_given)
+      asfPrintError("Please specify the number of looks with the -nlooks option.\n");
   }
   else {
     if (type_given)
