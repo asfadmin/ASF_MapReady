@@ -161,7 +161,7 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
       y = inbuf[base] + 2*inbuf[base+1] + inbuf[base+2]
         - inbuf[base+2*nSamples] - 2*inbuf[base+1+2*nSamples] 
         - inbuf[base+2+2*nSamples];
-      value = sqrt(SQR(x) + SQR(y));
+      value = hypot(x,y);
       break;
 
     case SOBEL_X:
