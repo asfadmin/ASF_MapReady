@@ -173,6 +173,8 @@ src_subs = lib_subs + [
     "change_value",
     "addapole",
     "trim_wedges",
+    "raster_calc",
+    "kernel",
     ]
 
 # paths where the libraries will be built

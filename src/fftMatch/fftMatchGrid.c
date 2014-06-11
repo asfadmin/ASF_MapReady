@@ -88,9 +88,6 @@ int main(int argc,char **argv)
 {
   char descFile[512];
   char *inFile1=NULL,*inFile2=NULL;
-  extern int optind;            /* argv index of the next argument */
-  extern char *optarg;          /* current argv[] */
-  int c;                        /* option letter from getopt() */
   float bestLocX, bestLocY, certainty;
   double tolerance = -1;
   int size=-1, overlap=-1;

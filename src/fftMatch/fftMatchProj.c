@@ -86,68 +86,41 @@ void usage(char *name);
 
 int main(int argc,char **argv)
 {
-  char *descFile=NULL,*inFile1=NULL,*inFile2=NULL;
-  extern int optind;            /* argv index of the next argument */
-  extern char *optarg;          /* current argv[] */
-  int c;                        /* option letter from getopt() */
-  extern FILE *fLog;
-  extern int logflag,quietflag;
+  char descFile[512], listFile[512];
+  char *inFile1=NULL,*inFile2=NULL;
   float bestLocX, bestLocY;
 
-  fLog=NULL;
-  logflag=quietflag=0;
+  handle_common_asf_args(&argc, &argv, "fftMatchGrid");
+  int descGiven = extract_string_options(&argc, &argv, descFile, "-m", NULL);
+  int listMode = extract_string_options(&argc, &argv, listFile, "-l","-list",NULL);
 
-  /* process command line */
-  /* q has a : because we want to have it be -quiet (: = uiet) */
-  while ((c=getopt(argc,argv,"m:c:l:q:")) != EOF)
-    {
-      switch (c) {
-      case 'm':
-	descFile=optarg;
-	break;
-      case 'l':/* -log <filename>, get logfile; this is sorta hacked */
-	if (0==strncmp(optarg,"og",2))
-	  {
-	    sscanf(argv[optind++], "%s", logFile);
-	    logflag=1;
-	    fLog = FOPEN(logFile, "a");
-	  }
-	else usage(argv[0]);
-	break;
-      case 'q':/* -quiet flag; this is also hacked */
-	if (0==strncmp(optarg,"uiet",4))
-	  quietflag=1;
-	else usage(argv[0]);
-	break;
-      default:
-	if (fLog) FCLOSE(fLog);
-	usage(argv[0]);
-	break;
-      }
-    }
+  int nArg = 3;
+  if (listMode) nArg = 1;
 
-  if ((argc-optind) != 2) {
-    if ((argc-optind) > 2) printf("\nToo many inputs.\n");
-    if ((argc-optind) < 2) printf("\nToo few inputs.\n");
-    if (fLog) FCLOSE(fLog);
+  if (argc != nArg) {
+    if (argc > nArg) printf("\nToo many inputs.\n");
+    if (argc < nArg) printf("\nToo few inputs.\n");
     usage(argv[0]);
   }
-  else {
-    inFile1=argv[optind];
-    inFile2=argv[optind+1];
+  else if (listMode) {
+    fftMatch_projList(listFile, descGiven ? descFile : NULL);
   }
+  else {
+    inFile1=argv[1];
+    inFile2=argv[2];
 
-  asfSplashScreen(argc, argv);
-  fftMatch_proj(inFile1, inFile2, &bestLocX, &bestLocY);
-  asfPrintStatus("\nPixel offsets (projection corrected)\n");
-  asfPrintStatus("x: %.5f, y: %.5f\n", bestLocX, bestLocY);
+    asfSplashScreen(argc, argv);
+    fftMatch_proj(inFile1, inFile2, &bestLocX, &bestLocY);
+    asfPrintStatus("\nPixel offsets (projection corrected)\n");
+    asfPrintStatus("x: %.5f, y: %.5f\n", bestLocX, bestLocY);
 
-  if (descFile) {
-    FILE *fp = FOPEN(descFile, "w");
-    fprintf(fp, "master,slave,offsetX,offsetY\n");
-    fprintf(fp, "%s,%s,%.5f,%.5f\n", inFile1, inFile2, bestLocX, bestLocY);
-    FCLOSE(fp);
-    asfPrintStatus("Generated match file (%s)!\n", descFile);
+    if (descFile) {
+      FILE *fp = FOPEN(descFile, "w");
+      fprintf(fp, "master,slave,offsetX,offsetY\n");
+      fprintf(fp, "%s,%s,%.5f,%.5f\n", inFile1, inFile2, bestLocX, bestLocY);
+      FCLOSE(fp);
+      asfPrintStatus("Generated match file (%s)!\n", descFile);
+    }
   }
 
   return (0);
@@ -157,13 +130,16 @@ int main(int argc,char **argv)
 void usage(char *name)
 {
   printf("\nUSAGE:\n"
-	 "   %s [-m <matchFile> [-log <file>] [-quiet]\n"
+	 "   %s [-m <matchFile> [-log <file>] [-quiet] [-list <listFile>]\n"
 	 "            <master basename> <slave basename>\n"
 	 "\nOPTIONS:\n"
 	 "   -m <matchFile>:   an output file, listing how much image 2\n"
 	 "                       should be shifted to line up with image 1:\n"
 	 "                       <shift x (pixels)>   <shift y (pixels)>\n"
 	 "                       <confidence (percent)>\n"
+         "   -l <listFile>:    an input file.  Instead of specifying a master\n"
+         "                     & slave on the command line, provide a text file\n"
+         "                     containing granules to match.\n"
 	 "   -c <corrImg.ext>: an image of the correlation between the two\n"
 	 "                       source images.  This is useful for debugging.\n"
 	 "   -log <file>:      allows the output to be written to a log file\n"
