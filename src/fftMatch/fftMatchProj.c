@@ -114,7 +114,7 @@ int main(int argc,char **argv)
     asfPrintStatus("\nPixel offsets (projection corrected)\n");
     asfPrintStatus("x: %.5f, y: %.5f\n", bestLocX, bestLocY);
 
-    if (descFile) {
+    if (strlen(descFile) > 0) {
       FILE *fp = FOPEN(descFile, "w");
       fprintf(fp, "master,slave,offsetX,offsetY\n");
       fprintf(fp, "%s,%s,%.5f,%.5f\n", inFile1, inFile2, bestLocX, bestLocY);
