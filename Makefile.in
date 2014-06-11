@@ -78,6 +78,8 @@ MAPREADY_MODULES = \
 	src/color_browse \
 	src/annotate_image \
 	src/populate_meta_field \
+	src/trim_wedges \
+	src/kernel \
 	src/make_overlay \
 	src/asf_kml_overlay \
 	src/sample_plugin \

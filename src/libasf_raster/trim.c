@@ -419,7 +419,7 @@ void trim_wedges(char *infile, char *outfile)
     for (i=0; i<nl; ++i) {
       get_float_line(in, metaIn, i, buf);
 
-      int left = 0, right = ns-1, moved_left, moved_right;
+      int left = 0, right = ns-1, moved_left=0, moved_right=0;
       while (buf[left] == 0.0 && left<ns-1) ++left;
       while (buf[right] == 0.0 && right>0) --right;
       if (left > 0) moved_left = left;
