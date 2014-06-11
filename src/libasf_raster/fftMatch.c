@@ -581,10 +581,16 @@ int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
   meta_parameters *testMeta = meta_read(inFile2);
   if (!testMeta->projection)
     asfPrintError("File (%s) is not map projected!\n", inFile2);
-  float diffX = (testMeta->projection->startX - refMeta->projection->startX) /
-    testMeta->projection->perX;
-  float diffY = (testMeta->projection->startY - refMeta->projection->startY) /
-    testMeta->projection->perY;
+  double testStartX = testMeta->projection->startX + 
+    testMeta->general->start_sample*testMeta->projection->perX;
+  double testStartY = testMeta->projection->startY +
+    testMeta->general->start_line*testMeta->projection->perY;
+  double refStartX = refMeta->projection->startX +
+    refMeta->general->start_sample*refMeta->projection->perX;
+  double refStartY = refMeta->projection->startY +
+    refMeta->general->start_line*refMeta->projection->perY;
+  float diffX = (testStartX - refStartX) / testMeta->projection->perX;
+  float diffY = (testStartY - refStartY) / testMeta->projection->perY;
   meta_free(refMeta);
   meta_free(testMeta);
 
