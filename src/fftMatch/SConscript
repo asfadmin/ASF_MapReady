@@ -21,6 +21,7 @@ bins = [
     localenv.Program("fftMatch", ["fftMatch.c"]),
     localenv.Program("fftMatchGrid", ["fftMatchGrid.c"]),
     localenv.Program("fftMatchProj", ["fftMatchProj.c"]),
+    localenv.Program("fftMatchOptical", ["fftMatchOptical.c"]),
 ]
 
 docs = localenv.File("fftMatch.man")

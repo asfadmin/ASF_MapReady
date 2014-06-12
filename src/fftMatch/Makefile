@@ -8,6 +8,7 @@ include ../../make_support/system_rules
 
 LIBS =	\
 	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf_fft.a \
@@ -22,7 +23,7 @@ LIBS =	\
 
 CFLAGS += $(PROJ_CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS)
 
-all: fftMatch fftMatchGrid fftMatchProj clean
+all: fftMatch fftMatchGrid fftMatchProj fftMatchOptical clean
 
 fftMatch: $(OBJLIB)
 	$(CC) $(CFLAGS) -o fftMatch fftMatch.c $(LIBS) $(LDFLAGS)
@@ -36,6 +37,10 @@ fftMatchGrid: $(OBJLIB)
 fftMatchProj: $(OBJLIB)
 	$(CC) $(CFLAGS) -o fftMatchProj fftMatchProj.c $(LIBS) $(LDFLAGS)
 	mv fftMatchProj$(BIN_POSTFIX) $(BINDIR)
+
+fftMatchOptical: $(OBJLIB)
+	$(CC) $(CFLAGS) -o fftMatchOptical fftMatchOptical.c $(LIBS) $(LDFLAGS)
+	mv fftMatchOptical$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f *.o
