@@ -3317,6 +3317,7 @@ void classify_geotiff(GTIF *input_gtif,
             // Found a vintage ASF UTM geotiff
             *geographic_geotiff    = *geocentric_geotiff  = 0;
             *map_projected_geotiff = *geotiff_data_exists = 1;
+            GTIFKeyGet (input_gtif, GTRasterTypeGeoKey, raster_type, 0, 0);
             return;
         }
     }

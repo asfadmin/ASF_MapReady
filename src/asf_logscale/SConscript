@@ -6,6 +6,7 @@ localenv.AppendUnique(CPPPATH = [
         "#src/asf",
         "#src/asf_meta",
         "#src/libasf_proj",
+        "#src/libasf_raster",
         "#src/libasf_sar",
         ])
 
@@ -14,6 +15,7 @@ localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 
 localenv.AppendUnique(LIBS = [
     "asf",
+    "asf_raster",
     "asf_sar",
 ])
 

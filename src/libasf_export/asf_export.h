@@ -101,6 +101,7 @@ typedef struct {
   char green_channel[MAX_CHANNEL_STRING_LENGTH];
   char band[MAX_CHANNEL_STRING_LENGTH];
   char look_up_table_name[MAX_IMAGE_NAME_LENGTH];
+  int use_pixel_is_point;
 } command_line_parameters_t;
 
 /* Prototypes */
@@ -110,7 +111,8 @@ int asf_export_with_lut(output_format_t, scale_t sample_mapping,
 			char *lutFile, char *inFile, char *outFile);
 int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                      int true_color, int false_color,
-                     char *look_up_table_name, char *in_base_name,
+                     char *look_up_table_name, int use_pixel_is_point,
+                     char *in_base_name,
                      char *output_name, char **band_name,
                      int *noutputs, char ***output_names);
 
@@ -154,6 +156,7 @@ void export_band_image(const char *metadata_file_name,
                        int true_color, int false_color,
                        char *look_up_table_name,
                        output_format_t format,
+                       int use_pixel_is_point,
                        int *noutputs,
                        char ***output_names);
 
@@ -186,9 +189,11 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *metadata_file_name,
                            int is_geotiff, scale_t sample_mapping,
                            int rgb, int *palette_color_tiff, char **band_names,
-                           char *look_up_table_name, int is_colormapped);
+                           char *look_up_table_name, int is_colormapped,
+                           int use_pixel_is_point);
 GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
-                              int rgb, char **band_names, int palette_color_tiff);
+                              int rgb, char **band_names, int palette_color_tiff,
+                              int use_pixel_is_point);
 void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
 int lut_to_tiff_palette(unsigned short **colors, int size, char *look_up_table_name);
 void dump_palette_tiff_color_map(unsigned short *colors, int map_size);

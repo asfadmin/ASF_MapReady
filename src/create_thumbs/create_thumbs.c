@@ -1328,6 +1328,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                          0, /*true_color*/
                          1, /*false_color*/
                          "", /*look_up_table_name*/
+                         0, /*use_pixel_is_point*/
                          in_file,
                          export_path,
                          (char**)band_name,
@@ -1347,6 +1348,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                         0, /*true_color*/
                         0, /*false_color*/
                         lut_file, /*look_up_table_name*/
+                        0, /*use_pixel_is_point*/
                         in_file,
                         export_path,
                         (char**)band_name,
