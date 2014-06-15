@@ -175,6 +175,7 @@ src_subs = lib_subs + [
     "trim_wedges",
     "raster_calc",
     "kernel",
+    "asf_logscale"
     ]
 
 # paths where the libraries will be built
