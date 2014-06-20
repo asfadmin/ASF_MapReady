@@ -149,10 +149,10 @@ resample_impl(const char *infile, const char *outfile,
                     nl,np,onl,onp,yscalfact,xscalfact);
     }
 
-    xbase = 1.0 / (2.0 * xscalfact) - 0.5;
+    xbase = 1.0 / (2.0 * xscalfact);
     xrate = 1.0 / xscalfact;
 
-    ybase = 1.0 / (2.0 * yscalfact) - 0.5;
+    ybase = 1.0 / (2.0 * yscalfact);
     yrate = 1.0 / yscalfact;
     yhalf = (ynsk-1)/2;
     n_lines = ynsk;
@@ -230,7 +230,7 @@ resample_impl(const char *infile, const char *outfile,
         for (i = 0; i < onl; i++)
         {
             /*--------- Read next set of lines for kernel ---------------*/
-            yi = i * yrate + ybase + 0.5;
+            yi = i * yrate + ybase;
             s_line = yi-yhalf;
             if (s_line < 0) s_line = 0;
             if (nl < ynsk+s_line) n_lines = nl-s_line;
@@ -249,7 +249,7 @@ resample_impl(const char *infile, const char *outfile,
             /*--------- Produce the output line and write to disk -------*/
             for (j = 0; j < onp; j++)
             {
-                xi = j * xrate + xbase + 0.5;
+                xi = j * xrate + xbase;
                 outbuf[j] = filter(inbuf,n_lines,np,xi,xnsk,nn_flag);
 		if (metaOut->general->radiometry >= r_SIGMA_DB &&
 		    metaOut->general->radiometry <= r_GAMMA_DB) {

@@ -173,6 +173,7 @@ src_subs = lib_subs + [
     "change_value",
     "addapole",
     "trim_wedges",
+    "point_target_analysis",
     "raster_calc",
     "kernel",
     "asf_logscale"
