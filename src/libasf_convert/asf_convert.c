@@ -2968,7 +2968,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	    scale = MINMAX;
 	  check_return(
 		       asf_export_bands(format, is_polsarpro ? scale : TRUNCATE, TRUE, 0, 0,
-					lut_file, inFile, outFile, bands,
+					lut_file, 0, inFile, outFile, bands,
 					NULL, NULL),
 		       "exporting thumbnail (asf_export), using rgb look up table.\n");
 	  int i;
@@ -3009,7 +3009,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	    char **bands = find_bands(inFile, 1, red, green, blue, &n);
 	    if (n > 0) {
 	      check_return(
-			   asf_export_bands(format, scale, TRUE, 0, 0, NULL,
+			   asf_export_bands(format, scale, TRUE, 0, 0, NULL, 0,
 					    tmpFile, outFile, bands, NULL, NULL),
 			   "exporting thumbnail data file (asf_export), banded\n");
 	      // No zipping for the moment
@@ -3049,7 +3049,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
             strcpy(bands[3], "");
           }
           check_return(asf_export_bands(format, NONE, TRUE,
-                                        true_color, false_color, NULL,
+                                        true_color, false_color, NULL, 0,
                                         tmpFile, outFile, bands, NULL, NULL),
                        "exporting thumbnail (asf_export), color banded.\n");
           // No zipping for the moment
@@ -3076,7 +3076,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
                                         meta->general->band_count);
       int noutputs;
       char **outputs;
-      check_return(asf_export_bands(format, scale, FALSE, 0, 0, NULL,
+      check_return(asf_export_bands(format, scale, FALSE, 0, 0, NULL, 0,
 				    tmpFile, outFile, bands, &noutputs,
 				    &outputs),
 		   "exporting thumbnail data file (asf_export)\n");
@@ -3271,7 +3271,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       asfPrintStatus("Exporting terrain correction side products...\n");
       char *outTif = appendExt(outFile, ".tif");
 
-      check_return(asf_export_bands(GEOTIFF, NONE, 0, 0, 0, NULL,
+      check_return(asf_export_bands(GEOTIFF, NONE, 0, 0, 0, NULL, 0,
 				    inFile, outTif, NULL, NULL, NULL),
 		   "exporting terrain correction side products (asf_export)\n");
 
@@ -3361,7 +3361,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       
       check_return(
 		   asf_export_bands(GEOTIFF, TRUNCATE, 1, 0, 0,
-				    "layover_mask.lut", inFile, outFile, bands,
+				    "layover_mask.lut", 0, inFile, outFile, bands,
 				    NULL, NULL),
 		   "exporting layover mask (asf_export)\n");
       meta_free(meta);
@@ -4055,7 +4055,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
       check_return(
 	asf_export_bands(format, (is_polsarpro || is_insar) ? scale : TRUNCATE,
                          is_polsarpro ? FALSE : TRUE, 0, 0,
-                         lut_file, inFile, outFile, bands, &num_outputs,
+                         lut_file, 0, inFile, outFile, bands, &num_outputs,
                          &output_names),
         "exporting data file (asf_export), using rgb look up table.\n");
       int i;
@@ -4081,7 +4081,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
                          "Green band: %s\n"
                          "Blue band : %s\n\n",
                          red, green, blue);
-          check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL,
+          check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL, 0,
                                         inFile, outFile, bands, &num_outputs,
                                         &output_names),
                        "export data file (asf_export), banded.\n");
@@ -4148,7 +4148,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
             strcpy(bands[3], "");
           }
           check_return(asf_export_bands(format, SIGMA, TRUE,
-                                        true_color, false_color, NULL,
+                                        true_color, false_color, NULL, 0,
                                         inFile, outFile, bands,
                                         &num_outputs, &output_names),
                        "exporting data file (asf_export), color banded.\n");
@@ -4182,13 +4182,13 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 	  if (strcmp_case(cfg->import->format, "POLSARPRO") == 0 &&
 	      format == GEOTIFF)
 	    check_return(asf_export_bands(format, scale, FALSE,
-					  0, 0, NULL,
+					  0, 0, NULL, 0,
 					  inFile, outFile, bands,
 					  &num_outputs, &output_names),
 			 "exporting data file (asf_export), greyscale bands.\n");
 	  else
 	    check_return(asf_export_bands(format, scale, FALSE,
-					  0, 0, NULL,
+					  0, 0, NULL, 0,
 					  inFile, outFile, NULL,
 					  &num_outputs, &output_names),
 			 "exporting data file (asf_export), greyscale bands.\n");
@@ -4230,7 +4230,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 	      md->general->image_data_type = RGB_STACK;
 	      meta_write(md, inFile);
 	      meta_free(md);
-	      check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL,
+	      check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL, 0,
 					    inFile, decompFile, bands, 
 					    &num_outputs, &output_names),
 			   "export data file (asf_export), polarimetric decomposition.\n");
@@ -4256,7 +4256,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
             asfPrintError("Selected band for export not found.\n");
           }
           check_return(asf_export_bands(format, scale, FALSE,
-                                        0, 0, NULL,
+                                        0, 0, NULL, 0,
                                         inFile, outFile, band_names,
                                         &num_outputs, &output_names),
                        "exporting data file (asf_export), single selected greyscale band.\n");
@@ -4265,7 +4265,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
         }
         else {
           // single band
-          check_return(asf_export_bands(format, scale, 0, 0, 0, NULL,
+          check_return(asf_export_bands(format, scale, 0, 0, 0, NULL, 0,
                                         inFile, outFile, NULL,
                                         &num_outputs, &output_names),
                        "exporting data file (asf_export), single band.\n");
