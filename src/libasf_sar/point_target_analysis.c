@@ -317,8 +317,10 @@ int point_target_analysis(char *inFile, char *crFile, char *ptaFile)
 	  //  x_pixel_size;
 	  //offY = (srcPeakY - (int)(peakSize/2) + (int)(posY + 0.5) - posY)*
 	  //  y_pixel_size;
-	  offX = (srcPeakX - (peakSize/2) - xfrac)*x_pixel_size * 48916;
-	  offY = (srcPeakY - (peakSize/2) - yfrac)*y_pixel_size * 111444;
+	  offX = (srcPeakX - (int)(peakSize/2) - xfrac)*x_pixel_size;
+	  offY = (srcPeakY - (int)(peakSize/2) - yfrac)*y_pixel_size;
+	  //offX = (srcPeakX - (peakSize/2) - xfrac)*x_pixel_size * 48916;
+	  //offY = (srcPeakY - (peakSize/2) - yfrac)*y_pixel_size * 111444;
 	}
 	else {
 	  offX = (srcPeakX - (int)(peakSize/2))*x_pixel_size;

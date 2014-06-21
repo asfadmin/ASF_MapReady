@@ -19,7 +19,6 @@
 #include <asf_sar.h>
 #include <asf_license.h>
 #include <asf_contact.h>
-#include <asf_terrcorr.h>
 #include <assert.h>
 #include "vector.h"
 

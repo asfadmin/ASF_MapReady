@@ -297,8 +297,9 @@ main (int argc, char *argv[])
   strcpy(command_line.blue_channel, "");
   strcpy(command_line.band, "");
   strcpy(command_line.look_up_table_name, "");
+  command_line.use_pixel_is_point = 0;
 
-  int formatFlag, logFlag, quietFlag, byteFlag, rgbFlag, bandFlag, lutFlag;
+  int formatFlag, logFlag, quietFlag, byteFlag, rgbFlag, bandFlag, lutFlag, pixelIsPointFlag;
   int truecolorFlag, falsecolorFlag;
   int needed_args = 3;  //command & argument & argument
   int ii;
@@ -322,6 +323,7 @@ main (int argc, char *argv[])
   lutFlag = checkForOption ("-lut", argc, argv);
   truecolorFlag = checkForOption("-truecolor", argc, argv);
   falsecolorFlag = checkForOption("-falsecolor", argc, argv);
+  pixelIsPointFlag = checkForOption("-point", argc, argv);
 
   if ( formatFlag != FLAG_NOT_SET ) {
     needed_args += 2;           // Option & parameter.
@@ -350,7 +352,9 @@ main (int argc, char *argv[])
   if ( falsecolorFlag != FLAG_NOT_SET ) {
     needed_args += 1;           // Option only
   }
-
+  if ( pixelIsPointFlag != FLAG_NOT_SET ) {
+    needed_args += 1;
+  }
   if ( argc != needed_args ) {
     print_usage ();                   // This exits with a failure.
   }
@@ -754,6 +758,15 @@ main (int argc, char *argv[])
     meta_free(md);
   }
 
+  if (strcmp_case(command_line.format, "GEOTIFF") != 0 &&
+      pixelIsPointFlag != FLAG_NOT_SET )
+  {
+    asfPrintWarning("-point option has no effect");
+  }
+  else {
+    command_line.use_pixel_is_point = pixelIsPointFlag != FLAG_NOT_SET; 
+  }
+
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
   if ( strcmp_case (command_line.format, "ENVI") == 0 ) {
@@ -819,7 +832,7 @@ main (int argc, char *argv[])
   // Do that exporting magic!
   asf_export_bands(format, command_line.sample_mapping, rgb,
                    true_color, false_color,
-                   command_line.look_up_table_name,
+                   command_line.look_up_table_name, command_line.use_pixel_is_point,
                    in_base_name, command_line.output_name, band_names,
                    NULL, NULL);
 
