@@ -486,6 +486,20 @@ void fill_structure_field(char *field_name, void *valp)
 	MGENERAL->image_data_type = RGB_STACK;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "MOSAIC") )
 	MGENERAL->image_data_type = MOSAIC;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ICE_AGE") )
+	MGENERAL->image_data_type = ICE_AGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ICE_THICKNESS") )
+	MGENERAL->image_data_type = ICE_THICKNESS;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "BACKSCATTER_HISTOGRAM") )
+	MGENERAL->image_data_type = BACKSCATTER_HISTOGRAM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "MULTIYEAR_ICE_FRACTION") )
+	MGENERAL->image_data_type = MULTIYEAR_ICE_FRACTION;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "DIVERGENCE") )
+	MGENERAL->image_data_type = DIVERGENCE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "VORTICITY") )
+	MGENERAL->image_data_type = VORTICITY;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SHEAR") )
+	MGENERAL->image_data_type = SHEAR;
       else {
         warning_message("Unrecognized image_data_type (%s).\n",VALP_AS_CHAR_POINTER);
         MGENERAL->image_data_type = MAGIC_UNSET_INT;

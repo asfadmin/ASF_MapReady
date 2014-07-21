@@ -197,6 +197,20 @@ char *image_data_type2str(image_data_type_t image_data_type)
     strcpy(str, "RGB_STACK");
   else if (image_data_type == MOSAIC)
     strcpy(str, "MOSAIC");
+  else if (image_data_type == ICE_AGE)
+    strcpy(str, "ICE_AGE");
+  else if (image_data_type == ICE_THICKNESS)
+    strcpy(str, "ICE_THICKNESS");
+  else if (image_data_type == BACKSCATTER_HISTOGRAM)
+    strcpy(str, "BACKSCATTER_HISTOGRAM");
+  else if (image_data_type == MULTIYEAR_ICE_FRACTION)
+    strcpy(str, "MULTIYEAR_ICE_FRACTION");
+  else if (image_data_type == DIVERGENCE)
+    strcpy(str, "DIVERGENCE");
+  else if (image_data_type == VORTICITY)
+    strcpy(str, "VORTICITY");
+  else if (image_data_type == SHEAR)
+    strcpy(str, "SHEAR");
   else
     strcpy(str, MAGIC_UNSET_STRING);
 

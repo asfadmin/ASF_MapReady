@@ -68,6 +68,26 @@ typedef struct {
   int *var_id;                  // Variable IDs
 } netcdf_t;
 
+typedef struct {
+  char name[50];
+  char axis[5];
+  char cell_methods[50];
+  char coordinates[50];
+  char grid_mapping[50];
+  char long_name[100];
+  char references[100];
+  char standard_name[100];
+  char units[50];
+  char units_description[100];
+  char bounds[50];
+  double fill_value;
+  double valid_range[2];
+  int time_count;
+  int cat_count;
+  int dim_count;
+  nc_type datatype;
+} band_t;
+
 // HDF5 pointer structure
 typedef struct {
   hid_t file;                   // File identifier
@@ -200,8 +220,12 @@ void dump_palette_tiff_color_map(unsigned short *colors, int map_size);
 int meta_colormap_to_tiff_palette(unsigned short **colors, int *byte_image, meta_colormap *colormap);
 
 // Prototypes from export_netcdf.c
-void export_netcdf(const char *in_base_name, char *output_file_name,
-  int *noutputs, char ***output_names);
+void export_netcdf(const char *metadata_file_name, 
+		   const char *image_data_file_name,
+		   char *output_file_name, char **band_name,
+		   int *noutputs,char ***output_names);
+void export_netcdf_list(const char *input_file_list, band_t *band, 
+			int band_count, char *output_file_name);
 
 // Prototypes from export_hdf.c
 void export_hdf(const char *in_base_name, char *output_file_name,
