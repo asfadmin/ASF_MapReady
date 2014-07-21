@@ -2,6 +2,8 @@
 #include "jpl_proj.h"
 #include "asf_nan.h"
 #include "meta_init_stVec.h"
+#include "spheroids.h"
+#include "libasf_proj.h"
 #include "matrix.h"
 #include <assert.h>
 
@@ -42,7 +44,7 @@ void proj_to_latlon(meta_projection *proj, double x, double y, double z,
       project_eqc_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
       break;
     case SINUSOIDAL:
-      project_sin_inv(&(proj->param), x, y, z, lat, lon, height);
+      project_sin_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
       break;
     case SCANSAR_PROJECTION:
       asfPrintError("'proj_to_latlon' not defined for SCANSAR_PROJECTION.\n"
@@ -543,10 +545,12 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
       project_eqr(&(proj->param), geoc_lat, lon, height, x, y, z, proj->datum);
       break;
     case EQUIDISTANT:
+      // Some special treatment required for PROJ4 limitation
+      geoc_lat = atan(tan(lat)/(1-ecc2(proj->re_minor,proj->re_major)));
       project_eqc(&(proj->param), geoc_lat, lon, height, x, y, z, proj->datum);
       break;
     case SINUSOIDAL:
-      project_sin(&(proj->param), lat, lon, height, x, y, x);
+      project_sin(&(proj->param), lat, lon, height, x, y, x, proj->datum);
       break;
     case LAT_LONG_PSEUDO_PROJECTION:
       *x = lon*R2D;
@@ -968,14 +972,12 @@ void atct_init(meta_projection *proj,stateVector st)
  */
 void atct_init_from_leader(const char *leaderName, meta_projection *proj)
 {
-    struct dataset_sum_rec *dssr = NULL;
     meta_parameters *meta = raw_init();
     stateVector st_start;
     ceos_description *ceos = 
       get_ceos_description_ext(leaderName, REPORT_LEVEL_NONE, FALSE);
 
     // Azimuth time per pixel need to be known for state vector propagation
-    dssr = &ceos->dssr;
     ceos_init_sar_general(ceos, leaderName, meta, TRUE);
 
     ceos_read_stVecs(leaderName, ceos, meta);
@@ -984,4 +986,296 @@ void atct_init_from_leader(const char *leaderName, meta_projection *proj)
 
     atct_init(proj, st_start);
     meta_free(meta);
+}
+
+void write_esri_proj_file(char *inFile)
+{
+  FILE *fp;
+  char esri_prj_file_name[255];
+
+  create_name (esri_prj_file_name, inFile, ".prj");
+
+  fp = FOPEN(esri_prj_file_name, "w");
+  fprintf(fp,
+      "GEOGCS[\"GCS_WGS_1984\","
+      "DATUM[\"D_WGS_1984\","
+      "SPHEROID[\"WGS_1984\",6378137,298.257223563]],"
+      "PRIMEM[\"Greenwich\",0],"
+      "UNIT[\"Degree\",0.017453292519943295]]");
+  FCLOSE(fp);
+}
+
+char *meta2esri_proj(meta_parameters *meta, char *projFile)
+{
+  FILE *fpIn;
+  char projcsStr[100], geogcsStr[200], projStr[500], datumStr[150];
+  char spheroidStr[100], *error;
+  static char out[1024];
+
+  project_parameters_t pps;
+  projection_type_t proj_type;
+  datum_type_t datum;
+  spheroid_type_t spheroid;
+  double semimajor;
+  double inv_flattening ;
+
+  // Get projection information
+  if (meta &&
+      (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR ||
+       meta->projection->type == POLAR_STEREOGRAPHIC ||
+       meta->projection->type == ALBERS_EQUAL_AREA ||
+       meta->projection->type == LAMBERT_CONFORMAL_CONIC ||
+       meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA)) {
+    
+    pps = meta->projection->param;
+    proj_type = meta->projection->type;
+    datum = meta->projection->datum;
+    spheroid = meta->projection->spheroid;
+    semimajor = meta->projection->re_major;
+    inv_flattening = 
+      semimajor / (semimajor - meta->projection->re_minor);
+  }
+  else if (projFile) {
+    parse_proj_args_file(projFile, &pps, &proj_type, &datum, &spheroid, &error);
+    fpIn = FOPEN(projFile, "r");
+    //spheroid = get_spheroid(fpIn);
+    FCLOSE(fpIn);
+
+    switch (spheroid)
+      {
+      case BESSEL_SPHEROID:
+      	semimajor = BESSEL_SEMIMAJOR;
+      	inv_flattening = BESSEL_INV_FLATTENING;
+    	  break;
+      case CLARKE1866_SPHEROID:
+      	semimajor = CLARKE1866_SEMIMAJOR;
+      	inv_flattening = CLARKE1866_INV_FLATTENING;
+    	  break;
+      case GEM6_SPHEROID:
+      	semimajor = GEM6_SEMIMAJOR;
+      	inv_flattening = GEM6_INV_FLATTENING;
+    	  break;
+      case GEM10C_SPHEROID:
+      	semimajor = GEM10C_SEMIMAJOR;
+      	inv_flattening = GEM10C_INV_FLATTENING;			\
+    	  break;
+      case GRS1980_SPHEROID:
+      	semimajor = GRS1980_SEMIMAJOR;
+      	inv_flattening = GRS1980_INV_FLATTENING;
+    	  break;
+      case INTERNATIONAL1924_SPHEROID:
+      	semimajor = INTERNATIONAL1924_SEMIMAJOR;
+      	inv_flattening = INTERNATIONAL1924_INV_FLATTENING;
+    	  break;
+      case INTERNATIONAL1967_SPHEROID:
+      	semimajor = INTERNATIONAL1967_SEMIMAJOR;
+      	inv_flattening = INTERNATIONAL1967_INV_FLATTENING;
+    	  break;
+      case WGS72_SPHEROID:
+      	semimajor = WGS72_SEMIMAJOR;
+      	inv_flattening = WGS72_INV_FLATTENING;
+    	  break;
+      case WGS84_SPHEROID:
+      	semimajor = WGS84_SEMIMAJOR;
+      	inv_flattening = WGS84_INV_FLATTENING;
+    	  break;
+      case HUGHES_SPHEROID:
+      	semimajor = HUGHES_SEMIMAJOR;
+      	inv_flattening = HUGHES_INV_FLATTENING;
+    	  break;
+      default:
+        asfPrintError("Unknown spheroid: %d\n", spheroid);
+        break;
+      }
+  }
+
+  // Convert the projection information into ESRI projection format
+  if ((meta &&
+       (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR ||
+        meta->projection->type == POLAR_STEREOGRAPHIC ||
+        meta->projection->type == ALBERS_EQUAL_AREA ||
+        meta->projection->type == LAMBERT_CONFORMAL_CONIC ||
+        meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA)) || projFile) {
+
+    // Construct geographic coordinate system string
+    sprintf(geogcsStr, "GEOGCS[");
+    sprintf(datumStr, "DATUM[");
+    switch (datum)
+      {
+      case EGM96_DATUM:
+      	break;
+      case ED50_DATUM:
+      	strcat(geogcsStr, "\"GCS_European_1950\",");
+      	strcat(datumStr, "\"D_European_1950\",");
+    	  break;
+      case ETRF89_DATUM:
+      	strcat(geogcsStr, "\"GCS_ETRS_1989\",");
+      	strcat(datumStr, "\"D_ETRS_1989\",");
+    	  break;
+      case ITRF97_DATUM:
+    	  break;
+      case NAD27_DATUM:
+      	strcat(geogcsStr, "\"GCS_North_American_1927\",");
+      	strcat(datumStr, "\"D_North_American_1927\",");
+    	  break;
+      case NAD83_DATUM:
+      	strcat(geogcsStr, "\"GCS_North_American_1983\",");
+      	strcat(datumStr, "\"D_North_American_1983\",");
+    	  break;
+      case WGS72_DATUM:
+      	strcat(geogcsStr, "\"GCS_WGS_1972\",");
+      	strcat(datumStr, "\"D_WGS_1972\",");
+    	  break;
+      case WGS84_DATUM:
+      	strcat(geogcsStr, "\"GCS_WGS_1984\",");
+      	strcat(datumStr, "\"D_WGS_1984\",");
+    	  break;
+      case HUGHES_DATUM:
+      	strcat(geogcsStr, "\"GCS_HUGHES\",");
+      	strcat(datumStr, "\"D_HUGHES\",");
+    	  break;
+      default:
+        asfPrintError("Unknown datum: %d\n", datum);
+        break;
+      }
+    strcat(geogcsStr, datumStr);
+    switch (spheroid)
+      {
+      case BESSEL_SPHEROID:
+      	sprintf(spheroidStr, "SPHEROID[\"BESSEL\",%.0f,%.9f]]",
+      		semimajor, inv_flattening);
+    	  break;
+      case CLARKE1866_SPHEROID:
+      	sprintf(spheroidStr, "SPHEROID[\"CLARKE_1866\",%.0f,%.9f]]",
+    	  	semimajor, inv_flattening);
+    	  break;
+      case GEM6_SPHEROID:
+      	sprintf(spheroidStr, "SPHEROID[\"GEM6\",%.0f,%.9f]]",
+      		semimajor, inv_flattening);
+    	  break;
+      case GEM10C_SPHEROID:
+      	sprintf(spheroidStr, "SPHEROID[\"GEM10C\",%.0f,%.9f]]",
+		      semimajor, inv_flattening);
+    	  break;
+      case GRS1980_SPHEROID:
+      	sprintf(spheroidStr, "SPHEROID[\"GRS_1980\",%.0f,%.9f]]", 
+      		semimajor, inv_flattening);
+    	  break;
+      case INTERNATIONAL1924_SPHEROID:
+      	sprintf(spheroidStr, "SPHEROID[\"International_1924\",%.0f,%.9f]]",
+      		semimajor, inv_flattening);
+    	  break;
+      case INTERNATIONAL1967_SPHEROID:
+      	sprintf(spheroidStr, "SPHEROID[\"International_1967\",%.0f,%.9f]]",
+      		semimajor, inv_flattening);
+    	  break;
+      case WGS72_SPHEROID:
+      	sprintf(spheroidStr, "SPHEROID[\"WGS_1972\",%.0f,%.9f]]",
+      		semimajor, inv_flattening);
+    	  break;
+      case WGS84_SPHEROID:
+      	sprintf(spheroidStr, "SPHEROID[\"WGS_1984\",%.0f,%.9f]]",
+      		semimajor, inv_flattening);
+    	  break;
+      case HUGHES_SPHEROID:
+      	sprintf(spheroidStr, "SPHEROID[\"HUGHES\",%.0f,%9f]]",
+      		semimajor, inv_flattening);
+    	  break;
+      default:
+        asfPrintError("Unknown spheroid: %d\n", spheroid);
+        break;
+      }
+    strcat(geogcsStr, spheroidStr);  
+    
+    // Construct projection string
+    switch (proj_type)
+      {
+      default:
+        asfPrintError("Unknown proj_type: %d\n", proj_type);
+        break;
+      case LAT_LONG_PSEUDO_PROJECTION:
+    	  break;
+      case UNIVERSAL_TRANSVERSE_MERCATOR:
+      	sprintf(projcsStr, "PROJCS[\"Universal_Transverse_Mercator\"");
+      	sprintf(projStr, "PROJECTION[\"Transverse_Mercator\"],PARAMETER[\""
+      		"False_Easting\",%.1f],PARAMETER[\"False_Northing\",%.1f],"
+      		"PARAMETER[\"Central_Meridian\",%.1f],PARAMETER["
+      		"\"Scale_Factor\",%.4f],PARAMETER[\"Latitude_Of_Origin\",%.1f],"
+      		"UNIT[\"Meter\",1.0]",
+    		pps.utm.false_easting, pps.utm.false_northing, 
+		    pps.utm.lon0, pps.utm.scale_factor, pps.utm.lat0);
+    	  break;
+      case POLAR_STEREOGRAPHIC:
+      	if (!isfinite(pps.ps.false_easting))
+	        pps.ps.false_easting = 0.0;
+      	if (!isfinite(pps.ps.false_northing))
+      	  pps.ps.false_northing = 0.0;
+      	sprintf(projcsStr, "PROJCS[\"Polar_Stereographic\"");
+      	sprintf(projStr, "PROJECTION[\"Stereographic\"],PARAMETER["
+      		"\"False_Easting\",%.1f],PARAMETER[\"False_Northing\",%.1f],"
+      		"PARAMETER[\"Central_Meridian\",%.1f],PARAMETER["
+      		"\"Scale_Factor\",1.0],PARAMETER[\"Latitude_Of_Origin\",%.1f],"
+      		"UNIT[\"Meter\",1.0]",
+    		pps.ps.false_easting, pps.ps.false_northing, pps.ps.slat, 
+		    pps.ps.slon);
+    	  break;
+      case ALBERS_EQUAL_AREA:
+      	sprintf(projcsStr, "PROJCS[\"Albers_Equal_Area_Conic\"");
+      	sprintf(projStr, "PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\","
+      		"%.1f],PARAMETER[\"False_Northing\",%.1f],PARAMETER["
+      		"\"Central_Meridian\",%.1f],PARAMETER[\"Standard_Parallel_1\","
+      		"%.1f],PARAMETER[\"Standard_Parallel_2\",%.1f],PARAMETER["
+      		"\"Latitude_Of_Origin\",%.1f],UNIT[\"Meter\",1.0]",
+      		pps.albers.false_easting, pps.albers.false_northing, 
+      		pps.albers.center_meridian, pps.albers.std_parallel1, 
+      		pps.albers.std_parallel2, pps.albers.orig_latitude);
+    	  break;
+      case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      	sprintf(projcsStr, "PROJCS[\"Lambert_Azimuthal_Equal_Area\"");
+      	sprintf(projStr, "PROJECTION[\"\"],PARAMETER[\"False_Easting\","
+      		"%.1f],PARAMETER[\"False_Northing\",%.1f],PARAMETER["
+      		"\"Central_Meridian\",%.1f],PARAMETER["
+      		"\"Latitude_Of_Origin\",%.1f],UNIT[\"Meter\",1.0]",
+      		pps.lamaz.false_easting, pps.lamaz.false_northing, 
+      		pps.lamaz.center_lat, pps.lamaz.center_lon);
+    	  break;
+      case LAMBERT_CONFORMAL_CONIC:
+      	sprintf(projcsStr, "PROJCS[\"Lambert_Conformal_Conic\"");
+      	sprintf(projStr, "PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER["
+      		"\"False_Easting\",%.1f],PARAMETER[\"False_Northing\",%.1f],"
+      		"PARAMETER[\"Central_Meridian\",%.1f],PARAMETER["
+      		"\"Standard_Parallel_1\",%.1f],PARAMETER["
+      		"\"Standard_Parallel_2\",%.1f],PARAMETER["
+      		"\"Latitude_Of_Origin\",%.1f],UNIT[\"Meter\",1.0]",
+      		pps.lamcc.false_easting, pps.lamcc.false_northing, 
+      		pps.lamcc.lon0, pps.lamcc.plat1, pps.lamcc.plat2, 
+      		pps.lamcc.lat0);
+    	  break;
+      case MERCATOR:
+        break;
+      case EQUI_RECTANGULAR:
+    	  break;
+      }
+    
+    sprintf(out, "%s,%s,PRIMEM[\"Greenwich\",0],UNIT[\"Degree\","
+	    "0.0174532925199432955]],%s]\n", projcsStr, geogcsStr, projStr);
+  }
+  else
+    sprintf(out,
+	    "GEOGCS[\"GCS_WGS_1984\","
+	    "DATUM[\"D_WGS_1984\","
+	    "SPHEROID[\"WGS_1984\",6378137,298.257223563]],"
+	    "PRIMEM[\"Greenwich\",0],"
+	    "UNIT[\"Degree\",0.017453292519943295]]");
+
+  return out;
+}
+
+void write_asf2esri_proj(meta_parameters *meta, char *projFile, char *outFile)
+{
+  char esri_prj_file_name[255];
+  create_name (esri_prj_file_name, outFile, ".prj");
+  FILE *fpOut = FOPEN(esri_prj_file_name, "w");
+  fprintf(fpOut, "%s", meta2esri_proj(meta, projFile));
+  FCLOSE(fpOut);
 }

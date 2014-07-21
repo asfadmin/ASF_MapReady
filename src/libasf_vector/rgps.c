@@ -49,7 +49,7 @@ void rgps2kml(cell_t cell, double *lat, double *lon, FILE *fp)
   write_kml_style_keys(fp);
   fprintf(fp, "<Polygon>\n");
   fprintf(fp, "<extrude>1</extrude>\n");
-  fprintf(fp, "<altitudeMode>%s</altitudeMode>\n", altitude_mode());
+  fprintf(fp, "<altitudeMode>absolute</altitudeMode>\n");
   fprintf(fp, "<outerBoundaryIs>\n");
   fprintf(fp, "<LinearRing>\n");
   fprintf(fp, "<coordinates>\n");
@@ -167,7 +167,7 @@ void rgps_grid2shape(grid_attr_t grid, DBFHandle dbase, SHPHandle shape, int n)
 // Convert RGPS weather data to shape
 void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
 {
-  double lat, lon, direction, speed, temperature, pressure;
+  double lat=0.0, lon=0.0, direction=0.0, speed=0.0, temperature=0.0, pressure=0.0;
   char date[15], *p;
 
   // Read weather information;

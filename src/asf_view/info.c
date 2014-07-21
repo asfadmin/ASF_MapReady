@@ -7,11 +7,13 @@ int meta_supports_meta_get_latLon(meta_parameters *meta)
   // slant/ground range with state vectors: YES
   // transform block (i.e., ALOS): YES
   // airsar: YES
+  // latlon: YES
   // all others: NO
   if (meta->projection || 
       (meta->sar&&meta->state_vectors) ||
       meta->airsar ||
       meta->uavsar ||
+      meta->latlon ||
       meta->transform) {
     return TRUE;
   } 
@@ -217,8 +219,10 @@ void update_pixel_info(ImageInfo *ii)
         meta_get_timeSlantDop(meta, y, x, &t, &s, NULL);
         sprintf(&buf[strlen(buf)],
             "Incid: %.4f, Look: %.4f (deg)\n"
-            "Slant: %.1f m Time: %.3f s\n",
-            R2D*meta_incid(meta,y,x), R2D*meta_look(meta,y,x), s, t);
+            "Slant: %.1f m Time: %.3f s\n"
+            "Yaw: %.4f (deg)\n",
+            R2D*meta_incid(meta,y,x), R2D*meta_look(meta,y,x), s, t,
+            R2D*meta_yaw(meta,y,x));
     }
 
     if (meta->projection &&

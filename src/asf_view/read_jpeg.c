@@ -228,7 +228,7 @@ meta_parameters* open_jpeg(const char *data_name, ClientInterface *client)
       strcpy(meta->projection->units, "meters");
 
       meta->projection->datum = WGS84_DATUM;
-      meta->projection->datum = WGS84_SPHEROID;
+      meta->projection->spheroid = WGS84_SPHEROID;
 
       meta->general->start_line = 0;
       meta->general->start_sample = 0;

@@ -6,7 +6,7 @@
 int asf_export(output_format_t format, scale_t sample_mapping,
                char *in_base_name, char *output_name)
 {
-  return asf_export_bands(format, sample_mapping, 0, 0, 0, NULL,
+  return asf_export_bands(format, sample_mapping, 0, 0, 0, NULL, 0,
               in_base_name, output_name, NULL, NULL, NULL);
 }
 
@@ -14,13 +14,14 @@ int asf_export_with_lut(output_format_t format, scale_t sample_mapping,
             char *lutFile, char *inFile, char *outFile)
 {
   return asf_export_bands(format, sample_mapping, 1, 0, 0,
-              lutFile, inFile, outFile, NULL, NULL, NULL);
+              lutFile, 0, inFile, outFile, NULL, NULL, NULL);
 }
 
 
 int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                      int true_color, int false_color,
-                     char *look_up_table_name, char *in_base_name,
+                     char *look_up_table_name, int use_pixel_is_point,
+                     char *in_base_name,
                      char *output_name, char **band_name,
                      int *noutputs, char ***output_names)
 {
@@ -28,20 +29,23 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
 
   asfPrintStatus("Exporting ...\n");
 
-  int i, nouts = 0;
+  meta_parameters *md = NULL;
+  int i, nouts = 0, is_polsarpro = 0, is_matrix = 0;
   char **outs = NULL;
 
-  in_data_name = appendExt(in_base_name, ".img");
-  in_meta_name = appendExt(in_base_name, ".meta");
-  meta_parameters *md = meta_read(in_meta_name);
-  int is_polsarpro = 
-    (md->general->image_data_type == POLARIMETRIC_SEGMENTATION) ? 1 : 0;
-  int is_matrix =
-    ((md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
-      md->general->image_data_type <= POLARIMETRIC_STOKES_MATRIX) ||
-     md->general->image_data_type == POLARIMETRIC_DECOMPOSITION) ? 1 : 0;
-  if (md->general->image_data_type == RGB_STACK)
-    rgb = TRUE;
+  if (format != HDF && format != NC) {
+    in_data_name = appendExt(in_base_name, ".img");
+    in_meta_name = appendExt(in_base_name, ".meta");
+    md = meta_read(in_meta_name);
+    is_polsarpro = 
+      (md->general->image_data_type == POLARIMETRIC_SEGMENTATION) ? 1 : 0;
+    is_matrix =
+      ((md->general->image_data_type >= POLARIMETRIC_C2_MATRIX &&
+        md->general->image_data_type <= POLARIMETRIC_STOKES_MATRIX) ||
+        md->general->image_data_type == POLARIMETRIC_DECOMPOSITION) ? 1 : 0;
+    if (md->general->image_data_type == RGB_STACK)
+      rgb = TRUE;
+  }
 
   // Do that exporting magic!
   if ( format == ENVI ) {
@@ -66,7 +70,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, TIF,
+                        look_up_table_name, TIF, 0,
                         &nouts, &outs);
 
   }
@@ -80,7 +84,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, GEOTIFF,
+                        look_up_table_name, GEOTIFF, use_pixel_is_point,
                         &nouts, &outs);
       
   }
@@ -94,7 +98,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, JPEG,
+                        look_up_table_name, JPEG, 0,
                         &nouts, &outs);
   }
   else if ( format == PNG ) {
@@ -107,7 +111,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, PNG,
+                        look_up_table_name, PNG, 0,
                         &nouts, &outs);
   }
   else if ( format == PNG_ALPHA ) {
@@ -120,7 +124,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, PNG_ALPHA,
+                        look_up_table_name, PNG_ALPHA, 0,
                         &nouts, &outs);
   }
   else if ( format == PNG_GE ) {
@@ -133,7 +137,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, PNG_GE,
+                        look_up_table_name, PNG_GE, 0,
                         &nouts, &outs);
   }
   else if ( format == PGM ) {
@@ -157,7 +161,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, PGM,
+                        look_up_table_name, 0, PGM,
                         &nouts, &outs);
   }
   else if ( format == POLSARPRO_HDR ) {
@@ -168,38 +172,38 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   else if ( format == HDF ) {
     out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
     strcpy(out_name, output_name);
-    export_hdf(in_meta_name, in_data_name, out_name, band_name, 
-	       &nouts, &outs);
+    export_hdf(in_base_name, out_name, &nouts, &outs);
   }
   else if ( format == NC ) {
     out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
     strcpy(out_name, output_name);
-    export_netcdf(in_meta_name, in_data_name, out_name, band_name,
-		  &nouts, &outs);
+    export_netcdf(in_base_name, out_name, &nouts, &outs);
   }
 
-  if (should_write_insar_rgb(md->general->bands)) {
-      write_insar_rgb(format, in_meta_name, in_data_name, out_name);
-  }
+  if (format != HDF && format != NC) {
+    if (should_write_insar_rgb(md->general->bands)) {
+        write_insar_rgb(format, in_meta_name, in_data_name, out_name);
+    }
 
-  if (should_write_insar_xml_meta(md)) {
-    char *xml_meta = get_insar_xml_string(md, FALSE);
-      char *xml_output_file_name = 
-          (char *) MALLOC(sizeof(char)*(strlen(out_name)+10));
+    if (should_write_insar_xml_meta(md)) {
+      char *xml_meta = get_insar_xml_string(md, FALSE);
+        char *xml_output_file_name = 
+            (char *) MALLOC(sizeof(char)*(strlen(out_name)+10));
+        sprintf(xml_output_file_name, "%s.xml", stripExt(out_name));
+
+        write_insar_xml_to_file(xml_output_file_name, xml_meta);
+        FREE(xml_meta);
+        FREE(xml_output_file_name);
+    }
+    else if (should_write_dem_xml_meta(md)) {
+      char *xml_meta = get_dem_xml_string(md, FALSE);
+      char *xml_output_file_name =
+        (char *) MALLOC(sizeof(char)*(strlen(out_name)+10));
       sprintf(xml_output_file_name, "%s.xml", stripExt(out_name));
-
-      write_insar_xml_to_file(xml_output_file_name, xml_meta);
+      write_dem_xml_to_file(xml_output_file_name, xml_meta);
       FREE(xml_meta);
       FREE(xml_output_file_name);
-  }
-  else if (should_write_dem_xml_meta(md)) {
-    char *xml_meta = get_dem_xml_string(md, FALSE);
-    char *xml_output_file_name =
-      (char *) MALLOC(sizeof(char)*(strlen(out_name)+10));
-    sprintf(xml_output_file_name, "%s.xml", stripExt(out_name));
-    write_dem_xml_to_file(xml_output_file_name, xml_meta);
-    FREE(xml_meta);
-    FREE(xml_output_file_name);
+    }
   }
 
   if (noutputs && output_names) {
@@ -218,10 +222,14 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
     FREE(outs);
   }
 
-  FREE(in_data_name);
-  FREE(in_meta_name);
-  FREE(out_name);
-  meta_free(md);
+  if (in_data_name)
+    FREE(in_data_name);
+  if (in_meta_name)
+    FREE(in_meta_name);
+  if (out_name)
+    FREE(out_name);
+  if (md)
+    meta_free(md);
 
   asfPrintStatus("Export successful!\n\n");
   return (EXIT_SUCCESS);
@@ -257,7 +265,7 @@ write_insar_rgb(output_format_t format, char *in_meta_name, char *in_data_name, 
     strcpy(band_name[0], "INTERFEROGRAM_PHASE");
     export_band_image(in_meta_name, in_data_name, out_name,
 		      MINMAX, band_name, FALSE, FALSE, FALSE,
-		      "interferogram.lut", format, &nouts, &outs);
+		      "interferogram.lut", format, 0, &nouts, &outs);
     FREE(band_name[0]);
     FREE(band_name);
     for (ii=0; ii<nouts; ii++)
@@ -370,7 +378,7 @@ write_insar_xml_to_file(char *output_file_name, char *insar_xml)
      asfPrintStatus("\nWriting InSAR metadata (%s) ...\n", output_file_name);
      FILE *fp = FOPEN(output_file_name, "wt");
     if ( NULL != fp ) {
-        fprintf(fp, insar_xml);
+        fprintf(fp, "%s", insar_xml);
         FCLOSE(fp);
     }
 }
@@ -444,7 +452,7 @@ write_dem_xml_to_file(char *output_file_name, char *dem_xml)
   asfPrintStatus("\nWriting DEM metadata (%s) ...\n", output_file_name);
   FILE *fp = FOPEN(output_file_name, "wt");
   if ( NULL != fp ) {
-    fprintf(fp, dem_xml);
+    fprintf(fp, "%s", dem_xml);
     FCLOSE(fp);
   }
 }

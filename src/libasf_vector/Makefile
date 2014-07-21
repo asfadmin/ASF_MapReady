@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS += \
+CFLAGS += $(W_ERROR) \
 	$(TIFF_CFLAGS) \
 	$(GEOTIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
@@ -15,26 +15,11 @@ CFLAGS += \
 
 OBJS = \
 	convert2vector.o \
-	convert2vector.t.o \
+	vector.o \
 	utils.o \
-	header.o \
-	geotiff.o \
-	polygon.o \
-	point.o \
-	auig.o \
 	rgps.o \
-	multimatch.o \
-	meta.o \
-	terrasar.o \
 	kml.o \
 	shape.o \
-	generic_csv.o \
-	ursa.o \
-	datapool.o \
-	high_altitude_photography.o \
-	smap.o \
-	custom.o \
-	utils.o \
 	config.o
 
 LIBS = \
@@ -60,9 +45,9 @@ LIBS = \
 all: build_only
 	mv libasf_vector.a $(LIBDIR)
 	cp asf_vector.h $(ASF_INCLUDE_DIR)
-	cp ursa.h $(ASF_INCLUDE_DIR)
 	mkdir -p $(SHAREDIR)
 	cp header.lst $(SHAREDIR)
+	cp *_data_dictionary.csv $(SHAREDIR)
 	cp convert2vector.config $(SHAREDIR)
 
 build_only: $(OBJS)

@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := \
+CFLAGS := $(W_ERROR) \
 	$(GEOTIFF_CFLAGS) \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
@@ -27,7 +27,8 @@ OBJS = \
 	look_up_table.o \
 	raster_calc.o \
 	diffimage.o  \
-	spline_eval.o
+	spline_eval.o \
+	fit_warp.o
 
 LIBS :=	\
 	$(LIBDIR)/asf_meta.a \

@@ -22,7 +22,7 @@ integer "x" from a file, call big16(x).  On a big-endian
 machine, this does nothing; but on a little-endian
 machine, this swaps the bytes properly.  Before writing
 out big-endian data, do the same! */
-#if defined(big_endian)
+#if defined(ASF_BIG_ENDIAN)
 #define big16(x) 
 #define big32(x) 
 #define big64(x) 
@@ -30,7 +30,7 @@ out big-endian data, do the same! */
 #define lil32(x) swap32((unsigned char *)&(x))
 #define lil64(x) swap64((unsigned char *)&(x))
 
-#elif defined(lil_endian)
+#elif defined(ASF_LIL_ENDIAN)
 #define big16(x) swap16((unsigned char *)&(x))
 #define big32(x) swap32((unsigned char *)&(x))
 #define big64(x) swap64((unsigned char *)&(x))
@@ -38,7 +38,7 @@ out big-endian data, do the same! */
 #define lil32(x) 
 #define lil64(x) 
 #else
-#error "You must set either big_endian or lil_endian"
+#error "You must set either ASF_BIG_ENDIAN or ASF_LIL_ENDIAN"
 #endif
 
 /*These routines interpret the bytes in an array as integers:*/
@@ -54,7 +54,7 @@ void bigInt32_out(int in,unsigned char *out);
 
 /*These routines convert 16, 32, or 64 bit floating-point data
 to/from big or little endian format.*/
-#if defined(big_ieee)
+#if defined(ASF_BIG_IEEE)
 #define ieee_big16(x)
 #define ieee_big32(x) 
 #define ieee_big64(x)
@@ -62,7 +62,7 @@ to/from big or little endian format.*/
 #define ieee_lil32(x) swap32((unsigned char *)&(x))
 #define ieee_lil64(x) swap64((unsigned char *)&(x))
 
-#elif defined(lil_ieee)
+#elif defined(ASF_LIL_IEEE)
 #define ieee_big16(x) swap16((unsigned char *)&(x))
 #define ieee_big32(x) swap32((unsigned char *)&(x))
 #define ieee_big64(x) swap64((unsigned char *)&(x))
@@ -70,7 +70,7 @@ to/from big or little endian format.*/
 #define ieee_lil32(x) 
 #define ieee_lil64(x) 
 #else
-#error "You must set either big_ieee or lil_ieee"
+#error "You must set either ASF_BIG_IEEE or ASF_LIL_IEEE"
 #endif
 
 

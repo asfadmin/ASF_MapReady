@@ -106,10 +106,10 @@ int init_c2v_config(char *configFile)
   fprintf(fConfig, "# The list flag indicates whether the input is a file (value set to 0)\n");
   fprintf(fConfig, "# or a list of files (value set to 1). The default value is 0\n\n");
   fprintf(fConfig, "list = 0\n\n");
-  // stack
-  fprintf(fConfig, "# The stacking flag indicates whether the input is a polygon stack\n");
+  // nosplit
+  fprintf(fConfig, "# The nosplit flag indicates whether vectors should be split at the dateline or not.\n");
   fprintf(fConfig, "# The default value is 0\n\n");
-  fprintf(fConfig, "stack = 0\n\n");
+  fprintf(fConfig, "nosplit = 0\n\n");
   // short configuration file flag
   fprintf(fConfig, "# The short configuration file flag allows the experienced user to generate\n"
           "# configuration files without the verbose comments that explain all entries for\n"
@@ -169,10 +169,7 @@ c2v_config *init_fill_c2v_config()
 #define newStruct(type) (type *)MALLOC(sizeof(type))
 #define LINE_LEN 8196
 
-  FILE *fConfig, *fDefaults;
-  char line[LINE_LEN], params[25];
-  char *test;
-  int i;
+  char params[25];
 
   // Create structure
   strcpy(params, "");
@@ -192,16 +189,15 @@ c2v_config *init_fill_c2v_config()
   cfg->west = 0;
   cfg->transparency = 50;
   cfg->list = 0;
-  cfg->time = 0;
-  cfg->stack = 0;
+  cfg->nosplit = 0;
   strcpy(cfg->boundary, "polygon");
-  strcpy(cfg->altitude, "clampToGround");
+  strcpy(cfg->altitude, "absolute");
   cfg->height = 7000;
   cfg->range = 400000;
   cfg->width = 5;
   strcpy(cfg->color, "ffff9900");
   cfg->short_config = 0;
-  strcpy(cfg->header_file, "");
+  cfg->debug = 0;
 
   return cfg;
 }
@@ -210,11 +206,11 @@ c2v_config *read_c2v_config(char *configFile)
 {
   FILE *fConfig;
   c2v_config *cfg=NULL;
-  char line[255], params[50], tmp[50];
+  char line[255], params[50];
   char *test;
 
   strcpy(params, "");
-  cfg = init_fill_c2v_config(configFile);
+  cfg = init_fill_c2v_config();
   if (cfg == NULL) check_return(1, "Creating configuration structure.\n");
   fConfig = fopen(configFile, "r");
   if (!fConfig) return NULL;
@@ -224,52 +220,50 @@ c2v_config *read_c2v_config(char *configFile)
     if (strcmp(params, "general")==0) {
       test = read_param(line);
       if (strncmp(test, "directory", 9)==0)
-	strcpy(cfg->directory, read_str(line, "directory"));
+      	strcpy(cfg->directory, read_str(line, "directory"));
       if (strncmp(test, "input file", 10)==0)
-	strcpy(cfg->input_file, read_str(line, "input file"));
+      	strcpy(cfg->input_file, read_str(line, "input file"));
       if (strncmp(test, "output file", 11)==0)
-	strcpy(cfg->output_file, read_str(line, "output file"));
+      	strcpy(cfg->output_file, read_str(line, "output file"));
       if (strncmp(test, "input format", 12)==0)
-	strcpy(cfg->input_format, read_str(line, "input format"));
+      	strcpy(cfg->input_format, read_str(line, "input format"));
       if (strncmp(test, "output format", 13)==0)
-	strcpy(cfg->output_format, read_str(line, "output format"));
+      	strcpy(cfg->output_format, read_str(line, "output format"));
       if (strncmp(test, "list", 4)==0) 
-	cfg->list = read_int(line, "list");
-      if (strncmp(test, "stack", 5)==0) 
-	cfg->stack = read_int(line, "stack");
-      if (strncmp(test, "header file", 11)==0)
-	strcpy(cfg->header_file, read_str(line, "header file"));
+      	cfg->list = read_int(line, "list");
+      if (strncmp(test, "nosplit", 7)==0) 
+      	cfg->nosplit = read_int(line, "nosplit");
+      if (strncmp(test, "debug", 5)==0)
+        cfg->debug = read_int(line, "debug");
       FREE(test);
     }
     if (strncmp(line, "[KML]", 5)==0) strcpy(params, "kml");
     if (strcmp(params, "kml")==0) {
       test = read_param(line);
-      if (strncmp(test, "time", 4)==0)
-	cfg->time = read_int(line, "time");
       if (strncmp(test, "boundary", 8)==0)
-	strcpy(cfg->boundary, read_str(line, "boundary"));
+      	strcpy(cfg->boundary, read_str(line, "boundary"));
       if (strncmp(test, "height", 6)==0)
-	cfg->height = read_int(line, "height");
+      	cfg->height = read_int(line, "height");
       if (strncmp(test, "range", 5)==0)
-	cfg->range = read_int(line, "range");
+      	cfg->range = read_int(line, "range");
       if (strncmp(test, "altitude", 8)==0)
-	strcpy(cfg->altitude, read_str(line, "altitude"));
+      	strcpy(cfg->altitude, read_str(line, "altitude"));
       if (strncmp(test, "width", 5)==0)
-	cfg->width = read_int(line, "width");
+      	cfg->width = read_int(line, "width");
       if (strncmp(test, "color", 5)==0)
-	strcpy(cfg->color, read_str(line, "color"));
+      	strcpy(cfg->color, read_str(line, "color"));
       if (strncmp(test, "overlay", 7)==0)
-	strcpy(cfg->overlay, read_str(line, "overlay"));
+      	strcpy(cfg->overlay, read_str(line, "overlay"));
       if (strncmp(test, "north", 5)==0)
-	cfg->north = read_double(line, "north");
+      	cfg->north = read_double(line, "north");
       if (strncmp(test, "south", 5)==0)
-	cfg->south = read_double(line, "south");
+      	cfg->south = read_double(line, "south");
       if (strncmp(test, "east", 4)==0)
-	cfg->east = read_double(line, "east");
+      	cfg->east = read_double(line, "east");
       if (strncmp(test, "west", 4)==0)
         cfg->west = read_double(line, "west");
       if (strncmp(test, "transparency", 12)==0)
-	cfg->transparency = read_int(line, "transparency");
+      	cfg->transparency = read_int(line, "transparency");
       FREE(test);
     } 
   }
@@ -290,10 +284,7 @@ int write_c2v_config(char *configFile, c2v_config *cfg)
     shortFlag = TRUE;
 
   fConfig = FOPEN(configFile, "w");
-  fprintf(fConfig, "%s\n", cfg->comment);
-
-
-  fprintf(fConfig, "convert2vector configuration file\n\n");
+  fprintf(fConfig, "%s\n\n", cfg->comment);
 
   fprintf(fConfig, "[General]\n");
   // directory
@@ -305,11 +296,11 @@ int write_c2v_config(char *configFile, c2v_config *cfg)
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the name of the input file or\n"
 	    "# the name of the list file.\n\n");
-  fprintf(fConfig, "input file = \n");
+  fprintf(fConfig, "input file = %s\n", cfg->input_file);
   // output file
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the name of the output file.\n\n");
-  fprintf(fConfig, "output file = \n");
+  fprintf(fConfig, "output file = %s\n", cfg->output_file);
   // input format
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the input format for the vector conversion.\n"
@@ -325,15 +316,6 @@ int write_c2v_config(char *configFile, c2v_config *cfg)
     fprintf(fConfig, "\n# The list flag indicates whether the input is a file (value set to 0)\n"
 	    "# or a list of files (value set to 1). The default value is 0\n\n");
   fprintf(fConfig, "list = %d\n", cfg->list);
-  // stack
-  if (!shortFlag) {
-    fprintf(fConfig, "# The stacking flag indicates whether the input is a polygon stack\n");
-    fprintf(fConfig, "# The default value is 0\n\n");
-  }
-  fprintf(fConfig, "stack = %d\n", cfg->stack);
-  // header
-  if (strlen(cfg->header_file) > 0)
-    fprintf(fConfig, "header file = %s\n", cfg->header_file);
   // short configuration file flag
   if (!shortFlag)
     fprintf(fConfig, "\n# The short configuration file flag allows the experienced user to generate\n"
@@ -343,12 +325,6 @@ int write_c2v_config(char *configFile, c2v_config *cfg)
   fprintf(fConfig, "short configuration file = %d\n", cfg->short_config);
 
   fprintf(fConfig, "\n[KML]\n");
-  // time
-  if (!shortFlag)
-    fprintf(fConfig, "\n# This parameter specifies that the list of input files is\n"
-	    "# treated as a time series. Each file in the list will have a\n"
-	    "# time stamp associated with it.\n");
-  fprintf(fConfig, "time = %d\n", cfg->time);
   // boundary
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the type of boundary should be used in KML.\n"
@@ -358,7 +334,7 @@ int write_c2v_config(char *configFile, c2v_config *cfg)
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the height references for KML.\n"
 	    "# The recognized height references are 'clampToGround' and 'relativeToGround'.\n\n");
-  fprintf(fConfig, "height = %s\n", cfg->height);
+  fprintf(fConfig, "height = %d\n", cfg->height);
   // width
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter defines the width of the boundary for KML.\n\n");
@@ -368,30 +344,6 @@ int write_c2v_config(char *configFile, c2v_config *cfg)
     fprintf(fConfig, "\n# This parameter defines the color of the boundary. It is expressed as aabbggrr,\n"
 	    "# where aa=alpha (00 to ff); bb=blue (00 to ff); gg=green (00 to ff); rr=red (00 to ff).\n\n");
   fprintf(fConfig, "color = %s\n", cfg->color);
-  // overlay
-  if (!shortFlag)
-    fprintf(fConfig, "\n# This parameter defines the name of the overlay file.\n\n");
-  fprintf(fConfig, "overlay = %s\n", cfg->overlay);  
-  // north
-  if (!shortFlag)
-    fprintf(fConfig, "\n# This parameter defines the northern boundary of the overlay.\n\n");
-  fprintf(fConfig, "north = %.4f\n", cfg->north);  
-  // south
-  if (!shortFlag)  
-    fprintf(fConfig, "\n# This parameter defines the southern boundary of the overlay.\n\n");
-  fprintf(fConfig, "south = %.4f\n", cfg->south);  
-  // east
-  if (!shortFlag)
-    fprintf(fConfig, "\n# This parameter defines the eastern boundary of the overlay.\n\n");
-  fprintf(fConfig, "east = %.4f\n", cfg->east);  
-  // west
-  if (!shortFlag)
-    fprintf(fConfig, "\n# This parameter defines the western boundary of the overlay.\n\n");
-  fprintf(fConfig, "west = %.4f\n", cfg->west);  
-  // transparency
-  if (!shortFlag)
-    fprintf(fConfig, "\n# This parameter defines the transparency of the overlay (0 to 100).\n\n");
-  fprintf(fConfig, "transparency = %d\n", cfg->transparency);
 
   FCLOSE(fConfig);
 

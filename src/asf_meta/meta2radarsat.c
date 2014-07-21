@@ -77,7 +77,7 @@ static int getNumParamsInString (char *str)
 {
   int ii, count=0;
  
-  for (ii>0; ii<strlen(str); ii++) {
+  for (ii=0; ii<strlen(str); ii++) {
     if (str[ii] == ' ')
       count++;
   }
@@ -133,7 +133,11 @@ static double *read_radarsat2_lut(const char *dataFile, int gain_count)
   return gain;
 }
 
-radarsat2_meta *read_radarsat2_meta(const char *dataFile)
+radarsat2_meta *read_radarsat2_meta(const char *dataFile) {
+  return read_radarsat2_meta_ext(dataFile, TRUE);
+}
+
+radarsat2_meta *read_radarsat2_meta_ext(const char *dataFile, int cal)
 {
   int ii, numStateVectors, numDopplerEstimates;
   ymd_date imgStartDate, date;
@@ -442,28 +446,30 @@ radarsat2_meta *read_radarsat2_meta(const char *dataFile)
   }
 
   // Read calibration information
-  double sample_count = radarsat2->numberOfSamplesPerLine;
-  attribute = (char *) MALLOC(sizeof(char)*128);
-  fileName = (char *) MALLOC(sizeof(char)*512);
-  for (ii=0; ii<3; ii++) {
-    sprintf(str, 
-	    "product.imageAttributes.lookupTable[%d].incidenceAngleCorrection", 
-	    ii);
-    strcpy(attribute, xml_get_string_attribute(doc, str));
-    sprintf(str, "product.imageAttributes.lookupTable[%d]", ii);
-    if (strlen(path) > 0)
-      sprintf(fileName, "%s%s", path, xml_get_string_value(doc, str));
-    else
-      strcpy(fileName, xml_get_string_value(doc, str));
-    if (strcmp_case(attribute, "Beta Nought") == 0)
-      radarsat2->gains_beta = read_radarsat2_lut(fileName, sample_count);
-    else if (strcmp_case(attribute, "Sigma Nought") == 0)
-      radarsat2->gains_sigma = read_radarsat2_lut(fileName, sample_count);
-    else if (strcmp_case(attribute, "Gamma") == 0)
-      radarsat2->gains_gamma = read_radarsat2_lut(fileName, sample_count);
+  if (cal) {
+    double sample_count = radarsat2->numberOfSamplesPerLine;
+    attribute = (char *) MALLOC(sizeof(char)*128);
+    fileName = (char *) MALLOC(sizeof(char)*512);
+    for (ii=0; ii<3; ii++) {
+      sprintf(str, 
+        "product.imageAttributes.lookupTable[%d].incidenceAngleCorrection", 
+        ii);
+      strcpy(attribute, xml_get_string_attribute(doc, str));
+      sprintf(str, "product.imageAttributes.lookupTable[%d]", ii);
+      if (strlen(path) > 0)
+        sprintf(fileName, "%s%s", path, xml_get_string_value(doc, str));
+      else
+        strcpy(fileName, xml_get_string_value(doc, str));
+      if (strcmp_case(attribute, "Beta Nought") == 0)
+        radarsat2->gains_beta = read_radarsat2_lut(fileName, sample_count);
+      else if (strcmp_case(attribute, "Sigma Nought") == 0)
+        radarsat2->gains_sigma = read_radarsat2_lut(fileName, sample_count);
+      else if (strcmp_case(attribute, "Gamma") == 0)
+        radarsat2->gains_gamma = read_radarsat2_lut(fileName, sample_count);
+    }
+    FREE(attribute);
+    FREE(fileName);
   }
-  FREE(attribute);
-  FREE(fileName);
 
   xmlFreeDoc(doc);
   xmlCleanupParser();

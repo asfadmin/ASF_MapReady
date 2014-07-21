@@ -1334,11 +1334,11 @@ float_image_get_region (FloatImage *self, ssize_t x, ssize_t y, ssize_t size_x,
 }
 
 void
-float_image_set_region (FloatImage *self, size_t x, size_t y, size_t size_x,
-                        size_t size_y, float *buffer)
+float_image_set_region (FloatImage* UNUSED(self),
+                        size_t UNUSED(x), size_t UNUSED(y), size_t UNUSED(size_x),
+                        size_t UNUSED(size_y), float *UNUSED(buffer))
 {
   g_assert_not_reached ();      // Stubbed out for now.
-  self = self; x = x; y = y; size_x = size_x, size_y = size_y; buffer = buffer;
 }
 
 void
@@ -1982,9 +1982,9 @@ float_image_band_store(FloatImage *self, const char *file,
   // Establish byte order
   /*
   float_image_byte_order_t byte_order = 0;
-  if (strcmp(meta->general->system, "big_ieee") == 0)
+  if (strcmp(meta->general->system, "BIG_IEEE") == 0)
     byte_order = FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
-  else if (strcmp(meta->general->system, "lil_ieee") == 0)
+  else if (strcmp(meta->general->system, "LIL_IEEE") == 0)
     byte_order = FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN;
   */
 
@@ -2035,9 +2035,9 @@ float_image_store (FloatImage *self, const char *file,
   meta = meta_read(file);
 
   //float_image_byte_order_t meta_byte_order = 0;
-  //if (strcmp(meta->general->system, "big_ieee") == 0)
+  //if (strcmp(meta->general->system, "BIG_IEEE") == 0)
   //  meta_byte_order = FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
-  //else if (strcmp(meta->general->system, "lil_ieee") == 0)
+  //else if (strcmp(meta->general->system, "LIL_IEEE") == 0)
   //  meta_byte_order = FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN;
 
   //if (meta_byte_order != byte_order)
@@ -2266,6 +2266,7 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
         ival = float_image_get_pixel(self, jj, ii);
       }
       else {
+      	ival = 0.0;
         asfPrintError("Invalid scale factor.  Scale factor must be 1 or greater.\n");
       }
       unsigned char oval;       // Output value.
@@ -2676,20 +2677,16 @@ float_image_export_as_csv (FloatImage *self, const char * filename)
 }
 
 size_t
-float_image_get_cache_size (FloatImage *self)
+float_image_get_cache_size (FloatImage * UNUSED(self))
 {
   g_assert_not_reached ();      // Stubbed out for now.
-  // Compiler reassurance.
-  self = self;
   return 0;
 }
 
 void
-float_image_set_cache_size (FloatImage *self, size_t size)
+float_image_set_cache_size (FloatImage * UNUSED(self), size_t UNUSED(size))
 {
   g_assert_not_reached ();      // Stubbed out for now.
-  // Compiler reassurance.
-  self = self; size = size;
 }
 
 FloatImage *

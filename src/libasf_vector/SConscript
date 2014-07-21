@@ -1,0 +1,54 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#include/",
+        "#src/asf_meta/",
+        "#src/libasf_proj/",
+        "#src/libasf_import/",
+        "#src/libasf_raster/",
+        "/usr/include/libshp",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
+
+localenv.AppendUnique(LIBS = [
+    "m",
+    "hdf5",
+    "asf",
+    "asf_meta",
+    "asf_proj",
+    "asf_import",
+    "shp",
+])
+
+libs = localenv.SharedLibrary("libasf_vector", [
+        "convert2vector.c",
+        "vector.c",
+        "utils.c",
+        "kml.c",
+        "shape.c",
+        "config.c",
+        "rgps.c",
+        ])
+
+shares = localenv.File([
+    "header.lst",
+    "convert2vector.config",
+    "datapool_data_dictionary.csv",
+    "geotiff_data_dictionary.csv",
+    "granule_data_dictionary.csv",
+    "latlon_data_dictionary.csv",
+    "meta_data_dictionary.csv",
+    "point_data_dictionary.csv",
+    "polygon_data_dictionary.csv",
+    "smap_data_dictionary.csv",
+    "ursa_data_dictionary.csv"
+])
+
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
+

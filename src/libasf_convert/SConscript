@@ -1,0 +1,47 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#include/",
+        "#src/asf_meta/",
+        "#src/libasf_proj/",
+        "#src/libasf_tiff/",
+        "#src/libasf_export/",
+        "#src/libasf_raster/",
+        "#src/libasf_import/",
+        "#src/libasf_sar/",
+        "#src/libasf_terrcorr/",
+        "#src/libasf_geocode/",
+        "#src/libasf_ardop/",
+        "#src/libasf_vector/",
+        "/usr/include/libshp",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs netcdf")
+localenv.ParseConfig("pkg-config --cflags --libs zlib")
+
+localenv.AppendUnique(LIBS = [
+    "asf",
+    "asf_meta",
+    "asf_raster",
+    "asf_sar",
+    "asf_vector",
+    "asf_export",
+    "asf_geocode",
+    "asf_terrcorr",
+    "asf_ardop",
+    "asf_import",
+])
+
+libs = localenv.SharedLibrary("libasf_convert", Glob("*.c"))
+
+shares = localenv.File([
+    "mapready_settings.cfg",
+])
+
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
+

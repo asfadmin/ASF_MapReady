@@ -48,22 +48,6 @@ static void close_shape(DBFHandle dbase, SHPHandle shape)
   SHPClose(shape);
 }
 
-static void write_esri_proj_file(char *inFile)
-{
-  FILE *fp;
-  char esri_prj_file_name[255];
-
-  create_name (esri_prj_file_name, inFile, ".prj");
-  fp = FOPEN(esri_prj_file_name, "w");
-  fprintf(fp,
-      "GEOGCS[\"GCS_WGS_1984\","
-      "DATUM[\"D_WGS_1984\","
-      "SPHEROID[\"WGS_1984\",6378137,298.257223563]],"
-      "PRIMEM[\"Greenwich\",0],"
-      "UNIT[\"Degree\",0.017453292519943295]]");
-  FCLOSE(fp);
-}
-
 static void shape_looks_init(char *inFile)
 {
   char *dbaseFile;
@@ -193,8 +177,8 @@ int calc_number_looks(char *inFile, int imageFlag, int chipSize, char *gis)
   float *data = (float *) MALLOC(sizeof(float)*size);  
 
   // Initialize GIS file
-  DBFHandle dbase;
-  SHPHandle shape;
+  DBFHandle dbase = NULL;
+  SHPHandle shape = NULL;
   char gisFile[1024];
   long n = 0;
   create_name(gisFile, inFile, ".shp");

@@ -127,15 +127,21 @@ static int zipFiles(char *kmzFile, char *kmlFile, char *pngFile)
 
 int kml_overlay(char *inFile, char *outFile, int zip)
 {
-  return kml_overlay_ext(inFile, outFile, 8, 0, NULL, NULL, NULL, NULL, zip);
+  return 
+    kml_overlay_ext(inFile, outFile, 8, 0, NULL, NULL, NULL, NULL, zip, NULL);
 }
 
 int kml_overlay_ext(char *inFile, char *outFile, int reduction, 
 		    int transparency, char *colormap, char *rgb, 
-		    char *polsarpro, char *band, int zip)
+		    char *polsarpro, char *band, int zip, const char *byteConversionIn)
 {
+  char byteConversion[256];
+  if (byteConversionIn)
+    strncpy_safe(byteConversion, byteConversionIn, 255);
+  else
+    strcpy(byteConversion, "SIGMA");
   meta_parameters *meta=NULL;
-  double pixel_size;
+  double pixel_size=0.0;
   int is_insar = isInSAR(inFile);
   if (is_insar)
     printf("InSAR file\n");
@@ -169,7 +175,7 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
     else {
       pixel_size = meta->projection->perX;
       if (meta->general->line_count > 1024)
-	pixel_size *= reduction;
+    	pixel_size *= reduction;
       FREE(envi);
     }
 
@@ -189,11 +195,18 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
     // Check if PolSARPro decomposition is chosen. Needs to have the bands in
     // the RGB option defined as well.
     if (polsarpro && strcmp_case(polsarpro, "DECOMPOSITION") == 0 && 
-	rgb && strlen(rgb))
+	    rgb && strlen(rgb))
       asfPrintStatus("PolSARPro decomposition stored as RGB (%s)\n", rgb);
     else if (rgb && strlen(rgb))
       asfPrintError("For PolSARPro decomposition the RGB channels need to be "
 		    "\ndefined as well.\n");
+    if (colormap && strlen(colormap))
+      strcpy(byteConversion, "TRUNCATE");
+    else if (polsarpro && strlen(polsarpro) &&
+      strcmp_case(polsarpro, "DECOMPOSITION") == 0) 
+      strcpy(byteConversion, "MINMAX_MEDIAN");
+    else
+      strcpy(byteConversion, "SIGMA");
   }
   else {
     meta = meta_read(inFile);
@@ -255,13 +268,13 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
       fprintf(fp, "polsarpro colormap = %s\n", colormap);
     if (polsarpro && strlen(polsarpro)) {
       if (strcmp_case(polsarpro, "SEGMENTATION") == 0)
-	fprintf(fp, "image data type = POLARIMETRIC_SEGMENTATION\n");
+      	fprintf(fp, "image data type = POLARIMETRIC_SEGMENTATION\n");
       else if (strcmp_case(polsarpro, "DECOMPOSITION") == 0) {
-	fprintf(fp, "image data type = POLARIMETRIC_DECOMPOSITION\n");
-	fprintf(fp, "output db = 1\n");
+      	fprintf(fp, "image data type = POLARIMETRIC_DECOMPOSITION\n");
+      	fprintf(fp, "output db = 1\n");
       }
       else if (strcmp_case(polsarpro, "PARAMETER") == 0)
-	fprintf(fp, "image data type = POLARIMETRIC_PARAMETER\n");
+	      fprintf(fp, "image data type = POLARIMETRIC_PARAMETER\n");
     }
     fprintf(fp, "\n");
   }
@@ -272,13 +285,7 @@ int kml_overlay_ext(char *inFile, char *outFile, int reduction,
   fprintf(fp, "force = 1\n\n");
   fprintf(fp, "[Export]\n");
   fprintf(fp, "format = PNG_GE\n");
-  if (colormap && strlen(colormap))
-    fprintf(fp, "byte conversion = TRUNCATE\n");
-  else if (polsarpro && strlen(polsarpro) &&
-	   strcmp_case(polsarpro, "DECOMPOSITION") == 0) 
-    fprintf(fp, "byte conversion = MINMAX_MEDIAN\n");
-  else
-    fprintf(fp, "byte conversion = SIGMA\n");
+  fprintf(fp, "byte conversion = %s\n", byteConversion);
   if (rgb && strlen(rgb))
     fprintf(fp, "rgb banding = %s\n", rgb);
   if (band && strlen(band))

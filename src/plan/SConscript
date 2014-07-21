@@ -1,0 +1,40 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#include/",
+        "#src/asf_meta",
+        "#src/asf",
+        "#src/libasf_proj",
+        "#src/sgpsdp",
+        "#src/libasf_vector",
+        "#src/libasf_raster",
+        "/usr/include/libshp",
+        "#src/libasf_import",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+
+localenv.AppendUnique(LIBS = [
+    "m",
+    "asf",
+    "asf_meta",
+    "asf_proj",
+    "asf_sgpsdp",
+    "asf_vector",
+    "asf_raster",
+])
+
+libs = localenv.SharedLibrary("libasf_plan", [
+        "plan.c",
+        "polygon.c",
+        "beam_mode_table.c",
+        "kml.c",
+        "pass.c",
+        "overlap.c",
+        "tle.c",
+        ])
+
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+

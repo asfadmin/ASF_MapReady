@@ -5,6 +5,7 @@
 #include "asf_nan.h"
 #include "xml_util.h"
 
+/*
 static void date2str(iso_dateTime dateUTC, char *str)
 {
   int year = dateUTC.year;
@@ -17,6 +18,7 @@ static void date2str(iso_dateTime dateUTC, char *str)
   else
     sprintf(str, "%4d-%02d-%02d", year, month, day);
 }
+*/
 
 static void dateTime2str(iso_dateTime timeUTC, char *str)
 {
@@ -56,7 +58,7 @@ void double2str(double value, int decimals, char *str)
   }
 }
 
-void iso_meta_write(iso_meta *iso, const char *outFile)
+void iso_meta_write(iso_meta *iso, const char *gapFile, const char *outFile)
 {
   unsigned long ii, kk;
   char *str;
@@ -83,7 +85,30 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   xmlNewProp(section, BAD_CAST "status", BAD_CAST "PRELIMINARY");
   xmlNewChild(section, NULL, BAD_CAST "itemName", BAD_CAST header->itemName);
   xmlNewChild(section, NULL, BAD_CAST "mission", BAD_CAST header->mission);
-  xmlNewChild(section, NULL, BAD_CAST "source", BAD_CAST header->source);
+
+  // Read the source information out of the .roi.in file
+  if (gapFile) {
+    char line[512], *p=NULL, source[255];
+    char *disFile = (char *) MALLOC(sizeof(char)*(strlen(gapFile)+10));
+    disFile = appendExt(gapFile, ".roi.in");
+    FILE *fp = FOPEN(disFile, "r");
+    if (fp) {
+      while (fgets(line, 512, fp)) {
+	if (strstr(line, "First input data file")) {
+	  p = strchr(line, ' ');
+	  if (p)
+	    *p = '\0';
+	  sprintf(source, "%s", line);
+	  xmlNewChild(section, NULL, BAD_CAST "source", BAD_CAST line);
+	}
+      }
+    }
+    FCLOSE(fp);
+    FREE(disFile);
+  }
+  else
+    xmlNewChild(section, NULL, BAD_CAST "source", BAD_CAST header->source);
+  
   xmlNewChild(section, NULL, BAD_CAST "destination", 
 	      BAD_CAST header->destination);
   xmlNewChild(section, NULL, BAD_CAST "generationSystem", 
@@ -488,7 +513,7 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   xmlNewChild(node, NULL, BAD_CAST "rowScaling", BAD_CAST str);
   double2str(info->columnScaling, 0, str);
   xmlNewChild(node, NULL, BAD_CAST "columnScaling", BAD_CAST str);
-  double2str(info->rowSpacing, 0, str);
+  double2str(info->rowSpacing, 10, str);
   unit = xmlNewChild(node, NULL, BAD_CAST "rowSpacing", BAD_CAST str);
   if (info->projection == MAP_PROJ)
     xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");  
@@ -684,8 +709,12 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
   double2str(spec->projectedSpacingGroundFarRange, 0, str);
   unit = xmlNewChild(node, NULL, BAD_CAST "groundFar", BAD_CAST str);
   xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
-  double2str(spec->projectedSpacingSlantRange, 0, str);
+  double2str(spec->projectedSpacingSlantRange, 3, str);
   unit = xmlNewChild(node, NULL, BAD_CAST "slantRange", BAD_CAST str);
+  xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
+  double2str(spec->slantRangeShift, 3, str);
+  unit = xmlNewChild(node, NULL, BAD_CAST "slantRangeShift", BAD_CAST str);
+  xmlNewProp(unit, BAD_CAST "units", BAD_CAST "m");
   if (spec->imageCoordinateType == RAW_COORD)
     strcpy(str, "RAW");
   else if (spec->imageCoordinateType == ZERODOPPLER)
@@ -1394,24 +1423,80 @@ void iso_meta_write(iso_meta *iso, const char *outFile)
 	xmlNewChild(parent, NULL, BAD_CAST "beamID", 
 		    BAD_CAST quality->rawDataQuality[ii].beamID);
       numGaps = quality->rawDataQuality[ii].numGaps;
-      sprintf(str, "%d", numGaps);
-      xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST str);
-      for (kk=0; kk<numGaps; kk++) {
-	node = xmlNewChild(parent, NULL, BAD_CAST "gap", NULL);
-	sprintf(num, "%ld", kk+1);
-	xmlNewProp(node, BAD_CAST "num", BAD_CAST num);
-	sprintf(str, "%ld", quality->rawDataQuality[ii].gap[kk].start);
-	xmlNewChild(node, NULL, BAD_CAST "start", BAD_CAST str);
-	sprintf(str, "%d", quality->rawDataQuality[ii].gap[kk].length);
-	xmlNewChild(node, NULL, BAD_CAST "length", BAD_CAST str);
-	if (quality->rawDataQuality[ii].gap[kk].fill == RANDOM_FILL)
-	  strcpy(str, "RANDOM");
-	else if (quality->rawDataQuality[ii].gap[kk].fill == ZERO_FILL)
-	  strcpy(str, "ZERO");
-	else if (quality->rawDataQuality[ii].gap[kk].fill == UNDEF_FILL)
-	  strcpy(str, "UNDEFINED");
-	xmlNewChild(node, NULL, BAD_CAST "fill", BAD_CAST str);
+
+      // gap information already in the metadata
+      if (numGaps > 0) {
+        sprintf(str, "%d", numGaps);
+        xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST str);
+        for (kk=0; kk<numGaps; kk++) {
+  	  node = xmlNewChild(parent, NULL, BAD_CAST "gap", NULL);
+ 	  sprintf(num, "%ld", kk+1);
+	  xmlNewProp(node, BAD_CAST "num", BAD_CAST num);
+	  sprintf(str, "%ld", quality->rawDataQuality[ii].gap[kk].start);
+	  xmlNewChild(node, NULL, BAD_CAST "start", BAD_CAST str);
+	  sprintf(str, "%d", quality->rawDataQuality[ii].gap[kk].length);
+	  xmlNewChild(node, NULL, BAD_CAST "length", BAD_CAST str);
+	  if (quality->rawDataQuality[ii].gap[kk].fill == RANDOM_FILL)
+	    strcpy(str, "RANDOM");
+	  else if (quality->rawDataQuality[ii].gap[kk].fill == ZERO_FILL)
+	    strcpy(str, "ZERO");
+	  else if (quality->rawDataQuality[ii].gap[kk].fill == UNDEF_FILL)
+	    strcpy(str, "UNDEFINED");
+	  xmlNewChild(node, NULL, BAD_CAST "fill", BAD_CAST str);
+        }
       }
+
+      // gap information from SEASAT processing .dis file
+      else if (gapFile && ii==0 && numGaps == 0) {
+        if (!fileExists(gapFile)) {
+          printf("Gaps file not found: %s\n", gapFile);
+          xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST "0");
+        }
+        else {
+          FILE *fp = fopen(gapFile, "r");
+          if (!fp) {
+            printf("Gaps file could not be opened: %s\n", gapFile);
+            xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST "0");
+          }
+          else {
+            printf("Found gaps file: %s\n", gapFile);
+            numGaps = 0;
+            char str[1024];
+            int lines[100], gaps[100];
+            fgets(str, 1024, fp);
+            while (fgets(str, 1024, fp) && numGaps < 100) {
+              int line, gap;
+              if (sscanf(str, "%d\t%d\n", &line, &gap) == 2) {
+                lines[numGaps] = line;
+                gaps[numGaps] = gap;
+                ++numGaps;
+              }
+            }
+            fclose(fp);
+            printf("Found %d gaps in file: %s\n", numGaps, gapFile);
+        
+            sprintf(str, "%d", numGaps);
+            xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST str);
+
+            for (kk=0; kk<numGaps; ++kk) {
+  	      node = xmlNewChild(parent, NULL, BAD_CAST "gap", NULL);
+   	      sprintf(num, "%ld", kk+1);
+	      xmlNewProp(node, BAD_CAST "num", BAD_CAST num);
+	      sprintf(str, "%d", lines[kk]);
+	      xmlNewChild(node, NULL, BAD_CAST "start", BAD_CAST str);
+	      sprintf(str, "%d", gaps[kk]);
+	      xmlNewChild(node, NULL, BAD_CAST "length", BAD_CAST str);
+	      xmlNewChild(node, NULL, BAD_CAST "fill", BAD_CAST "RANDOM");
+            }
+          }
+        }
+      }
+      
+      // no gap information
+      else {
+        xmlNewChild(parent, NULL, BAD_CAST "numGaps", BAD_CAST "0");
+      }
+
       boolean2str(quality->rawDataQuality[ii].gapSignificanceFlag, str);
       xmlNewChild(parent, NULL, BAD_CAST "gapSignificanceFlag", BAD_CAST str);
       boolean2str(quality->rawDataQuality[ii].missingLinesSignificanceFlag, 
@@ -1535,7 +1620,8 @@ void cornerCoords2boundingBox(iso_sceneCoord corner[4],
 
 void iso_ext_meta_write(iso_meta *iso, const char *outFile, 
 			const char *fileIdentifier, 
-			const char *iso_meta_configFile)
+			const char *iso_meta_configFile,
+			const char *gapFile)
 {
   char *str = (char *) MALLOC(sizeof(char)*1024);
   int ii;
@@ -1556,7 +1642,7 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
   iso_setup *setup = iso->setup;
   iso_productQuality *quality = iso->productQuality;
   iso_processing *proc = iso->processing;
-  iso_instrument *inst = iso->instrument;
+  //iso_instrument *inst = iso->instrument;
   iso_productSpecific *spec = iso->productSpecific;
   
   // Set up 
@@ -1578,8 +1664,8 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
 			BAD_CAST "gco"); 
   //xmlNs *srv = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/srv", 
   //			BAD_CAST "srv");
-  xmlNs *xs = xmlNewNs(root, BAD_CAST "http://www.w3.org/2001/XMLSchema", 
-		       BAD_CAST "xs");
+  //xmlNs *xs = xmlNewNs(root, BAD_CAST "http://www.w3.org/2001/XMLSchema", 
+  //		       BAD_CAST "xs");
   //xmlNs *gsr = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gsr", 
   //			BAD_CAST "gsr");
   //xmlNs *gss = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gss", 
@@ -1590,11 +1676,11 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
   //			BAD_CAST "gmx");
   xmlNs *eos = xmlNewNs(root, BAD_CAST "http://earthdata.nasa.gov/schema/eos", 
 			BAD_CAST "eos");
-  xmlNs *echo = xmlNewNs(root, 
-			 BAD_CAST "http://www.echo.nasa.gov/ingest/schemas/operatations",
-			 BAD_CAST "echo");
-  xmlNs *xlink = xmlNewNs(root, BAD_CAST "http://www.w3.org/1999/xlink", 
-			  BAD_CAST "xlink"); 
+  //xmlNs *echo = xmlNewNs(root, 
+  //			 BAD_CAST "http://www.echo.nasa.gov/ingest/schemas/operatations",
+  //			 BAD_CAST "echo");
+  //xmlNs *xlink = xmlNewNs(root, BAD_CAST "http://www.w3.org/1999/xlink", 
+  //                        BAD_CAST "xlink"); 
   xmlNs *gml = xmlNewNs(root, BAD_CAST "http://www.opengis.net/gml/3.2", 
 			BAD_CAST "gml"); 
   xmlNs *gmi = xmlNewNs(root, BAD_CAST "http://www.isotc211.org/2005/gmi", 
@@ -1603,7 +1689,6 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
   
   xmlNodePtr parent, section, node, node2, node3, node4, node5, node6, node7;
   xmlNodePtr node8, node9, node10, node11, node12, node13, node14, node15;
-  xmlNodePtr node16, node17;
   xmlNodePtr composedOf = xmlNewChild(root, gmd, BAD_CAST "composedOf", NULL);
   xmlNodePtr ds_dataSet = 
     xmlNewChild(composedOf, gmd, BAD_CAST "DS_DataSet", NULL);
@@ -2896,6 +2981,32 @@ void iso_ext_meta_write(iso_meta *iso, const char *outFile,
     xmlNewChild(node10, gco, BAD_CAST "CharacterString", BAD_CAST "m");
     node10 = xmlNewChild(node9, eos, BAD_CAST "value", NULL);
     double2str(spec->projectedSpacingSlantRange, 3, str);
+    xmlNewChild(node10, gco, BAD_CAST "Real", BAD_CAST str);
+
+    // contentInfo - extra parameters (slantRangeShift)
+    node6 = xmlNewChild(node5, eos, BAD_CAST "additionalAttribute", NULL);
+    node7 = xmlNewChild(node6, eos, BAD_CAST "EOS_AdditionalAttribute", NULL);
+    node8 = xmlNewChild(node7, eos, BAD_CAST "reference", NULL);
+    node9 = xmlNewChild(node8, eos, 
+			BAD_CAST "EOS_AdditionalAttributeDescription", NULL);
+    node10 = xmlNewChild(node9, eos, BAD_CAST "name", NULL);
+    xmlNewChild(node10, gco, BAD_CAST "CharacterString", 
+		BAD_CAST "slantRangeShift");
+    node10 = xmlNewChild(node9, eos, BAD_CAST "type", NULL);
+    node11 = xmlNewChild(node10, eos, 
+			 BAD_CAST "EOS_AdditionalAttributeTypeCode",
+			 BAD_CAST "imageInformation");
+    xmlNewProp(node11, BAD_CAST "codeList", 
+	       BAD_CAST "http://earthdata.nasa.gov/metadata/resources/Codelist.xml#EOS_AdditionalAttributeTypeCode");
+    xmlNewProp(node11, BAD_CAST "codeListValue", BAD_CAST "imageInformation");
+    xmlNewChild(node9, eos, BAD_CAST "dataType", BAD_CAST "FLOAT");
+    node10 = xmlNewChild(node9, eos, BAD_CAST "description", NULL);
+    xmlNewChild(node10, gco, BAD_CAST "CharacterString", 
+		BAD_CAST "slant range shift [m]");
+    node10 = xmlNewChild(node9, eos, BAD_CAST "parameterUnitsOfMeasure", NULL);
+    xmlNewChild(node10, gco, BAD_CAST "CharacterString", BAD_CAST "m");
+    node10 = xmlNewChild(node9, eos, BAD_CAST "value", NULL);
+    double2str(spec->slantRangeShift, 3, str);
     xmlNewChild(node10, gco, BAD_CAST "Real", BAD_CAST str);
     
     // contentInfo - extra parameters (projectedSpacingGroundRangeNear)

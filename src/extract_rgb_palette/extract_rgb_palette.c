@@ -28,21 +28,6 @@ ISSUES:
 #include "geotiff_support.h"
 #include "extract_rgb_palette_help.h"
 
-/**** TYPES ****/
-typedef enum {
-  UNKNOWN_GRAPHICS_TYPE=0,
-  ASF_IMG,
-  JPEG,
-  PGM,
-  PPM,
-  PBM,
-  STD_TIFF,
-  GEO_TIFF,
-  BMP,
-  GIF,
-  PNG
-} graphics_file_t;
-
 #define MISSING_TIFF_DATA -1
 typedef struct {
   uint32 width;
@@ -125,8 +110,8 @@ int main(int argc, char **argv)
   }
   graphics_file_t type;
   type = getGraphicsFileType(inFile);
-  if (type != STD_TIFF &&
-      type != GEO_TIFF )
+  if (type != STD_TIFF_IMG &&
+      type != GEO_TIFF_IMG )
   {
     graphicsFileType_toStr(type, type_str);
     sprintf(msg, "Graphics file type %s is not currently supported (Graphics file: %s)\n",
@@ -135,8 +120,8 @@ int main(int argc, char **argv)
   }
 
   switch (type) {
-    case STD_TIFF:
-    case GEO_TIFF:
+    case STD_TIFF_IMG:
+    case GEO_TIFF_IMG:
       dump_tiff_rgb_palette(inFile);
       break;
     default:
@@ -167,19 +152,19 @@ graphics_file_t getGraphicsFileType (char *file)
 
     // Check for a valid magic number combination
     if (magic[0] == 0xFF && magic[1] == 0xD8) {
-      file_type = JPEG;
+      file_type = JPEG_IMG;
     }
     else if (magic[0] == 'P' && (magic[1] == '4' || magic[1] == '1')) {
-      file_type = PBM;
+      file_type = PBM_IMG;
     }
     else if (magic[0] == 'P' && (magic[1] == '5' || magic[1] == '2')) {
-      file_type = PGM;
+      file_type = PGM_IMG;
     }
     else if (magic[0] == 'P' && (magic[1] == '6' || magic[1] == '3')) {
-      file_type = PPM;
+      file_type = PPM_IMG;
     }
     else if ((magic[0] == 'I' && magic[1] == 'I') || (magic[0] == 'M' && magic[1] == 'M')) {
-      file_type = STD_TIFF;
+      file_type = STD_TIFF_IMG;
 
       itif = XTIFFOpen(file, "rb");
       if (itif != NULL) {
@@ -197,7 +182,7 @@ graphics_file_t getGraphicsFileType (char *file)
           read_count += GTIFKeyGet(gtif, ProjLinearUnitsGeoKey, &linear_units, 0, 1);
 
           if (tie_points == 6 && pixel_scales == 3 && read_count == 3) {
-            file_type = GEO_TIFF;
+            file_type = GEO_TIFF_IMG;
           }
 
           if (tie_point != NULL) free(tie_point);
@@ -208,13 +193,13 @@ graphics_file_t getGraphicsFileType (char *file)
       }
     }
     else if (magic[0] == 'B' && magic[1] == 'M') {
-      file_type = BMP;
+      file_type = BMP_IMG;
     }
     else if (magic[0] == 'G' && magic[1] == 'I' && magic[2] == 'F') {
-      file_type = GIF;
+      file_type = GIF_IMG;
     }
     else if (magic[1] == 'P' && magic[2] == 'N' && magic[3] == 'G') {
-      file_type = PNG;
+      file_type = PNG_IMG;
     }
     else {
       file_type = UNKNOWN_GRAPHICS_TYPE;
@@ -230,31 +215,31 @@ void graphicsFileType_toStr (graphics_file_t type, char *type_str)
     case ASF_IMG:
       strcpy (type_str, "ASF_IMG");
       break;
-    case JPEG:
+    case JPEG_IMG:
       strcpy (type_str, "JPEG");
       break;
-    case PBM:
+    case PBM_IMG:
       strcpy (type_str, "PBM");
       break;
-    case PGM:
+    case PGM_IMG:
       strcpy (type_str, "PGM");
       break;
-    case PPM:
+    case PPM_IMG:
       strcpy (type_str, "PPM");
       break;
-    case STD_TIFF:
+    case STD_TIFF_IMG:
       strcpy (type_str, "TIFF");
       break;
-    case GEO_TIFF:
+    case GEO_TIFF_IMG:
       strcpy (type_str, "GEOTIFF");
       break;
-    case BMP:
+    case BMP_IMG:
       strcpy (type_str, "BMP");
       break;
-    case GIF:
+    case GIF_IMG:
       strcpy (type_str, "GIF");
       break;
-    case PNG:
+    case PNG_IMG:
       strcpy (type_str, "PNG");
       break;
     case UNKNOWN_GRAPHICS_TYPE:

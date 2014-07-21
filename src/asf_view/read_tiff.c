@@ -162,7 +162,8 @@ int handle_tiff_file(const char *filename, char *meta_name, char *data_name,
 // customize the signature to fit your needs.  The read_jpeg client, for
 // example, eliminated this function entirely, and returned metadata
 // with the "open_" function, below.
-meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client, char *filename)
+meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client,
+                                const char *filename)
 {
     ReadTiffClientInfo *info = (ReadTiffClientInfo *)client->read_client_info;
     int i;
@@ -176,8 +177,6 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client, 
     int is_scanline_format; // False if tiled or strips > 1 TIFF file format
     int is_palette_color_tiff;
     data_type_t data_type;
-
-    set_tiff_warning_handler();
 
     tiff = XTIFFOpen(meta_name, "r");
     if (tiff) {
@@ -1503,4 +1502,3 @@ void set_tiff_warning_handler()
 {
     TIFFSetWarningHandler(ASF_TIFF_WarningHandler);
 }
-

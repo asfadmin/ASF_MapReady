@@ -2,6 +2,7 @@
 #include "asf_meta.h"
 #include "libasf_proj.h"
 #include "proj_api.h"
+#include "CUnit/Basic.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -54,11 +55,14 @@ test_proj_direct(const char *input_projection_info, const char *proj_name,
     x[0] *= R2D;
     y[0] *= R2D;
 
+    CU_ASSERT(double_equals(x[0], expected_lat, 6));
+    CU_ASSERT(double_equals(y[0], expected_lon, 6));
+
     if (double_equals(x[0], expected_lat, 6) && 
         double_equals(y[0], expected_lon, 6))
     {
-        asfPrintStatus("%s %s (fwd): %f, %f ... OK\n",
-                       proj_name, datum, projX, projY);
+        //asfPrintStatus("%s %s (fwd): %f, %f ... OK\n",
+        //               proj_name, datum, projX, projY);
         ++n_ok;
     }
     else
@@ -86,11 +90,14 @@ test_proj_direct(const char *input_projection_info, const char *proj_name,
     pj_free(input_projection);
     pj_free(output_projection);
 
+    CU_ASSERT(double_equals(y[0], projX, 5));
+    CU_ASSERT(double_equals(x[0], projY, 5));
+
     if (double_equals(y[0], projX, 5) && 
         double_equals(x[0], projY, 5))
     {
-        asfPrintStatus("%s %s (rev): %f, %f ... OK\n", 
-                       proj_name, datum, expected_lon, expected_lat);
+        //asfPrintStatus("%s %s (rev): %f, %f ... OK\n", 
+        //               proj_name, datum, expected_lon, expected_lat);
         ++n_ok;
     }
     else
@@ -153,10 +160,13 @@ static int test_nad27_ll(double lat, double lon,
     lats[0] *= R2D;
     lons[0] *= R2D;
 
+    CU_ASSERT(double_equals(lats[0], expected_lat, 6));
+    CU_ASSERT(double_equals(lons[0], expected_lon, 6));
+
     if (double_equals(lats[0], expected_lat, 6) &&
         double_equals(lons[0], expected_lon, 6))
     {
-        asfPrintStatus("Proj (fwd): %f, %f ... OK\n", lat, lon);
+        //asfPrintStatus("Proj (fwd): %f, %f ... OK\n", lat, lon);
         return TRUE;
     }
     else
@@ -192,10 +202,13 @@ test_wrapper(const char * proj_name, project_parameters_t *pps,
     {
         double x, y, z;
         project_fwd(pps, lat*D2R, lon*D2R, height, &x, &y, &z, datum);
-        
+
+        CU_ASSERT(double_equals(x, projX, 5));
+        CU_ASSERT(double_equals(y, projY, 5));
+
         if (double_equals(x, projX, 5) && double_equals(y, projY, 5)) {
-            asfPrintStatus("%s Wrapper (fwd): %f, %f ... OK\n",
-                           proj_name, lat, lon);
+            //asfPrintStatus("%s Wrapper (fwd): %f, %f ... OK\n",
+            //               proj_name, lat, lon);
             ++n_ok;
         } else {
             asfPrintStatus("%s Wrapper (fwd): %f, %f ... ERROR\n",
@@ -211,9 +224,12 @@ test_wrapper(const char * proj_name, project_parameters_t *pps,
         testLat *= R2D;
         testLon *= R2D;
         
+        CU_ASSERT(double_equals(lat, testLat, 5));
+        CU_ASSERT(double_equals(lon, testLon, 5));
+
         if (double_equals(lat, testLat, 5) && double_equals(lon, testLon, 5)) {
-            asfPrintStatus("%s Wrapper (rev): %f, %f ... OK\n",
-                           proj_name, projX, projY);
+            //asfPrintStatus("%s Wrapper (rev): %f, %f ... OK\n",
+            //               proj_name, projX, projY);
             ++n_ok;
         } else {
             asfPrintStatus("%s Wrapper (rev): %f, %f ... ERROR\n",
@@ -236,10 +252,13 @@ test_wrapper(const char * proj_name, project_parameters_t *pps,
         x = y = z = NULL;
 
         project_fwd_arr(pps, lats, lons, hts, &x, &y, &z, 1, datum);
-        
+
+        CU_ASSERT(double_equals(x[0], projX, 5));
+        CU_ASSERT(double_equals(y[0], projY, 5));
+
         if (double_equals(x[0], projX, 5) && double_equals(y[0], projY, 5)) {
-            asfPrintStatus("%s Array (fwd): %f, %f ... OK\n",
-                           proj_name, lat, lon);
+            //asfPrintStatus("%s Array (fwd): %f, %f ... OK\n",
+            //               proj_name, lat, lon);
             ++n_ok;
         } else {
             asfPrintStatus("%s Array (fwd): %f, %f ... ERROR\n",
@@ -268,11 +287,14 @@ test_wrapper(const char * proj_name, project_parameters_t *pps,
         lats[0] *= R2D;
         lons[0] *= R2D;
 
+        CU_ASSERT(double_equals(lats[0], lat, 5));
+        CU_ASSERT(double_equals(lons[0], lon, 5));
+
         if (double_equals(lats[0], lat, 5) &&
             double_equals(lons[0], lon, 5))
         {
-            asfPrintStatus("%s Array (rev): %f, %f ... OK\n",
-                           proj_name, projX, projY);
+            //asfPrintStatus("%s Array (rev): %f, %f ... OK\n",
+            //               proj_name, projX, projY);
             ++n_ok;
         } else {
             asfPrintStatus("%s Array (rev): %f, %f ... ERROR\n",
@@ -304,9 +326,12 @@ test_wrapper(const char * proj_name, project_parameters_t *pps,
 
         project_fwd_arr(pps, lats, lons, hts, xx, yy, zz, 1, datum);
 
+        CU_ASSERT(double_equals(x[0], projX, 5));
+        CU_ASSERT(double_equals(y[0], projY, 5));
+
         if (double_equals(x[0], projX, 5) && double_equals(y[0], projY, 5)) {
-            asfPrintStatus("%s Array 2 (fwd): %f, %f ... OK\n",
-                           proj_name, lat, lon);
+            //asfPrintStatus("%s Array 2 (fwd): %f, %f ... OK\n",
+            //               proj_name, lat, lon);
             ++n_ok;
         } else {
             asfPrintStatus("%s Array 2 (fwd): %f, %f ... ERROR\n",
@@ -344,9 +369,12 @@ test_p2ll(meta_projection *mp, const char *proj_name,
     testLat *= R2D;
     testLon *= R2D;
 
+    CU_ASSERT(double_equals(lat, testLat, 5));
+    CU_ASSERT(double_equals(lon, testLon, 5));
+
     if (double_equals(lat, testLat, 5) && double_equals(lon, testLon, 5)) {
-        asfPrintStatus("%s proj_to_latlon Testing: %f, %f ... OK\n",
-                       proj_name, projX, projY);
+        //asfPrintStatus("%s proj_to_latlon Testing: %f, %f ... OK\n",
+        //               proj_name, projX, projY);
         ++n_ok;
     } else {
         asfPrintStatus("%s proj_to_latlon Testing: %f, %f ... ERROR\n",
@@ -359,9 +387,12 @@ test_p2ll(meta_projection *mp, const char *proj_name,
     double x, y;
     latlon_to_proj(mp, '?', lat*D2R, lon*D2R, height, &x, &y, &z);
 
+    CU_ASSERT(double_equals(x, projX, 5));
+    CU_ASSERT(double_equals(y, projY, 5));
+
     if (double_equals(x, projX, 5) && double_equals(y, projY, 5)) {
-        asfPrintStatus("%s latlon_to_proj Testing: %f, %f ... OK\n",
-                       proj_name, lat, lon);
+        //asfPrintStatus("%s latlon_to_proj Testing: %f, %f ... OK\n",
+        //               proj_name, lat, lon);
         ++n_ok;
     } else {
         asfPrintStatus("%s latlon_to_proj Testing: %f, %f ... ERROR\n",
@@ -393,8 +424,11 @@ test_p2utm(double projY, double projX, double height, int zone,
     double testLat, testLon;
     UTM2latLon(projX, projY, height, zone, &testLat, &testLon);
 
+    CU_ASSERT(double_equals(lat, testLat, 5));
+    CU_ASSERT(double_equals(lon, testLon, 5));
+
     if (double_equals(lat, testLat, 5) && double_equals(lon, testLon, 5)) {
-        asfPrintStatus("UTM2latLon Testing: %f, %f ... OK\n", projX, projY);
+        //asfPrintStatus("UTM2latLon Testing: %f, %f ... OK\n", projX, projY);
         ++n_ok;
     } else {
         asfPrintStatus("UTM2latLon Testing: %f, %f ... ERROR\n",
@@ -407,8 +441,11 @@ test_p2utm(double projY, double projX, double height, int zone,
     double x, y;
     latLon2UTM(lat, lon, height, &x, &y);
 
+    CU_ASSERT(double_equals(x, projX, 5));
+    CU_ASSERT(double_equals(y, projY, 5));
+
     if (double_equals(x, projX, 5) && double_equals(y, projY, 5)) {
-        asfPrintStatus("latLon2UTM Testing: %f, %f ... OK\n", lat, lon);
+        //asfPrintStatus("latLon2UTM Testing: %f, %f ... OK\n", lat, lon);
         ++n_ok;
     } else {
         asfPrintStatus("latLon2UTM Testing: %f, %f ... ERROR\n", lat, lon);
@@ -419,8 +456,11 @@ test_p2utm(double projY, double projX, double height, int zone,
 
     latLon2UTM_zone(lat, lon, height, zone, &x, &y);
 
+    CU_ASSERT(double_equals(x, projX, 5));
+    CU_ASSERT(double_equals(y, projY, 5));
+
     if (double_equals(x, projX, 5) && double_equals(y, projY, 5)) {
-        asfPrintStatus("latLon2UTM_zone Testing: %f, %f ... OK\n", lat, lon);
+        //asfPrintStatus("latLon2UTM_zone Testing: %f, %f ... OK\n", lat, lon);
         ++n_ok;
     } else {
         asfPrintStatus("latLon2UTM_zone Testing: %f, %f ... ERROR\n", lat, lon);
@@ -432,7 +472,7 @@ test_p2utm(double projY, double projX, double height, int zone,
 
 static int test_from_file_utm(const char *filename)
 {
-    asfPrintStatus("Testing from file: %s\n", filename);
+    //asfPrintStatus("Testing from file: %s\n", filename);
     if (fileExists(filename))
     {
         FILE *fp = FOPEN(filename, "r");
@@ -471,8 +511,8 @@ static int test_from_file_utm(const char *filename)
                    &nad27_zone_char);
             
             if (n==13) {
-                asfPrintStatus("\n\nTesting next line: %f %f\n",
-                               wgs84_long_deg, wgs84_lat_deg);
+                //asfPrintStatus("\n\nTesting next line: %f %f\n",
+                //               wgs84_long_deg, wgs84_lat_deg);
 
                 // low-level tests -- call proj directly
                 test_utm_direct(nad83_northing_m, nad83_easting_m,
@@ -518,22 +558,11 @@ static int test_from_file_utm(const char *filename)
     return 0;
 }
 
-int main()
+void test_project_nad27()
 {
-    asfPrintStatus("NAD27 Test...\n");
-
-    //char tmp[255];
-    //sprintf(tmp, "PROJ_LIB=%s/proj/", get_asf_share_dir());
-    //putenv(tmp);
-
-    asfPrintStatus("LatLon projection...\n");
-#define TEST(x,y,xr,yr) if (test_nad27_ll(x,y,xr,yr)) ++n_ok; else ++n_bad;
-    TEST(-117, 30, -117.0008058128, 30.0001131919);
-#undef TEST
-
+    CU_ASSERT(test_nad27_ll(-117, 30, -117.0008058128, 30.0001131919));
     test_from_file_utm("nad27_nad83_utm_ak.txt");
-    asfPrintStatus("Tested %d points: %d ok.  (%.2f%%)\n", n_bad+n_ok, n_ok,
-                   (float)n_ok/(n_bad+n_ok)*100);
 
-    return n_bad > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
+    //asfPrintStatus("Tested %d points: %d ok.  (%.2f%%)\n", n_bad+n_ok, n_ok,
+    //               (float)n_ok/(n_bad+n_ok)*100);
 }

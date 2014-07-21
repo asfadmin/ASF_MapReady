@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
     sprintf(logbuf, 
 	    "   WARNING: Kernel must have an odd number of lines and samples!\n"
 	    "            Kernel size reduced to %dx%d\n", kernel_size, kernel_size);
-    printf(logbuf);
+    printf("%s", logbuf);
     if (logflag) printLog(logbuf);
   } 
 
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
     /* Calculate the parameters of the output image */
     sprintf(logbuf, "   Resampling image with average kernel (%dx%d)\n\n",
 	    kernel_size, kernel_size);
-    printf(logbuf);
+    printf("%s", logbuf);
     if (logflag) printLog(logbuf);
 
     outLines = (inLines) / kernel_size;
@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
 
     sprintf(logbuf, "   Kernel type: %s\n   Kernel size: %dx%d\n\n",
 	    filter_type, kernel_size, kernel_size);
-    printf(logbuf);
+    printf("%s", logbuf);
     if (logflag) printLog(logbuf);
     
     /* Allocate memory for input and output file */

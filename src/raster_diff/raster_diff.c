@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 	double smallestDiff, largestDiff;       /* Largest & smallest difference found between images */
 	double npixels;                         /* Number of pixels in each image           */
 	float mask = NAN;                       /* Value to ignore while doing statistics   */
-	int ignored_pix_cnt;                    /* Number of pixels ignored when using mask */
+	int ignored_pix_cnt=0;                  /* Number of pixels ignored when using mask */
 	int *histogram;                         /* Histogram pointer                        */
 	int line_count, sample_count;           /* Number of lines & samples for all images */
 	char *in_file_name1, *in_file_name2;    /* Name for images to be compared           */

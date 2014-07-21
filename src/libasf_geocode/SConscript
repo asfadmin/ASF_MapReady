@@ -1,0 +1,47 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#/include/",
+        "#src/asf_meta/",
+        "#src/libasf_proj/",
+        "#src/libasf_raster/",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+
+localenv.AppendUnique(LIBS = [
+    "m",
+    "asf",
+    "asf_meta",
+    "asf_proj",
+    "asf_raster",
+])
+
+libs = localenv.SharedLibrary("libasf_geocode", [
+        "geocode_options.c",
+        "geocode_dem.c",
+        "set_projection_functions.c",
+        "check_parameters.c",
+        "clip.c",
+        "asf_geocode.c",
+        "geoid.c",
+        "geoid_adjust.c",
+        ])
+
+shares = [
+     localenv.Dir([
+        "#src/libasf_geocode/projections",
+     ]),
+     localenv.File([
+        "WW15MGH.DAC",
+     ]),
+]
+
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
+
+

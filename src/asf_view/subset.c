@@ -253,7 +253,7 @@ static float get_data(ImageInfo *ii, int what_to_save, int line, int samp)
               return cached_image_get_pixel(data_ci, line, samp);
             }
 
-        case INCIDENCE_ANGLE:
+        case INCIDENCE_ANGLES:
             if (meta->sar)
                 return R2D*meta_incid(meta, line, samp);
             else

@@ -86,4 +86,7 @@ int escher(char *inFile, char *outFile);
 int refine_baseline(char *phaseFile, char *seeds, char *oldBase, 
 		    char *newBase);
 
+// Prototypes from multilook.c
+int asf_insar_multilook(char *inFile, char *outFile, char *metaFile, char *overlay);
+
 #endif

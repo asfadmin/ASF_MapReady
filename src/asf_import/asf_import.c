@@ -23,7 +23,7 @@ following defines.
 "              [-interferogam <file>] [-coherence <file>] [-slave <file>]\n"\
 "              [-baseline <file>] [-cpx_gamma <file>] [-line <start line subset>]\n"\
 "              [-sample <start sample subset>] [-width <subset width>]\n"\
-"              [-height <subset height>] [-uavsar <type>]\n"\ 
+"              [-height <subset height>] [-uavsar <type>]\n"\
 "              [-subset <latUL> <lonUL> <latLR> <lonLR>] [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
 
@@ -80,7 +80,7 @@ following defines.
 "        Force input data to be read as the given format type. Valid formats\n"\
 "        are 'ceos', 'stf', 'geotiff', 'airsar', 'uavsar', 'bil',\n"\
 "        'gridfloat', 'vp', 'polsarpro', 'gamma', 'roipac', 'alos_mosaic',\n"\
-"        'terrasar', 'radarsat2' and 'jaxa_L0'.\n"\
+"        'terrasar', 'radarsat2', 'seasat_h5' and 'jaxa_L0'.\n"\
 "        The 'jaxa_L0' format refers to the ALOS AVNIR-2 Level 0 dataset\n"\
 "        format. 'CEOS' is the default behavior.\n"\
 "   -ancillary-file <file>\n"\
@@ -102,7 +102,8 @@ following defines.
 "        imported, e.g. a TIFF or GeoTIFF with an embedded color palette.\n"\
 "   -metadata <metadata file>\n"\
 "        Allows the ingest of metadata that does not have the same basename\n"\
-"        as the image data.\n"\
+"        as the image data.  When importing GAMMA data, use this to specify\n"\
+"        the parameter (usually _par) file.\n"\
 "   -interferogram <file>\n"\
 "        Allows the ingest of an interferogram that is in the same geometry\n"\
 "        as the amplitude image that is ingested as the main file.\n"\
@@ -427,8 +428,9 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n",
-      DEFAULT_RANGE_SCALE);
+      "Version:\n   %s\n\n",
+      DEFAULT_RANGE_SCALE,
+      version_string(ASF_NAME_STRING));
   exit(EXIT_FAILURE);
 }
 
@@ -448,7 +450,7 @@ int main(int argc, char *argv[])
     char *uavsar_type=NULL;
     char *prcPath=NULL;
     char format_type_str[256]="";
-    input_format_t format_type;
+    input_format_t format_type=UNKNOWN_INPUT_FORMAT;
     char band_id[256]="";
     char data_type[256]="";
     char image_data_type[256]="";
@@ -916,10 +918,15 @@ int main(int argc, char *argv[])
       format_type = POLSARPRO;
     else if (strncmp_case(format_type_str, "GAMMA", 5) == 0)
       format_type = GAMMA;
+    // Old type is "roipac" new type is "roi_pac" what could be simpler!!
     else if (strncmp_case(format_type_str, "ROIPAC", 6) == 0)
+      format_type = ROIPAC_DEPRECATED;
+    else if (strncmp_case(format_type_str, "ROI_PAC", 7) == 0)
       format_type = ROIPAC;
     else if (strncmp_case(format_type_str, "SMAP", 4) == 0)
       format_type = SMAP;
+    else if (strncmp_case(format_type_str, "SEASAT_H5", 9) == 0)
+      format_type = SEASAT_H5;
     else
       asfPrintError("Unsupported format: %s\n", format_type_str);
     }
@@ -932,7 +939,8 @@ int main(int argc, char *argv[])
         flags[f_METADATA_FILE] == FLAG_NOT_SET) {
       // GAMMA/ROIPAC requires the metadata file
       asfPrintError("%s ingest requires the specific name of the %s\n"
-	  "metadata file. See asf_import -help for more information.\n", 
+	  "metadata file.  Use the -metadata option.\n"
+          "See asf_import -help for more information.\n", 
 	  format_type_str, format_type_str);
     }
     if (flags[f_SLAVE] != FLAG_NOT_SET &&

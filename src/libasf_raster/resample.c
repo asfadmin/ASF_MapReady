@@ -60,39 +60,45 @@ static float filter(      /****************************************/
            total  =0,                      /* valid kernel values */
            i, j;                           /* loop counters       */
                                            /***********************/
-                                           
-    if (nn_flag) {
 
-      if (base>=0 && base<nl*ns)
-        return inbuf[base];
-      else if (base<0)
-        return inbuf[0];
-      else if (base>=nl*ns)
-        return inbuf[ns*nl-1];
-      asfPrintError("Not reached.\n");
 
-    }
-    else {
-      for (i = 0; i < nl; i++)
-      {
-        for (j = x-half; j <= x+half; j++)
-        {
-          if (base>=0 && base<nl*ns && inbuf[base] != 0 && j < ns)
-          {
-            kersum += inbuf[base];
-            total++;
+    if (nn_flag == 1) {  /* Use nearest neighbor value */
+      	if (base>=0 && base<nl*ns) 
+          return inbuf[base];
+	else if (base<0) 
+          return inbuf[0];
+      	else if (base>=nl*ns) 
+          return inbuf[ns*nl-1];
+      	asfPrintError("Not reached.\n");
+    } else if (nn_flag == 2) { /* Use logical OR of values */
+      	for (i = 0; i < nl; i++) {
+      	  for (j = x-half; j <= x+half; j++) {
+      	    if (base>=0 && base<nl*ns && inbuf[base] != 0 && j < ns) { kersum = (int) ((int) kersum | (int) inbuf[base]); }
+      	    base++;
+      	  }
+      	  base += ns;
+      	  base -= nsk;
+      	}
+       	return (kersum);
+    } else {
+        for (i = 0; i < nl; i++) {
+          for (j = x-half; j <= x+half; j++) {
+            if (base>=0 && base<nl*ns && inbuf[base] != 0 && j < ns) {
+              kersum += inbuf[base];
+              total++;
+            }
+            base++;
           }
-          base++;
+          base += ns;
+          base -= nsk;
         }
-        base += ns;
-        base -= nsk;
-      }
-
-      if (total != 0)
-        kersum /= (float) total;
-
-      return (kersum);
+        if (total != 0)
+          kersum /= (float) total;
+        return (kersum);
     }
+
+    asfPrintError("Not reached");
+    return 0;
 }
 
 static int
@@ -108,7 +114,7 @@ resample_impl(const char *infile, const char *outfile,
              onp, onl,              /* out number of pixels,lines     */
              xnsk,                  /* kernel size in samples (x)     */
              ynsk,                  /* kernel size in samples (y)     */
-             xhalf,yhalf,           /* half of the kernel size        */
+             yhalf,                 /* half of the kernel size        */
              n_lines,               /* number of lines in this kernel */
              s_line,                /* start line for input file      */
              xi = 0,                /* inbuf int x sample #           */
@@ -143,11 +149,10 @@ resample_impl(const char *infile, const char *outfile,
                     nl,np,onl,onp,yscalfact,xscalfact);
     }
 
-    xbase = 1.0 / (2.0 * xscalfact) - 0.5;
+    xbase = 1.0 / (2.0 * xscalfact);
     xrate = 1.0 / xscalfact;
-    xhalf = (xnsk-1)/2;
 
-    ybase = 1.0 / (2.0 * yscalfact) - 0.5;
+    ybase = 1.0 / (2.0 * yscalfact);
     yrate = 1.0 / yscalfact;
     yhalf = (ynsk-1)/2;
     n_lines = ynsk;
@@ -225,7 +230,7 @@ resample_impl(const char *infile, const char *outfile,
         for (i = 0; i < onl; i++)
         {
             /*--------- Read next set of lines for kernel ---------------*/
-            yi = i * yrate + ybase + 0.5;
+            yi = i * yrate + ybase;
             s_line = yi-yhalf;
             if (s_line < 0) s_line = 0;
             if (nl < ynsk+s_line) n_lines = nl-s_line;
@@ -244,7 +249,7 @@ resample_impl(const char *infile, const char *outfile,
             /*--------- Produce the output line and write to disk -------*/
             for (j = 0; j < onp; j++)
             {
-                xi = j * xrate + xbase + 0.5;
+                xi = j * xrate + xbase;
                 outbuf[j] = filter(inbuf,n_lines,np,xi,xnsk,nn_flag);
 		if (metaOut->general->radiometry >= r_SIGMA_DB &&
 		    metaOut->general->radiometry <= r_GAMMA_DB) {

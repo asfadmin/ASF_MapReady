@@ -12,8 +12,8 @@ static void put_bounding_box(GdkPixbuf *pixbuf, ImageInfo *ii)
 {
     int i, width, height, rowstride, n_channels;
     guchar *pixels, *p;
-    const int bb_width = get_big_image_width();
-    const int bb_height = get_big_image_height();
+    const int bb_width = get_big_image_width_sub();
+    const int bb_height = get_big_image_height_sub();
     int ns = ii->ns;
     int nl = ii->nl;
 
@@ -159,7 +159,7 @@ static GdkPixbuf * make_small_image(int force, ThumbnailData *tdata,
         pixbuf_small =
             gdk_pixbuf_scale_simple(pb, small_image_x_dim, small_image_y_dim,
                                     GDK_INTERP_BILINEAR);
-        gdk_pixbuf_unref(pb);
+        g_object_unref(pb);
 
         if (!pixbuf_small)
             asfPrintError("Failed to allocate scaled thumbnail pixbuf\n");

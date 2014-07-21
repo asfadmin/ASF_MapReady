@@ -1,0 +1,41 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+    "#src/asf/",
+    "#include/",
+    "#src/asf_meta/",
+    "#src/libasf_proj/",
+    "#src/libasf_geocode/",
+    "#src/libasf_raster/",
+])
+
+localenv.ParseConfig("pkg-config --cflags --libs libglade-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs gtk+-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
+
+localenv.AppendUnique(LIBS = [
+    "asf",
+    "asf_proj",
+    "asf_meta",
+])
+
+bins = localenv.Program("proj2proj", [
+    "proj2proj.c",
+    "utility.c",
+    "font.c",
+    "projfile.c",
+    "geocode.c",
+    "execute.c",
+    "new.c",
+])
+
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
+
+shares = localenv.File([
+    "proj2proj.glade",
+    "proj2proj_icon.ico",
+])
+
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)

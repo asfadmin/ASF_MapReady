@@ -2,7 +2,7 @@ include ../../make_support/system_rules
 
 TARGET = mosaic
 
-CFLAGS += \
+CFLAGS += $(W_ERROR) \
 	$(GLIBS_CFLAGS) \
 	$(TIFF_CFLAGS)
 

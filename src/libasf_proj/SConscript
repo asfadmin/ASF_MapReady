@@ -1,0 +1,26 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#include/",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+
+localenv.AppendUnique(LIBS = [
+    "m",
+    "proj",
+    "asf",
+    "tiff",
+])
+
+libs = localenv.SharedLibrary("libasf_proj", [
+        "project.c",
+        "spheroid_axes_lengths.c",
+        "datum_spheroid.c",
+        "geotiff_support.c",
+        ])
+
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+

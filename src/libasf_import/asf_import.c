@@ -208,6 +208,12 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     asfPrintStatus("   Data format: GRIDFLOAT\n");
     import_gridfloat(inBaseName, outBaseName);
   }
+  else if (format_type == SEASAT_H5) {
+    if (radiometry != r_AMP)
+      asfPrintError("Calibration of SEASAT data is not supported.\n");
+    asfPrintStatus("   Data format: SEASAT H5\n");
+    import_seasat_h5(inBaseName, outBaseName);
+  }
   else if (format_type == AIRSAR) {
     asfPrintStatus("   Data format: AIRSAR\n");
     import_airsar(inBaseName, update(radiometry, db_flag), outBaseName);
@@ -252,9 +258,13 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
 		 coherence_file, baseline_file, complex_gamma, 
 		 outBaseName);
   }
+  else if (format_type == ROIPAC_DEPRECATED) {
+    asfPrintStatus("   Data format: ROI_PAC (deprecated)\n");
+    import_roipac(inBaseName, outBaseName);
+  }
   else if (format_type == ROIPAC) {
     asfPrintStatus("   Data format: ROI_PAC\n");
-    import_roipac(inBaseName, outBaseName);
+    import_roipac_new(inBaseName, outBaseName, inMetaNameOption, ancillary_file);
   }
   else if (format_type == SMAP) {
     asfPrintStatus("   Data format: SMAP\n");

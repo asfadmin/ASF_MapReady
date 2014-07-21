@@ -1,12 +1,7 @@
 #ifndef POLYGON_H
 #define POLYGON_H
 
-typedef struct
-{
-    int n;
-    double *x;
-    double *y;
-} Poly;
+#include "asf_raster.h"
 
 Poly *polygon_new(int n, double *x, double *y);
 Poly *polygon_new_closed(int n, double *x, double *y);

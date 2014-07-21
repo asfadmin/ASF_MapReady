@@ -129,7 +129,8 @@ static void print_help(void)
       "Examples:\n" ASF_EXAMPLES_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n");
+      "Version:\n   %s\n\n",
+      version_string(ASF_NAME_STRING));
   exit(EXIT_SUCCESS);
 }
 
@@ -234,6 +235,9 @@ main (int argc, char *argv[])
   double x_shift_m = x_shift * meta->general->x_pixel_size;
   double y_shift_m = y_shift * meta->general->y_pixel_size;
 
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+
   if (meta->projection) {
     // when adjusting startX/startY, we have to take into account the
     // fact that startX/Y <-> line 0,0 are in the upper left corner --
@@ -243,35 +247,93 @@ main (int argc, char *argv[])
     // x and y both move up/right, so to get points to move that direction,
     // we must move the origin down/left.
 
-    if (user_gave_meters) {
-      asfPrintStatus("Shifting by: %.5f pixels (%.5f meters) in X.\n",
-                     x_shift, x_shift_m);
-      asfPrintStatus("             %.5f pixels (%.5f meters) in Y.\n\n",
+    if (strncmp_case(meta->projection->units, "degree", 6) == 0) {
+      asfPrintStatus("Projection has units of degrees.\n");
+
+      // Not sure if this really works
+      asfPrintWarning("Experimental code");
+
+      double x_shift_deg, y_shift_deg, xc, yc;
+      if (user_gave_meters) {
+        xc = meta->projection->startX + meta->projection->perX*ns/2;
+        yc = meta->projection->startY + meta->projection->perY*nl/2;
+        int zone = utm_zone(xc);
+        double utm_x, utm_y, new_xc, new_yc;
+        latLon2UTM_zone(yc, xc, 0, zone, &utm_x, &utm_y);
+        utm_x += x_shift_m;
+        utm_y += y_shift_m;
+        UTM2latLon(utm_x, utm_y, 0, zone, &new_yc, &new_xc);
+        x_shift_deg = new_xc - xc;
+        y_shift_deg = new_yc - yc;
+
+        // now the annoying reversal referred to above
+        x_shift_deg *= -1;
+        y_shift_deg *= -1;
+
+        asfPrintStatus("Zone %d\n", zone);
+        asfPrintStatus("Center lat/lon        : %10.5f, %10.5f\n", yc, xc);
+        asfPrintStatus("Shifted center lat/lon: %10.5f, %10.5f\n\n", new_yc, new_xc);
+
+        asfPrintStatus("A shift of %f meters in X corresponds adjusting startX by %g degrees.\n",
+                       x_shift_m, x_shift_deg);
+        asfPrintStatus("A shift of %f meters in Y corresponds adjusting startY by %g degrees.\n\n",
+                       y_shift_m, y_shift_deg);
+      }
+      else {
+        x_shift_deg = -x_shift;
+        y_shift_deg = y_shift;
+      }
+
+      asfPrintStatus("  StartX: %f -> %f\n"
+                     "  StartY: %f -> %f\n",
+          meta->projection->startX,
+          meta->projection->startX + x_shift_deg,
+          meta->projection->startY,
+          meta->projection->startY + y_shift_deg);
+
+      meta->projection->startX += x_shift_deg;
+      meta->projection->startY += y_shift_deg;
+
+      asfPrintStatus("After adjusting metadata, center lat/lon calculates as:\n");
+      xc = meta->projection->startX + meta->projection->perX*ns/2;
+      yc = meta->projection->startY + meta->projection->perY*nl/2;
+      asfPrintStatus("New center lat/lon    : %10.5f, %10.5f\n", yc, xc);
+    }
+    else
+    {
+      // projected data, not in degrees
+      if (user_gave_meters) {
+
+        asfPrintStatus("Shifting by: %.5f pixels (%.5f meters) in X.\n",
+                       x_shift, x_shift_m);
+        asfPrintStatus("             %.5f pixels (%.5f meters) in Y.\n\n",
                      -y_shift, y_shift_m);
-      asfPrintStatus("Input Metadata: %s\n", meta_name);
-      x_shift_m = -x_shift_m;
-      y_shift_m = -y_shift_m;
-    }
-    else {
-      asfPrintStatus("Shifting by: %.5f pixels (%.5f meters) in X.\n",
-                     x_shift, x_shift_m);
-      asfPrintStatus("             %.5f pixels (%.5f meters) in Y.\n\n",
-                     y_shift, -y_shift_m);
-      asfPrintStatus("Input Metadata: %s\n", meta_name);
-      x_shift_m = -x_shift_m;
-    }
+        asfPrintStatus("Input Metadata: %s\n", meta_name);
+        x_shift_m = -x_shift_m;
+        y_shift_m = -y_shift_m;
+      }
+      else {
+        asfPrintStatus("Shifting by: %.5f pixels (%.5f meters) in X.\n",
+                       x_shift, x_shift_m);
+        asfPrintStatus("             %.5f pixels (%.5f meters) in Y.\n\n",
+                       y_shift, -y_shift_m);
+        asfPrintStatus("Input Metadata: %s\n", meta_name);
+        x_shift_m = -x_shift_m;
+      }
 
-    // projected data -- update startX/Y
-    asfPrintStatus("  StartX: %f -> %f\n"
-                   "  StartY: %f -> %f\n",
-        meta->projection->startX,
-        meta->projection->startX + x_shift_m,
-        meta->projection->startY,
-        meta->projection->startY + y_shift_m);
+      asfPrintStatus("  StartX: %f -> %f\n"
+                     "  StartY: %f -> %f\n",
+          meta->projection->startX,
+          meta->projection->startX + x_shift_m,
+          meta->projection->startY,
+          meta->projection->startY + y_shift_m);
 
-    meta->projection->startX += x_shift_m;
-    meta->projection->startY += y_shift_m;
-  } else {
+      meta->projection->startX += x_shift_m;
+      meta->projection->startY += y_shift_m;
+    }
+  }
+  else {
+    // not projected data
     asfPrintStatus("Shifting by: %.5f pixels (%.5f meters) in X.\n",
                    x_shift, x_shift_m);
     asfPrintStatus("             %.5f pixels (%.5f meters) in Y.\n\n",

@@ -1,6 +1,7 @@
-#include "libasf_proj.h"
-#include "asf_meta.h"
+
 #include "projects.h"
+#include "asf_meta.h"
+#include "libasf_proj.h"
 #include "proj_api.h"
 
 #define DELTA 1e-05
@@ -168,7 +169,7 @@ void map_distortions(meta_projection *proj, double lat, double lon,
   double s = (dy_dlat*dx_dlon - dx_dlat*dy_dlon) * r / cos(lat);
 
   // Meridian/Parallel angle
-  double theta = aasin(s/(h*k));
+  //double theta = aasin(s/(h*k));
 
   // Tissot indicatrix (semimajor and semiminor axes)
   /*

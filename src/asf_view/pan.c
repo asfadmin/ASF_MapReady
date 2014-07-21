@@ -4,6 +4,7 @@
 // have to use static vars... actually, we probably should be using
 // the "user_data" stuff that is always being passed around
 static int big_image_drag = FALSE;
+static int big_image_drag_subimage = -1;
 static int planner_big_image_drag = FALSE;
 static int small_image_drag = FALSE;
 static int start_x=0, start_y=0;
@@ -110,6 +111,7 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
 
   if (big_image_drag) {
     big_image_drag = FALSE;
+    big_image_drag_subimage = -1;
 
     if (planner_big_image_drag) {
       planner_big_image_drag = FALSE;
@@ -167,7 +169,7 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
 #endif
     }
 
-    gdk_pixbuf_unref(pb);
+    g_object_unref(pb);
     fill_small(curr);
     fill_big(curr);
 
@@ -192,10 +194,10 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     if (maxy > height) maxy = height;
 
     double w = (double)(maxx-minx)/(double)small_image_x_dim * curr->ns;
-    double z1 = w/(double)get_big_image_width();
+    double z1 = w/(double)get_big_image_width_sub();
 
     double h = (double)(maxy-miny)/(double)small_image_y_dim * curr->nl;
-    double z2 = h/(double)get_big_image_height();
+    double z2 = h/(double)get_big_image_height_sub();
 
     center_line = ((double)(maxy+miny))/(double)small_image_y_dim*curr->nl/2.;
     center_samp = ((double)(maxx+minx))/(double)small_image_x_dim*curr->ns/2.;
@@ -359,6 +361,27 @@ on_motion_notify_event(
         start_y = y;
         big_image_drag = TRUE;
 
+        if (subimages == 2) {
+            if (x < get_big_image_width_sub())
+                big_image_drag_subimage = 1; // left
+            else
+                big_image_drag_subimage = 2; // right
+        }
+        else if (subimages == 4) {
+            int w = get_big_image_width_sub();
+            int h = get_big_image_height_sub();
+            if (x < w && y < h)
+                big_image_drag_subimage = 3; // top left
+            else if (x >= w && y < h)
+                big_image_drag_subimage = 4; // top right
+            else if (x < w && y >= h)
+                big_image_drag_subimage = 5; // bottom left
+            else if (x >= w && y >= h)
+                big_image_drag_subimage = 6; // bottom right
+            else
+                assert(0);
+        }
+
         if (planner_is_active() && (state & GDK_BUTTON1_MASK))
           planner_big_image_drag = TRUE;
 
@@ -389,8 +412,8 @@ on_motion_notify_event(
 
       // put the modified image in a new pixbuf
       int nchan = 3;
-      int biw = get_big_image_width();
-      int bih = get_big_image_height();
+      int biw = get_big_image_width_full();
+      int bih = get_big_image_height_full();
       unsigned char *bdata = CALLOC(sizeof(unsigned char), biw*bih*nchan);
 
       // we refer to "pb" here -- the pixbuf that was being shown before
@@ -399,7 +422,7 @@ on_motion_notify_event(
       unsigned char *pixels = gdk_pixbuf_get_pixels(pb);
 
       if (pb2)
-        gdk_pixbuf_unref(pb2);
+        g_object_unref(pb2);
 
       if (planner_big_image_drag) {
         // planner mode: just copy the pixels over, so pb2 is the same
@@ -418,47 +441,201 @@ on_motion_notify_event(
       }
       else {
         //printf ("Button 1 motion  (%d, %d)\n", off_x, off_y);
-                
-        // copy pixels over
-        // handle left&right completely off first
-        // vertically off will be ok, loop will have 0 iterations
-        // (horizontally off would blow up the memcpys)
-        if (off_x > biw || off_x < -biw) {
-          // image is all black! no action needed
-          ;
-        }
 
-        // 4 cases: user has panned up&left, up&right, down&left, down&right
-        else if (off_x >= 0 && off_y >= 0) {
-          for (ii=off_y; ii<bih; ++ii)
-            memcpy(bdata + ii*rowstride + off_x*3,
-                   pixels + (ii-off_y)*rowstride,
-                   (biw-off_x)*3);
-        } else if (off_x < 0 && off_y >= 0) {
-          for (ii=off_y; ii<bih; ++ii)
-            memcpy(bdata + ii*rowstride,
-                   pixels + (ii-off_y)*rowstride - off_x*3,
-                   (biw+off_x)*3);
-        } else if (off_x >= 0 && off_y < 0) {
-          for (ii=0; ii<bih+off_y; ++ii)
-            memcpy(bdata + ii*rowstride + off_x*3,
-                   pixels + (ii-off_y)*rowstride,
-                   (biw-off_x)*3);
-        } else if (off_x < 0 && off_y < 0) {
-          for (ii=0; ii<bih+off_y; ++ii)
-            memcpy(bdata + ii*rowstride,
-                   pixels + (ii-off_y)*rowstride - off_x*3,
-                   (biw+off_x)*3);
-        } else {
-          // The above cases should handle everything ...
-          assert(0);
+        if (subimages == 1) {
+            // copy pixels over
+            // handle left&right completely off first
+            // vertically off will be ok, loop will have 0 iterations
+            // (horizontally off would blow up the memcpys)
+            if (off_x > biw || off_x < -biw) {
+              // image is all black! no action needed
+              ;
+            }
+
+            // 4 cases: user has panned up&left, up&right, down&left, down&right
+            else if (off_x >= 0 && off_y >= 0) {
+              for (ii=off_y; ii<bih; ++ii)
+                memcpy(bdata + ii*rowstride + off_x*3,
+                       pixels + (ii-off_y)*rowstride,
+                       (biw-off_x)*3);
+            } else if (off_x < 0 && off_y >= 0) {
+              for (ii=off_y; ii<bih; ++ii)
+                memcpy(bdata + ii*rowstride,
+                       pixels + (ii-off_y)*rowstride - off_x*3,
+                       (biw+off_x)*3);
+            } else if (off_x >= 0 && off_y < 0) {
+              for (ii=0; ii<bih+off_y; ++ii)
+                memcpy(bdata + ii*rowstride + off_x*3,
+                       pixels + (ii-off_y)*rowstride,
+                       (biw-off_x)*3);
+            } else if (off_x < 0 && off_y < 0) {
+              for (ii=0; ii<bih+off_y; ++ii)
+                memcpy(bdata + ii*rowstride,
+                       pixels + (ii-off_y)*rowstride - off_x*3,
+                       (biw+off_x)*3);
+            } else {
+              // The above cases should handle everything ...
+              assert(0);
+            }
+        }
+        else if (subimages == 2) {
+
+            int biw2 = biw/2;
+            int offset = 0;
+
+            if (big_image_drag_subimage == 1) {
+                // user clicked in the left image -- copy over the right
+                // without modifications
+                for (ii=0; ii<bih; ++ii) {
+                  memcpy(bdata + ii*biw*3 + biw2*3,
+                         pixels + ii*rowstride + biw2*3,
+                         biw2*3);
+                }
+            }
+            else {
+                assert(big_image_drag_subimage == 2);
+                // user clicked in the right image -- copy over the left
+                // without modifications
+                for (ii=0; ii<bih; ++ii) {
+                  memcpy(bdata + ii*biw*3,
+                         pixels + ii*rowstride,
+                         biw2*3);
+                }
+                offset = biw2*3;
+            }
+
+            // now we copy pixels over corresponding to the drag, only in the
+            // subimage that they have grabbed.
+            if (off_x > biw2 || off_x < -biw2) {
+              ;
+            }
+            else if (off_x >= 0 && off_y >= 0) {
+              for (ii=off_y; ii<bih; ++ii)
+                memcpy(bdata + ii*biw*3 + off_x*3 + offset,
+                       pixels + (ii-off_y)*rowstride + offset,
+                       (biw2-off_x)*3);
+            } else if (off_x < 0 && off_y >= 0) {
+              for (ii=off_y; ii<bih; ++ii)
+                memcpy(bdata + ii*biw*3 + offset,
+                       pixels + (ii-off_y)*rowstride - off_x*3 + offset,
+                       (biw2+off_x)*3);
+            } else if (off_x >= 0 && off_y < 0) {
+              for (ii=0; ii<bih+off_y; ++ii)
+                memcpy(bdata + ii*biw*3 + off_x*3 + offset,
+                       pixels + (ii-off_y)*rowstride + offset,
+                       (biw2-off_x)*3);
+            } else if (off_x < 0 && off_y < 0) {
+              for (ii=0; ii<bih+off_y; ++ii)
+                memcpy(bdata + ii*biw*3 + offset,
+                       pixels + (ii-off_y)*rowstride - off_x*3 + offset,
+                       (biw2+off_x)*3);
+            } else {
+              // The above cases should handle everything ...
+              assert(0);
+            }
+        }
+        else if (subimages == 4) {
+
+            int biw2 = biw/2;
+            int bih2 = bih/2;
+            int offset_w = 0;
+            int offset_h = 0;
+
+            if (big_image_drag_subimage == 3) {
+                // user clicked in the top left image
+                for (ii=0; ii<bih2; ++ii) {
+                  memcpy(bdata + ii*biw*3 + biw2*3,
+                         pixels + ii*rowstride + biw2*3,
+                         biw2*3);
+                }
+                for (ii=bih2; ii<bih; ++ii) {
+                  memcpy(bdata + ii*biw*3,
+                         pixels + ii*rowstride,
+                         biw*3);
+                }
+            }
+            else if (big_image_drag_subimage == 4) {
+                // user clicked in the top right image
+                for (ii=0; ii<bih; ++ii) {
+                  memcpy(bdata + ii*biw*3,
+                         pixels + ii*rowstride,
+                         biw2*3);
+                }
+                for (ii=bih2; ii<bih; ++ii) {
+                  memcpy(bdata + ii*biw*3,
+                         pixels + ii*rowstride,
+                         biw*3);
+                }
+                offset_w = biw2*3;
+            }
+            else if (big_image_drag_subimage == 5) {
+                // user clicked in the bottom left image
+                for (ii=bih2; ii<bih; ++ii) {
+                  memcpy(bdata + ii*biw*3 + biw2*3,
+                         pixels + ii*rowstride + biw2*3,
+                         biw2*3);
+                }
+                for (ii=0; ii<bih2; ++ii) {
+                  memcpy(bdata + ii*biw*3,
+                         pixels + ii*rowstride,
+                         biw*3);
+                }
+                offset_h = bih2;
+            }
+            else if (big_image_drag_subimage == 6) {
+                // user clicked in the bottom right image
+                for (ii=bih2; ii<bih; ++ii) {
+                  memcpy(bdata + ii*biw*3,
+                         pixels + ii*rowstride,
+                         biw2*3);
+                }
+                for (ii=0; ii<bih2; ++ii) {
+                  memcpy(bdata + ii*biw*3,
+                         pixels + ii*rowstride,
+                         biw*3);
+                }
+                offset_w = biw2*3;
+                offset_h = bih2;
+            }
+            else
+                assert(0);
+
+            // now we copy pixels over corresponding to the drag, only in the
+            // subimage that they have grabbed.
+            if (off_x > biw2 || off_x < -biw2) {
+              ;
+            }
+            else if (off_x >= 0 && off_y >= 0) {
+              for (ii=off_y; ii<bih2; ++ii)
+                memcpy(bdata + (ii+offset_h)*biw*3 + off_x*3 + offset_w,
+                       pixels + (ii-off_y+offset_h)*rowstride + offset_w,
+                       (biw2-off_x)*3);
+            } else if (off_x < 0 && off_y >= 0) {
+              for (ii=off_y; ii<bih2; ++ii)
+                memcpy(bdata + (ii+offset_h)*biw*3 + offset_w,
+                       pixels + (ii-off_y+offset_h)*rowstride - off_x*3 + offset_w,
+                       (biw2+off_x)*3);
+            } else if (off_x >= 0 && off_y < 0) {
+              for (ii=0; ii<bih2+off_y; ++ii)
+                memcpy(bdata + (ii+offset_h)*biw*3 + off_x*3 + offset_w,
+                       pixels + (ii-off_y+offset_h)*rowstride + offset_w,
+                       (biw2-off_x)*3);
+            } else if (off_x < 0 && off_y < 0) {
+              for (ii=0; ii<bih2+off_y; ++ii)
+                memcpy(bdata + (offset_h+ii)*biw*3 + offset_w,
+                       pixels + (ii-off_y+offset_h)*rowstride - off_x*3 + offset_w,
+                       (biw2+off_x)*3);
+            } else {
+              // The above cases should handle everything ...
+              assert(0);
+            }
         }
 
         pb2 = 
           gdk_pixbuf_new_from_data(bdata, GDK_COLORSPACE_RGB, FALSE,
                                    8, biw, bih, biw*3, destroy_pb_data, NULL);
       }
-                
+ 
       gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb2);
       return FALSE;
     }

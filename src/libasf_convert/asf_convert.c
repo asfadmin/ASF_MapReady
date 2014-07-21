@@ -26,27 +26,6 @@
 #define FLOAT_COMPARE(a, b) (abs((a) - (b)) \
 			     < UNIT_TESTS_MICRON ? 1 : 0)
 
-static char *t3_matrix[9] = {"T11.bin","T12_real.bin","T12_imag.bin",
-			     "T13_real.bin","T13_imag.bin","T22.bin",
-			     "T23_real.bin","T23_imag.bin","T33.bin"};
-static char *t4_matrix[16] = {"T11.bin","T12_real.bin","T12_imag.bin",
-			      "T13_real.bin","T13_imag.bin","T14_real.bin",
-			      "T14_imag.bin","T22.bin","T23_real.bin",
-			      "T23_imag.bin","T24_real.bin","T24_imag.bin",
-			      "T33.bin","T34_real.bin","T34_imag.bin",
-			      "T44.bin"};
-static char *c2_matrix[4] = {"C11.bin","C12_real.bin","C12_imag.bin",
-			     "C22.bin"};
-static char *c3_matrix[9] = {"C11.bin","C12_real.bin","C12_imag.bin",
-			     "C13_real.bin","C13_imag.bin","C22.bin",
-			     "C23_real.bin","C23_imag.bin","C33.bin"};
-static char *c4_matrix[16] = {"C11.bin","C12_real.bin","C12_imag.bin",
-			      "C13_real.bin","C13_imag.bin","C14_real.bin",
-			      "C14_imag.bin","C22.bin","C23_real.bin",
-			      "C23_imag.bin","C24_real.bin","C24_imag.bin",
-			      "C33.bin","C34_real.bin","C34_imag.bin",
-			      "C44.bin"};
-
 static char *freeman2_decomposition[2] = 
   {"Freeman2_Ground","Freeman2_Vol"};
 static char *freeman3_decomposition[3] = 
@@ -670,7 +649,7 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
   int ii;
 
   // Read radiometry
-  radiometry_t radiometry;
+  radiometry_t radiometry = r_AMP;
   if (strncmp_case(cfg->import->radiometry, "AMPLITUDE_IMAGE", 15) == 0)
     radiometry = r_AMP;
   else if (strncmp_case(cfg->import->radiometry, "POWER_IMAGE", 11) == 0)
@@ -1027,7 +1006,7 @@ extern char *g_status_file;
 static void save_intermediate(convert_config *cfg, char *tag, char *filename)
 {
   // the "tag" that is passed in needs to match what is looked for
-  // in the GUI: asf_convert_gui/file_list.c:move_to_completed_files_list()
+  // in the GUI: mapready/file_list.c:move_to_completed_files_list()
 
   
 
@@ -1035,7 +1014,7 @@ static void save_intermediate(convert_config *cfg, char *tag, char *filename)
   {
     if (!intermediates_file) {
       // the name of the intermediates file needs to match what the GUI
-      // will look for in asf_convert_gui/execute.c:do_convert()
+      // will look for in mapready/execute.c:do_convert()
       char *status_file = STRDUP(g_status_file);
       char *ext = strstr(status_file, ".status");
       if (ext) *ext = '\0';
@@ -1369,7 +1348,8 @@ static int check_config(const char *configFileName, convert_config *cfg)
 	strncmp_case(cfg->import->format, "ALOS_MOSAIC", 11) != 0 &&
 	strncmp_case(cfg->import->format, "GEOTIFF", 7) != 0 &&
 	strncmp_case(cfg->import->format, "ROIPAC", 6) != 0 &&
-	strncmp_case(cfg->import->format, "UAVSAR", 6) != 0) {
+	strncmp_case(cfg->import->format, "UAVSAR", 6) != 0 &&
+	strncmp_case(cfg->import->format, "SEASAT_H5", 9) != 0) {
       asfPrintError("Selected import format not supported\n");
     }
         
@@ -1626,13 +1606,18 @@ static int check_config(const char *configFileName, convert_config *cfg)
 	cfg->geocoding->pixel = 5.0;
       else if (isCEOS(cfg->general->in_name, &error)) {
 	meta_parameters *meta = meta_read(cfg->general->in_name);
-	// Check for ScanSAR data: RSAT-1 - 100 m
+	// Check for ScanSAR data:
+        //    RSAT-1    - 100 m
+        //    Palsar WB - 100 m 
 	if (strcmp_case(meta->general->sensor, "RSAT-1") == 0 &&
 	    (strcmp_case(meta->general->mode, "SNA") == 0 ||
 	     strcmp_case(meta->general->mode, "SNB") == 0 ||
 	     strcmp_case(meta->general->mode, "SWA") == 0 ||
-	     strcmp_case(meta->general->mode, "SWB") == 0))
+	     strcmp_case(meta->general->mode, "SWB") == 0)) 
 	  cfg->geocoding->pixel = 100.0;
+        else if (strcmp_case(meta->general->sensor, "ALOS") == 0 &&
+                 strncmp_case(meta->general->mode, "WB", 2) == 0)
+          cfg->geocoding->pixel = 100.0;
 	// Anything else - 12.5 m
 	else
 	  cfg->geocoding->pixel = 12.5;
@@ -1911,6 +1896,8 @@ char ***do_import(convert_config *cfg)
       format_type = ROIPAC;
     else if (strncmp_case(cfg->import->format, "UAVSAR", 6) == 0)
       format_type = UAVSAR;
+    else if (strncmp_case(cfg->import->format, "SEASAT_H5", 9) == 0)
+      format_type = SEASAT_H5;
     else {
       asfPrintError("Unknown Format: %s\n", cfg->import->format);
       format_type = CEOS; // actually this is not reached
@@ -2517,6 +2504,9 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
     }
     else {
       update_status("Terrain Correcting...");
+
+      int matching_level = cfg->terrain_correct->no_matching ? MATCHING_NONE : MATCHING_FULL;
+
       check_return(
 		   asf_terrcorr_ext(inFile, cfg->terrain_correct->dem,
 				    cfg->terrain_correct->mask, outFile,
@@ -2530,7 +2520,8 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
 				    cfg->terrain_correct->water_height_cutoff,
 				    cfg->terrain_correct->do_radiometric,
 				    cfg->terrain_correct->smooth_dem_holes,
-				    NULL, cfg->terrain_correct->no_matching,
+				    NULL,
+                                    matching_level,
 				    cfg->terrain_correct->range_offset,
 				    cfg->terrain_correct->azimuth_offset,
 				    cfg->terrain_correct->use_gr_dem,
@@ -2580,7 +2571,7 @@ static char *do_processing(convert_config *cfg, const char *inFile_in, int saveD
       sprintf(outFile, "%s", cfg->general->out_name);
     
     // Check radiometry
-    radiometry_t radiometry;
+    radiometry_t radiometry=r_AMP;
     if (strcmp_case(cfg->calibrate->radiometry, "SIGMA") == 0)
       radiometry = r_SIGMA;
     else if (strcmp_case(cfg->calibrate->radiometry, "BETA") == 0)
@@ -2977,7 +2968,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	    scale = MINMAX;
 	  check_return(
 		       asf_export_bands(format, is_polsarpro ? scale : TRUNCATE, TRUE, 0, 0,
-					lut_file, inFile, outFile, bands,
+					lut_file, 0, inFile, outFile, bands,
 					NULL, NULL),
 		       "exporting thumbnail (asf_export), using rgb look up table.\n");
 	  int i;
@@ -3018,7 +3009,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
 	    char **bands = find_bands(inFile, 1, red, green, blue, &n);
 	    if (n > 0) {
 	      check_return(
-			   asf_export_bands(format, scale, TRUE, 0, 0, NULL,
+			   asf_export_bands(format, scale, TRUE, 0, 0, NULL, 0,
 					    tmpFile, outFile, bands, NULL, NULL),
 			   "exporting thumbnail data file (asf_export), banded\n");
 	      // No zipping for the moment
@@ -3058,7 +3049,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
             strcpy(bands[3], "");
           }
           check_return(asf_export_bands(format, NONE, TRUE,
-                                        true_color, false_color, NULL,
+                                        true_color, false_color, NULL, 0,
                                         tmpFile, outFile, bands, NULL, NULL),
                        "exporting thumbnail (asf_export), color banded.\n");
           // No zipping for the moment
@@ -3085,7 +3076,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
                                         meta->general->band_count);
       int noutputs;
       char **outputs;
-      check_return(asf_export_bands(format, scale, FALSE, 0, 0, NULL,
+      check_return(asf_export_bands(format, scale, FALSE, 0, 0, NULL, 0,
 				    tmpFile, outFile, bands, &noutputs,
 				    &outputs),
 		   "exporting thumbnail data file (asf_export)\n");
@@ -3228,7 +3219,6 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   // Process the incidence angles file if requested
   if (cfg->general->terrain_correct &&
       cfg->terrain_correct &&
-      cfg->terrain_correct->do_radiometric &&
       cfg->terrain_correct->save_incid_angles)
   {
     if (cfg->general->geocoding) {
@@ -3248,7 +3238,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
     }
     else {
       // no geocoding ... just prepare the 'outFile' param for export
-      sprintf(outFile, "%s%cincidence_angles", 
+      sprintf(outFile, "%s%cterrcorr_side_products", 
 	      cfg->general->tmp_dir, DIR_SEPARATOR);
     }
    
@@ -3281,7 +3271,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       asfPrintStatus("Exporting terrain correction side products...\n");
       char *outTif = appendExt(outFile, ".tif");
 
-      check_return(asf_export_bands(GEOTIFF, NONE, 0, 0, 0, NULL,
+      check_return(asf_export_bands(GEOTIFF, NONE, 0, 0, 0, NULL, 0,
 				    inFile, outTif, NULL, NULL, NULL),
 		   "exporting terrain correction side products (asf_export)\n");
 
@@ -3293,13 +3283,18 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       save_intermediate(cfg, "Local Incidence Angles", intFile);
       FREE(intFile);
 
-      intFile = appendToBasename(outTif, "_RADIOMETRIC_CORRECTION");
-      save_intermediate(cfg, "Radiometric Correction", intFile);
-      FREE(intFile);
+      if (cfg->terrain_correct->do_radiometric) {
 
-      intFile = appendToBasename(outTif, "_COS_PHI");
-      save_intermediate(cfg, "Cos Phi", intFile);
-      FREE(intFile);
+          // These are only available when radiometric correction was performed
+          intFile = appendToBasename(outTif, "_RADIOMETRIC_CORRECTION");
+          save_intermediate(cfg, "Radiometric Correction", intFile);
+          FREE(intFile);
+
+          intFile = appendToBasename(outTif, "_COS_PHI");
+          save_intermediate(cfg, "Cos Phi", intFile);
+          FREE(intFile);
+      }
+
       FREE(outTif);
     }
     else {
@@ -3366,7 +3361,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
       
       check_return(
 		   asf_export_bands(GEOTIFF, TRUNCATE, 1, 0, 0,
-				    "layover_mask.lut", inFile, outFile, bands,
+				    "layover_mask.lut", 0, inFile, outFile, bands,
 				    NULL, NULL),
 		   "exporting layover mask (asf_export)\n");
       meta_free(meta);
@@ -3427,7 +3422,7 @@ static int asf_convert_file(char *configFileName, int saveDEM)
   }
   
   // Don't change this message unless you also change the code in
-  // asf_convert_gui/execute.c to look for a different successful
+  // mapready/execute.c to look for a different successful
   // completion string.  GUI currently detects successful processing
   // by looking for this message in the log file.... (yeah, I know.)
   asfPrintStatus("\nSuccessful completion!\n\n");
@@ -3741,7 +3736,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     projection_type_t proj_type;
     datum_type_t datum;
     spheroid_type_t spheroid;
-    resample_method_t resample_method;
+    resample_method_t resample_method=RESAMPLE_NEAREST_NEIGHBOR;
     int multiband = 1;
     int band_num = 0;
     char *err=NULL;
@@ -4060,7 +4055,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
       check_return(
 	asf_export_bands(format, (is_polsarpro || is_insar) ? scale : TRUNCATE,
                          is_polsarpro ? FALSE : TRUE, 0, 0,
-                         lut_file, inFile, outFile, bands, &num_outputs,
+                         lut_file, 0, inFile, outFile, bands, &num_outputs,
                          &output_names),
         "exporting data file (asf_export), using rgb look up table.\n");
       int i;
@@ -4086,7 +4081,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
                          "Green band: %s\n"
                          "Blue band : %s\n\n",
                          red, green, blue);
-          check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL,
+          check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL, 0,
                                         inFile, outFile, bands, &num_outputs,
                                         &output_names),
                        "export data file (asf_export), banded.\n");
@@ -4153,7 +4148,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
             strcpy(bands[3], "");
           }
           check_return(asf_export_bands(format, SIGMA, TRUE,
-                                        true_color, false_color, NULL,
+                                        true_color, false_color, NULL, 0,
                                         inFile, outFile, bands,
                                         &num_outputs, &output_names),
                        "exporting data file (asf_export), color banded.\n");
@@ -4187,13 +4182,13 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 	  if (strcmp_case(cfg->import->format, "POLSARPRO") == 0 &&
 	      format == GEOTIFF)
 	    check_return(asf_export_bands(format, scale, FALSE,
-					  0, 0, NULL,
+					  0, 0, NULL, 0,
 					  inFile, outFile, bands,
 					  &num_outputs, &output_names),
 			 "exporting data file (asf_export), greyscale bands.\n");
 	  else
 	    check_return(asf_export_bands(format, scale, FALSE,
-					  0, 0, NULL,
+					  0, 0, NULL, 0,
 					  inFile, outFile, NULL,
 					  &num_outputs, &output_names),
 			 "exporting data file (asf_export), greyscale bands.\n");
@@ -4235,7 +4230,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
 	      md->general->image_data_type = RGB_STACK;
 	      meta_write(md, inFile);
 	      meta_free(md);
-	      check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL,
+	      check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL, 0,
 					    inFile, decompFile, bands, 
 					    &num_outputs, &output_names),
 			   "export data file (asf_export), polarimetric decomposition.\n");
@@ -4261,7 +4256,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
             asfPrintError("Selected band for export not found.\n");
           }
           check_return(asf_export_bands(format, scale, FALSE,
-                                        0, 0, NULL,
+                                        0, 0, NULL, 0,
                                         inFile, outFile, band_names,
                                         &num_outputs, &output_names),
                        "exporting data file (asf_export), single selected greyscale band.\n");
@@ -4270,7 +4265,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
         }
         else {
           // single band
-          check_return(asf_export_bands(format, scale, 0, 0, 0, NULL,
+          check_return(asf_export_bands(format, scale, 0, 0, 0, NULL, 0,
                                         inFile, outFile, NULL,
                                         &num_outputs, &output_names),
                        "exporting data file (asf_export), single band.\n");
