@@ -4,6 +4,7 @@
 #include "fft.h"
 #include "fft2d.h"
 #include "asf_raster.h"
+#include "asf_sar.h"
 
 #if defined(mingw) // MAXFLOAT not available on mingw
 #define MAXFLOAT 3.4028234663852886e+38
@@ -616,6 +617,77 @@ int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
   // Compare both offsets
   *offsetX = diffX - offX;
   *offsetY = diffY - offY;
+
+  return (0);
+}
+
+int fftMatch_opt(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
+{ 
+  // Generate temporary directory
+  char tmpDir[1024];
+  char metaFile[1024], outFile[1024], sarFile[1024], opticalFile[1024];
+  char *baseName = get_basename(inFile1);
+  strcpy(tmpDir, baseName);
+  strcat(tmpDir, "-");
+  strcat(tmpDir, time_stamp_dir());
+  create_clean_dir(tmpDir);
+  
+  // Cutting optical to SAR extent
+  asfPrintStatus("Cutting optical to SAR extent ...\n");
+  sprintf(metaFile, "%s.meta", inFile1);
+  sprintf(outFile, "%s%c%s_sub.img", tmpDir, DIR_SEPARATOR, inFile2);
+  trim_to(inFile2, outFile, metaFile);
+  
+  // Clipping optical image including blackfill
+  asfPrintStatus("\nClipping optical image including blackfill ...\n");
+  meta_parameters *metaOpt = meta_read(outFile);
+  meta_parameters *metaSAR = meta_read(metaFile);
+  int line_count = metaSAR->general->line_count;
+  int sample_count = metaSAR->general->sample_count;
+  float *floatLine = (float *) MALLOC(sizeof(float)*sample_count);
+  unsigned char *byteLine = (unsigned char *) MALLOC(sizeof(char)*sample_count);
+  FILE *fpOptical = FOPEN(outFile, "rb");
+  sprintf(sarFile, "%s.img", inFile1);
+  FILE *fpSAR = FOPEN(sarFile, "rb");
+  sprintf(outFile, "%s%c%s_mask.img", tmpDir, DIR_SEPARATOR, inFile2);
+  sprintf(metaFile, "%s%c%s_mask.meta", tmpDir, DIR_SEPARATOR, inFile2);
+  FILE *fpOut = FOPEN(outFile, "wb");
+  int ii, kk;
+  for (ii=0; ii<line_count; ii++) {
+    get_float_line(fpSAR, metaSAR, ii, floatLine);
+    get_byte_line(fpOptical, metaOpt, ii, byteLine);
+    for (kk=0; kk<sample_count; kk++) {
+      if (!FLOAT_EQUIVALENT(floatLine[kk], 0.0))
+        floatLine[kk] = (float) byteLine[kk];
+    }
+    put_float_line(fpOut, metaSAR, ii, floatLine);
+  }
+  FCLOSE(fpOptical);
+  FCLOSE(fpSAR);
+  FCLOSE(fpOut);
+  meta_write(metaSAR, metaFile);
+
+  // Edge filtering optical image
+  asfPrintStatus("\nEdge filtering optical image ...\n");
+  sprintf(opticalFile, "%s%c%s_sobel.img", tmpDir, DIR_SEPARATOR, inFile2);
+  kernel_filter(outFile, opticalFile, SOBEL, 3, 0, 0);
+
+  // Scaling to dBs
+  asfPrintStatus("\nScaling to dB ...\n");
+  sprintf(outFile, "%s%c%s_db.img", tmpDir, DIR_SEPARATOR, inFile1);
+  asf_logscale(inFile1, outFile);
+
+  // Edge filtering SAR image
+  asfPrintStatus("\nEdge filtering SAR image ...\n");
+  sprintf(sarFile, "%s%c%s_sobel.img", tmpDir, DIR_SEPARATOR, inFile1);
+  kernel_filter(outFile, sarFile, SOBEL, 3, 0, 0);
+
+  // FFT matching on a grid
+  asfPrintStatus("\nFFT matching on a grid ...\n");
+  fftMatch_proj(sarFile, opticalFile, offsetX, offsetY);
+
+  // Clean up
+  remove_dir(tmpDir);
 
   return (0);
 }

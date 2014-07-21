@@ -195,6 +195,7 @@ void parse_date(const char *inStr,ymd_date *date,hms_time *time);
 const char *date_str(double s);
 const char *date_str_long(double s);
 double seconds_from_str(const char *date_str);
+double measures2sec(const char *inStr);
 
 // "Dates as longs" utilities
 // These are all in longdate.c
