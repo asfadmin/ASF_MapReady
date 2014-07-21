@@ -142,13 +142,14 @@ netcdf_t *initialize_netcdf_file(const char *output_file, band_t *band,
     asfPrintError("Could not open netCDF file (%s).\n", nc_strerror(status));
   
   // Define projection
+  int dim_str[1] = 50;
   char str[512];
   double fValue;
   int projected = FALSE;
   if (mp)
     projected = TRUE;
   if (projected) {
-    status = nc_def_var(ncid, "projection", NC_CHAR, 0, 0, &var_id);
+    status = nc_def_var(ncid, "projection", NC_CHAR, 1, dim_str, &var_id);
     if (status != NC_NOERR)
       asfPrintError("Problem with 'projection' variable definition\n");
     if (mp->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
@@ -196,7 +197,7 @@ netcdf_t *initialize_netcdf_file(const char *output_file, band_t *band,
 		      spatial_ref);
       sprintf(str, "+proj=utm +zone=%d", mp->param.utm.zone);
       if (meta->general->center_latitude < 0)
-	strcat(str, " +south");
+	      strcat(str, " +south");
       nc_put_att_text(ncid, var_id, "proj4text", strlen(str), str);
       nc_put_att_int(ncid, var_id, "zone", NC_INT, 1, &mp->param.utm.zone);
       nc_put_att_double(ncid, var_id, "semimajor_radius", NC_DOUBLE, 1, 

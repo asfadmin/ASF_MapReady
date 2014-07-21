@@ -138,7 +138,7 @@ int main(int argc, char **argv)
       ii--;
     ext = (char *) &inFile[ii];
     if (strcmp_case(ext, ".AGE") == 0 ||
-	strcmp_case(ext, ".THK") == 0)
+	    strcmp_case(ext, ".THK") == 0)
       size = 109;
     else if (strcmp_case(ext, ".BSH") == 0)
       size = 104;
@@ -284,27 +284,27 @@ int main(int argc, char **argv)
     fpMask = FOPEN(maskFile, "wb");
     for (ii=0; ii<line_count; ii++) {
       for (kk=0; kk<sample_count*num; kk++) {
-	FREAD(&floatBuf[kk], sizeof(float), 1, fpIn);
-	ieee_big32(floatBuf[kk]);
+	      FREAD(&floatBuf[kk], sizeof(float), 1, fpIn);
+	      ieee_big32(floatBuf[kk]);
       }
       for (ll=0; ll<num; ll++) {
-	for (kk=0; kk<sample_count; kk++) {
-	  if (floatBuf[kk*num+ll] < 10000000000.0) {
-	    floatBand[kk] = floatBuf[kk*num+ll];
-	    maskBuf[kk] = 1.0;
-	  }
-	  else if (floatBuf[kk*num+ll] > 10000000000.0) {
-	    maskBuf[kk] = 1.0;
-	    floatBand[kk] = MAGIC_UNSET_DOUBLE;
- 	  }
-	  else {
-	    maskBuf[kk] = 0.0;
-	    floatBand[kk] = MAGIC_UNSET_DOUBLE;
-	  }
-	}
-	put_band_float_line(fpOut, meta, ll, line_count-ii-1, floatBand);
-	if (ll == 0)
-	  put_float_line(fpMask, metaByte, line_count-ii-1, maskBuf);
+        for (kk=0; kk<sample_count; kk++) {
+          if (floatBuf[kk*num+ll] < 10000000000.0) {
+            floatBand[kk] = floatBuf[kk*num+ll];
+            maskBuf[kk] = 1.0;
+          }
+          else if (floatBuf[kk*num+ll] > 10000000000.0) {
+            maskBuf[kk] = 1.0;
+            floatBand[kk] = MAGIC_UNSET_DOUBLE;
+          }
+          else {
+            maskBuf[kk] = 0.0;
+            floatBand[kk] = MAGIC_UNSET_DOUBLE;
+          }
+        }
+        put_band_float_line(fpOut, meta, ll, line_count-ii-1, floatBand);
+        if (ll == 0)
+          put_float_line(fpMask, metaByte, line_count-ii-1, maskBuf);
       }
     }
     FCLOSE(fpOut);
@@ -390,23 +390,23 @@ int main(int argc, char **argv)
     }
     else {
       if (strcmp_case(band[ii].name, "ice_age") == 0) {
-	band[ii].time_count = nAge;
-	band[ii].cat_count = bAge;
+	      band[ii].time_count = nAge;
+	      band[ii].cat_count = bAge;
       }
       else if (strcmp_case(band[ii].name, "ice_thickness") == 0) {
-	band[ii].time_count = nThk;
-	band[ii].cat_count = bThk;
+	      band[ii].time_count = nThk;
+	      band[ii].cat_count = bThk;
       }
       else if (strcmp_case(band[ii].name, "multiyear_ice_fraction") == 0) {
-	band[ii].time_count = nMyr;
-	band[ii].cat_count = bMyr;
+	      band[ii].time_count = nMyr;
+	      band[ii].cat_count = bMyr;
       }
       band[ii].valid_range[0] = MAGIC_UNSET_DOUBLE;
       band[ii].valid_range[1] = MAGIC_UNSET_DOUBLE;
     }
     if (image_data_type == ICE_AGE ||
-	image_data_type == ICE_THICKNESS ||
-	image_data_type == BACKSCATTER_HISTOGRAM)
+	    image_data_type == ICE_THICKNESS ||
+	    image_data_type == BACKSCATTER_HISTOGRAM)
       band[ii].dim_count = 4;
     else
       band[ii].dim_count = 3;
@@ -519,9 +519,9 @@ int main(int argc, char **argv)
   strcpy(band[band_count+5].cell_methods, "");
   strcpy(band[band_count+5].coordinates, "");
   strcpy(band[band_count+5].grid_mapping, "");
-  strcpy(band[band_count+5].long_name, "projection_grid_x_centers");
+  strcpy(band[band_count+5].long_name, "projection_grid_x_center");
   strcpy(band[band_count+5].references, "");
-  strcpy(band[band_count+5].standard_name, "projection_x_coordinates");
+  strcpy(band[band_count+5].standard_name, "projection_x_coordinate");
   strcpy(band[band_count+5].units, "meters");
   strcpy(band[band_count+5].units_description, "");
   strcpy(band[band_count+5].bounds, "");
@@ -539,9 +539,9 @@ int main(int argc, char **argv)
   strcpy(band[band_count+6].cell_methods, "");
   strcpy(band[band_count+6].coordinates, "");
   strcpy(band[band_count+6].grid_mapping, "");
-  strcpy(band[band_count+6].long_name, "projection_grid_y_centers");
+  strcpy(band[band_count+6].long_name, "projection_grid_y_center");
   strcpy(band[band_count+6].references, "");
-  strcpy(band[band_count+6].standard_name, "projection_y_coordinates");
+  strcpy(band[band_count+6].standard_name, "projection_y_coordinate");
   strcpy(band[band_count+6].units, "meters");
   strcpy(band[band_count+6].units_description, "");
   strcpy(band[band_count+6].bounds, "");

@@ -2,6 +2,7 @@
 #include "airsar.h"
 #include "asf_meta.h"
 #include "asf_endian.h"
+#include "asf_import.h"
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_math.h>
@@ -16,7 +17,7 @@
 char **get_uavsar_products(const char *data_type, char *type, int *num_product)
 {  
   char *rest, *token;
-  int ii, product_count;
+  int ii, product_count = 0;
   char *tmp = (char *) MALLOC(sizeof(char)*60);
   strcpy(tmp, data_type);
 
