@@ -2,4 +2,3 @@ META,SHAPE,Type,Length,Decimals,Definition
 file_name,GRANULE,string,255,0,File name
 start_time,START_TIME,string,30,0,Start time
 stop_time,STOP_TIME,string,30,0,Stop time
-direction,DIRECTION,string,20,0,Orbit direction

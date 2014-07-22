@@ -463,6 +463,7 @@ void export_netcdf(const char *in_base_name, char *output_file_name,
     lons = (float *) MALLOC(sizeof(float)*pixel_count);
     asfPrintStatus("Generating band 'longitude' ...\n");
     meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
+
     if (lon < 0.0)
       first_value = lon + 360.0;
     else

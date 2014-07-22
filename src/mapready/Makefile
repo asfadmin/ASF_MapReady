@@ -62,6 +62,7 @@ LIB = \
 	$(ASF_LIB)/asf_fft.a \
 	$(ASF_LIB)/libasf_proj.a \
 	$(ASF_LIB)/asf.a \
+	$(GDAL_LIBS) \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(JPEG_LIBS) \
@@ -123,6 +124,7 @@ LDLIBS = \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(GDAL_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	-ljpeg \

@@ -37,6 +37,7 @@ LIBS :=	\
 	$(LIBDIR)/libasf_export.a \
 	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/asf.a \
+	$(GDAL_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(GSL_LIBS) \

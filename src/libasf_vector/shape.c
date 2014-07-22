@@ -1254,8 +1254,9 @@ int convert2shape(char *inFile, char *outFile, char *format, int list,
     }
     while (fgets(line, 1024, fp)) {
       chomp(line);
-      if (strcmp_case(format, "META") == 0) {
-        meta = meta2vector(line, &dbf, &nAttr, &lat, &lon, &nCoords);
+      if (strcmp_case(format, "META") == 0 ||
+        strcmp_case(format, "COVERAGE") == 0) {
+        meta = meta2vector(line, format, &dbf, &nAttr, &lat, &lon, &nCoords);
         if (n == 0) {
           shapefile_init(NULL, outFile, format, meta);
           open_shape(outFile, &dbase, &shape);
@@ -1287,8 +1288,9 @@ int convert2shape(char *inFile, char *outFile, char *format, int list,
       write_esri_proj_file(outFile);
   }
   else {
-    if (strcmp_case(format, "META") == 0) {
-      meta = meta2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
+    if (strcmp_case(format, "META") == 0 ||
+      strcmp_case(format, "COVERAGE") == 0) {
+      meta = meta2vector(inFile, format, &dbf, &nAttr, &lat, &lon, &nCoords);
       shapefile_init(NULL, outFile, format, meta);
       meta_free(meta);
       open_shape(outFile, &dbase, &shape);

@@ -237,8 +237,8 @@ void rgps_grid2shape(grid_attr_t grid, DBFHandle dbase, SHPHandle shape,
 void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 
 // Prototypes from vector.c
-meta_parameters *meta2vector(char *inFile, dbf_header_t **dbf, int *nAttr, 
-  double **latArray, double **lonArray, int *nCoords);
+meta_parameters *meta2vector(char *inFile, char *format, dbf_header_t **dbf, 
+  int *nAttr, double **latArray, double **lonArray, int *nCoords);
 void geotiff2vector(char *inFile, dbf_header_t **dbf, int *nAttr, 
   double **latArray, double **lonArray, int *nCoords);
 void polygon2vector(char *inFile, dbf_header_t **dbf, int *nAttr, 

@@ -34,6 +34,10 @@ dictionary = datapool_data_dictionary.csv
 type = polygon
 dictionary = granule_data_dictionary.csv
 
+[COVERAGE]
+type = polygon
+dictionary = coverage_data_dictionary.csv
+
 [RGPS_BP]
 type = point
 dictionary = rgps_bp_data_dictionary.csv

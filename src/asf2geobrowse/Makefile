@@ -12,6 +12,7 @@ LIBS  = \
 	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(GDAL_LIBS) \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	$(NETCDF_LIBS) \

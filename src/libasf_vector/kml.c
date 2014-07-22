@@ -404,8 +404,9 @@ int convert2kml(char *inFile, char *outFile, char *format, int list,
     kml_header(kml_file);
     while (fgets(line, 1024, fpIn)) {
       chomp(line);
-      if (strcmp_case(format, "META") == 0) {
-        meta = meta2vector(line, &dbf, &nAttr, &lat, &lon, &nCoords);
+      if (strcmp_case(format, "META") == 0 ||
+        strcmp_case(format, "COVERAGE") == 0) {
+        meta = meta2vector(line, format, &dbf, &nAttr, &lat, &lon, &nCoords);
         sprintf(name, "%s", meta->general->basename);
         center_lat = meta->general->center_latitude;
         center_lon = meta->general->center_longitude;
@@ -455,8 +456,9 @@ int convert2kml(char *inFile, char *outFile, char *format, int list,
     FCLOSE(kml_file);
   }
   else {
-    if (strcmp_case(format, "META") == 0) {
-      meta = meta2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
+    if (strcmp_case(format, "META") == 0 ||
+      strcmp_case(format, "COVERAGE") == 0) {
+      meta = meta2vector(inFile, format, &dbf, &nAttr, &lat, &lon, &nCoords);
       sprintf(name, "%s", meta->general->basename);
       center_lat = meta->general->center_latitude;
       center_lon = meta->general->center_longitude;

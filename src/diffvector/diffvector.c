@@ -423,6 +423,7 @@ int main(int argc, char **argv)
       asfReport(level, "\nFAIL: failed one or more tests as reported above\n");
     FCLOSE(fLog);
     OGR_DS_Destroy(hSourceRef);
+    OGR_DS_Destroy(hSourceTest);
   }
   return(0);
 }
