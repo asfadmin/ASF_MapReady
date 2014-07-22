@@ -21,6 +21,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf_fft.a \
 	$(GSL_LIBS) \
+	$(GDAL_LIBS) \
 	$(PROJ_LIBS) \
 	$(XML_LIBS) \
 	$(GLIB_LIBS) \

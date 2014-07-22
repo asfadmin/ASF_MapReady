@@ -12,6 +12,7 @@ LIBS  = \
 	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(GDAL_LIBS) \
 	$(XML_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
@@ -39,5 +40,3 @@ prog: $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS) $(LDFLAGS)
 	mv $(TARGET)$(BIN_POSTFIX) $(BINDIR)
 
-clean:
-	rm -f core $(OBJS) *.o

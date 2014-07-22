@@ -83,8 +83,8 @@ meta_sar *meta_sar_init(void)
   strcpy(sar->polarization, MAGIC_UNSET_STRING);
   sar->image_type = MAGIC_UNSET_CHAR;
   sar->look_direction = MAGIC_UNSET_CHAR;
-  sar->azimuth_look_count = MAGIC_UNSET_INT;
-  sar->range_look_count = MAGIC_UNSET_INT;
+  sar->azimuth_look_count = 1;
+  sar->range_look_count = 1;
   sar->deskewed = MAGIC_UNSET_INT;
   sar->multilook = TRUE;
   sar->original_line_count = MAGIC_UNSET_INT;

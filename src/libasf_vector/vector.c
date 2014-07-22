@@ -1,13 +1,18 @@
 #include "asf_vector.h"
 
-meta_parameters *meta2vector(char *inFile, dbf_header_t **dbf, int *nAttr, 
-  double **latArray, double **lonArray, int *nCoords)
+meta_parameters *meta2vector(char *inFile, char *format, dbf_header_t **dbf, 
+  int *nAttr, double **latArray, double **lonArray, int *nCoords)
 {
   // Read header information
   dbf_header_t *header;
-  int n;
+  int n = 0;
   char shape_type[25];
-  read_header_config("META", &header, &n, shape_type);
+  if (strcmp_case(format, "META") == 0)
+    read_header_config("META", &header, &n, shape_type);
+  else if (strcmp_case(format, "COVERAGE") == 0)
+    read_header_config("COVERAGE", &header, &n, shape_type);
+  else
+    asfPrintError("Format (%s) not supported!\n", format);
   dbf_header_t *values = (dbf_header_t *) MALLOC(sizeof(dbf_header_t)*n);
   
   // Read metadata
