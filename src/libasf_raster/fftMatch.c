@@ -4,7 +4,6 @@
 #include "fft.h"
 #include "fft2d.h"
 #include "asf_raster.h"
-#include "asf_sar.h"
 
 #if defined(mingw) // MAXFLOAT not available on mingw
 #define MAXFLOAT 3.4028234663852886e+38
@@ -672,15 +671,10 @@ int fftMatch_opt(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
   sprintf(opticalFile, "%s%c%s_sobel.img", tmpDir, DIR_SEPARATOR, inFile2);
   kernel_filter(outFile, opticalFile, SOBEL, 3, 0, 0);
 
-  // Scaling to dBs
-  asfPrintStatus("\nScaling to dB ...\n");
-  sprintf(outFile, "%s%c%s_db.img", tmpDir, DIR_SEPARATOR, inFile1);
-  asf_logscale(inFile1, outFile);
-
   // Edge filtering SAR image
   asfPrintStatus("\nEdge filtering SAR image ...\n");
   sprintf(sarFile, "%s%c%s_sobel.img", tmpDir, DIR_SEPARATOR, inFile1);
-  kernel_filter(outFile, sarFile, SOBEL, 3, 0, 0);
+  kernel_filter(inFile1, sarFile, SOBEL, 3, 0, 0);
 
   // FFT matching on a grid
   asfPrintStatus("\nFFT matching on a grid ...\n");
