@@ -231,6 +231,7 @@ int main(int argc, char **argv)
   short	n_images=0;	 // Number of images used in the create of this product
   int n_trajectories=0;      // Number of trajectories
   int n_cells;               // Number of cells
+  char stream;
   char prod_type[15];        // Product type
   short	create_year=0;	     // Product creation year
   double create_time=0.0;	   // Product creation time
@@ -278,10 +279,18 @@ int main(int argc, char **argv)
   fpIn = FOPEN(inFile, "rb");
 
   FREAD(&pid, 24, 1, fpIn);
-  FREAD(&prod_description, 40, 1, fpIn);  
+  stream = pid[5];
+  FREAD(&prod_description, 40, 1, fpIn);
+  if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) != 0 &&
+    strncmp_case(prod_description, "Ice Deformation", 15) != 0 &&
+    strncmp_case(prod_description, "Ice Age", 7) != 0 &&
+    strncmp_case(prod_description, "Backscatter Histogram", 21) != 0)
+    asfPrintError("Could not determine product type!\n");
+
   snprintf(product_id, 18, "%s", pid);
   printf("PID: %s\n", product_id);
   printf("Product description: %s\n", prod_description);
+  printf("Stream: %c\n", stream);
   
   if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) == 0) {
     FREAD(&n_images, 2, 1, fpIn);
@@ -358,9 +367,9 @@ int main(int argc, char **argv)
     }
 
     fpOut = FOPEN(csvFile, "w");
-    fprintf(fpOut, "IMAGE_ID,IMAGE_YEAR,IMAGE_TIME,MAP_X,MAP_Y,GPID,BIRTH_YEAR,"
-      "BIRTH_TIME,DEATH_YEAR,DEATH_TIME,N_OBS,OBS_YEAR,OBS_TIME,X_MAP,Y_MAP,"
-      "LAT,LON,Q_FLAG\n");
+    fprintf(fpOut, "IMAGE_ID,STREAM,IMAGE_YEAR,IMAGE_TIME,MAP_X,MAP_Y,GPID,"
+      "BIRTH_YEAR,BIRTH_TIME,DEATH_YEAR,DEATH_TIME,N_OBS,OBS_YEAR,OBS_TIME,"
+      "X_MAP,Y_MAP,LAT,LON,Q_FLAG\n");
     for (ii=0; ii<n_trajectories; ii++) {
       FREAD(&gpid, 4, 1, fpIn);
       ieee_big32(gpid);
@@ -431,9 +440,9 @@ int main(int argc, char **argv)
             image_map_y = image[ll].map_y*1000.0;
           }
         }
-        fprintf(fpOut,"%s,%d,%.6f,%.4f,%.4f,%d,%d,%.6f,%d,%.6f,%d,", image_id, 
-          image_year, image_time, image_map_x, image_map_y, gpid, birth_year, 
-          birth_time, death_year, death_time, n_int_obs);
+        fprintf(fpOut,"%s,%c,%d,%.6f,%.4f,%.4f,%d,%d,%.6f,%d,%.6f,%d,", 
+          image_id, stream, image_year, image_time, image_map_x, image_map_y, 
+          gpid, birth_year, birth_time, death_year, death_time, n_int_obs);
         fprintf(fpOut, "%d,%.6f,%.4f,%.4f,%.5f,%.5f,%d\n", obs[kk].year, 
           obs[kk].time, map_x, map_y, lat*R2D, lon*R2D, obs[kk].q_flag);
       }
@@ -493,9 +502,9 @@ int main(int argc, char **argv)
     southBoundLat = minValue(n_w_lat, n_e_lat, s_w_lat, s_e_lat);
     
     fpOut = FOPEN(csvFile, "w");
-    fprintf(fpOut, "CELL_ID,BIRTH_YEAR,BIRTH_TIME,N_OBS,OBS_YEAR,OBS_TIME,"
-      "X_MAP,Y_MAP,LAT,LON,X_DISP,Y_DISP,C_AREA,D_AREA,DTP,DUDX,DUDY,DVDX,DVDY"
-      "\n");
+    fprintf(fpOut, "CELL_ID,STREAM,BIRTH_YEAR,BIRTH_TIME,N_OBS,OBS_YEAR,"
+      "OBS_TIME,X_MAP,Y_MAP,LAT,LON,X_DISP,Y_DISP,C_AREA,D_AREA,DTP,DUDX,DUDY,"
+      "DVDX,DVDY\n");
     for (ii=0; ii<n_cells; ii++) {
       FREAD(&cell_id, 4, 1, fpIn);
       ieee_big32(cell_id);
@@ -568,7 +577,8 @@ int main(int argc, char **argv)
         proj_to_latlon(proj, map_x, map_y, 0.0, &lat, &lon, &height);
         meta = raw_init();
         meta->projection = proj;
-        fprintf(fpOut, "%d,%d,%.6f,", cell_id, birth_year, birth_time);
+        fprintf(fpOut, "%d,%c,%d,%.6f,", cell_id, stream, birth_year, 
+          birth_time);
         fprintf(fpOut, "%d,%d,%.6f,", n_short_obs, obs[kk].year, obs[kk].time);
         fprintf(fpOut, "%.4f,%.4f,%.5f,%.5f,", map_x, map_y, lat*R2D, lon*R2D);
         fprintf(fpOut, "%.6f,%.6f,", obs[kk].disp_x, obs[kk].disp_y);
@@ -635,7 +645,7 @@ int main(int argc, char **argv)
     southBoundLat = minValue(n_w_lat, n_e_lat, s_w_lat, s_e_lat);
     
     fpOut = FOPEN(csvFile, "w");
-    fprintf(fpOut, "CELL_ID,BIRTH_YEAR,BIRTH_TIME,I_AREA,N_OBS,OBS_YEAR,"
+    fprintf(fpOut, "CELL_ID,STREAM,BIRTH_YEAR,BIRTH_TIME,I_AREA,N_OBS,OBS_YEAR,"
       "OBS_TIME,X_MAP,Y_MAP,LAT,LON,C_TEMP,FDD,C_AREA,N_AGE,R_AR,I_AR,AGE_FAR,"
       "R_FDD,I_FDD,N_THICK,THICK_FAR,FAR_FYR,FAR_MY,N_RIDGE,R_RIDGE_AR,"
       "I_RIDGE_AR,R_RIDGE_TR,I_RIDGE_TR,RIDGE_FAR,R_RIDGE_FDD,I_RIDGE_FDD,"
@@ -798,8 +808,8 @@ int main(int argc, char **argv)
           }
         }
         for (ll=0; ll<n_max; ll++) {
-          fprintf(fpOut, "%d,%d,%.6f,%.6f,%d,", cell_id, birth_year, birth_time,
-            init_area, n_int_obs);
+          fprintf(fpOut, "%d,%c,%d,%.6f,%.6f,%d,", cell_id, stream, birth_year, 
+            birth_time, init_area, n_int_obs);
           fprintf(fpOut, "%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%d,", 
             obs[kk].year, obs[kk].time, map_x, map_y, lat*R2D, lon*R2D,
             obs[kk].center_temp, obs[kk].fdd, obs[kk].cell_area, obs[kk].n_age);
@@ -899,7 +909,7 @@ int main(int argc, char **argv)
     }
     // Backscatter histogram data
     fpOut = FOPEN(csvFile, "w");
-    fprintf(fpOut, "CELL_ID,BIRTH_YEAR,BIRTH_TIME,I_AREA,N_OBS,OBS_YEAR,"
+    fprintf(fpOut, "CELL_ID,STREAM,BIRTH_YEAR,BIRTH_TIME,I_AREA,N_OBS,OBS_YEAR,"
       "OBS_TIME,MAP_X,MAP_Y,LAT,LON,CELL_TEMP,C_AREA,MYFRAC,OWFRAC,");
     for (ll=0; ll<25; ll++)
       fprintf(fpOut, "FBSR_%d,", ll+1);
@@ -975,9 +985,8 @@ int main(int argc, char **argv)
         proj->hem = 'N';
         spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
         proj_to_latlon(proj, map_x, map_y, 0.0, &lat, &lon, &height);
-        meta = raw_init();
-        meta->projection = proj;
-        fprintf(fpOut, "%d,%d,%.6f,", cell_id, birth_year, birth_time);
+        fprintf(fpOut, "%d,%c,%d,%.6f,", cell_id, stream, birth_year, 
+          birth_time);
         fprintf(fpOut, "%.6f,%d,", init_area, n_int_obs);
         fprintf(fpOut, "%d,%.6f,", obs[kk].year, obs[kk].time);
         fprintf(fpOut, "%.4f,%.4f,", map_x, map_y);
@@ -1002,6 +1011,7 @@ int main(int argc, char **argv)
   fprintf(fpXml, "  <metadata>\n");
   fprintf(fpXml, "    <product>\n");
   fprintf(fpXml, "      <file>%s</file>\n", product_id);
+  fprintf(fpXml, "      <stream>%c</stream>\n", stream);
   if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) == 0) {
     fprintf(fpXml, "      <description type=\"string\" definition=\"description"
       " of this product\">Lagrangian Ice Motion</description>\n");
@@ -1103,7 +1113,6 @@ int main(int argc, char **argv)
   FREE(inFile);
   FREE(csvFile);
   FREE(xmlFile);
-  meta_free(meta);
   
   return 0;
 }
