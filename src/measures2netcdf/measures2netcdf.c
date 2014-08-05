@@ -167,18 +167,23 @@ int main(int argc, char **argv)
   split_dir_and_file(outFile, outDirName, outFileName);
   char *tmpDir = (char *) MALLOC(sizeof(char)*512);
   sprintf(tmpDir, "%smeasures-", outDirName);
-  strcat(tmpDir, time_stamp_dir());
+  char *tsdir = time_stamp_dir();
+  strcat(tmpDir, tsdir);
+  FREE(tsdir);
   create_clean_dir(tmpDir);
+  char *isoStr = iso_date();
 
   // Read header information
   char inFile[512], imgFile[768], metaFile[768], xmlFile[768], geotiff[768];
   char listOutFile[768], citation[50], start[30], end[30];
-  char header[109], isoStr[30], baseName[512], ext[5];
+  char header[110], baseName[512], ext[5];
   float x_pix, y_pix, x_map_ll, y_map_ll, x_map_ur, y_map_ur, cat;
   double lat, lon, height, x, y, z;
   int ii, kk, ll, nFiles=0, num, size, sample_count, line_count;
   image_data_type_t image_data_type;
   sprintf(listOutFile, "%s%crgps.xml", tmpDir, DIR_SEPARATOR);
+
+  for (ii=0; ii<110; ++ii) header[ii] = '\0';
 
   // Preparing map projection information
   project_parameters_t pps;
@@ -197,6 +202,7 @@ int main(int argc, char **argv)
   strcpy(proj->units, "meters");
   proj->hem = 'N';
   spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
+  FREE(proj);
 
   // Set up supplemental file names: water mask, lat/lon, x/y grids
   char maskFile[768], latFile[768], lonFile[768], xFile[768], yFile[768]; 
@@ -272,7 +278,6 @@ int main(int argc, char **argv)
       &ext[1]);
     sprintf(xmlFile, "%s%s_%s.xml", outDirName, baseName, &ext[1]);
     sprintf(geotiff, "%s%s_%s.tif", outDirName, baseName, &ext[1]);
-    sprintf(isoStr, "%s", iso_date());
     fpXml = FOPEN(xmlFile, "w");
     fprintf(fpXml, "<rgps>\n");
     fprintf(fpXml, "  <granule>%s</granule>\n", inFileName);
@@ -436,8 +441,9 @@ int main(int argc, char **argv)
     meta->general->start_sample = 0;
     meta->general->no_data = MAGIC_UNSET_DOUBLE;
     strcpy(meta->general->sensor, "RGPS MEaSUREs");
-    sprintf(meta->general->bands, "%s", 
-	    lc(image_data_type2str(meta->general->image_data_type)));
+    char *tmp = image_data_type2str(meta->general->image_data_type);
+    sprintf(meta->general->bands, "%s", lc(tmp));
+    FREE(tmp);
     sprintf(meta->general->acquisition_date, "%s", baseName);
     
     // Sort out map projection
@@ -859,6 +865,9 @@ int main(int argc, char **argv)
   // Clean up
   remove_dir(tmpDir);
   FREE(tmpDir);
+  FREE(outFile);
+  FREE(listInFile);
+  FREE(isoStr);
 
   return 0;
 }
