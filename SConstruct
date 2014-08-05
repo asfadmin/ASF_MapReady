@@ -176,7 +176,9 @@ src_subs = lib_subs + [
     "point_target_analysis",
     "raster_calc",
     "kernel",
-    "asf_logscale"
+    "asf_logscale",
+    "measures2csv",
+    "measures2netcdf"
     ]
 
 # paths where the libraries will be built

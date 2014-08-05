@@ -255,7 +255,7 @@ void export_netcdf_xml(const char *xmlFile, char *outFile)
   }
   if (xFile && yFile) {
     projected = TRUE;
-    var_count += 2;
+    var_count += 3;
   }
   
   // Check for mask file
@@ -342,8 +342,8 @@ void export_netcdf_xml(const char *xmlFile, char *outFile)
 
   // Create output file
   int ncid;
-  append_ext_if_needed(outFile, ".nc", NULL);
-  int status = nc_create(outFile, NC_CLOBBER|NC_NETCDF4, &ncid);
+  char *ncFile = appendExt(outFile, ".nc");
+  int status = nc_create(ncFile, NC_CLOBBER|NC_NETCDF4, &ncid);
   netcdf->ncid = ncid;
   if (status != NC_NOERR)
     asfPrintError("Could not open netCDF file (%s)!\n", nc_strerror(status));
@@ -530,7 +530,6 @@ void export_netcdf_xml(const char *xmlFile, char *outFile)
   xml_get_children(node->children, root_params);  
   for (ii=0; ii<meta_count; ii++) {
     sprintf(xmlStr, "netcdf.root.%s", root_params[ii]);
-printf("param: %s, %s\n", root_params[ii], xmlStr);
     strcpy(str, xml_get_string_value(doc, xmlStr));
     nc_put_att_text(ncid, NC_GLOBAL, root_params[ii], strlen(str), str);
     FREE(root_params[ii]);
@@ -666,6 +665,7 @@ printf("param: %s, %s\n", root_params[ii], xmlStr);
   FREE(netcdf);
   meta_free(meta);
   xmlFreeDoc(doc);
+  FREE(ncFile);
 }
 
 void export_netcdf(const char *in_base_name, char *output_file_name,

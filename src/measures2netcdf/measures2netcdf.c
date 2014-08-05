@@ -173,12 +173,14 @@ int main(int argc, char **argv)
   // Read header information
   char inFile[512], imgFile[768], metaFile[768], xmlFile[768], geotiff[768];
   char listOutFile[768], citation[50], start[30], end[30];
-  char header[109], isoStr[30], baseName[512], ext[5];
+  char header[110], isoStr[30], baseName[512], ext[5];
   float x_pix, y_pix, x_map_ll, y_map_ll, x_map_ur, y_map_ur, cat;
   double lat, lon, height, x, y, z;
   int ii, kk, ll, nFiles=0, num, size, sample_count, line_count;
   image_data_type_t image_data_type;
   sprintf(listOutFile, "%s%crgps.xml", tmpDir, DIR_SEPARATOR);
+
+  for (ii=0; ii<110; ++ii) header[ii] = '\0';
 
   // Preparing map projection information
   project_parameters_t pps;
