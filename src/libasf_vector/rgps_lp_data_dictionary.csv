@@ -1,0 +1,20 @@
+META,Shape,Type,Length,Decimals,Definition
+image ID,IMAGE_ID,string,30,0,image identifier
+stream,STREAM,string,1,0,stream image is located in
+image year,IMAGE_YEAR,integer,5,0,image center year
+image time,IMAGE_TIME,double,12,6,image center time [day]
+map x,MAP_X,double,16,4,x map coordinate of image center [m]
+map y,MAP_Y,double,16,4,y map coordinate of image center [m]
+grid point ID,GPID,integer,8,0,grid point identifier
+birth year,BIRTH_YEAR,integer,5,0,year the grid point was created
+birth time,BIRTH_TIME,double,12,6,day the grid point was created [day]
+death year,DEATH_YEAR,integer,5,0,year the grid point was deleted
+death time,DEATH_TIME,double,12,6,day the grid point was deleted [day]
+number observations,N_OBS,integer,8,0,number of observations of the grid point
+observation year,OBS_YEAR,integer,5,0,year of the observation
+observation time,OBS_TIME,double,12,6,day of the observation [day]
+x map,X_MAP,double,16,4,x map coordinate of the grid point [m]
+y map,Y_MAP,double,16,4,y map coordinate of the grid point [m]
+lat,LAT,double,12,5,latitude of grid point [degrees]
+lon,LON,double,12,5,longitude of grid point [degrees]
+quality flag,Q_FLAG,integer,4,0,quality flag - lower values indicate that the confidence of the matches are high

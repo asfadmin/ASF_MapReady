@@ -202,6 +202,7 @@ int meta_colormap_to_tiff_palette(unsigned short **colors, int *byte_image, meta
 // Prototypes from export_netcdf.c
 void export_netcdf(const char *in_base_name, char *output_file_name,
   int *noutputs, char ***output_names);
+void export_netcdf_xml(const char *xmlFile, char *outFile);
 
 // Prototypes from export_hdf.c
 void export_hdf(const char *in_base_name, char *output_file_name,
