@@ -173,6 +173,9 @@ static void add_var_attr(xmlDoc *doc, int ncid, int var_id, char *xml_id)
       nc_put_att_double(ncid, var_id, meta_param[ii], NC_DOUBLE, 1, &dValue);
     }
   }
+  for (ii=0; ii<meta_count; ++ii)
+    FREE(meta_param[ii]);
+  FREE(meta_param);
 }
 
 void check_projection(xmlDoc *doc, char *projection)
