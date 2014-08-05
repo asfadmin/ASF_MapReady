@@ -979,7 +979,7 @@ int main(int argc, char **argv)
         proj = meta_projection_init();
         proj->type = proj_type;
         proj->datum = HUGHES_DATUM;
-        proj->spheroid = spheroid;
+        proj->spheroid = HUGHES_SPHEROID;
         proj->param = pps;
         strcpy(proj->units, "meters");
         proj->hem = 'N';
@@ -1010,8 +1010,10 @@ int main(int argc, char **argv)
   fprintf(fpXml, "  <metadata_creation>%s</metadata_creation>\n", isoStr);
   fprintf(fpXml, "  <metadata>\n");
   fprintf(fpXml, "    <product>\n");
-  fprintf(fpXml, "      <file>%s</file>\n", product_id);
-  fprintf(fpXml, "      <stream>%c</stream>\n", stream);
+  fprintf(fpXml, "      <file type=\"string\" definition=\"name of the product "
+    "file\">%s</file>\n", product_id);
+  fprintf(fpXml, "      <stream type=\"string\" definition=\"name of the stream"
+    "the product was tracked in\">%c</stream>\n", stream);
   if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) == 0) {
     fprintf(fpXml, "      <description type=\"string\" definition=\"description"
       " of this product\">Lagrangian Ice Motion</description>\n");
@@ -1051,17 +1053,6 @@ int main(int argc, char **argv)
     }
     fprintf(fpXml, "      </backscatter_histogram>\n");
   }
-  rgps2iso_date(prod_start_year, prod_start_time, dateStr);
-  snprintf(citation, 11, "%s", dateStr);
-  strcat(citation, " to ");
-  fprintf(fpXml, "      <start_datetime type=\"string\" definition=\"start "
-    "time of the image acquisition for the product \">%s</start_datetime>\n", 
-    dateStr);
-  rgps2iso_date(prod_end_year, prod_end_time, dateStr);
-  strcat(citation, dateStr);
-  citation[24] = '\0';
-  fprintf(fpXml, "      <end_datetime type=\"string\" definition=\"end time of"
-    " the image acquisition for the product\">%s</end_datetime>\n", dateStr);
   fprintf(fpXml, "      <start_year type=\"int\" definition=\"product start "
     "year\">%d</start_year>\n", prod_start_year);
   fprintf(fpXml, "      <start_day type=\"double\" definition=\"product start "
@@ -1085,6 +1076,14 @@ int main(int argc, char **argv)
     northBoundLat);
   fprintf(fpXml, "      <southBoundLatitude>%.5f</southBoundLatitude>\n",
     southBoundLat);
+  rgps2iso_date(prod_start_year, prod_start_time, dateStr);
+  snprintf(citation, 11, "%s", dateStr);
+  strcat(citation, " to ");
+  fprintf(fpXml, "      <start_datetime>%s</start_datetime>\n", dateStr);
+  rgps2iso_date(prod_end_year, prod_end_time, dateStr);
+  strcat(citation, dateStr);
+  citation[24] = '\0';
+  fprintf(fpXml, "      <end_datetime>%s</end_datetime>\n", dateStr);
   fprintf(fpXml, "    </product>\n");
   fprintf(fpXml, "  </extent>\n");
   fprintf(fpXml, "  <processing>\n");

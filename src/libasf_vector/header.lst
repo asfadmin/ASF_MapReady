@@ -34,14 +34,14 @@ dictionary = datapool_data_dictionary.csv
 type = polygon
 dictionary = granule_data_dictionary.csv
 
-[RGPS_BP]
-type = point
-dictionary = rgps_bp_data_dictionary.csv
-
-[RGPS_LP]
+[RGPS_LP_GRID]
 type = point
 dictionary = rgps_lp_data_dictionary.csv
 
-[RGPS_DP]
+[RGPS_DP_GRID]
 type = point
+dictionary = rgps_dp_data_dictionary.csv
+
+[RGPS_DP_CELL]
+type = polygon
 dictionary = rgps_dp_data_dictionary.csv

@@ -1214,10 +1214,9 @@ char *meta2esri_proj(meta_parameters *meta, char *projFile)
       	sprintf(projStr, "PROJECTION[\"Stereographic\"],PARAMETER["
       		"\"False_Easting\",%.1f],PARAMETER[\"False_Northing\",%.1f],"
       		"PARAMETER[\"Central_Meridian\",%.1f],PARAMETER["
-      		"\"Scale_Factor\",1.0],PARAMETER[\"Latitude_Of_Origin\",%.1f],"
+      		"\"Scale_Factor\",1.0],PARAMETER[\"Latitude_Of_Origin\",90],"
       		"UNIT[\"Meter\",1.0]",
-    		pps.ps.false_easting, pps.ps.false_northing, pps.ps.slat, 
-		    pps.ps.slon);
+    		pps.ps.false_easting, pps.ps.false_northing, pps.ps.slon);
     	  break;
       case ALBERS_EQUAL_AREA:
       	sprintf(projcsStr, "PROJCS[\"Albers_Equal_Area_Conic\"");

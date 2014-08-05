@@ -173,7 +173,7 @@ int read_header_config(const char *format, dbf_header_t **dbf,
 	  get_asf_share_dir(), DIR_SEPARATOR, "header.lst");
   
   FILE *fp;
-  char line[1024], params[255], format_str[255], dictionary[255], *str;
+  char line[1024], params[255], format_str[255], dictionary[255], *str=NULL;
   int found_format=FALSE;
   sprintf(format_str, "[%s]", uc(format));
 
@@ -227,10 +227,13 @@ int read_header_config(const char *format, dbf_header_t **dbf,
     sprintf(type, "%s", column[2]);
     if (strncmp_case(type, "DOUBLE", 6) == 0)
       header[n].format = DBF_DOUBLE;
-    else if(strncmp_case(type, "INTEGER", 7) == 0)
+    else if (strncmp_case(type, "INTEGER", 7) == 0)
       header[n].format = DBF_INTEGER;
-    else
+    else if (strncmp_case(type, "STRING", 6) == 0)
       header[n].format = DBF_STRING;
+    else
+      asfPrintError("Unknown data format (%s) for '%s'!\n", 
+        type, header[n].meta);
     header[n].length = atoi(column[3]);
     header[n].decimals = atoi(column[4]);
     header[n].definition = STRDUP(column[5]); 
