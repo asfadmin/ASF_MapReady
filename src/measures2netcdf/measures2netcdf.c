@@ -850,7 +850,8 @@ int main(int argc, char **argv)
   // Write ISO meatadata for netCDF
   asfPrintStatus("Generating metadata for netCDF file ...\n");
 
-  char *ncXmlBase = stripExt(outFile);
+  char *ncXmlBase = (char *) MALLOC(sizeof(char)*strlen(outFile));
+  split_base_and_ext(outFile, 1, '.', ncXmlBase, ext);
   char *ncXmlFile = (char *) MALLOC(sizeof(char)*(strlen(ncXmlBase)+10));
   sprintf(ncXmlFile, "%s.xml", ncXmlBase);
   fpXml = FOPEN(ncXmlFile, "w");
