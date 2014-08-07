@@ -1012,6 +1012,8 @@ int main(int argc, char **argv)
   fprintf(fpXml, "    <product>\n");
   fprintf(fpXml, "      <file type=\"string\" definition=\"name of the product "
     "file\">%s</file>\n", product_id);
+  fprintf(fpXml, "      <format type=\"string\" definition=\"name of the data "
+    "format\">CSV</format>\n");
   fprintf(fpXml, "      <stream type=\"string\" definition=\"name of the stream"
     "the product was tracked in\">%c</stream>\n", stream);
   if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) == 0) {
