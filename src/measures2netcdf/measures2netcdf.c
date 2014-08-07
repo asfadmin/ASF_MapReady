@@ -860,7 +860,7 @@ int main(int argc, char **argv)
   fprintf(fpXml, "  <metadata>\n");
   fprintf(fpXml, "    <product>\n");
   fprintf(fpXml, "      <file type=\"string\" definition=\"name of product "
-    "file\">%s</file>\n", outFile);
+    "file\">%s.nc</file>\n", ncXmlBase);
   if (divFlag && vrtFlag && shrFlag)
     fprintf(fpXml, "      <type type=\"string\" definition=\"product type\">"
     "divergence, vorticity, shear</type>\n");
