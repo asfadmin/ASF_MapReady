@@ -397,7 +397,7 @@ int main(int argc, char **argv)
 	    printf("sample_count: %d, line_count: %d\n", sample_count, line_count);
       */
     }
-    fprintf(fpXml, "      <format type\"string\" defintion=\"name of the data "
+    fprintf(fpXml, "      <format type=\"string\" definition=\"name of the data "
       "format\">GeoTIFF</format>\n");
     fprintf(fpXml, "      <cell_size_x type=\"double\" definition=\"cell size "
       "in x direction\" units=\"m\">%.2f</cell_size_x>\n", x_pix*1000.0);
