@@ -176,7 +176,7 @@ int main(int argc, char **argv)
   // Read header information
   char inFile[512], imgFile[768], metaFile[768], xmlFile[768], geotiff[768];
   char listOutFile[768], citation[50], start[30], end[30], first[30];
-  char header[110], baseName[512], ext[5];
+  char header[110], baseName[512], dirName[512], ext[5];
   float x_pix, y_pix, x_map_ll, y_map_ll, x_map_ur, y_map_ur, cat;
   double lat, lon, height, x, y, z;
   int ii, kk, ll, nFiles=0, num, size, sample_count, line_count;
@@ -850,8 +850,7 @@ int main(int argc, char **argv)
   // Write ISO meatadata for netCDF
   asfPrintStatus("Generating metadata for netCDF file ...\n");
 
-  char *ncXmlBase = (char *) MALLOC(sizeof(char)*strlen(outFile));
-  split_base_and_ext(outFile, 1, '.', ncXmlBase, ext);
+  char *ncXmlBase = get_basename(outFile);
   char *ncXmlFile = (char *) MALLOC(sizeof(char)*(strlen(ncXmlBase)+10));
   sprintf(ncXmlFile, "%s.xml", ncXmlBase);
   fpXml = FOPEN(ncXmlFile, "w");
@@ -874,8 +873,9 @@ int main(int argc, char **argv)
   fpInList = FOPEN(listInFile, "r");
   while (fgets(inFile, 512, fpInList)) {
     chomp(inFile);
+    split_dir_and_file(inFile, dirName, baseName);
     fprintf(fpXml, "      <source type=\"string\" definition=\"name of the data"
-    " source\">%s</source>\n", inFile);
+    " source\">%s</source>\n", baseName);
   }
   FCLOSE(fpInList);
 
