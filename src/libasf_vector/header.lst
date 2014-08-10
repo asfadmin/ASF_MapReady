@@ -45,3 +45,7 @@ dictionary = rgps_dp_data_dictionary.csv
 [RGPS_DP_CELL]
 type = polygon
 dictionary = rgps_dp_data_dictionary.csv
+
+[RGPS_EP_GRID]
+type = line
+dictionary = rgps_ep_data_dictionary.csv

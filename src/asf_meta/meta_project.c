@@ -596,32 +596,32 @@ static void latLon2proj_imp(double lat, double lon, double elev,
       switch(proj_type)
       {
           case ALBERS_EQUAL_AREA:
-              printf("Lat/Lon to Albers Equal Area\n\n");
+              asfPrintStatus("Lat/Lon to Albers Equal Area\n\n");
               break;
           case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-              printf("Lat/Lon to Lambert Azimuthal Equal Area\n\n");
+              asfPrintStatus("Lat/Lon to Lambert Azimuthal Equal Area\n\n");
               break;
           case LAMBERT_CONFORMAL_CONIC:
-              printf("Lat/Lon to Lambert Conformal Conic\n\n");
+              asfPrintStatus("Lat/Lon to Lambert Conformal Conic\n\n");
               break;
           case POLAR_STEREOGRAPHIC:
-              printf("Lat/Lon to Polar Stereographic\n\n");
+              asfPrintStatus("Lat/Lon to Polar Stereographic\n\n");
               break;
           case UNIVERSAL_TRANSVERSE_MERCATOR:
-              printf("Lat/Lon to UTM\n\n");
+              asfPrintStatus("Lat/Lon to UTM\n\n");
               break;
           case MERCATOR:
-	    printf("Lat/Lon to Mercator\n\n");
-	    break;
+              asfPrintStatus("Lat/Lon to Mercator\n\n");
+              break;
           case EQUI_RECTANGULAR:
-	    printf("Lat/Lon to Equirectangular\n\n");
-	    break;
+              asfPrintStatus("Lat/Lon to Equirectangular\n\n");
+              break;
           case EQUIDISTANT:
-	    printf("Lat/Lon to Equidistant\n\n");
-	    break;
+              asfPrintStatus("Lat/Lon to Equidistant\n\n");
+              break;
           case SINUSOIDAL:
-	    printf("Lat/Lon to Sinusoidal\n\n");
-	    break;
+              asfPrintStatus("Lat/Lon to Sinusoidal\n\n");
+              break;
           case STATE_PLANE:
               // Not implemented.
               assert (0);
@@ -1214,9 +1214,8 @@ char *meta2esri_proj(meta_parameters *meta, char *projFile)
       	sprintf(projStr, "PROJECTION[\"Stereographic\"],PARAMETER["
       		"\"False_Easting\",%.1f],PARAMETER[\"False_Northing\",%.1f],"
       		"PARAMETER[\"Central_Meridian\",%.1f],PARAMETER["
-      		"\"Scale_Factor\",1.0],PARAMETER[\"Latitude_Of_Origin\",90],"
-      		"UNIT[\"Meter\",1.0]",
-    		pps.ps.false_easting, pps.ps.false_northing, pps.ps.slon);
+      		"\"Standard_Parallel_1\",%.1f],UNIT[\"Meter\",1.0]",
+    		pps.ps.false_easting, pps.ps.false_northing, pps.ps.slon, pps.ps.slat);
     	  break;
       case ALBERS_EQUAL_AREA:
       	sprintf(projcsStr, "PROJCS[\"Albers_Equal_Area_Conic\"");

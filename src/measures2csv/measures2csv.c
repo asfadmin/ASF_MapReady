@@ -421,8 +421,8 @@ int main(int argc, char **argv)
         pps.ps.false_northing = 0.0;
         proj = meta_projection_init();
         proj->type = proj_type;
-        proj->datum = HUGHES_DATUM; //datum;
-        proj->spheroid = spheroid;
+        proj->datum = HUGHES_DATUM;
+        proj->spheroid = HUGHES_SPHEROID;
         proj->param = pps;
         strcpy(proj->units, "meters");
         proj->hem = 'N';
@@ -569,7 +569,7 @@ int main(int argc, char **argv)
         proj = meta_projection_init();
         proj->type = proj_type;
         proj->datum = HUGHES_DATUM;
-        proj->spheroid = spheroid;
+        proj->spheroid = HUGHES_SPHEROID;
         proj->param = pps;
         strcpy(proj->units, "meters");
         proj->hem = 'N';
@@ -707,7 +707,7 @@ int main(int argc, char **argv)
         proj = meta_projection_init();
         proj->type = proj_type;
         proj->datum = HUGHES_DATUM;
-        proj->spheroid = spheroid;
+        proj->spheroid = HUGHES_SPHEROID;
         proj->param = pps;
         strcpy(proj->units, "meters");
         proj->hem = 'N';
