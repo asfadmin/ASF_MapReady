@@ -367,7 +367,7 @@ int main(int argc, char **argv)
   char *xmlFile = appendExt(outFile, ".xml");
   FILE *fpXml = FOPEN(xmlFile, "w");
   fprintf(fpXml, "<rgps>\n");
-  fprintf(fpXml, "  <granule>%s</granule>\n", product_id);
+  fprintf(fpXml, "  <granule>%s</granule>\n", stripExt(product_id));
   fprintf(fpXml, "  <metadata_creation>%s</metadata_creation>\n", isoStr);
   fprintf(fpXml, "  <metadata>\n");
   fprintf(fpXml, "    <product>\n");
@@ -377,15 +377,15 @@ int main(int argc, char **argv)
     "format\">CSV</format>\n");
   fprintf(fpXml, "      <description type=\"string\" definition=\"product "
     "description\">%s</description>\n", description);
+  fprintf(fpXml, "      <duration type=\"float\" definition=\"time between "
+    "source and target image acquisition\" units=\"days\">%.8f</duration>\n", 
+    time_diff);
   fprintf(fpXml, "      <data_region type=\"string\" definition=\"region data "
     "was acquired in\">%s</data_region>\n", data_region);
   fprintf(fpXml, "      <ref_id type=\"string\" definition=\"IMV tracking REQID"
     "\">%s</ref_id>\n", ref_id);
-  fprintf(fpXml, "      <time_diff type=\"float\" definition=\"time difference "
-    "between source and target image\" units=\"day\">%.8f</time_diff>\n",
-    time_diff);
   fprintf(fpXml, "      <num_grids type=\"int\" definition=\"number of grid "
-    "points with observations\">%d<num_grids>\n", num_grids);
+    "points with observations\">%d</num_grids>\n", num_grids);
   fprintf(fpXml, "      <pixel_size type=\"float\" definition=\"image pixel "
     "size [m]\" units=\"m\">%.3f</pixel_size>\n", pixel_size);
   fprintf(fpXml, "      <grid_spacing type=\"float\" definition=\"grid spacing "
