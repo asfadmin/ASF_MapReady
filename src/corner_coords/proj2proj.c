@@ -90,7 +90,6 @@ int main(int argc, char **argv)
   spheroid_type_t spheroidIn, spheroidOut;
   meta_projection *meta_projIn, *meta_projOut;
   double lat, lon, height, projXIn, projYIn, projXOut, projYOut, projZOut;
-  double sphere;
   int listFlag = FALSE;
   extern int currArg; /* from cla.h in asf.h... initialized to 1 */
 

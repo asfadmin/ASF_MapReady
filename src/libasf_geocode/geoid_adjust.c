@@ -19,10 +19,10 @@ static double
 bilinear_interp_fn(double y, double x,
                    double p00, double p10, double p01, double p11)
 {
-  double x1 = 1-x;
-  double y1 = 1-y;
+  double x_1 = 1-x;
+  double y_1 = 1-y;
 
-  return p00*x1*y1 + p10*x*y1 + p01*x1*y + p11*x*y;
+  return p00*x_1*y_1 + p10*x*y_1 + p01*x_1*y + p11*x*y;
 }
 
 static void xy_interp(int line, int samp,
@@ -201,8 +201,8 @@ int geoid_adjust(const char *input_filename, const char *output_filename)
         int iii, jjj;
         for (iii=0; iii<size; ++iii) {
           for (jjj=0; jjj<size && jj+jjj<ns; ++jjj) {
-            int index = iii*ns + jj + jjj;
-            assert(index < ns*size);
+            int kkk = iii*ns + jj + jjj;
+            assert(kkk < ns*size);
 
             double lat, lon;
             xy_interp(ii+iii, jj+jjj, line_lo, line_hi, samp_lo, samp_hi, lats, lons,
@@ -231,10 +231,10 @@ int geoid_adjust(const char *input_filename, const char *output_filename)
               ++num_checked;
             }
 
-            if (buf[index] > -900 && buf[index] != meta->general->no_data)
+            if (buf[kkk] > -900 && buf[kkk] != meta->general->no_data)
             {
               float ht = get_geoid_height(lat,lon);
-              buf[index] += ht;
+              buf[kkk] += ht;
               avg += ht;
               ++num;
             }

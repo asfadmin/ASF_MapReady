@@ -1,3 +1,4 @@
+#include "error.h"
 #include "asf_baseline.h"
 #include "parse_funcs.h"
 
@@ -183,7 +184,7 @@ void read_palsar(char *inFile, struct srf_orbit **srf_orbits, int *nOrbits)
   FILE *fp;
   struct srf_orbit *srf_orbit;
   int n, version;
-  char timeStr[25], line[4096], orbit_dir[25], versionStr[32];
+  char line[4096], orbit_dir[25], versionStr[32];
   
   // Check out how many frames we need to allocate memory for
   int nTotalFrames = 0;

@@ -1,0 +1,16 @@
+META,SHAPE,Type,Length,Decimals,Definition
+GRANULE_NAME,GRAN_NAME,string,64,0,Granule name
+DATA_GRANULE_TYPE,GRAN_TYPE,string,32,0,Data granule type
+PLATFORM_TYPE,SATELLITE,string,5,0,Platform type
+DATA_SENSOR_TYPE,SENSOR,string,3,0,Data sensor type
+REVOLUTION,ORBIT,integer,38,0,Revolution
+START_TIME,ACQ_START,string,30,0,Acquisition start time
+END_TIME,ACQ_END,string,30,0,Acquisition end time
+NEAR_START_LAT,LAT1,double,12,5,Near start latitude [degrees]
+NEAR_START_LON,LON1,double,12,5,Near start longitude [degrees]
+FAR_START_LAT,LAT2,double,12,5,Far start latitude [degrees]
+FAR_START_LON,LON2,double,12,5,Far start longitude [degrees]
+FAR_END_LAT,LAT3,double,12,5,Far end latitude [degrees]
+FAR_END_LON,LON3,double,12,5,Far end longitude [degrees]
+NEAR_END_LAT,LAT4,double,12,5,Near end latitude [degrees]
+NEAR_END_LON,LON4,double,12,5,Near end longitude [degrees]

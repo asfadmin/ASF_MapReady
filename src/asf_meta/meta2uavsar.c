@@ -4,11 +4,6 @@
 #include "uavsar.h"
 #include "asf_nan.h"
 
-#define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
-#define ASF_EXPORT_FLOAT_MICRON 0.000000001
-#define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
-                                (a, b, ASF_EXPORT_FLOAT_MICRON))
-
 int parse_annotation_line(char *line, char *key, char *value)
 {
   char *ks = line, *ke = line, *vs = line, *ve = line, *b = line;

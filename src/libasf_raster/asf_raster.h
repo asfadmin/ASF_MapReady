@@ -74,6 +74,14 @@ typedef struct {
   gsl_histogram_pdf *hist_pdf;
 } channel_stats_t;
 
+typedef struct
+{
+  int n;
+  double *x;
+  double *y;
+  int dateline;
+} Poly;
+
 typedef double calc_stats_formula_t(double band_values[], double no_data_value);
 
 // Prototypes from arithmetic.c
@@ -98,13 +106,20 @@ void floats_to_bytes_from_file(const char *inFile, const char *outFile,
 void calc_stats_rmse_from_file(const char *inFile, char *band, double mask, double *min,
                                double *max, double *mean, double *stdDev, double *rmse,
                                gsl_histogram **histogram);
+void calc_stats_rmse_from_file_ext(const char *inFile, char *band, double mask, double *min,
+                               double *max, double *mean, double *stdDev, double *rmse,
+                               double *valid, gsl_histogram **histogram);
 void calc_stats_from_file(const char *inFile, char *band, double mask, double *min,
 			  double *max, double *mean, double *stdDev,
+			  gsl_histogram **histogram);
+void calc_stats_from_file_ext(const char *inFile, char *band, double mask, 
+        double *min, double *max, double *mean, double *stdDev, double *valid,
 			  gsl_histogram **histogram);
 void calc_stats(float *data, long long pixel_count, double mask, double *min,
 		double *max, double *mean, double *stdDev);
 void calc_stats_ext(float *data, long long pixel_count, double mask, int report,
-		    double *min, double *max, double *mean, double *stdDev);
+		                double *min, double *max, double *mean, double *stdDev, 
+		                double *percentValid);
 void estimate_stats(FILE *fpIn, meta_parameters *meta, int lines, int samples,
 		    double mask, double *min, double *max, double *mean,
 		    double *stdDev);
@@ -116,7 +131,7 @@ calc_stats_from_file_with_formula(const char *inFile, char *bands,
                                   gsl_histogram **histogram);
 void calc_minmax_median(const char *inFile, char *band, double mask, 
 			double *min, double *max);
-
+void calc_minmax_polsarpro(const char *inFile, double *min, double *max);
 
 /* Prototypes from kernel.c **************************************************/
 float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
@@ -135,6 +150,14 @@ int trim(char *infile, char *outfile, long long startX, long long startY,
 void trim_zeros(char *infile, char *outfile, int *startX, int *endX);
 void trim_zeros_ext(char *infile, char *outfile, int update_meta,
                     int do_top, int do_left);
+void trim_wedges(char *infile, char *outfile);
+void trim_to(char *infile, char *outfile, char *metadata_file);
+void subset_by_latlon(char *infile, char *outfile, double *lat, double *lon, 
+  int nCoords);
+void subset_by_map(char *infile, char *outfile, double minX, double maxX,
+  double minY, double maxY);
+void clip_to_polygon(char *inFile, char *outFile, double *lat, double *lon, 
+  int *start, int nParts, int nVertices);
 
 // Prototypes from raster_calc.c
 int raster_calc(char *outFile, char *expression, int input_count, 
@@ -146,7 +169,12 @@ int fftMatch(char *inFile1, char *inFile2, char *corrFile,
 void fftMatch_withOffsetFile(char *inFile1, char *inFile2, char *corrFile,
 			     char *offsetFileName);
 int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
-	     float *dx, float *dy, float *certainty);
+	     float *dx, float *dy, float *certainty,
+             int size, double tolerance, int overlap);
+int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY);
+int fftMatch_projList(char *inFile1, char *descFile);
+int fftMatch_opt(char *inFile1, char *inFile2, float *offsetX, float *offsetY);
+
          
 /* Prototypes from shaded_relief.c *******************************************/
 void shaded_relief(char *inFile, char *outFile, int addSpeckle, int water);
@@ -181,6 +209,9 @@ void apply_look_up_table_int(char *lutFile, int *in_buffer,
 			 int pixel_count, unsigned char *rgb_buffer);
 int read_lut(char *lutFile, unsigned char *lut_buffer);
 int is_jasc_palette_lut(const char *name);
+
+// Prototypes from fit_warp.c
+int fit_warp(const char *offsetsFile, const char *imageName, const char *outName);
 
 // Prototypes from diffimage.c
 typedef enum {

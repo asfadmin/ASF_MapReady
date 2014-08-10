@@ -269,9 +269,9 @@ main (int argc, char *argv[])
   char *in_base_name, *output_name;
   char **band_names=NULL;
   int rgb=0;
-  int true_color;
-  int false_color;
-  int num_bands_found;
+  int true_color = FALSE;
+  int false_color = FALSE;
+  int num_bands_found = 0;
   int ignored[3] = {0, 0, 0};
   int num_ignored = 0;
 
@@ -297,8 +297,9 @@ main (int argc, char *argv[])
   strcpy(command_line.blue_channel, "");
   strcpy(command_line.band, "");
   strcpy(command_line.look_up_table_name, "");
+  command_line.use_pixel_is_point = 0;
 
-  int formatFlag, logFlag, quietFlag, byteFlag, rgbFlag, bandFlag, lutFlag;
+  int formatFlag, logFlag, quietFlag, byteFlag, rgbFlag, bandFlag, lutFlag, pixelIsPointFlag;
   int truecolorFlag, falsecolorFlag;
   int needed_args = 3;  //command & argument & argument
   int ii;
@@ -322,6 +323,7 @@ main (int argc, char *argv[])
   lutFlag = checkForOption ("-lut", argc, argv);
   truecolorFlag = checkForOption("-truecolor", argc, argv);
   falsecolorFlag = checkForOption("-falsecolor", argc, argv);
+  pixelIsPointFlag = checkForOption("-point", argc, argv);
 
   if ( formatFlag != FLAG_NOT_SET ) {
     needed_args += 2;           // Option & parameter.
@@ -350,7 +352,9 @@ main (int argc, char *argv[])
   if ( falsecolorFlag != FLAG_NOT_SET ) {
     needed_args += 1;           // Option only
   }
-
+  if ( pixelIsPointFlag != FLAG_NOT_SET ) {
+    needed_args += 1;
+  }
   if ( argc != needed_args ) {
     print_usage ();                   // This exits with a failure.
   }
@@ -468,335 +472,343 @@ main (int argc, char *argv[])
   strcpy (command_line.in_meta_name, in_base_name);
   strcat (command_line.in_meta_name, ".meta");
 
-  // for some validation, need the metadata
-  md = meta_read (command_line.in_meta_name);
+  if (strcmp_case(command_line.format, "HDF5") != 0 &&
+    strcmp_case(command_line.format, "NETCDF") != 0) { 
+    // for some validation, need the metadata
+    md = meta_read (command_line.in_meta_name);
 
-  // Convert the string to upper case.
-  for ( ii = 0 ; ii < strlen (command_line.format) ; ++ii ) {
-    command_line.format[ii] = toupper (command_line.format[ii]);
-  }
-  if (strcmp (command_line.format, "PGM") == 0 &&
-      (rgbFlag != FLAG_NOT_SET      ||
-      truecolorFlag != FLAG_NOT_SET ||
-      falsecolorFlag != FLAG_NOT_SET)
-     )
-  {
-    asfPrintWarning("Greyscale PGM output is not compatible with color options:\n"
-                    "(RGB, True Color, False Color, color look-up tables, etc\n)"
-                    "...Defaulting to producing separate greyscale PGM files for available band.\n");
-    rgbFlag = FLAG_NOT_SET;
-    truecolorFlag = FLAG_NOT_SET;
-    falsecolorFlag = FLAG_NOT_SET;
-  }
-
-  // Set the default byte scaling mechanisms
-  if (md->optical) {
-     // for optical data, default sample mapping is NONE
-      command_line.sample_mapping = NONE;
-  }
-  // for other data, default is based on the output type
-  else if (strcmp (command_line.format, "TIFF") == 0 ||
-           strcmp (command_line.format, "TIF")  == 0 ||
-           strcmp (command_line.format, "JPEG") == 0 ||
-           strcmp (command_line.format, "JPG")  == 0 ||
-           strcmp (command_line.format, "PNG")  == 0 ||
-           strcmp (command_line.format, "PGM")  == 0 ||
-	   strcmp (command_line.format, "PNG_ALPHA") == 0 ||
-	   strcmp (command_line.format, "PNG_GE") == 0)
-  {
-    command_line.sample_mapping = SIGMA;
-  }
-  else if (strcmp (command_line.format, "GEOTIFF") == 0) {
-    command_line.sample_mapping = NONE;
-  }
-
-  if ( quietFlag != FLAG_NOT_SET )
-    command_line.quiet = TRUE;
-  else
-    command_line.quiet = FALSE;
-
-  // Set rgb combination
-  if ( rgbFlag != FLAG_NOT_SET ) {
-    int i;
-
-    for (i=0, num_ignored = 0; i<3; i++) {
-      ignored[i] = strncmp("IGNORE", uc(argv[rgbFlag + i + 1]), 6) == 0 ? 1 : 0;
-      num_ignored += ignored[i] ? 1 : 0;
-    }
-    asfRequire(num_ignored < 3,
-               "Cannot ignore all bands.  Exported image would be blank.\n");
-
-    strcpy (command_line.red_channel, ignored[0] ? "Ignored" : argv[rgbFlag + 1]);
-    strcpy (command_line.green_channel, ignored[1] ? "Ignored" : argv[rgbFlag + 2]);
-    strcpy (command_line.blue_channel, ignored[2] ? "Ignored" : argv[rgbFlag + 3]);
-
-    // Check to see if the bands are numeric and in range
-    int r_channel = atoi(command_line.red_channel);
-    int g_channel = atoi(command_line.green_channel);
-    int b_channel = atoi(command_line.blue_channel);
-
-    /////////// Numeric channel case ////////////
-    // Remove trailing non-numeric characters from the channel number
-    // string and pad front end nicely with a zero
-    if (!ignored[0] && is_numeric(command_line.red_channel) &&
-        r_channel >= 1 && r_channel <= MAX_BANDS) {
-      sprintf(command_line.red_channel, "%02d", atoi(command_line.red_channel));
-    }
-    if (!ignored[1] && is_numeric(command_line.green_channel) &&
-        g_channel >= 1 && g_channel <= MAX_BANDS) {
-      sprintf(command_line.green_channel, "%02d", atoi(command_line.green_channel));
-    }
-    if (!ignored[2] && is_numeric(command_line.blue_channel) &&
-        b_channel >= 1 && b_channel <= MAX_BANDS) {
-      sprintf(command_line.blue_channel, "%02d", atoi(command_line.blue_channel));
-    }
-  }
-
-  // Set up the bands for true or false color optical data
-  true_color = false_color = 0;
-  int with_sigma = FALSE;
-  if (truecolorFlag != FLAG_NOT_SET || falsecolorFlag != FLAG_NOT_SET) {
-    int ALOS_optical = (md->optical && strncmp(md->general->sensor, "ALOS", 4) == 0) ? 1 : 0;
-    if (md->optical && truecolorFlag != FLAG_NOT_SET) {
-      if (ALOS_optical) {
-        with_sigma = TRUE;
-        strcpy(command_line.red_channel,   "03");
-        strcpy(command_line.green_channel, "02");
-        strcpy(command_line.blue_channel,  "01");
-        true_color = 1;
-        asfPrintStatus("Applying True Color contrast expansion to following channels:");
-      }
-      else {
-        char **bands = extract_band_names(md->general->bands, 3);
-        asfRequire(bands != NULL,
-                   "-truecolor option specified for non-true color optical image.\n");
-
-        asfPrintWarning("Attempting to use the -truecolor option with non-ALOS\n"
-            "optical data.\n");
-        strcpy(command_line.red_channel, bands[2]);
-        strcpy(command_line.green_channel, bands[1]);
-        strcpy(command_line.blue_channel, bands[0]);
-        int i;
-        for (i=0; i<3; i++) {
-          FREE(bands[i]);
-        }
-        FREE(bands);
-      }
-    }
-    if (md->optical && falsecolorFlag != FLAG_NOT_SET) {
-      if (ALOS_optical) {
-        with_sigma = TRUE;
-        strcpy(command_line.red_channel,   "04");
-        strcpy(command_line.green_channel, "03");
-        strcpy(command_line.blue_channel,  "02");
-        false_color = 1;
-        asfPrintStatus("Applying False Color contrast expansion to the following channels:");
-      }
-      else {
-        char **bands = extract_band_names(md->general->bands, 4);
-        asfRequire(bands != NULL,
-                   "-falsecolor option specified for an optical image with fewer than 4 bands.\n");
-
-        asfPrintWarning("Attempting to use the -falsecolor option with non-ALOS\n"
-            "optical data.\n");
-        strcpy(command_line.red_channel, bands[3]);
-        strcpy(command_line.green_channel, bands[2]);
-        strcpy(command_line.blue_channel, bands[1]);
-        int i;
-        for (i=0; i<3; i++) {
-          FREE(bands[i]);
-        }
-        FREE(bands);
-      }
-    }
-    if (!ALOS_optical && !md->optical) {
-      asfPrintError("-truecolor or -falsecolor option selected with non-optical data\n");
-    }
-  }
-
-  if (rgbFlag != FLAG_NOT_SET ||
-     truecolorFlag != FLAG_NOT_SET ||
-     falsecolorFlag != FLAG_NOT_SET)
-  {
-    char red_band[16], green_band[16], blue_band[16];
-
-    asfPrintStatus("\nRed channel  : %s %s\n", command_line.red_channel, sigma_str(with_sigma));
-    asfPrintStatus("Green channel: %s %s\n", command_line.green_channel, sigma_str(with_sigma));
-    asfPrintStatus("Blue channel : %s %s\n\n", command_line.blue_channel, sigma_str(with_sigma));
-
-    if (is_numeric(command_line.red_channel) &&
-        is_numeric(command_line.green_channel) &&
-        is_numeric(command_line.blue_channel))
+    if (strcmp_case (command_line.format, "PGM") == 0 &&
+        (rgbFlag != FLAG_NOT_SET      ||
+        truecolorFlag != FLAG_NOT_SET ||
+        falsecolorFlag != FLAG_NOT_SET)
+       )
     {
-      sprintf(red_band, "%02d", atoi(command_line.red_channel));
-      sprintf(green_band, "%02d", atoi(command_line.green_channel));
-      sprintf(blue_band, "%02d", atoi(command_line.blue_channel));
-      band_names = find_bands(in_base_name, rgbFlag,
-                              red_band,
-                              green_band,
-                              blue_band,
-                              &num_bands_found);
+      asfPrintWarning("Greyscale PGM output is not compatible with color options:\n"
+                      "(RGB, True Color, False Color, color look-up tables, etc\n)"
+                      "...Defaulting to producing separate greyscale PGM files for available band.\n");
+      rgbFlag = FLAG_NOT_SET;
+      truecolorFlag = FLAG_NOT_SET;
+      falsecolorFlag = FLAG_NOT_SET;
     }
-    else {
-      band_names = find_bands(in_base_name, rgbFlag,
-                              command_line.red_channel,
-                              command_line.green_channel,
-                              command_line.blue_channel,
-                              &num_bands_found);
+
+    // Set the default byte scaling mechanisms
+    if (md->optical) {
+       // for optical data, default sample mapping is NONE
+        command_line.sample_mapping = NONE;
     }
-  }
-
-  // Set band
-  if ( bandFlag != FLAG_NOT_SET) {
-    strcpy (command_line.band, argv[bandFlag + 1]);
-    band_names = find_single_band(in_base_name, command_line.band,
-                  &num_bands_found);
-  }
-  else if (rgbFlag == FLAG_NOT_SET &&
-          truecolorFlag == FLAG_NOT_SET &&
-          falsecolorFlag == FLAG_NOT_SET &&
-          bandFlag == FLAG_NOT_SET) {
-    bandFlag=1; // For proper messaging to the user
-    strcpy (command_line.band, "all");
-    band_names = find_single_band(in_base_name, command_line.band,
-                                  &num_bands_found);
-  }
-
-  // Read look up table name
-  if ( lutFlag != FLAG_NOT_SET) {
-    strcpy(command_line.look_up_table_name, argv[lutFlag + 1]);
-    rgb = 1;
-  }
-
-  // Set scaling mechanism
-  if ( byteFlag != FLAG_NOT_SET ) {
-    strcpy (sample_mapping_string, argv[byteFlag + 1]);
-    for ( ii = 0; ii < strlen(sample_mapping_string); ii++) {
-      sample_mapping_string[ii] = toupper (sample_mapping_string[ii]);
-    }
-    if ( strcmp (sample_mapping_string, "TRUNCATE") == 0 )
-      command_line.sample_mapping = TRUNCATE;
-    else if ( strcmp(sample_mapping_string, "MINMAX") == 0 )
-      command_line.sample_mapping = MINMAX;
-    else if ( strcmp(sample_mapping_string, "SIGMA") == 0 )
+    // for other data, default is based on the output type
+    else if (strcmp_case (command_line.format, "TIFF") == 0 ||
+             strcmp_case (command_line.format, "TIF")  == 0 ||
+             strcmp_case (command_line.format, "JPEG") == 0 ||
+             strcmp_case (command_line.format, "JPG")  == 0 ||
+             strcmp_case (command_line.format, "PNG")  == 0 ||
+             strcmp_case (command_line.format, "PGM")  == 0 ||
+       strcmp_case (command_line.format, "PNG_ALPHA") == 0 ||
+       strcmp_case (command_line.format, "PNG_GE") == 0)
+    {
       command_line.sample_mapping = SIGMA;
-    else if ( strcmp(sample_mapping_string, "HISTOGRAM_EQUALIZE") == 0 )
-      command_line.sample_mapping = HISTOGRAM_EQUALIZE;
-    else if ( strcmp(sample_mapping_string, "NONE") == 0 ) {
-        asfPrintWarning("Sample remapping method (-byte option) is set to NONE\n"
-                "which doesn't make sense.  Defaulting to TRUNCATE...\n");
-        command_line.sample_mapping = TRUNCATE;
     }
+    else if (strcmp_case (command_line.format, "GEOTIFF") == 0) {
+      command_line.sample_mapping = NONE;
+    }
+
+    if ( quietFlag != FLAG_NOT_SET )
+      command_line.quiet = TRUE;
     else
-      asfPrintError("Unrecognized byte scaling method '%s'.\n",
-                    sample_mapping_string);
-  }
+      command_line.quiet = FALSE;
 
-  int is_polsarpro = (md->general->bands && strstr(md->general->bands, "POLSARPRO") != NULL) ? 1 : 0;
-  if ( !is_polsarpro               &&
-       lutFlag != FLAG_NOT_SET     &&
-       bandFlag == FLAG_NOT_SET    &&
-       md->general->band_count > 1)
-  {
-    asfPrintError("Look up tables can only be applied to single band"
-          " images\n");
-  }
+    // Set rgb combination
+    if ( rgbFlag != FLAG_NOT_SET ) {
+      int i;
 
-  if ( !is_polsarpro                       &&
-       lutFlag != FLAG_NOT_SET             &&
-       command_line.sample_mapping == NONE &&
-       md->general->data_type != ASF_BYTE      &&
-       md->general->band_count == 1)
-  {
-    asfPrintError("Look up tables can only be applied to byte output"
-          " images\n");
-  }
+      for (i=0, num_ignored = 0; i<3; i++) {
+        ignored[i] = strncmp("IGNORE", uc(argv[rgbFlag + i + 1]), 6) == 0 ? 1 : 0;
+        num_ignored += ignored[i] ? 1 : 0;
+      }
+      asfRequire(num_ignored < 3,
+                 "Cannot ignore all bands.  Exported image would be blank.\n");
 
-  // Report what is going to happen
-  if (rgbFlag != FLAG_NOT_SET ||
-     truecolorFlag != FLAG_NOT_SET ||
-     falsecolorFlag != FLAG_NOT_SET)
-  {
-    if (num_bands_found >= 3) {
-      asfPrintStatus("Exporting multiband image ...\n\n");
+      strcpy (command_line.red_channel, ignored[0] ? "Ignored" : argv[rgbFlag + 1]);
+      strcpy (command_line.green_channel, ignored[1] ? "Ignored" : argv[rgbFlag + 2]);
+      strcpy (command_line.blue_channel, ignored[2] ? "Ignored" : argv[rgbFlag + 3]);
+
+      // Check to see if the bands are numeric and in range
+      int r_channel = atoi(command_line.red_channel);
+      int g_channel = atoi(command_line.green_channel);
+      int b_channel = atoi(command_line.blue_channel);
+
+      /////////// Numeric channel case ////////////
+      // Remove trailing non-numeric characters from the channel number
+      // string and pad front end nicely with a zero
+      if (!ignored[0] && is_numeric(command_line.red_channel) &&
+          r_channel >= 1 && r_channel <= MAX_BANDS) {
+        sprintf(command_line.red_channel, "%02d", atoi(command_line.red_channel));
+      }
+      if (!ignored[1] && is_numeric(command_line.green_channel) &&
+          g_channel >= 1 && g_channel <= MAX_BANDS) {
+        sprintf(command_line.green_channel, "%02d", atoi(command_line.green_channel));
+      }
+      if (!ignored[2] && is_numeric(command_line.blue_channel) &&
+          b_channel >= 1 && b_channel <= MAX_BANDS) {
+        sprintf(command_line.blue_channel, "%02d", atoi(command_line.blue_channel));
+      }
+    }
+
+    // Set up the bands for true or false color optical data
+    true_color = false_color = 0;
+    int with_sigma = FALSE;
+    if (truecolorFlag != FLAG_NOT_SET || falsecolorFlag != FLAG_NOT_SET) {
+      int ALOS_optical = (md->optical && strncmp(md->general->sensor, "ALOS", 4) == 0) ? 1 : 0;
+      if (md->optical && truecolorFlag != FLAG_NOT_SET) {
+        if (ALOS_optical) {
+          with_sigma = TRUE;
+          strcpy(command_line.red_channel,   "03");
+          strcpy(command_line.green_channel, "02");
+          strcpy(command_line.blue_channel,  "01");
+          true_color = 1;
+          asfPrintStatus("Applying True Color contrast expansion to following channels:");
+        }
+        else {
+          char **bands = extract_band_names(md->general->bands, 3);
+          asfRequire(bands != NULL,
+                     "-truecolor option specified for non-true color optical image.\n");
+
+          asfPrintWarning("Attempting to use the -truecolor option with non-ALOS\n"
+              "optical data.\n");
+          strcpy(command_line.red_channel, bands[2]);
+          strcpy(command_line.green_channel, bands[1]);
+          strcpy(command_line.blue_channel, bands[0]);
+          int i;
+          for (i=0; i<3; i++) {
+            FREE(bands[i]);
+          }
+          FREE(bands);
+        }
+      }
+      if (md->optical && falsecolorFlag != FLAG_NOT_SET) {
+        if (ALOS_optical) {
+          with_sigma = TRUE;
+          strcpy(command_line.red_channel,   "04");
+          strcpy(command_line.green_channel, "03");
+          strcpy(command_line.blue_channel,  "02");
+          false_color = 1;
+          asfPrintStatus("Applying False Color contrast expansion to the following channels:");
+        }
+        else {
+          char **bands = extract_band_names(md->general->bands, 4);
+          asfRequire(bands != NULL,
+                     "-falsecolor option specified for an optical image with fewer than 4 bands.\n");
+
+          asfPrintWarning("Attempting to use the -falsecolor option with non-ALOS\n"
+              "optical data.\n");
+          strcpy(command_line.red_channel, bands[3]);
+          strcpy(command_line.green_channel, bands[2]);
+          strcpy(command_line.blue_channel, bands[1]);
+          int i;
+          for (i=0; i<3; i++) {
+            FREE(bands[i]);
+          }
+          FREE(bands);
+        }
+      }
+      if (!ALOS_optical && !md->optical) {
+        asfPrintError("-truecolor or -falsecolor option selected with non-optical data\n");
+      }
+    }
+
+    if (rgbFlag != FLAG_NOT_SET ||
+       truecolorFlag != FLAG_NOT_SET ||
+       falsecolorFlag != FLAG_NOT_SET)
+    {
+      char red_band[16], green_band[16], blue_band[16];
+
+      asfPrintStatus("\nRed channel  : %s %s\n", command_line.red_channel, sigma_str(with_sigma));
+      asfPrintStatus("Green channel: %s %s\n", command_line.green_channel, sigma_str(with_sigma));
+      asfPrintStatus("Blue channel : %s %s\n\n", command_line.blue_channel, sigma_str(with_sigma));
+
+      if (is_numeric(command_line.red_channel) &&
+          is_numeric(command_line.green_channel) &&
+          is_numeric(command_line.blue_channel))
+      {
+        sprintf(red_band, "%02d", atoi(command_line.red_channel));
+        sprintf(green_band, "%02d", atoi(command_line.green_channel));
+        sprintf(blue_band, "%02d", atoi(command_line.blue_channel));
+        band_names = find_bands(in_base_name, rgbFlag,
+                                red_band,
+                                green_band,
+                                blue_band,
+                                &num_bands_found);
+      }
+      else {
+        band_names = find_bands(in_base_name, rgbFlag,
+                                command_line.red_channel,
+                                command_line.green_channel,
+                                command_line.blue_channel,
+                                &num_bands_found);
+      }
+    }
+
+    // Set band
+    if ( bandFlag != FLAG_NOT_SET) {
+      strcpy (command_line.band, argv[bandFlag + 1]);
+      band_names = find_single_band(in_base_name, command_line.band,
+                    &num_bands_found);
+    }
+    else if (rgbFlag == FLAG_NOT_SET &&
+            truecolorFlag == FLAG_NOT_SET &&
+            falsecolorFlag == FLAG_NOT_SET &&
+            bandFlag == FLAG_NOT_SET) {
+      bandFlag=1; // For proper messaging to the user
+      strcpy (command_line.band, "all");
+      band_names = find_single_band(in_base_name, command_line.band,
+                                    &num_bands_found);
+    }
+
+    // Read look up table name
+    if ( lutFlag != FLAG_NOT_SET) {
+      strcpy(command_line.look_up_table_name, argv[lutFlag + 1]);
       rgb = 1;
     }
-    else {
-      asfPrintError("Not all RGB channels found.\n");
-    }
-  }
-  else if (bandFlag != FLAG_NOT_SET) {
-    if (strcmp_case(command_line.band, "ALL") == 0) {
-      if (multiband(command_line.format, 
-		    extract_band_names(md->general->bands, md->general->band_count), 
-		    md->general->band_count))
-	asfPrintStatus("Exporting multiband image ...\n\n");
-      else  if (num_bands_found > 1)
-        asfPrintStatus("Exporting each band into individual greyscale files ...\n\n");
-    }
-    else if (num_bands_found == 1) {
-      if (lutFlag != FLAG_NOT_SET)
-    asfPrintStatus("Exporting band '%s' applying look up table ...\n\n",
-               command_line.band);
-      else
-    asfPrintStatus("Exporting band '%s' as greyscale ...\n\n",
-               command_line.band);
-    }
-    else
-      asfPrintError("Band could not be found in the image.\n");
-  }
-  else if (lutFlag != FLAG_NOT_SET)
-    asfPrintStatus("Exporting applying look up table.\n\n");
-  else
-    asfPrintStatus("Exporting as greyscale.\n\n");
 
-  //If user added ".img", strip it.
-  ext = findExt(in_base_name);
-  if (ext && strcmp(ext, ".img") == 0) *ext = '\0';
-  meta_free(md);
+    // Set scaling mechanism
+    if ( byteFlag != FLAG_NOT_SET ) {
+      strcpy (sample_mapping_string, argv[byteFlag + 1]);
+      for ( ii = 0; ii < strlen(sample_mapping_string); ii++) {
+        sample_mapping_string[ii] = toupper (sample_mapping_string[ii]);
+      }
+      if ( strcmp (sample_mapping_string, "TRUNCATE") == 0 )
+        command_line.sample_mapping = TRUNCATE;
+      else if ( strcmp(sample_mapping_string, "MINMAX") == 0 )
+        command_line.sample_mapping = MINMAX;
+      else if ( strcmp(sample_mapping_string, "SIGMA") == 0 )
+        command_line.sample_mapping = SIGMA;
+      else if ( strcmp(sample_mapping_string, "HISTOGRAM_EQUALIZE") == 0 )
+        command_line.sample_mapping = HISTOGRAM_EQUALIZE;
+      else if ( strcmp(sample_mapping_string, "NONE") == 0 ) {
+          asfPrintWarning("Sample remapping method (-byte option) is set to NONE\n"
+                  "which doesn't make sense.  Defaulting to TRUNCATE...\n");
+          command_line.sample_mapping = TRUNCATE;
+      }
+      else
+        asfPrintError("Unrecognized byte scaling method '%s'.\n",
+                      sample_mapping_string);
+    }
+
+    int is_polsarpro = (md->general->bands && strstr(md->general->bands, "POLSARPRO") != NULL) ? 1 : 0;
+    if ( !is_polsarpro               &&
+         lutFlag != FLAG_NOT_SET     &&
+         bandFlag == FLAG_NOT_SET    &&
+         md->general->band_count > 1)
+    {
+      asfPrintError("Look up tables can only be applied to single band"
+            " images\n");
+    }
+
+    if ( !is_polsarpro                       &&
+         lutFlag != FLAG_NOT_SET             &&
+         command_line.sample_mapping == NONE &&
+         md->general->data_type != ASF_BYTE      &&
+         md->general->band_count == 1)
+    {
+      asfPrintError("Look up tables can only be applied to byte output"
+            " images\n");
+    }
+
+    // Report what is going to happen
+    if (rgbFlag != FLAG_NOT_SET ||
+       truecolorFlag != FLAG_NOT_SET ||
+       falsecolorFlag != FLAG_NOT_SET)
+    {
+      if (num_bands_found >= 3) {
+        asfPrintStatus("Exporting multiband image ...\n\n");
+        rgb = 1;
+      }
+      else {
+        asfPrintError("Not all RGB channels found.\n");
+      }
+    }
+    else if (bandFlag != FLAG_NOT_SET) {
+      if (strcmp_case(command_line.band, "ALL") == 0) {
+        if (multiband(command_line.format, 
+          extract_band_names(md->general->bands, md->general->band_count), 
+          md->general->band_count))
+    asfPrintStatus("Exporting multiband image ...\n\n");
+        else  if (num_bands_found > 1)
+          asfPrintStatus("Exporting each band into individual greyscale files ...\n\n");
+      }
+      else if (num_bands_found == 1) {
+        if (lutFlag != FLAG_NOT_SET)
+      asfPrintStatus("Exporting band '%s' applying look up table ...\n\n",
+                 command_line.band);
+        else
+      asfPrintStatus("Exporting band '%s' as greyscale ...\n\n",
+                 command_line.band);
+      }
+      else
+        asfPrintError("Band could not be found in the image.\n");
+    }
+    else if (lutFlag != FLAG_NOT_SET)
+      asfPrintStatus("Exporting applying look up table.\n\n");
+    else
+      asfPrintStatus("Exporting as greyscale.\n\n");
+
+    //If user added ".img", strip it.
+    ext = findExt(in_base_name);
+    if (ext && strcmp(ext, ".img") == 0) *ext = '\0';
+    meta_free(md);
+  }
+
+  if (strcmp_case(command_line.format, "GEOTIFF") != 0 &&
+      pixelIsPointFlag != FLAG_NOT_SET )
+  {
+    asfPrintWarning("-point option has no effect");
+  }
+  else {
+    command_line.use_pixel_is_point = pixelIsPointFlag != FLAG_NOT_SET; 
+  }
 
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
-  if ( strcmp (command_line.format, "ENVI") == 0 ) {
+  if ( strcmp_case (command_line.format, "ENVI") == 0 ) {
     format = ENVI;
   }
-  else if ( strcmp (command_line.format, "ESRI") == 0 ) {
+  else if ( strcmp_case (command_line.format, "ESRI") == 0 ) {
     format = ESRI;
   }
-  else if ( strcmp (command_line.format, "GEOTIFF") == 0 ||
-            strcmp (command_line.format, "GEOTIF") == 0) {
+  else if ( strcmp_case (command_line.format, "GEOTIFF") == 0 ||
+            strcmp_case (command_line.format, "GEOTIF") == 0) {
     format = GEOTIFF;
   }
-  else if ( strcmp (command_line.format, "TIFF") == 0 ||
-            strcmp (command_line.format, "TIF") == 0) {
+  else if ( strcmp_case (command_line.format, "TIFF") == 0 ||
+            strcmp_case (command_line.format, "TIF") == 0) {
     format = TIF;
   }
-  else if ( strcmp (command_line.format, "JPEG") == 0 ||
-            strcmp (command_line.format, "JPG") == 0) {
+  else if ( strcmp_case (command_line.format, "JPEG") == 0 ||
+            strcmp_case (command_line.format, "JPG") == 0) {
     format = JPEG;
   }
-  else if ( strcmp (command_line.format, "PGM") == 0 ) {
+  else if ( strcmp_case (command_line.format, "PGM") == 0 ) {
     format = PGM;
   }
-  else if ( strcmp (command_line.format, "PNG") == 0 ) {
+  else if ( strcmp_case (command_line.format, "PNG") == 0 ) {
     format = PNG;
   }
-  else if ( strcmp (command_line.format, "PNG_ALPHA") == 0 ) {
+  else if ( strcmp_case (command_line.format, "PNG_ALPHA") == 0 ) {
     format = PNG_ALPHA;
   }
-  else if ( strcmp (command_line.format, "PNG_GE") == 0 ) {
+  else if ( strcmp_case (command_line.format, "PNG_GE") == 0 ) {
     format = PNG_GE;
   }
-  else if ( strcmp (command_line.format, "KML") == 0 ) {
+  else if ( strcmp_case (command_line.format, "KML") == 0 ) {
     format = KML;
   }
-  else if ( strcmp (command_line.format, "POLSARPRO") == 0 ) {
+  else if ( strcmp_case (command_line.format, "POLSARPRO") == 0 ) {
     format = POLSARPRO_HDR;
   }
-  else if ( strcmp (command_line.format, "HDF5") == 0 ) {
+  else if ( strcmp_case (command_line.format, "HDF5") == 0 ) {
     format = HDF;
   }
-  else if ( strcmp (command_line.format, "NETCDF") == 0 ) {
+  else if ( strcmp_case (command_line.format, "NETCDF") == 0 ) {
     format = NC;
   }
   else {
@@ -820,7 +832,7 @@ main (int argc, char *argv[])
   // Do that exporting magic!
   asf_export_bands(format, command_line.sample_mapping, rgb,
                    true_color, false_color,
-                   command_line.look_up_table_name,
+                   command_line.look_up_table_name, command_line.use_pixel_is_point,
                    in_base_name, command_line.output_name, band_names,
                    NULL, NULL);
 
@@ -831,10 +843,12 @@ main (int argc, char *argv[])
       remove(logFile);
   }
 
-  for (ii = 0; ii<num_bands_found; ii++) {
-    FREE(band_names[ii]);
+  if (band_names) {
+    for (ii = 0; ii<num_bands_found; ii++) {
+      FREE(band_names[ii]);
+    }
+    FREE(band_names);
   }
-  FREE(band_names);
   FREE(in_base_name);
   FREE(output_name);
   exit (EXIT_SUCCESS);

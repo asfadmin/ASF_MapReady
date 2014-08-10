@@ -24,6 +24,7 @@ MAPREADY_MODULES = \
 	src/libasf_ardop \
 	src/libasf_terrcorr \
 	src/libasf_insar \
+	src/libasf_remap \
 	src/asf_import \
 	src/asf_export \
 	src/asf_geocode \
@@ -34,7 +35,7 @@ MAPREADY_MODULES = \
 	src/asf_airsar_import \
 	src/asf_polsarpro_import \
 	src/libasf_convert \
-	src/asf_convert \
+	src/asf_mapready \
 	src/refine_geolocation \
 	src/shift_geolocation \
 	src/flip \
@@ -43,10 +44,12 @@ MAPREADY_MODULES = \
 	src/adjust_bands \
 	src/fftMatch \
 	src/trim \
+	src/asf_subset \
 	src/sr2gr \
 	src/gr2sr \
 	src/to_sr \
 	src/deskew \
+	src/libasf_metadata \
 	src/metadata \
 	src/resample \
 	src/fill_holes \
@@ -63,12 +66,24 @@ MAPREADY_MODULES = \
 	src/plan \
 	src/brs2jpg \
 	src/add_aux_band \
+	src/fit_warp \
+	src/remap \
 	src/update_state \
 	src/clm \
+	src/byteswap \
+	src/write_hdf5_xml \
+	src/stats \
+	src/asf2geobrowse \
+	src/sqrt_img \
+	src/color_browse \
+	src/annotate_image \
 	src/populate_meta_field \
+	src/trim_wedges \
+	src/kernel \
 	src/make_overlay \
 	src/asf_kml_overlay \
 	src/sample_plugin \
+	src/convert2vector \
 	@ASF_GUI@
 
 MAPREADY_SOURCE = \
@@ -243,7 +258,6 @@ ALL_MODULES = \
 	$(AP_MODULES) \
 	$(REQ_MODULES) \
 	$(C2V_MODULES) \
-	$(JPL_MODULES) \
 	$(CREATE_THUMBS_MODULES) \
 	$(DATA_QC_MODULES)
 

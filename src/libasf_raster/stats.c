@@ -16,11 +16,14 @@
 void calc_stats(float *data, long long pixel_count, double mask, double *min,
 		double *max, double *mean, double *stdDev)
 {
-  return calc_stats_ext(data, pixel_count, mask, TRUE, min, max, mean, stdDev);
+  double percentValid;
+  return calc_stats_ext(data, pixel_count, mask, TRUE, min, max, mean, stdDev,
+    &percentValid);
 }
 
 void calc_stats_ext(float *data, long long pixel_count, double mask, int report,
-		    double *min, double *max, double *mean, double *stdDev)
+		                double *min, double *max, double *mean, double *stdDev,
+		                double *percentValid)
 {
     long long ii, pix;
 
@@ -56,6 +59,7 @@ void calc_stats_ext(float *data, long long pixel_count, double mask, int report,
     if (report)
       asfPercentMeter(1.0);
     *mean /= pix;
+    *percentValid = (double)pix*100.0/pixel_count;
 
     if (report)
       asfPrintStatus("\nCalculating standard deviation...\n");
@@ -293,11 +297,23 @@ calc_stats_from_file(const char *inFile, char *band, double mask,
                      double *min, double *max, double *mean,
                      double *stdDev, gsl_histogram **histogram)
 {
+  double valid;
+  return calc_stats_from_file_ext(inFile, band, mask, min, max, mean, stdDev, 
+                                  &valid, histogram);
+}
+
+void
+calc_stats_from_file_ext(const char *inFile, char *band, double mask,
+                         double *min, double *max, double *mean,
+                         double *stdDev, double *percentValid, 
+                         gsl_histogram **histogram)
+{
     int ii,jj;
 
     *min = 999999;
     *max = -999999;
     *mean = 0.0;
+    *percentValid = 0.0;
 
     meta_parameters *meta = meta_read(inFile);
     int band_number;
@@ -336,6 +352,8 @@ calc_stats_from_file(const char *inFile, char *band, double mask,
     FCLOSE(fp);
 
     *mean /= pixel_count;
+    long total_count = meta->general->line_count*meta->general->sample_count;
+    *percentValid = (double)pixel_count*100.0/total_count;
 
     // Guard against weird data
     if(!(*min<*max)) *max = *min + 1;
@@ -378,12 +396,24 @@ calc_stats_rmse_from_file(const char *inFile, char *band, double mask,
                           double *stdDev, double *rmse,
                           gsl_histogram **histogram)
 {
+  double valid;
+  return calc_stats_rmse_from_file_ext(inFile, band, mask, min, max, mean,
+                                       stdDev, rmse, &valid, histogram);
+}
+
+void
+calc_stats_rmse_from_file_ext(const char *inFile, char *band, double mask,
+                              double *min, double *max, double *mean,
+                              double *stdDev, double *rmse, 
+                              double *percentValid, gsl_histogram **histogram)
+{
     double se;
     int ii,jj;
 
     *min = 999999;
     *max = -999999;
     *mean = 0.0;
+    *percentValid = 0.0;
 
     meta_parameters *meta = meta_read(inFile);
     int band_number =
@@ -413,6 +443,8 @@ calc_stats_rmse_from_file(const char *inFile, char *band, double mask,
     FCLOSE(fp);
 
     *mean /= pixel_count;
+    long total_count = meta->general->line_count*meta->general->sample_count;
+    *percentValid = (double)pixel_count*100.0/total_count;
 
     // Guard against weird data
     if(!(*min<*max)) *max = *min + 1;
@@ -420,7 +452,10 @@ calc_stats_rmse_from_file(const char *inFile, char *band, double mask,
     // Initialize the histogram.
     const int num_bins = 256;
     gsl_histogram *hist = gsl_histogram_alloc (num_bins);
-    gsl_histogram_set_ranges_uniform (hist, *min, *max);
+    if (meta->general->data_type == ASF_BYTE)
+      gsl_histogram_set_ranges_uniform (hist, 0, 255);
+    else
+      gsl_histogram_set_ranges_uniform (hist, *min, *max);
     *stdDev = 0.0;
 
     // pass 2 -- update histogram, calculate standard deviation

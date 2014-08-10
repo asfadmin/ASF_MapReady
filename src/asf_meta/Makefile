@@ -2,8 +2,10 @@
 
 include ../../make_support/system_rules
 
-LIBS = $(XML_LIBS)
-CFLAGS += $(XML_CFLAGS)
+LIBS = $(XML_LIBS) $(GSL_LIBS) $(PROJ_LIBS) -lm
+
+# Had to add -Wno-unused-function because flex generates some
+CFLAGS += $(W_ERROR) -Wno-unused-function $(XML_CFLAGS)
 
 # Things used/needed by make's implicit rules for lex and yacc.
 # Need the GNU flex and bison, others are broken in variety of ways.
@@ -85,6 +87,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	err_die.o \
 	fixed2gei.o \
 	frame_calc.o \
+  gamma_dem2meta.o \
 	gei2fixed.o \
 	getLatLong.o \
 	getLoc.o \
@@ -152,7 +155,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	distortions.o \
 	$(LAS_OBJS)
 
-all: asf_meta
+all: asf_meta test
 
 asf_meta: build_only
 	mv asf_meta.a $(LIBDIR)
@@ -196,4 +199,8 @@ meta_update: meta_update.c build_only
 
 distclean:
 	rm -f core *~ TAGS gdb_init.com
+
+test: *.t.c build_only
+	$(CC) $(CFLAGS) -o test *.t.c $(LIBDIR)/libcunit.a $(LIBDIR)/asf_meta.a $(LIBDIR)/asf.a $(LIBDIR)/libasf_proj.a $(LIBS) -lm -lz
+	./test
 

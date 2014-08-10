@@ -1,0 +1,30 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#include",
+        "#src/asf",
+        "#src/asf_meta",
+        "#src/libasf_proj",
+        "#src/libasf_raster",
+        "#src/libasf_export",
+        "#src/libasf_import",
+        "#src/libasf_geocode",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+
+localenv.AppendUnique(LIBS = [
+    "asf",
+    "asf_meta",
+    "asf_export",
+    "asf_import",
+    "asf_geocode",
+    "asf_raster",
+])
+
+bins = localenv.Program("asf2geobrowse", Glob("*.c"))
+
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
+

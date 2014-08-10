@@ -155,6 +155,8 @@ banded_float_image_export_as_jpeg(BandedFloatImage *self, const char *output_nam
   max = MALLOC(sizeof(float)*self->nbands);
   mean = MALLOC(sizeof(float)*self->nbands);
   stddev = MALLOC(sizeof(float)*self->nbands);
+  lin_min = MALLOC(sizeof(float)*self->nbands);
+  lin_max = MALLOC(sizeof(float)*self->nbands);
 
   for (i=0; i<self->nbands; ++i) {
       float_image_statistics(self->images[i], &min[i], &max[i], &mean[i], &stddev[i], -999);
@@ -215,6 +217,10 @@ banded_float_image_export_as_jpeg(BandedFloatImage *self, const char *output_nam
 
   FREE(row_pointer);
   FREE(jsample_row);
+  FREE(lin_min);
+  FREE(lin_max);
+  FREE(mean);
+  FREE(stddev);
   jpeg_finish_compress (&cinfo);
   FCLOSE (ofp);
   jpeg_destroy_compress (&cinfo);

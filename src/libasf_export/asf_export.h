@@ -5,6 +5,7 @@
 #include "asf_tiff.h"
 #include <png.h>
 #include "asf.h"
+#include "asf_meta.h"
 #include "asf_jpeg.h"
 #include <stdlib.h>
 #include "asf_raster.h"
@@ -12,17 +13,6 @@
 #include "asf_nan.h"
 #include "netcdf.h"
 #include "hdf5.h"
-
-/* Evaluate to true if floats are within tolerance of each other.  */
-#define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
-
-/* Default tolerance used for many floating point comparisons in this
-   program.  */
-#define ASF_EXPORT_FLOAT_MICRON 0.000000001
-
-/* Compare floats using the default tolerance for this program.  */
-#define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
-                                (a, b, ASF_EXPORT_FLOAT_MICRON))
 
 /* Maximum image name length we can accept from the user.  Since the
    user may enter a base name only, the actual file name strings need
@@ -58,7 +48,8 @@ typedef enum {
   KML,                          // JPEG with GoogleEarth overlay file
   POLSARPRO_HDR,                // PolsarPro with ENVI header
   HDF,                          // HDF5 - NASA Earth Observation standard
-  NC                            // netCDF - modeler oriented format
+  NC,                           // netCDF - modeler oriented format
+  UNKNOWN_OUTPUT_FORMAT
 } output_format_t;
 
 /* Ellipsoid used for the data.  */
@@ -110,6 +101,7 @@ typedef struct {
   char green_channel[MAX_CHANNEL_STRING_LENGTH];
   char band[MAX_CHANNEL_STRING_LENGTH];
   char look_up_table_name[MAX_IMAGE_NAME_LENGTH];
+  int use_pixel_is_point;
 } command_line_parameters_t;
 
 /* Prototypes */
@@ -119,7 +111,8 @@ int asf_export_with_lut(output_format_t, scale_t sample_mapping,
 			char *lutFile, char *inFile, char *outFile);
 int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                      int true_color, int false_color,
-                     char *look_up_table_name, char *in_base_name,
+                     char *look_up_table_name, int use_pixel_is_point,
+                     char *in_base_name,
                      char *output_name, char **band_name,
                      int *noutputs, char ***output_names);
 
@@ -163,6 +156,7 @@ void export_band_image(const char *metadata_file_name,
                        int true_color, int false_color,
                        char *look_up_table_name,
                        output_format_t format,
+                       int use_pixel_is_point,
                        int *noutputs,
                        char ***output_names);
 
@@ -195,28 +189,24 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *metadata_file_name,
                            int is_geotiff, scale_t sample_mapping,
                            int rgb, int *palette_color_tiff, char **band_names,
-                           char *look_up_table_name, int is_colormapped);
+                           char *look_up_table_name, int is_colormapped,
+                           int use_pixel_is_point);
 GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
-                              int rgb, char **band_names, int palette_color_tiff);
+                              int rgb, char **band_names, int palette_color_tiff,
+                              int use_pixel_is_point);
 void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
 int lut_to_tiff_palette(unsigned short **colors, int size, char *look_up_table_name);
 void dump_palette_tiff_color_map(unsigned short *colors, int map_size);
 int meta_colormap_to_tiff_palette(unsigned short **colors, int *byte_image, meta_colormap *colormap);
 
 // Prototypes from export_netcdf.c
-netcdf_t *initialize_netcdf_file(const char *output_file, 
-				 meta_parameters *meta);
-void finalize_netcdf_file(netcdf_t *netcdf, meta_parameters *md);
-void export_netcdf(const char *metadata_file_name, 
-		   const char *image_data_file_name,
-		   char *output_file_name, char **band_name,
-		   int *noutputs,char ***output_names);
+void export_netcdf(const char *in_base_name, char *output_file_name,
+  int *noutputs, char ***output_names);
+void export_netcdf_xml(const char *xmlFile, char *outFile);
 
 // Prototypes from export_hdf.c
-void export_hdf(const char *metadata_file_name, 
-		const char *image_data_file_name,
-		char *output_file_name, char **band_name,
-		int *noutputs,char ***output_names);
+void export_hdf(const char *in_base_name, char *output_file_name,
+  int *noutputs,char ***output_names);
 
 // Prototypes from export_polsarpro.c
 void initialize_polsarpro_file(const char *output_file_name,

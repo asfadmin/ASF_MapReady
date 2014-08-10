@@ -84,7 +84,7 @@ iso_productInfo *iso_productInfo_init(void)
   strcpy(info->elevationBeamConfiguration, MAGIC_UNSET_STRING);
   strcpy(info->azimuthBeamID, MAGIC_UNSET_STRING);
   info->numberOfBeams = MAGIC_UNSET_INT;
-  info->beamID = MAGIC_UNSET_STRING;
+  info->beamID = NULL;
   info->numberOfBursts = MAGIC_UNSET_INT;
   info->numberOfAzimuthBeams = MAGIC_UNSET_INT;
   strcpy(info->azimuthBeamIDFirst, MAGIC_UNSET_STRING);

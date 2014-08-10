@@ -330,7 +330,7 @@ void asf_polsarpro_import(char *ceosName, input_format_t format,
 int
 main (int argc, char *argv[])
 {
-  input_format_t format;
+  input_format_t format=UNKNOWN_INPUT_FORMAT;
   char *dataFile, *polsarFile, *outFile, *formatStr;
   int classification = FALSE;
   int currArg = 1;

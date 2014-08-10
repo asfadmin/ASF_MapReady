@@ -23,7 +23,7 @@ following defines.
 "              [-interferogam <file>] [-coherence <file>] [-slave <file>]\n"\
 "              [-baseline <file>] [-cpx_gamma <file>] [-line <start line subset>]\n"\
 "              [-sample <start sample subset>] [-width <subset width>]\n"\
-"              [-height <subset height>] [-uavsar <type>]\n"\ 
+"              [-height <subset height>] [-uavsar <type>]\n"\
 "              [-subset <latUL> <lonUL> <latLR> <lonLR>] [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
 
@@ -102,7 +102,8 @@ following defines.
 "        imported, e.g. a TIFF or GeoTIFF with an embedded color palette.\n"\
 "   -metadata <metadata file>\n"\
 "        Allows the ingest of metadata that does not have the same basename\n"\
-"        as the image data.\n"\
+"        as the image data.  When importing GAMMA data, use this to specify\n"\
+"        the parameter (usually _par) file.\n"\
 "   -interferogram <file>\n"\
 "        Allows the ingest of an interferogram that is in the same geometry\n"\
 "        as the amplitude image that is ingested as the main file.\n"\
@@ -449,7 +450,7 @@ int main(int argc, char *argv[])
     char *uavsar_type=NULL;
     char *prcPath=NULL;
     char format_type_str[256]="";
-    input_format_t format_type;
+    input_format_t format_type=UNKNOWN_INPUT_FORMAT;
     char band_id[256]="";
     char data_type[256]="";
     char image_data_type[256]="";
@@ -917,7 +918,10 @@ int main(int argc, char *argv[])
       format_type = POLSARPRO;
     else if (strncmp_case(format_type_str, "GAMMA", 5) == 0)
       format_type = GAMMA;
+    // Old type is "roipac" new type is "roi_pac" what could be simpler!!
     else if (strncmp_case(format_type_str, "ROIPAC", 6) == 0)
+      format_type = ROIPAC_DEPRECATED;
+    else if (strncmp_case(format_type_str, "ROI_PAC", 7) == 0)
       format_type = ROIPAC;
     else if (strncmp_case(format_type_str, "SMAP", 4) == 0)
       format_type = SMAP;
@@ -935,7 +939,8 @@ int main(int argc, char *argv[])
         flags[f_METADATA_FILE] == FLAG_NOT_SET) {
       // GAMMA/ROIPAC requires the metadata file
       asfPrintError("%s ingest requires the specific name of the %s\n"
-	  "metadata file. See asf_import -help for more information.\n", 
+	  "metadata file.  Use the -metadata option.\n"
+          "See asf_import -help for more information.\n", 
 	  format_type_str, format_type_str);
     }
     if (flags[f_SLAVE] != FLAG_NOT_SET &&

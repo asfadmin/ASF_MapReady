@@ -78,7 +78,7 @@
 #include <asf_raster.h>
 
 // Print minimalistic usage info & exit
-static void usage()
+static void usage(char *name)
 {
   asfPrintStatus("\n"
       "Usage:\n"
@@ -317,7 +317,7 @@ main (int argc, char *argv[])
   asfSplashScreen(argc, argv);
 
   if (argc<=1)
-      usage(ASF_NAME_STRING);
+      usage(argv[0]);
   else if (strmatches(argv[1],"-help","--help",NULL))
       print_help();
 
@@ -346,7 +346,7 @@ main (int argc, char *argv[])
   }
   if ((argc-currArg) < NUM_ARGS) {
     printf("Insufficient arguments.\n");
-    usage();
+    usage(argv[0]);
   }
 
   char *outFile = argv[argc-1];

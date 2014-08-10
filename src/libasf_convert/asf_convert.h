@@ -323,6 +323,6 @@ int isPolSARpro(const char * infile);
 int kml_overlay(char *inFile, char *outFile, int zip);
 int kml_overlay_ext(char *inFile, char *outFile, int reduction, 
 		    int transparency, char *colormap, char *rgb, 
-		    char *polsarpro, char *band, int zip);
+		    char *polsarpro, char *band, int zip, const char *byteConversionIn);
 
 #endif

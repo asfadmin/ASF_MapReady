@@ -8,11 +8,23 @@ localenv.AppendUnique(CPPPATH = [
         "#src/libasf_proj",
         "#src/sgpsdp",
         "#src/libasf_vector",
+        "#src/libasf_raster",
         "/usr/include/libshp",
         "#src/libasf_import",
         ])
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+
+localenv.AppendUnique(LIBS = [
+    "m",
+    "asf",
+    "asf_meta",
+    "asf_proj",
+    "asf_sgpsdp",
+    "asf_vector",
+    "asf_raster",
+])
 
 libs = localenv.SharedLibrary("libasf_plan", [
         "plan.c",
@@ -24,8 +36,5 @@ libs = localenv.SharedLibrary("libasf_plan", [
         "tle.c",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
 
-# run the unit test, and set its dependencies
-test_result = localenv.UnitTest("test.semaphore", None)
-localenv.Depends(test_result, [libs])

@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
   /* Loop over grid, performing forward and backward correlations */
   while (getNextPoint(&x1,&y1,&x2,&y2))
       {
-	float dx, dy, snr, dxFW, dyFW, snrFW, dxBW, dyBW, snrBW;
+	float dx=0.0, dy=0.0, snr=0.0, dxFW, dyFW, snrFW, dxBW, dyBW, snrBW;
 	attemptedPoints++;
 
         // Check bounds and mask

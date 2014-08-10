@@ -25,7 +25,7 @@ ASPLIB = patch.o \
 
 # Filter out the ISOC99 FLAGS which causes some problems.
 CFLAGS := $(patsubst -D_ISOC99_SOURCE, , $(CFLAGS))
-CFLAGS += $(GLIB_CFLAGS)
+CFLAGS += $(GLIB_CFLAGS) $(W_ERROR) $(JPEG_CFLAGS)
 
 all: build_only
 	mv libasf_ardop.a $(LIBDIR)

@@ -1,6 +1,8 @@
 #ifndef _DATE_UTIL_H_
 #define _DATE_UTIL_H_
 
+#include "asf_meta.h"
+
 /********************************************
 Constants:
 */
@@ -193,6 +195,8 @@ void parse_date(const char *inStr,ymd_date *date,hms_time *time);
 const char *date_str(double s);
 const char *date_str_long(double s);
 double seconds_from_str(const char *date_str);
+double date2sec_1995(julian_date *date,hms_time *time);
+double measures2sec(const char *inStr);
 
 // "Dates as longs" utilities
 // These are all in longdate.c
@@ -210,6 +214,7 @@ void date_tester(void);
 int date_diff(long date1, long date2);
 
 char *fgdc_date(void);
+char *iso_date(void);
 void ursa2date(const char *inStr, ymd_date *date, hms_time *time);
 
 #endif

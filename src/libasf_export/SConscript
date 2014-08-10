@@ -14,6 +14,23 @@ localenv.AppendUnique(CPPPATH = [
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libpng")
+localenv.ParseConfig("pkg-config --cflags --libs gsl")
+localenv.ParseConfig("pkg-config --cflags --libs netcdf")
+localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
+
+localenv.AppendUnique(LIBS = [
+    "m",
+    "hdf5",
+    "hdf5_hl",
+    "jpeg",
+    "asf",
+    "asf_meta",
+    "asf_raster",
+    "asf_proj",
+    "asf_geocode",
+    "tiff",
+])
 
 libs = localenv.SharedLibrary("libasf_export", [
         "asf_export.c",
@@ -29,8 +46,5 @@ libs = localenv.SharedLibrary("libasf_export", [
         "write_line.c",
         ])
 
-globalenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["libs"], libs)
 
-# run the unit test, and set its dependencies
-test_result = localenv.UnitTest("test.semaphore", None)
-localenv.Depends(test_result, [libs])

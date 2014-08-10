@@ -1,25 +1,32 @@
-def _runUnitTest(target, source, env):
-    """Function to run a unit test."""
+def _unit_test_pseudo_builder(env, source, extra_depends, **kwargs):
+    """Pseudo builder to execute unit test programs after they're built, and to set their dependencies."""
 
-    cur_dir = env["src_dir"]
+    test_binary = env.Program("test_binary", source, **kwargs)
+    test_result = env.Command(target = "test.semaphore",
+                              source = test_binary[0].abspath,
+                              action = run_test)
 
-    if not source:
-        sys.stderr.write("Warning: no unit test for " + cur_dir + "\n")
-        return 0
-
-    import subprocess
-    test_program = str(source[0].abspath)
-    if not subprocess.call(test_program):
-        open(str(target[0]), "w").write("passed\n")
-        return 0
-    else:
-        sys.stderr.write("Unit test failed for " + cur_dir + "\n")
-        return 1
+    env.Depends(test_result, extra_depends)
 
 def add_UnitTest(env):
     """Function to make the UnitTest builder."""
-    utbuild = Builder(action = _runUnitTest)
-    env.Append(BUILDERS = {"UnitTest": utbuild})
+    env.AddMethod(_unit_test_pseudo_builder, "UnitTest")
+
+def run_test(target, source, env):
+    """Run an external program and get its return code."""
+
+    target_file = target[0].abspath
+    test_binary = source[0].abspath
+
+    import subprocess
+    retcode = subprocess.call(test_binary)
+    
+    if retcode == 0:
+        open(target_file, "w").write("test passed")
+        return 0
+    else:
+        sys.stderr.write("warning: unit test failed")
+        return 1
     
 def checkEndian(env):
     """Endianness test function. Python already knows what endian it is, just ask Python. This code was tested on Intel, AMD 64, and Cell (Playstation 3)."""

@@ -68,8 +68,6 @@
 #define USER_DEFINED_KEY             32767
 #define BAND_NAME_LENGTH  12
 
-#define TIFFTAG_GDAL_NODATA          42113
-
 #ifdef USHORT_MAX
 #undef USHORT_MAX
 #endif
@@ -128,9 +126,10 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                          // receive the 'ignore' array and may assume there are MAX_BANDS in
                          // the array, e.g. read_tiff_meta() in the asf_view tool.
 
+  _XTIFFInitialize();
+
   // Open the input tiff file.
-  TIFFErrorHandler oldHandler;
-  oldHandler = TIFFSetWarningHandler(NULL);
+  //TIFFErrorHandler oldHandler = TIFFSetWarningHandler(NULL);
   input_tiff = XTIFFOpen (inFileName, "r");
   if (input_tiff == NULL)
     asfPrintError ("Error opening input TIFF file:\n    %s\n", inFileName);
@@ -251,13 +250,14 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   short linear_units=-1;
   short angular_units=-1;
   double scale_factor;
-  char no_data[25];
   TIFF *input_tiff;
   GTIF *input_gtif;
   meta_parameters *meta_out; // Return value
   data_type_t data_type;
   datum_type_t datum;
   va_list ap;
+
+  _XTIFFInitialize();
 
   /***** INITIALIZE PARAMETERS *****/
   /*                               */
@@ -560,7 +560,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     unsigned long pro_zone; // UTM zone (UTM only)
     short proj_coords_trans = UNKNOWN_PROJECTION_TYPE;
     short pcs;
-    short geokey_datum;
+    short geokey_datum=0;
     double false_easting = MAGIC_UNSET_DOUBLE;
     double false_northing = MAGIC_UNSET_DOUBLE;
     double lonOrigin = MAGIC_UNSET_DOUBLE;
@@ -593,7 +593,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     // Those need a shift by half a pixel
     if (raster_type == RasterPixelIsPoint) {
       mp->startX -= mp->perX / 2.0;
-      mp->startY -= fabs(mp->perY) / 2.0;
+      //mp->startY -= fabs(mp->perY) / 2.0;
+      mp->startY -= mp->perY / 2.0;
     }
     mp->height = 0.0;
     if (linear_units == Linear_Meter) {
@@ -1417,7 +1418,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     asfPrintError("Invalid height and width parameters in TIFF file,\n"
         "Height = %ld, Width = %ld\n", height, width);
   }
-
+  
   /***** FILL IN THE REST OF THE META DATA (Projection parms should already exist) *****/
   /*                                                                                   */
   char image_data_type[256];
@@ -1660,18 +1661,18 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   get_bands_from_citation(&num_found_bands, &band_str, empty, tmp_citation, num_bands);
   meta_statistics *stats = NULL;
   double mask_value = MAGIC_UNSET_DOUBLE;
+
+  // Look for a non-standard GDAL tag that contains the no data value
+  char *charDummy;
+  if (TIFFGetField(input_tiff,TIFFTAG_GDAL_NODATA,&charDummy)) {
+    if (strcmp_case( charDummy, "nan" ) != 0) {
+      mg->no_data = (double)atof(charDummy);
+    }
+  }
+
   if (!is_asf_geotiff) {
     asfPrintStatus("\nNo ASF-exported band names found in GeoTIFF citation tag.\n"
         "Band names will be assigned in numerical order.\n");
-
-    // Look for a non-standard GDAL tag that contains the no data value
-    void *data;
-    uint16 *counter;
-    int ret = TIFFGetField(input_tiff, TIFFTAG_GDAL_NODATA, &counter, &data);
-    if (ret)
-      mg->no_data = atof((char *)data);
-    else
-      mg->no_data = MAGIC_UNSET_DOUBLE;
   }
   else {
     // This is an ASF GeoTIFF so we must check to see if any bands are empty (blank)
@@ -1750,9 +1751,9 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     stats = meta_statistics_init(num_bands);
     int is_dem = (mg->image_data_type == DEM) ? 1 : 0;
     if(!stats) asfPrintError("Out of memory.  Cannot allocate statistics struct.\n");
-    int ii, nb;
+    int ii;
     int ret = 0;
-    for (ii=0, nb=num_bands; ii<num_bands; ii++) {
+    for (ii=0; ii<num_bands; ii++) {
       ret = tiff_image_band_statistics(input_tiff, meta_out,
                                        &stats->band_stats[ii], is_dem,
                                        num_bands, ii,
@@ -2824,7 +2825,7 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
                   orientation == ORIENTATION_LEFTBOT  ? "LEFT BOTTOM" : "UNKNOWN");
   }
   // Check for valid row number
-  if (row < 0 || row >= height) {
+  if (row >= height) {
     asfPrintError("Invalid row number (%d) found.  Valid range is 0 through %d\n",
                   row, height - 1);
   }
@@ -3001,7 +3002,7 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, unsigned long row, i
                   orientation == ORIENTATION_LEFTBOT  ? "LEFT BOTTOM" : "UNKNOWN");
   }
   // Check for valid row number
-  if (row < 0 || row >= height) {
+  if (row >= height) {
     asfPrintError("Invalid row number (%d) found.  Valid range is 0 through %d\n",
                   row, height - 1);
   }
@@ -3033,6 +3034,9 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, unsigned long row, i
       //        is an uncompressed tile in raster format (row-order 2D array
       //        in memory.)
       bytes_read = TIFFReadTile(tif, tbuf, tile_col, row, 0, band);
+      if (bytes_read <= 0) {
+        //asfPrintWarning("No data\n");
+      }
       uint32 num_preceding_tile_rows = floor(row / t.tileLength);
       row_in_tile = row - (num_preceding_tile_rows * t.tileLength);
       uint32 i;
@@ -3314,6 +3318,7 @@ void classify_geotiff(GTIF *input_gtif,
             // Found a vintage ASF UTM geotiff
             *geographic_geotiff    = *geocentric_geotiff  = 0;
             *map_projected_geotiff = *geotiff_data_exists = 1;
+            GTIFKeyGet (input_gtif, GTRasterTypeGeoKey, raster_type, 0, 0);
             return;
         }
     }
@@ -3406,7 +3411,7 @@ void classify_geotiff(GTIF *input_gtif,
             if (r &&
                 *raster_type != RasterPixelIsArea)
             {
-                asfPrintError("Only map-projected GeoTIFFs with pixels that represent area are supported.");
+                asfPrintWarning("Only map-projected GeoTIFFs with pixels that represent area are supported.");
             }
             if (a && !l) {
                 asfPrintWarning("Invalid map-projected GeoTIFF found ...angular units set to %s and\n"
@@ -3712,4 +3717,3 @@ void get_look_up_table_name(char *citation, char **look_up_table)
     *look_up_table = (char *)MALLOC(256 * sizeof(char));
     strcpy(*look_up_table, "UNKNOWN");
 }
-

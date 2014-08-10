@@ -10,7 +10,7 @@
 #define ASF_INPUT_STRING \
 "     <function name>:\n"\
 "     Name of an ASF metadata function, (e.g., meta_get_slant)\n"\
-"     Only certain metadata function are supported.  See the list below.\n"\
+"     Only certain metadata functions are supported.\n"\
 "\n"\
 "     <.meta file>:\n"\
 "     Name of a .meta file, for which the specified function should be called.\n"\
@@ -59,11 +59,89 @@ static void use(const char *msg)
   exit(1);
 }
 
-void clm(const char *func, meta_parameters *meta, double *args, int nArgs)
+void clm_call(const char *func, meta_parameters *meta, double *args, int nArgs)
 {
   if (strcmp_case(func, "meta_get_slant") == 0) {
     if (nArgs != 2) use("meta_get_slant: <line> <sample>\n");
     asfPrintStatus("%g\n", meta_get_slant(meta, args[0], args[1]));
+  }
+  else if (strcmp_case(func, "meta_get_time") == 0) {
+    if (nArgs != 2) use("meta_get_time: <line> <sample>\n");
+    asfPrintStatus("%g\n", meta_get_time(meta, args[0], args[1]));
+  }
+  else if (strcmp_case(func, "meta_get_sat_height") == 0) {
+    if (nArgs != 2) use("meta_get_sat_height: <line> <sample>\n");
+    double t = meta_get_time(meta, args[0], args[1]);
+    stateVector stVec = meta_get_stVec(meta, t);
+    asfPrintStatus("%g\n", sqrt(  stVec.pos.x * stVec.pos.x
+                                + stVec.pos.y * stVec.pos.y
+                                + stVec.pos.z * stVec.pos.z));
+
+  }
+  else if (strcmp_case(func, "meta_get_earth_radius") == 0) {
+    if (nArgs != 2) use("meta_get_earth_radius: <line> <sample>\n");
+    double re, rp, lat, ht, time, earth_rad;
+    stateVector stVec;
+
+    /* If re & rp are valid then set them to meta values, otherwise WGS84 */
+    re = (meta_is_valid_double(meta->general->re_major))
+             ? meta->general->re_major : 6378137.0;
+    rp = (meta_is_valid_double(meta->general->re_minor))
+             ? meta->general->re_minor : 6356752.31414;
+
+    time = meta_get_time(meta, args[0], args[1]);
+    stVec = meta_get_stVec(meta, time);
+    ht = sqrt(  stVec.pos.x * stVec.pos.x
+              + stVec.pos.y * stVec.pos.y
+              + stVec.pos.z * stVec.pos.z);
+    lat = asin(stVec.pos.z/ht);
+    earth_rad = (re*rp) / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+    asfPrintStatus("%g\n", earth_rad);
+  } 
+  else if (strcmp_case(func, "meta_get_dop") == 0) {
+    if (nArgs != 2) use("meta_get_dop: <line> <sample>\n");
+    asfPrintStatus("%g\n", meta_get_dop(meta, args[0], args[1]));
+  }
+  else if (strcmp_case(func, "meta_get_latLon") == 0) {
+    if (nArgs != 2 && nArgs != 3) use("meta_get_latLon: <line> <sample> [ <height> ]\n");
+    double h=0, lat, lon;
+    if (nArgs == 3) h = args[2];
+    meta_get_latLon(meta, args[0], args[1], h, &lat, &lon);
+    asfPrintStatus("%g %g\n", lat, lon);
+  }
+  else if (strcmp_case(func, "meta_get_lineSamp") == 0) {
+    if (nArgs != 2 && nArgs != 3) use("meta_get_lineSamp: <lat> <lon> [ <height> ]\n");
+    double h=0, line, samp;
+    if (nArgs == 3) h = args[2];
+    meta_get_lineSamp(meta, args[0], args[1], h, &line, &samp);
+    asfPrintStatus("%g %g\n", line, samp);
+  }
+  else if (strcmp_case(func, "meta_incid") == 0) {
+    if (nArgs != 2) use("meta_incid: <line> <sample>\n");
+    asfPrintStatus("%g\n", R2D*meta_incid(meta, args[0], args[1]));
+  }
+  else if (strcmp_case(func, "meta_look") == 0) {
+    if (nArgs != 2) use("meta_look: <line> <sample>\n");
+    asfPrintStatus("%g\n", R2D*meta_look(meta, args[0], args[1]));
+  }
+  else if (strcmp_case(func, "meta_yaw") == 0) {
+    if (nArgs != 2) use("meta_yaw: <line> <sample>\n");
+    asfPrintStatus("%g\n", R2D*meta_yaw(meta, args[0], args[1]));
+  }
+  else if (strcmp_case(func, "meta_get_stVec") == 0 ||
+           strncmp_case(func, "meta_get_state", 14) == 0)
+  {
+    double t=0;
+    if (nArgs == 1) {
+      t = args[0];
+    } else if (nArgs == 2) {
+      t = meta_get_time(meta, args[0], args[1]);
+    } else {
+      use("meta_get_stVec: [ <time> | <line> <sample> ]\n");
+    }
+    stateVector stVec = meta_get_stVec(meta, t);
+    asfPrintStatus("Pos= (%g %g %g)\n", stVec.pos.x, stVec.pos.y, stVec.pos.z);
+    asfPrintStatus("Vel= (%g %g %g)\n", stVec.vel.x, stVec.vel.y, stVec.vel.z);
   }
   else {
     use("Unknown: %s\n");
@@ -157,32 +235,47 @@ main (int argc, char *argv[])
     usage(argv[0]);
   }
 
-  int nArgs = argc - (currArg+2);
-  func = argv[currArg];
-  meta_file = argv[currArg+1];
+  char *op = argv[currArg];
 
-  double *args = MALLOC(sizeof(double)*nArgs);
-  meta_parameters *meta = meta_read(meta_file);
+  if (strcmp_case(op, "call") == 0)
+  {
+    func = argv[currArg+1];
+    meta_file = argv[currArg+2];
+    int nArgs = argc - (currArg+3);
+    double *args = MALLOC(sizeof(double)*nArgs);
+    meta_parameters *meta = meta_read(meta_file);
 
-  int ii,jj;
-  for (jj=0, ii=currArg+2; ii<argc; ++ii, ++jj) {
-    if (strcmp_case(argv[ii], "CL") == 0) {
-      args[jj] = meta->general->line_count/2.0;
-    } else if (strcmp_case(argv[ii], "CS") == 0) {
-      args[jj] = meta->general->sample_count/2.0;
-    } else if (strcmp_case(argv[ii], "EL") == 0) {
-      args[jj] = meta->general->line_count;
-    } else if (strcmp_case(argv[ii], "ES") == 0) {
-      args[jj] = meta->general->sample_count;
-    } else {
-      args[jj] = atof(argv[ii]);
+    int ii,jj;
+    for (jj=0, ii=currArg+2; ii<argc; ++ii, ++jj) {
+      if (strcmp_case(argv[ii], "CL") == 0) {
+        args[jj] = meta->general->line_count/2.0;
+      } else if (strcmp_case(argv[ii], "CS") == 0) {
+        args[jj] = meta->general->sample_count/2.0;
+      } else if (strcmp_case(argv[ii], "EL") == 0) {
+        args[jj] = meta->general->line_count;
+      } else if (strcmp_case(argv[ii], "ES") == 0) {
+        args[jj] = meta->general->sample_count;
+      } else if (strcmp_case(argv[ii], "NL") == 0) {
+        args[jj] = meta->general->line_count;
+      } else if (strcmp_case(argv[ii], "NS") == 0) {
+        args[jj] = meta->general->sample_count;
+      } else {
+        args[jj] = atof(argv[ii]);
+      }
     }
+
+    clm_call(func, meta, args, nArgs);
+
+    FREE(args);
+    meta_free(meta);
+  }
+  else if (strcmp_case(op, "get") == 0) {
+
+  }
+  else if (strcmp_case(op, "set") == 0) {
+
   }
 
-  clm(func, meta, args, nArgs);
-
-  FREE(args);
-  meta_free(meta);
   return EXIT_SUCCESS;
 }
 

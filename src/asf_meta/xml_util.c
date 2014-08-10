@@ -307,7 +307,7 @@ int xml_get_children_count(xmlDoc *doc, char *format, ...)
 {
   va_list ap;
   char str[100000];
-  int count;
+  int count=0;
   
   va_start(ap, format);
   vsnprintf(str, 99999, format, ap);
@@ -550,7 +550,7 @@ static void test_int_attr(xmlDoc *doc, char *key, int expected)
 #define TOP "CornerReflectorCoordinateListDelta"
 #define DESC "CornerReflectorDescriptor"
 
-void xml_test()
+void xml_test(int *num_ok, int *num_bad)
 {
   FILE *f = fopen("test.xml", "w");
   if (!f)
@@ -746,7 +746,7 @@ void xml_test()
   test_double_attr(doc, TOP "." DESC "[1].NestedListTest.ListItem[1].BB.dbl",
                    MAGIC_UNSET_DOUBLE);
 
-  printf("Number ok: %d\n", n_ok);
+  //printf("Number ok: %d\n", n_ok);
   if (n_bad>0)
     printf("**** Not all tests passed!\n"
            "**** Number of failures: %d\n", n_bad);
@@ -754,5 +754,8 @@ void xml_test()
   xmlFreeDoc(doc);
   xmlCleanupParser();
   unlink("test.xml");
-  exit(1);
+
+  *num_ok = n_ok;
+  *num_bad = n_bad;
 }
+

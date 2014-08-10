@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef DOUBLE
+#undef DOUBLE
+#endif
+
 #define DOUBLE __double
 #include "asf.h"
 
@@ -132,6 +136,7 @@ void error_message(const char *err_mes, ...)
 #define MESTIMATE ( (tsx_doppler_t *) current_block)
 #define MINSAR ( (meta_insar *) current_block)
 #define MDEM ( (meta_dem *) current_block)
+#define MQUALITY ( (meta_quality *) current_block)
 
 void select_current_block(char *block_name)
 {
@@ -273,6 +278,13 @@ void select_current_block(char *block_name)
       current_block = MTL->insar;
       goto MATCHED;
   }
+
+	if ( !strcmp(block_name, "quality") ) {
+		if (MTL->quality == NULL)
+		{ MTL->quality = meta_quality_init(); }
+		current_block = MTL->quality;
+		goto MATCHED;
+	}
 
   if ( !strcmp(block_name, "doppler") ) {
     if (MTL->doppler == NULL)
@@ -474,6 +486,20 @@ void fill_structure_field(char *field_name, void *valp)
 	MGENERAL->image_data_type = RGB_STACK;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "MOSAIC") )
 	MGENERAL->image_data_type = MOSAIC;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ICE_AGE") )
+	MGENERAL->image_data_type = ICE_AGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ICE_THICKNESS") )
+	MGENERAL->image_data_type = ICE_THICKNESS;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "BACKSCATTER_HISTOGRAM") )
+	MGENERAL->image_data_type = BACKSCATTER_HISTOGRAM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "MULTIYEAR_ICE_FRACTION") )
+	MGENERAL->image_data_type = MULTIYEAR_ICE_FRACTION;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "DIVERGENCE") )
+	MGENERAL->image_data_type = DIVERGENCE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "VORTICITY") )
+	MGENERAL->image_data_type = VORTICITY;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SHEAR") )
+	MGENERAL->image_data_type = SHEAR;
       else {
         warning_message("Unrecognized image_data_type (%s).\n",VALP_AS_CHAR_POINTER);
         MGENERAL->image_data_type = MAGIC_UNSET_INT;
@@ -1216,6 +1242,21 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(field_name, "no_data") )
       { MDEM->no_data = VALP_AS_DOUBLE; return; }
   }
+  
+  if ( !strcmp(stack_top->block_name, "quality") ) {
+		if ( !strcmp(field_name, "bit_error_rate") )
+			{ MQUALITY->bit_error_rate = VALP_AS_DOUBLE; return; }
+		if ( !strcmp(field_name, "azimuth_resolution") )
+			{ MQUALITY->azimuth_resolution = VALP_AS_DOUBLE; return; }
+		if ( !strcmp(field_name, "range_resolution") )
+			{ MQUALITY->range_resolution = VALP_AS_DOUBLE; return; }
+		if ( !strcmp(field_name, "signal_to_noise_ratio") )
+			{ MQUALITY->signal_to_noise_ratio = VALP_AS_DOUBLE; return; }
+		if ( !strcmp(field_name, "peak_sidelobe_ratio") )
+			{ MQUALITY->peak_sidelobe_ratio = VALP_AS_DOUBLE; return; }
+		if ( !strcmp(field_name, "integrated_sidelobe_ratio") )
+			{ MQUALITY->integrated_sidelobe_ratio = VALP_AS_DOUBLE; return; }
+  }
 
   /* Fields which normally go in the statistics block of the metadata file. */
   //
@@ -1240,6 +1281,8 @@ void fill_structure_field(char *field_name, void *valp)
     { (MSTATSBLOCK)->rmse = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "std_deviation") )
     { (MSTATSBLOCK)->std_deviation = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "percent_valid") )
+    { (MSTATSBLOCK)->percent_valid = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "mask") )
     { (MSTATSBLOCK)->mask = VALP_AS_DOUBLE; return; }
   }
@@ -1258,6 +1301,8 @@ void fill_structure_field(char *field_name, void *valp)
     { (MSTATS)->rmse = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "std_deviation") )
     { (MSTATS)->std_deviation = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "percent_valid") )
+    { (MSTATS)->percent_valid = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "mask") )
     { (MSTATS)->mask = VALP_AS_DOUBLE; return; }
   }

@@ -31,8 +31,12 @@
 #ifndef M_PI
 # define M_PI PI
 #endif
+#ifndef D2R
 #define D2R (PI/180.0)
+#endif
+#ifndef R2D
 #define R2D (180.0/PI)
+#endif
 #define DEGREES2ARCMINUTES 60.0
 #define ARCMINUTES2DEGREES (1.0/DEGREES2ARCMINUTES)
 #define DEGREES2ARCSECONDS 3600.0
@@ -298,6 +302,10 @@ const char *bin_postfix(void);
 /* wrapper for unlink */
 int remove_file(const char *file);
 
+/* delete image and metadata files given a basename */
+void removeImgAndMeta(const char *base);
+
+void catFile(char *file);
 
 /***************************************************************************
  * Get the location of the ASF Share Directory, (and some other stuff) */
@@ -395,5 +403,18 @@ void die_function (const char *file, int line, const char *message, ...)
  __attribute__ ((format (printf, 3, 4), noreturn))
 #endif
 ; /* <--- semicolon for die_function */
+
+// Can now specify unused arguments to functions with:
+//  int function(int x, int *y)
+// like this:
+//  int function(int UNUSED(x), int* UNUSED(x))
+#ifdef UNUSED
+#elif defined(__GNUC__) 
+# define UNUSED(x) UNUSED_ ## x __attribute__((unused)) 
+#elif defined(__LCLINT__) 
+# define UNUSED(x) /*@unused@*/ x 
+#else 
+# define UNUSED(x) x 
+#endif
 
 #endif

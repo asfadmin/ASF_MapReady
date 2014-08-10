@@ -2,6 +2,7 @@
 #include "airsar.h"
 #include "asf_meta.h"
 #include "asf_endian.h"
+#include "asf_import.h"
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_math.h>
@@ -9,14 +10,10 @@
 #include <gsl/gsl_multiroots.h>
 
 #define SQR(x) (x*x)
-#define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
-#define ASF_EXPORT_FLOAT_MICRON 0.000000001
-#define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
-                                (a, b, ASF_EXPORT_FLOAT_MICRON))
 char **get_uavsar_products(const char *data_type, char *type, int *num_product)
 {  
   char *rest, *token;
-  int ii, product_count;
+  int ii, product_count = 0;
   char *tmp = (char *) MALLOC(sizeof(char)*60);
   strcpy(tmp, data_type);
 
@@ -30,6 +27,8 @@ char **get_uavsar_products(const char *data_type, char *type, int *num_product)
     if (strcmp_case(tmp, "ALL") == 0)
       sprintf(tmp, "AMP,INT,UNW,COR,AMP_GRD,INT_GRD,UNW_GRD,COR_GRD,HGT_GRD");
   }
+  else
+  	asfPrintError("Could not identify data type!");
 
   char **product = (char **) MALLOC(sizeof(char*) * product_count);
   for (ii = 0; ii < product_count; ii++) {
@@ -1720,5 +1719,8 @@ uavsar_type_t uavsar_type_name_to_enum(const char *type_name)
   else {
     asfPrintError("uavsar_type_name_to_enum() Failure: No such uavsar type name: %s", type_name);
   }
+  // Not Reached
+  asfPrintError("Internal error");
+  return 0;
 }
 

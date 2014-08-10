@@ -27,7 +27,7 @@ HEADERS := diffimage_tolerances.h
 #
 ###############################################################################
 
-CFLAGS += \
+CFLAGS += $(W_ERROR) \
 	$(GEOTIFF_CFLAGS) \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
@@ -40,11 +40,13 @@ CFLAGS += \
 
 LIBS  = \
 	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf.a \
+	$(GDAL_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
