@@ -36,9 +36,9 @@ void shapefile_init(char *inFile, char *outFile, char *format,
     if (!read_header_config(format, &dbf, &nCols, shape_type))
       asfPrintError("Could not find format (%s) information\n", format);
     if (strcmp_case(shape_type, "UNKNOWN") == 0)
-      asfPrintError("Unknown shape type! Needs to be either 'POLYGON' or "
-      "'POINT'!\n");
-    if (strcmp_case(format, "POINT") == 0 || 
+      asfPrintError("Unknown shape type! Needs to be either 'POLYGON', 'LINE' "
+        "or 'POINT'!\n");
+    if (strcmp_case(format, "POINT") == 0 ||
       strcmp_case(format, "POLYGON") == 0)
       nCols = 1;
   }
@@ -686,6 +686,8 @@ void shapefile_init(char *inFile, char *outFile, char *format,
   // Open shapefile for initialization
   if (strcmp_case(shape_type, "POINT") == 0)
     shape = SHPCreate(outFile, SHPT_POINT);
+  else if (strcmp_case(shape_type, "LINE") == 0)
+    shape = SHPCreate(outFile, SHPT_ARC);
   else if (strcmp_case(shape_type, "POLYGON") == 0)
     shape = SHPCreate(outFile, SHPT_POLYGON);
   if (!shape)
@@ -762,8 +764,7 @@ void shape_init(char *inFile, format_type_t format)
   DBFClose(dbase);
 
   // Open shapefile for initialization
-  if (format == POINT || format == RGPS_GRID || format == RGPS_WEATHER ||
-      format == MULTIMATCH)
+  if (format == POINT || format == MULTIMATCH)
     shape = SHPCreate(inFile, SHPT_POINT);
   else
     shape = SHPCreate(inFile, SHPT_POLYGON);
@@ -1060,7 +1061,6 @@ void csv2shape(char *inFile, char *format, char *outFile, c2v_config *cfg)
       }
       FREE(cols);
       write_shape_attributes(dbase, nCols, n, header);
-      //write_shape_object(shape, 1, &lat, &lon);
       SHPObject *shapeObject = NULL;
       shapeObject = SHPCreateSimpleObject(SHPT_POINT, 1, &lon, &lat, NULL);
       SHPWriteObject(shape, -1, shapeObject);
@@ -1068,7 +1068,8 @@ void csv2shape(char *inFile, char *format, char *outFile, c2v_config *cfg)
       n++;
     }
   }
-  else if (strcmp_case(shape_type, "POLYGON") == 0) {
+  else if (strcmp_case(shape_type, "LINE") == 0 ||
+    strcmp_case(shape_type, "POLYGON") == 0) {
   
     // Figure out how many vertices we got
     int nColumns, nVertices = 0, nLat = 0, nLon = 0;
@@ -1126,7 +1127,7 @@ void csv2shape(char *inFile, char *format, char *outFile, c2v_config *cfg)
         "Can't convert this information properly!\n", nLat, nLon);
     else {
       nVertices = nLat;
-      asfPrintStatus("Found %d vertices of a polygon.\n", nVertices);
+      asfPrintStatus("Found %d vertices of a %s.\n", nVertices, shape_type);
     }
 
     // Initialize shapefile
@@ -1189,12 +1190,20 @@ void csv2shape(char *inFile, char *format, char *outFile, c2v_config *cfg)
       lon[nVertices] = lon[0];
       FREE(cols);
       write_shape_attributes(dbase, nCols, n, header);
-      write_shape_object(shape, nVertices+1, lat, lon);
+      if (strcmp_case(shape_type, "POLYGON") == 0)
+        write_shape_object(shape, nVertices+1, lat, lon);
+      else {
+        SHPObject *shapeObject = NULL;
+        shapeObject = SHPCreateSimpleObject(SHPT_ARC, nVertices, lon, lat,
+          NULL);
+        SHPWriteObject(shape, -1, shapeObject);
+        SHPDestroyObject(shapeObject);
+      }
       n++;
     }
   }
 
-  // Close shapefile  
+  // Close shapefile
   close_shape(dbase, shape);
   write_esri_proj_file(outFile);      
 }
