@@ -15,11 +15,18 @@ localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 
 localenv.AppendUnique(LIBS = [
     "asf",
+    "asf_meta",
+    "asf_raster",
     "asf_geocode",
 ])
 
-bins = localenv.Program("mosaic", [
-    "mosaic.c",
-])
+bins = [
+    localenv.Program("combine", [
+        "combine.c",
+    ]),
+    localenv.Program("mosaic", [
+        "mosaic.c",
+    ])
+]
 
 localenv.Install(globalenv["inst_dirs"]["bins"], bins)
