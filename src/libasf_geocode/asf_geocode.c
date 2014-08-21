@@ -2419,10 +2419,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 							uint8_image_sample(iim_b, input_x_pixel, input_y_pixel,
 										 uint8_image_sample_method);
 					}
-					//else if ( imd->general->image_data_type == DEM ) {
-					//	value = dem_sample(iim, input_x_pixel, input_y_pixel,
-					//				 float_image_sample_method);
-					//}
+					else if ( imd->general->image_data_type == DEM ) {
+						value = dem_sample(iim, input_x_pixel, input_y_pixel,
+									 float_image_sample_method);
+					}
 					else {
 						if (imd->general->radiometry >= r_SIGMA_DB &&
 								imd->general->radiometry <= r_GAMMA_DB) {
