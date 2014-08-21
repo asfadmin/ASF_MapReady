@@ -785,8 +785,7 @@ int main(int argc, char **argv)
   asfPrintStatus("Generating metadata for netCDF file ...\n");
 
   char *ncXmlBase = get_basename(outFile);
-  char *ncXmlFile = (char *) MALLOC(sizeof(char)*(strlen(ncXmlBase)+10));
-  sprintf(ncXmlFile, "%s.xml", ncXmlBase);
+  char *ncXmlFile = appendExt(outFile, ".xml");
   fpXml = FOPEN(ncXmlFile, "w");
   fprintf(fpXml, "<rgps>\n");
   fprintf(fpXml, "  <granule>%s</granule>\n", ncXmlBase);
