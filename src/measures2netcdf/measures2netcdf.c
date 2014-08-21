@@ -176,14 +176,12 @@ int main(int argc, char **argv)
   // Read header information
   char inFile[512], imgFile[768], metaFile[768], xmlFile[768], geotiff[768];
   char listOutFile[768], citation[50], start[30], end[30], first[30];
-  char header[110], baseName[512], dirName[512], ext[5];
-  float x_pix, y_pix, x_map_ll, y_map_ll, x_map_ur, y_map_ur, cat;
+  char header[120], baseName[512], dirName[512], ext[5];
+  float x_pix, y_pix, x_map_ll, y_map_ll, x_map_ur, y_map_ur, inc, cat;
   double lat, lon, height, x, y, z;
-  int ii, kk, ll, nFiles=0, num, size, sample_count, line_count;
+  int ii, kk, nFiles=0, num = 1, sample_count, line_count;
   image_data_type_t image_data_type;
   sprintf(listOutFile, "%s%crgps.xml", tmpDir, DIR_SEPARATOR);
-
-  for (ii=0; ii<110; ++ii) header[ii] = '\0';
 
   // Preparing map projection information
   project_parameters_t pps;
@@ -236,7 +234,6 @@ int main(int argc, char **argv)
 
   while (fgets(inFile, 512, fpInList)) {
 
-    num = 1;
     chomp(inFile);
     char inDirName[512], inFileName[512];
     split_dir_and_file(inFile, inDirName, inFileName);
@@ -272,10 +269,37 @@ int main(int argc, char **argv)
     rgps2iso_date(startYear, (double) startDay, start);
     rgps2iso_date(endYear, (double) endDay, end);
     rgps2iso_date(firstYear, (double) firstDay, first);
-    asfPrintStatus("Processing %s ...\n", inFileName);
     
+    // Read header information
+    FILE *fpIn = FOPEN(inFile, "r");
+    fgets(header, 100, fpIn);
+    sscanf(header, "%f %f %f %f %f %f", &x_pix, &y_pix, &x_map_ll, &y_map_ll, 
+      &x_map_ur, &y_map_ur);
+    fgets(header, 100, fpIn);
+    int params = sscanf(header, "%f %f %d %d", 
+      &inc, &cat, &sample_count, &line_count);
+    if (params == 3) {
+      sscanf(header, "%f %d %d", &cat, &sample_count, &line_count);
+      inc = 0;
+    }
+    else if (params == 2) {
+      sscanf(header, "%d %d", &sample_count, &line_count);
+      inc = 0;
+      cat = 1;
+    }
+    num = (int) cat;
+    if (num > 1)
+      asfPrintError("Multiband imagery (%s) not supported for netCDF "
+        "generation!\n", inFile);
+  
+    printf("x_pix: %f, y_pix: %f\n", x_pix, y_pix);
+    printf("x_map_ll: %f, y_map_ll: %f\n", x_map_ll, y_map_ll);
+    printf("x_map_ur: %f, y_map_ur: %f\n", x_map_ur, y_map_ur);
+    printf("sample_count: %d, line_count: %d\n\n", sample_count, line_count);
+      
     // Check extension
     split_base_and_ext(inFileName, 1, '.', baseName, ext);
+    asfPrintStatus("Processing %s ...\n", inFileName);
     sprintf(imgFile, "%s%c%s_%s.img", tmpDir, DIR_SEPARATOR, baseName, &ext[1]);
     sprintf(metaFile, "%s%c%s_%s.meta", tmpDir, DIR_SEPARATOR, baseName, 
       &ext[1]);
@@ -290,18 +314,6 @@ int main(int argc, char **argv)
     fprintf(fpXml, "      <file type=\"string\" definition=\"name of product "
       "file\">%s_%s.tif</file>\n", baseName, &ext[1]);
     
-    if (strcmp_case(ext, ".AGE") == 0 ||
-	    strcmp_case(ext, ".THK") == 0)
-      size = 109;
-    else if (strcmp_case(ext, ".BSH") == 0)
-      size = 104;
-    else
-      size = 96;
-    
-    // Read header file
-    fpIn = FOPEN(inFile, "r");
-    FREAD(header, size, 1, fpIn);
-    
     jdRef.year = firstYear;
     jdRef.jd = 1;
     jdStart.year = startYear;
@@ -310,28 +322,7 @@ int main(int argc, char **argv)
     jdEnd.jd = endDay;
     double startSec = date2sec(&jdStart, &hms) - date2sec(&jdRef, &hms);
     double endSec = date2sec(&jdEnd, &hms) - date2sec(&jdRef, &hms);
-    if (strcmp_case(ext, ".AGE") == 0) {
-      fprintf(fpXml, "      <type type=\"string\" definition=\"product type\">"
-        "ice age</type>\n");
-      fprintf(fpOutList, "    <ice_age start=\"%.1f\" end=\"%.1f\">%s</ice_age>"
-        "\n", startSec, endSec, imgFile);
-      image_data_type = ICE_AGE;
-    }
-    else if (strcmp_case(ext, ".THK") == 0) {
-      fprintf(fpXml, "      <type type=\"string\" definition=\"product type\">"
-        "ice thickness</type>\n");
-      fprintf(fpOutList, "    <ice_thickness start=\"%.1f\" end=\"%.1f\">%s"
-        "</ice_thickness>\n", startSec, endSec, imgFile);
-      image_data_type = ICE_THICKNESS;
-    }
-    else if (strcmp_case(ext, ".BSH") == 0) {
-      fprintf(fpXml, "      <type type=\"string\" definition=\"product type\">"
-        "backscatter histogram</type>\n");
-      fprintf(fpOutList, "    <backscatter_histogram start=\"%.1f\" end=\"%.1f"
-        "\">%s</backscatter_histogram>\n", startSec, endSec, imgFile);
-      image_data_type = BACKSCATTER_HISTOGRAM;
-    }
-    else if (strcmp_case(ext, ".MYR") == 0) {
+    if (strcmp_case(ext, ".MYR") == 0) {
       fprintf(fpXml, "      <type type=\"string\" definition=\"product type\">"
         "multiyear ice fraction</type>\n");
       fprintf(fpOutList, "    <multiyear_ice_fraction start=\"%.0f\" end=\"%.0f"
@@ -364,39 +355,6 @@ int main(int argc, char **argv)
       shrFlag = TRUE;
     }
 
-    if (size == 109) {
-      sscanf(header, "%f %f %f %f %f %f %f %d %d", &x_pix, &y_pix, &x_map_ll, 
-	     &y_map_ll, &x_map_ur, &y_map_ur, &cat, &sample_count, &line_count);
-      num = (int) cat;
-      /*
-      printf("x_pix: %f, y_pix: %f\n", x_pix, y_pix);
-	    printf("x_map_ll: %f, y_map_ll: %f\n", x_map_ll, y_map_ll);
-	    printf("x_map_ur: %f, y_map_ur: %f\n", x_map_ur, y_map_ur);
-	    printf("num: %f, sample_count: %d, line_count: %d\n",
-	      cat, sample_count, line_count);
-      */
-    }
-    else if (size == 104) {
-      sscanf(header, "%f %f %f %f %f %f %d %d %d", &x_pix, &y_pix, &x_map_ll, 
-	     &y_map_ll, &x_map_ur, &y_map_ur, &num, &sample_count, &line_count);
-      /*
-	    printf("x_pix: %f, y_pix: %f\n", x_pix, y_pix);
-	    printf("x_map_ll: %f, y_map_ll: %f\n", x_map_ll, y_map_ll);
-	    printf("x_map_ur: %f, y_map_ur: %f\n", x_map_ur, y_map_ur);
-	    printf("num: %d, sample_count: %d, line_count: %d\n",
-	      num, sample_count, line_count);
-      */
-    }
-    else if (size == 96) {
-      sscanf(header, "%f %f %f %f %f %f %d %d", &x_pix, &y_pix, &x_map_ll, 
-	     &y_map_ll, &x_map_ur, &y_map_ur, &sample_count, &line_count);
-      /*
-    	printf("x_pix: %f, y_pix: %f\n", x_pix, y_pix);
-	    printf("x_map_ll: %f, y_map_ll: %f\n", x_map_ll, y_map_ll);
-	    printf("x_map_ur: %f, y_map_ur: %f\n", x_map_ur, y_map_ur);
-	    printf("sample_count: %d, line_count: %d\n", sample_count, line_count);
-      */
-    }
     fprintf(fpXml, "      <format type=\"string\" definition=\"name of the data "
       "format\">GeoTIFF</format>\n");
     fprintf(fpXml, "      <cell_size_x type=\"double\" definition=\"cell size "
@@ -415,16 +373,6 @@ int main(int argc, char **argv)
     fprintf(fpXml, "      <map_y_upper_right type=\"double\" definition=\"y "
       "coordinate of upper right corner\" units=\"m\">%.6f</map_y_upper_right>"
       "\n", y_map_ur*1000.0);
-    if (num > 1) {
-      if (image_data_type == ICE_AGE)
-        fprintf(fpXml, "      <number_ice_categories type=\"int\" definition=\""
-        "number of ice categories\">%d</number_ice_categories>"
-          "\n", num);
-      else if (image_data_type == ICE_THICKNESS)
-        fprintf(fpXml, "      <number_thickness_categories type=\"int\" "
-          "definition=\"number of ice thickness categories\">%d"
-          "</number_thickness_categories>\n", num);
-    }
     fprintf(fpXml, "      <cell_dimension_x type=\"int\" definition=\"cell "
       "dimension in x direction\">%d</cell_dimension_x>\n", 
       sample_count);
@@ -436,7 +384,7 @@ int main(int argc, char **argv)
     meta = raw_init();
     meta->general->line_count = line_count;
     meta->general->sample_count = sample_count;
-    meta->general->band_count = num;
+    meta->general->band_count = 1;
     meta->general->data_type = REAL32;
     meta->general->image_data_type = image_data_type;
     strcpy(meta->general->basename, inFile);
@@ -464,31 +412,22 @@ int main(int argc, char **argv)
     sprintf(metaFile, "%s%c%s_%s.meta", tmpDir, DIR_SEPARATOR, baseName, 
       &ext[1]);
     
-    float *floatBuf = (float *) MALLOC(sizeof(float)*sample_count*num);
-    float *floatBand = (float *) MALLOC(sizeof(float)*sample_count);
+    float *floatBuf = (float *) MALLOC(sizeof(float)*sample_count);
 
     // Write gridded data to ASF internal format
     fpOut = FOPEN(imgFile, "wb");
     for (ii=0; ii<line_count; ii++) {
-      for (kk=0; kk<sample_count*num; kk++) {
+      for (kk=0; kk<sample_count; kk++) {
 	      FREAD(&floatBuf[kk], sizeof(float), 1, fpIn);
 	      ieee_big32(floatBuf[kk]);
+        if (floatBuf[kk] > 10000000000.0 || 
+          FLOAT_EQUIVALENT(floatBuf[kk], 10000000000.0))
+          floatBuf[kk] = MAGIC_UNSET_DOUBLE;
       }
-      for (ll=0; ll<num; ll++) {
-        for (kk=0; kk<sample_count; kk++) {
-          if (floatBuf[kk*num+ll] < 10000000000.0)
-            floatBand[kk] = floatBuf[kk*num+ll];
-          else if (floatBuf[kk*num+ll] > 10000000000.0)
-            floatBand[kk] = MAGIC_UNSET_DOUBLE;
-          else
-            floatBand[kk] = MAGIC_UNSET_DOUBLE;
-        }
-        put_band_float_line(fpOut, meta, ll, line_count-ii-1, floatBand);
-      }
+      put_float_line(fpOut, meta, line_count-ii-1, floatBuf);
     }
     FCLOSE(fpOut);
     FREE(floatBuf);
-    FREE(floatBand);
 
     // Adding map projection information to metadata    
     fprintf(fpXml, "      <projection_string type=\"string\" definition=\"map "
@@ -778,7 +717,7 @@ int main(int argc, char **argv)
 
   // Generate supplemental files: water mask, lat/lon, x/y grids
   asfPrintStatus("Generating supplemental files ...\n");
-  float *floatBuf = (float *) MALLOC(sizeof(float)*sample_count*num);
+  float *floatBuf = (float *) MALLOC(sizeof(float)*sample_count);
   float *maskBuf = (float *) MALLOC(sizeof(float)*sample_count);
   float *latBuf = (float *) MALLOC(sizeof(float)*sample_count);
   float *lonBuf = (float *) MALLOC(sizeof(float)*sample_count);
@@ -786,15 +725,12 @@ int main(int argc, char **argv)
   float *yBuf = (float *) MALLOC(sizeof(float)*sample_count);
   meta = meta_read(metaFile);
   
-  if (strcmp_case(ext, ".AGE") == 0 ||
-    strcmp_case(ext, ".THK") == 0)
-    size = 109;
-  else if (strcmp_case(ext, ".BSH") == 0)
-    size = 104;
-  else
-    size = 96;
   fpIn = FOPEN(inFile, "r");
-  FREAD(header, size, 1, fpIn);
+  fgets(header, 100, fpIn);
+  sscanf(header, "%f %f %f %f %f %f", &x_pix, &y_pix, &x_map_ll, &y_map_ll, 
+    &x_map_ur, &y_map_ur);
+  fgets(header, 100, fpIn);
+  sscanf(header, "%d %d", &sample_count, &line_count);
   
   FILE *fpMask = FOPEN(maskFile, "wb");
   FILE *fpLat = FOPEN(latFile, "wb");
@@ -802,34 +738,32 @@ int main(int argc, char **argv)
   FILE *fpXgrid = FOPEN(xFile, "wb");
   FILE *fpYgrid = FOPEN(yFile, "wb");
   for (ii=0; ii<line_count; ii++) {
-    for (kk=0; kk<sample_count*num; kk++) {
+    for (kk=0; kk<sample_count; kk++) {
       FREAD(&floatBuf[kk], sizeof(float), 1, fpIn);
       ieee_big32(floatBuf[kk]);
     }
-    for (ll=0; ll<1; ll++) {
-      for (kk=0; kk<sample_count; kk++) {
-        meta_get_latLon(meta, line_count-ii-1, kk, 0.0, &lat, &lon);
-        latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &x, &y, &z);
-        latBuf[kk] = lat;
-        lonBuf[kk] = lon;
-        xBuf[kk] = x;
-        yBuf[kk] = y;
-        if (floatBuf[kk*num+ll] < 10000000000.0) {
-          maskBuf[kk] = 1.0;
-        }
-        else if (floatBuf[kk*num+ll] > 10000000000.0) {
-          maskBuf[kk] = 1.0;
-        }
-        else {
-          maskBuf[kk] = 0.0;
-        }
+    for (kk=0; kk<sample_count; kk++) {
+      meta_get_latLon(meta, line_count-ii-1, kk, 0.0, &lat, &lon);
+      latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &x, &y, &z);
+      latBuf[kk] = lat;
+      lonBuf[kk] = lon;
+      xBuf[kk] = x;
+      yBuf[kk] = y;
+      if (floatBuf[kk] < 10000000000.0) {
+        maskBuf[kk] = 1.0;
       }
-      put_float_line(fpMask, meta, line_count-ii-1, maskBuf);
-      put_float_line(fpLat, meta, line_count-ii-1, latBuf);
-      put_float_line(fpLon, meta, line_count-ii-1, lonBuf);
-      put_float_line(fpXgrid, meta, line_count-ii-1, xBuf);
-      put_float_line(fpYgrid, meta, line_count-ii-1, yBuf);
+      else if (floatBuf[kk] > 10000000000.0) {
+        maskBuf[kk] = 1.0;
+      }
+      else {
+        maskBuf[kk] = 0.0;
+      }
     }
+    put_float_line(fpMask, meta, line_count-ii-1, maskBuf);
+    put_float_line(fpLat, meta, line_count-ii-1, latBuf);
+    put_float_line(fpLon, meta, line_count-ii-1, lonBuf);
+    put_float_line(fpXgrid, meta, line_count-ii-1, xBuf);
+    put_float_line(fpYgrid, meta, line_count-ii-1, yBuf);
   }
   FCLOSE(fpIn);
   FCLOSE(fpMask);

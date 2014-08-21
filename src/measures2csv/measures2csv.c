@@ -432,7 +432,7 @@ int main(int argc, char **argv)
         meta->projection = proj;
         for (ll=0; ll<n_images; ll++) {
           if ((obs[kk].year == image[ll].year) &&
-              FLOAT_COMPARE_TOLERANCE(obs[kk].time, image[ll].time, 0.000001)) {
+              FLOAT_COMPARE_TOLERANCE(obs[kk].time, image[ll].time, 0.001)) {
             image_id = STRDUP(image[ll].id);
             image_year = image[ll].year;
             image_time = image[ll].time;
@@ -1068,6 +1068,16 @@ int main(int argc, char **argv)
     meta2esri_proj(meta, NULL));
   fprintf(fpXml, "    </product>\n");
   fprintf(fpXml, "  </metadata>\n");
+  fprintf(fpXml, "  <boundary>\n");
+  fprintf(fpXml, "    <nw_lat>%.5f</nw_lat>\n", n_w_lat);
+  fprintf(fpXml, "    <nw_lon>%.5f</nw_lon>\n", n_w_lon);
+  fprintf(fpXml, "    <ne_lat>%.5f</ne_lat>\n", n_e_lat);
+  fprintf(fpXml, "    <ne_lon>%.5f</ne_lon>\n", n_e_lon);
+  fprintf(fpXml, "    <sw_lat>%.5f</sw_lat>\n", s_w_lat);
+  fprintf(fpXml, "    <sw_lon>%.5f</sw_lon>\n", s_w_lon);
+  fprintf(fpXml, "    <se_lat>%.5f</se_lat>\n", s_e_lat);
+  fprintf(fpXml, "    <se_lon>%.5f</se_lon>\n", s_e_lon);
+  fprintf(fpXml, "  </boundary>\n");
   fprintf(fpXml, "  <extent>\n");
   fprintf(fpXml, "    <product>\n");
   fprintf(fpXml, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",

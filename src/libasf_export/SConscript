@@ -35,6 +35,7 @@ localenv.AppendUnique(LIBS = [
 libs = localenv.SharedLibrary("libasf_export", [
         "asf_export.c",
         "export_band.c",
+	"export_geotiff.c",
         "export_netcdf.c",
         "export_hdf.c",
         "export_polsarpro.c",
