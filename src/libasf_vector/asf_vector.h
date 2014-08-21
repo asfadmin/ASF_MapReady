@@ -99,6 +99,10 @@ typedef struct {
   int gpid;
   int obs_year;
   double obs_time;
+  int birth_year;
+  double birth_time;
+  int death_year;
+  double death_time;
   double x;
   double y;
 } rgps_grid_t;
