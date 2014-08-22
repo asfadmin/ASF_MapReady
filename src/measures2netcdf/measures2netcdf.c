@@ -174,7 +174,7 @@ int main(int argc, char **argv)
   char *isoStr = iso_date();
 
   // Read header information
-  char inFile[512], imgFile[768], metaFile[768], xmlFile[768], geotiff[768];
+  char inFile[512], imgFile[768], metaFile[768];
   char listOutFile[768], citation[50], start[30], end[30], first[30];
   char header[120], baseName[512], dirName[512], ext[5];
   float x_pix, y_pix, x_map_ll, y_map_ll, x_map_ur, y_map_ur, inc, cat;
@@ -231,6 +231,7 @@ int main(int argc, char **argv)
   int myrFlag=FALSE, divFlag=FALSE, vrtFlag=FALSE, shrFlag=FALSE;
   int firstYear, firstDay, startYear, startDay, endYear, endDay;
   double westBoundLon, eastBoundLon, northBoundLat, southBoundLat;
+  double minLat=90.0, maxLat=-90.0, minLon=180.0, maxLon=-180.0;
 
   while (fgets(inFile, 512, fpInList)) {
 
@@ -291,11 +292,13 @@ int main(int argc, char **argv)
     if (num > 1)
       asfPrintError("Multiband imagery (%s) not supported for netCDF "
         "generation!\n", inFile);
-  
+
+    /*  
     printf("x_pix: %f, y_pix: %f\n", x_pix, y_pix);
     printf("x_map_ll: %f, y_map_ll: %f\n", x_map_ll, y_map_ll);
     printf("x_map_ur: %f, y_map_ur: %f\n", x_map_ur, y_map_ur);
     printf("sample_count: %d, line_count: %d\n\n", sample_count, line_count);
+    */
       
     // Check extension
     split_base_and_ext(inFileName, 1, '.', baseName, ext);
@@ -303,16 +306,6 @@ int main(int argc, char **argv)
     sprintf(imgFile, "%s%c%s_%s.img", tmpDir, DIR_SEPARATOR, baseName, &ext[1]);
     sprintf(metaFile, "%s%c%s_%s.meta", tmpDir, DIR_SEPARATOR, baseName, 
       &ext[1]);
-    sprintf(xmlFile, "%s%s_%s.xml", outDirName, baseName, &ext[1]);
-    sprintf(geotiff, "%s%s_%s.tif", outDirName, baseName, &ext[1]);
-    fpXml = FOPEN(xmlFile, "w");
-    fprintf(fpXml, "<rgps>\n");
-    fprintf(fpXml, "  <granule>%s</granule>\n", inFileName);
-    fprintf(fpXml, "  <metadata_creation>%s</metadata_creation>\n", isoStr);
-    fprintf(fpXml, "  <metadata>\n");
-    fprintf(fpXml, "    <product>\n");
-    fprintf(fpXml, "      <file type=\"string\" definition=\"name of product "
-      "file\">%s_%s.tif</file>\n", baseName, &ext[1]);
     
     jdRef.year = firstYear;
     jdRef.jd = 1;
@@ -323,62 +316,29 @@ int main(int argc, char **argv)
     double startSec = date2sec(&jdStart, &hms) - date2sec(&jdRef, &hms);
     double endSec = date2sec(&jdEnd, &hms) - date2sec(&jdRef, &hms);
     if (strcmp_case(ext, ".MYR") == 0) {
-      fprintf(fpXml, "      <type type=\"string\" definition=\"product type\">"
-        "multiyear ice fraction</type>\n");
       fprintf(fpOutList, "    <multiyear_ice_fraction start=\"%.0f\" end=\"%.0f"
         "\">%s</multiyear_ice_fraction>\n", startSec, endSec, imgFile);
       image_data_type = MULTIYEAR_ICE_FRACTION;
       myrFlag = TRUE;
     }
     else if (strcmp_case(ext, ".DIV") == 0) {
-      fprintf(fpXml, "      <type type=\"string\" definition=\"product type\">"
-        "divergence</type>\n");
       fprintf(fpOutList, "    <divergence start=\"%.0f\" end=\"%.0f\">%s"
         "</divergence>\n", startSec, endSec, imgFile);
       image_data_type = DIVERGENCE;
       divFlag = TRUE;
     }
     else if (strcmp_case(ext, ".VRT") == 0) {
-      fprintf(fpXml, "      <type type=\"string\" definition=\"product type\">"
-        "vorticity</type>\n");
       fprintf(fpOutList, "    <vorticity start=\"%.0f\" end=\"%.0f\">%s"
         "</vorticity>\n", startSec, endSec, imgFile);
       image_data_type = VORTICITY;
       vrtFlag = TRUE;
     }
     else if (strcmp_case(ext, ".SHR") == 0) {
-      fprintf(fpXml, "      <type type=\"string\" definition=\"product type\">"
-        "shear</type>\n");
       fprintf(fpOutList, "    <shear start=\"%.0f\" end=\"%.0f\">%s</shear>", 
         startSec, endSec, imgFile);
       image_data_type = SHEAR;
       shrFlag = TRUE;
     }
-
-    fprintf(fpXml, "      <format type=\"string\" definition=\"name of the data "
-      "format\">GeoTIFF</format>\n");
-    fprintf(fpXml, "      <cell_size_x type=\"double\" definition=\"cell size "
-      "in x direction\" units=\"m\">%.2f</cell_size_x>\n", x_pix*1000.0);
-    fprintf(fpXml, "      <cell_size_y type=\"double\" definition=\"cell size "
-      "in y direction\" units=\"m\">%.2f</cell_size_y>\n", y_pix*1000.0);
-    fprintf(fpXml, "      <map_x_lower_left type=\"double\" definition=\"x "
-      "coordinate of lower left corner\" units=\"m\">%.6f</map_x_lower_left>\n",
-      x_map_ll*1000.0);
-    fprintf(fpXml, "      <map_y_lower_left type=\"double\" definition=\"y "
-      "coordinate of lower left corner\" units=\"m\">%.6f</map_y_lower_left>\n",
-      y_map_ll*1000.0);
-    fprintf(fpXml, "      <map_x_upper_right type=\"double\" definition=\"x "
-      "coordinate of upper right corner\" units=\"m\">%.6f</map_x_upper_right>"
-      "\n", x_map_ur*1000.0);
-    fprintf(fpXml, "      <map_y_upper_right type=\"double\" definition=\"y "
-      "coordinate of upper right corner\" units=\"m\">%.6f</map_y_upper_right>"
-      "\n", y_map_ur*1000.0);
-    fprintf(fpXml, "      <cell_dimension_x type=\"int\" definition=\"cell "
-      "dimension in x direction\">%d</cell_dimension_x>\n", 
-      sample_count);
-    fprintf(fpXml, "      <cell_dimension_y type=\"int\" definition=\"cell "
-      "dimension in y direction\">%d</cell_dimension_y>\n",
-      line_count);
 
     // Generate basic metadata
     meta = raw_init();
@@ -428,15 +388,7 @@ int main(int argc, char **argv)
     }
     FCLOSE(fpOut);
     FREE(floatBuf);
-
-    // Adding map projection information to metadata    
-    fprintf(fpXml, "      <projection_string type=\"string\" definition=\"map "
-      "projection information as well known text\">%s</projection_string>\n", 
-    meta2esri_proj(meta, NULL));
-    fprintf(fpXml, "    </product>\n");
-    fprintf(fpXml, "  </metadata>\n");
-
-    // Calculate geographic extent
+    
     double lat1, lon1, lat2, lon2, lat3, lon3, lat4, lon4;
     proj_to_latlon(proj, x_map_ll*1000.0, y_map_ll*1000.0, 0.0, 
       &lat1, &lon1, &height);
@@ -450,27 +402,17 @@ int main(int argc, char **argv)
     eastBoundLon = maxValue(lon1*R2D, lon2*R2D, lon3*R2D, lon4*R2D);
     northBoundLat = maxValue(lat1*R2D, lat2*R2D, lat3*R2D, lat4*R2D);
     southBoundLat = minValue(lat1*R2D, lat2*R2D, lat3*R2D, lat4*R2D);
-    fprintf(fpXml, "  <extent>\n");
-    fprintf(fpXml, "    <product>\n");
-    fprintf(fpXml, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
-      westBoundLon);
-    fprintf(fpXml, "      <eastBoundLongitude>%.5f</eastBoundLongitude>\n",
-      eastBoundLon);
-    fprintf(fpXml, "      <northBoundLatitude>%.5f</northBoundLatitude>\n",
-      northBoundLat);
-    fprintf(fpXml, "      <southBoundLatitude>%.5f</southBoundLatitude>\n",
-      southBoundLat);
-    fprintf(fpXml, "      <start_datetime>%s</start_datetime>\n", start);
-    fprintf(fpXml, "      <end_datetime>%s</end_datetime>\n", end);
-    fprintf(fpXml, "    </product>\n");
-    fprintf(fpXml, "  </extent>\n");
-    fprintf(fpXml, "</rgps>\n");
-    FCLOSE(fpXml);
+    if (westBoundLon < minLon)
+      minLon = westBoundLon;
+    if (eastBoundLon > maxLon)
+      maxLon = eastBoundLon;
+    if (southBoundLat < minLat)
+      minLat = southBoundLat;
+    if (northBoundLat > maxLat)
+      maxLat = northBoundLat;
+
     meta_free(meta);
     nFiles++;
-    
-    // Export product to GeoTIFF
-    asf_export(GEOTIFF, NONE, imgFile, geotiff);
   }
   FCLOSE(fpInList);
   
@@ -780,7 +722,6 @@ int main(int argc, char **argv)
   meta_write(meta, xFile);
   meta_write(meta, yFile);
 
-
   // Write ISO meatadata for netCDF
   asfPrintStatus("Generating metadata for netCDF file ...\n");
 
@@ -842,13 +783,13 @@ int main(int argc, char **argv)
   fprintf(fpXml, "  <extent>\n");
   fprintf(fpXml, "    <product>\n");
   fprintf(fpXml, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
-    westBoundLon);
+    minLon);
   fprintf(fpXml, "      <eastBoundLongitude>%.5f</eastBoundLongitude>\n",
-    eastBoundLon);
+    maxLon);
   fprintf(fpXml, "      <northBoundLatitude>%.5f</northBoundLatitude>\n",
-    northBoundLat);
+    maxLat);
   fprintf(fpXml, "      <southBoundLatitude>%.5f</southBoundLatitude>\n",
-    southBoundLat);
+    minLat);
   fprintf(fpXml, "      <start_datetime>%s</start_datetime>\n", first);
   fprintf(fpXml, "      <end_datetime>%s</end_datetime>\n", end);
   fprintf(fpXml, "    </product>\n");
@@ -857,7 +798,6 @@ int main(int argc, char **argv)
   FCLOSE(fpXml);
   FREE(ncXmlBase);
   FREE(ncXmlFile);
-
   meta_free(meta);
 
   // Export to netCDF
