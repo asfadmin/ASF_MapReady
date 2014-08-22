@@ -14,6 +14,7 @@ include ../../make_support/system_rules
 
 SOURCES := asf_export.c \
 	export_band.c \
+	export_geotiff.c \
 	export_netcdf.c \
 	export_hdf.c \
 	export_polsarpro.c \

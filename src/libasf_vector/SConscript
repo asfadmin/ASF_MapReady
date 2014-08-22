@@ -32,7 +32,6 @@ libs = localenv.SharedLibrary("libasf_vector", [
         "kml.c",
         "shape.c",
         "config.c",
-        "rgps.c",
         ])
 
 shares = localenv.File([

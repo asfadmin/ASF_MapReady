@@ -93,57 +93,26 @@ typedef struct {
   int visible;
 } dbf_header_t;
 
-// RGPS grid point definition
+// RGPS grid
 typedef struct {
-  long cell_id;
-  long grid_id;
-  int ordering;
-  double lat;
-  double lon;
-  int alive;
-} grid_t;
+  char image_id[20];
+  int gpid;
+  int obs_year;
+  double obs_time;
+  int birth_year;
+  double birth_time;
+  int death_year;
+  double death_time;
+  double x;
+  double y;
+} rgps_grid_t;
 
+// RGPS connectivity
 typedef struct {
-  long grid_id;
-  char date[20];
-  double day;
-  double grid_x;
-  double grid_y;
-  double lat;
-  double lon;
-  char sourceImage[20];
-  char targetImage[20];
-  char stream[3];
-  int quality;
-  int alive;
-  int done;
-} grid_attr_t;
-
-// RGPS cell definition
-typedef struct {
-  long cell_id;
-  int nVertices;
-  char date[20];
-  double day;
-  char sourceImage[20];
-  char targetImage[20];
-  char stream[3];
-  double area;
-  double multi_year_ice;
-  double open_water;
-  double incidence_angle;
-  double cell_x;
-  double cell_y;
-  double dudx;
-  double dudy;
-  double dvdx;
-  double dvdy;
-  double dtp;
-  double temperature;
-  double u_wind;
-  double v_wind;
-  int alive;
-} cell_t;
+  int cell_id;
+  int grid_id;
+  int order;
+} rgps_con_t;
 
 // Prototype from config.c
 typedef struct
@@ -226,15 +195,6 @@ void shape2latlon(char *infile, double **latArray, double **lonArray,
   int **startArray, int *nPoly, int *nCoords);
 int convert2shape(char *inFile, char *outFile, char *format, int list,
   c2v_config *cfg);
-
-// Prototypes from rgps.c
-void rgps2kml(cell_t cell, double *lat, double *lon, FILE *fp);
-void rgps_grid2kml(grid_attr_t grid, FILE *fp);
-void rgps2shape(cell_t cell, double *lat, double *lon, int vertices,
-                DBFHandle dbase, SHPHandle shape, int n);
-void rgps_grid2shape(grid_attr_t grid, DBFHandle dbase, SHPHandle shape,
-		     int n);
-void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 
 // Prototypes from vector.c
 meta_parameters *meta2vector(char *inFile, dbf_header_t **dbf, int *nAttr, 

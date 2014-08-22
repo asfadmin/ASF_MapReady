@@ -2,12 +2,12 @@ Import("globalenv")
 localenv = globalenv.Clone()
 
 localenv.AppendUnique(CPPPATH = [
-        "#src/asf/",
-        "#include/",
-        "#src/asf_meta/",
-        "#src/libasf_proj/",
-        "#src/libasf_geocode/",
-        "#src/libasf_raster/",
+        "#src/asf",
+        "#include",
+        "#src/asf_meta",
+        "#src/libasf_proj",
+        "#src/libasf_raster",
+        "#src/libasf_export",
         ])
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
@@ -17,16 +17,9 @@ localenv.AppendUnique(LIBS = [
     "asf",
     "asf_meta",
     "asf_raster",
-    "asf_geocode",
+    "asf_export",
 ])
 
-bins = [
-    localenv.Program("combine", [
-        "combine.c",
-    ]),
-    localenv.Program("mosaic", [
-        "mosaic.c",
-    ])
-]
+bins = localenv.Program("measures2netcdf", Glob("*.c"))
 
 localenv.Install(globalenv["inst_dirs"]["bins"], bins)

@@ -69,9 +69,71 @@ void usage(char *name)
   exit(EXIT_FAILURE);
 }
 
+static float minValue(float x1, float x2, float x3, float x4)
+{
+  float min = x1 + 360.0;
+  if ((x2+360.0) < min)
+    min = x2 + 360.0;
+  if ((x3+360.0) < min)
+    min = x3 + 360.0;
+  if ((x4+360.0) < min)
+    min = x4 + 360.0;
+  min -= 360.0;
+  
+  return min;
+}
+
+static float maxValue(float x1, float x2, float x3, float x4)
+{
+  float max = x1 + 360.0;
+  if ((x2+360.0) > max)
+    max = x2 + 360.0;
+  if ((x3+360.0) > max)
+    max = x3 + 360.0;
+  if ((x4+360.0) > max)
+    max = x4 + 360.0;
+  max -= 360.0;
+  
+  return max;
+}
+
+static int subInt(char *inStr, int start, int len)
+{ 
+  char buf[100];
+  strncpy(buf, &inStr[start], len);
+  buf[len]=0;
+  int ret = atoi(buf);
+  return ret;
+}
+
+static void rgps2iso_date(int year, double day, char *isoStr)
+{
+  julian_date jd;
+  hms_time time;
+  ymd_date date;
+  
+  jd.year = year;
+  jd.jd = (int) day;
+  date_jd2ymd(&jd, &date);
+  double sec = 86400 * (day - jd.jd);
+  date_sec2hms(sec, &time);
+  sprintf(isoStr, "%4d-%02d-%02dT%02d:%02d:%09.6lfZ",
+        date.year, date.month, date.day, time.hour, time.min, time.sec);
+}
+
+static void jd2date(julian_date *jd, char *buf)
+{
+  char mon[][5]= 
+    {"","JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
+  ymd_date ymd;
+  date_jd2ymd(jd, &ymd);
+  sprintf(buf, "%02d-%s-%4d", ymd.day, mon[ymd.month], ymd.year);
+}
+
 int main(int argc, char **argv)
 {
-  FILE *fpIn, *fpOut, *fpMask, *fpInList, *fpOutList;
+  FILE *fpIn, *fpOut, *fpInList, *fpOutList, *fpXml;
+  meta_parameters *meta;
   extern int currArg; /* from cla.h in asf.h... initialized to 1 */
   logflag = 0;
   
@@ -101,468 +163,653 @@ int main(int argc, char **argv)
   strcpy(outFile, argv[2]);
   
   // Setup file names
+  char outDirName[512], outFileName[512];
+  split_dir_and_file(outFile, outDirName, outFileName);
   char *tmpDir = (char *) MALLOC(sizeof(char)*512);
-  sprintf(tmpDir, "measures-");
-  strcat(tmpDir, time_stamp_dir());
-  create_clean_dir(tmpDir);  
-  char *inFile = (char *) MALLOC(sizeof(char)*512);
-  char *imgFile = (char *) MALLOC(sizeof(char)*768);
-  char *metaFile = (char *) MALLOC(sizeof(char)*768);
-  char *maskFile = (char *) MALLOC(sizeof(char)*768);
-  sprintf(maskFile, "%s%cwater_mask.img", tmpDir, DIR_SEPARATOR);
-  char *listOutFile = (char *) MALLOC(sizeof(char)*768);
-  sprintf(listOutFile, "%s%clist", tmpDir, DIR_SEPARATOR);
+  sprintf(tmpDir, "%smeasures-", outDirName);
+  char *tsdir = time_stamp_dir();
+  strcat(tmpDir, tsdir);
+  FREE(tsdir);
+  create_clean_dir(tmpDir);
+  char *isoStr = iso_date();
 
   // Read header information
-  char header[109], *ext;
-  float x_pix, y_pix, x_map_ll, y_map_ll, x_map_ur, y_map_ur, cat;
-  int ii, kk, ll, nFiles=0, num, size, sample_count, line_count;
+  char inFile[512], imgFile[768], metaFile[768];
+  char listOutFile[768], citation[50], start[30], end[30], first[30];
+  char header[120], baseName[512], dirName[512], ext[5];
+  float x_pix, y_pix, x_map_ll, y_map_ll, x_map_ur, y_map_ur, inc, cat;
+  double lat, lon, height, x, y, z;
+  int ii, kk, nFiles=0, num = 1, sample_count, line_count;
   image_data_type_t image_data_type;
-  int ageFlag = FALSE, thkFlag = FALSE, bshFlag = FALSE, myrFlag = FALSE;
-  int divFlag = FALSE, vrtFlag = FALSE, shrFlag = FALSE;
-  int nAge = 0, nThk = 0, nBsh = 0, nMyr = 0, nDiv = 0, nVrt = 0, nShr = 0;
-  int bAge = 0, bThk = 0, bBsh = 0, bMyr = 0, bDiv = 0, bVrt = 0, bShr = 0;
+  sprintf(listOutFile, "%s%crgps.xml", tmpDir, DIR_SEPARATOR);
 
+  // Preparing map projection information
+  project_parameters_t pps;
+  projection_type_t proj_type;
+  datum_type_t datum;
+  spheroid_type_t spheroid;
+  read_proj_file("polar_stereographic_north_ssmi.proj", 
+     &pps, &proj_type, &datum, &spheroid);
+  pps.ps.false_easting = 0.0;
+  pps.ps.false_northing = 0.0;
+  meta_projection *proj = meta_projection_init();
+  proj->type = proj_type;
+  proj->datum = HUGHES_DATUM;
+  proj->spheroid = HUGHES_SPHEROID;
+  proj->param = pps;
+  strcpy(proj->units, "meters");
+  proj->hem = 'N';
+  spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
+  FREE(proj);
+
+  // Set up supplemental file names: water mask, lat/lon, x/y grids
+  char maskFile[768], latFile[768], lonFile[768], xFile[768], yFile[768]; 
+  sprintf(maskFile, "%s%cwater_mask.img", tmpDir, DIR_SEPARATOR);
+  sprintf(latFile, "%s%clatitude.img", tmpDir, DIR_SEPARATOR);
+  sprintf(lonFile, "%s%clongitude.img", tmpDir, DIR_SEPARATOR);
+  sprintf(xFile, "%s%cxgrid.img", tmpDir, DIR_SEPARATOR);
+  sprintf(yFile, "%s%cygrid.img", tmpDir, DIR_SEPARATOR);
+
+  // Generating output XML file
   fpInList = FOPEN(listInFile, "r");
   fpOutList = FOPEN(listOutFile, "w");
+  fprintf(fpOutList, "<netcdf>\n");
+  fprintf(fpOutList, "  <data>\n");
+  fprintf(fpOutList, "    <latitude>%s</latitude>\n", latFile);
+  fprintf(fpOutList, "    <longitude>%s</longitude>\n", lonFile);
+  fprintf(fpOutList, "    <xgrid>%s</xgrid>\n", xFile);
+  fprintf(fpOutList, "    <ygrid>%s</ygrid>\n", yFile);
+  fprintf(fpOutList, "    <mask>%s</mask>\n", maskFile);
+  
+  julian_date jdStart, jdEnd, jdRef;
+  hms_time hms;
+  hms.hour = 0;
+  hms.min = 0;
+  hms.sec = 0.0;
+
+  asfPrintStatus("Working through the file list:\n");
+  int myrFlag=FALSE, divFlag=FALSE, vrtFlag=FALSE, shrFlag=FALSE;
+  int firstYear, firstDay, startYear, startDay, endYear, endDay;
+  double westBoundLon, eastBoundLon, northBoundLat, southBoundLat;
+  double minLat=90.0, maxLat=-90.0, minLon=180.0, maxLon=-180.0;
+
   while (fgets(inFile, 512, fpInList)) {
 
-    num = 1;
     chomp(inFile);
-    sprintf(imgFile, "%s%cimage_%d.img", tmpDir, DIR_SEPARATOR, nFiles);
-    sprintf(metaFile, "%s%cimage_%d.meta", tmpDir, DIR_SEPARATOR, nFiles);
+    char inDirName[512], inFileName[512];
+    split_dir_and_file(inFile, inDirName, inFileName);
 
-    // Check extension
-    ii = strlen(inFile) - 1;
-    while (inFile[ii] != '.')
-      ii--;
-    ext = (char *) &inFile[ii];
-    if (strcmp_case(ext, ".AGE") == 0 ||
-	    strcmp_case(ext, ".THK") == 0)
-      size = 109;
-    else if (strcmp_case(ext, ".BSH") == 0)
-      size = 104;
-    else
-      size = 96;
-    
-    // Read header file
-    fpIn = FOPEN(inFile, "r");
-    FREAD(header, size, 1, fpIn);
-    
-    if (size == 109) {
-      sscanf(header, "%f %f %f %f %f %f %f %d %d", &x_pix, &y_pix, &x_map_ll, 
-	     &y_map_ll, &x_map_ur, &y_map_ur, &cat, &sample_count, &line_count);
-      num = (int) cat;
-      /*
-	printf("x_pix: %f, y_pix: %f\n", x_pix, y_pix);
-	printf("x_map_ll: %f, y_map_ll: %f\n", x_map_ll, y_map_ll);
-	printf("x_map_ur: %f, y_map_ur: %f\n", x_map_ur, y_map_ur);
-	printf("num: %f, sample_count: %d, line_count: %d\n",
-	cat, sample_count, line_count);
-      */
-    }
-    else if (size == 104) {
-      sscanf(header, "%f %f %f %f %f %f %d %d %d", &x_pix, &y_pix, &x_map_ll, 
-	     &y_map_ll, &x_map_ur, &y_map_ur, &num, &sample_count, &line_count);
-      /*
-	printf("x_pix: %f, y_pix: %f\n", x_pix, y_pix);
-	printf("x_map_ll: %f, y_map_ll: %f\n", x_map_ll, y_map_ll);
-	printf("x_map_ur: %f, y_map_ur: %f\n", x_map_ur, y_map_ur);
-	printf("num: %d, sample_count: %d, line_count: %d\n",
-	num, sample_count, line_count);
-      */
-    }
-    else if (size == 96) {
-      sscanf(header, "%f %f %f %f %f %f %d %d", &x_pix, &y_pix, &x_map_ll, 
-	     &y_map_ll, &x_map_ur, &y_map_ur, &sample_count, &line_count);
-      /*
-	printf("x_pix: %f, y_pix: %f\n", x_pix, y_pix);
-	printf("x_map_ll: %f, y_map_ll: %f\n", x_map_ll, y_map_ll);
-	printf("x_map_ur: %f, y_map_ur: %f\n", x_map_ur, y_map_ur);
-	printf("sample_count: %d, line_count: %d\n", sample_count, line_count);
-      */
-    }
-
-    // Generate some rudimentary metadata
+    // Preparing map projection information
     project_parameters_t pps;
     projection_type_t proj_type;
     datum_type_t datum;
     spheroid_type_t spheroid;
-    meta_parameters *meta = raw_init();
-    meta->general->line_count = line_count;
-    meta->general->sample_count = sample_count;
-    meta->general->band_count = num;
-    meta->general->data_type = REAL32;
-    if (strcmp_case(ext, ".AGE") == 0) {
-      image_data_type = ICE_AGE;
-      ageFlag = TRUE;
-      nAge++;
-      bAge = num;
+    read_proj_file("polar_stereographic_north_ssmi.proj", 
+       &pps, &proj_type, &datum, &spheroid);
+    pps.ps.false_easting = 0.0;
+    pps.ps.false_northing = 0.0;
+    meta_projection *proj = meta_projection_init();
+    proj->type = proj_type;
+    proj->datum = HUGHES_DATUM;
+    proj->spheroid = HUGHES_SPHEROID;
+    proj->param = pps;
+    strcpy(proj->units, "meters");
+    proj->hem = 'N';
+    spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
+
+    // Sort out dates
+    startYear = subInt(inFileName, 0, 4);
+    startDay = subInt(inFileName, 4, 3);
+    endYear = subInt(inFileName, 8, 4);
+    endDay = subInt(inFileName, 12, 3);
+    if (nFiles == 0) {
+      firstYear = startYear;
+      firstDay = startDay;
     }
-    else if (strcmp_case(ext, ".THK") == 0) {
-      image_data_type = ICE_THICKNESS;
-      thkFlag = TRUE;
-      nThk++;
-      bThk = num;
+    sprintf(citation, "%d%03d to %d%03d", startYear, startDay, endYear, endDay);
+    rgps2iso_date(startYear, (double) startDay, start);
+    rgps2iso_date(endYear, (double) endDay, end);
+    rgps2iso_date(firstYear, (double) firstDay, first);
+    
+    // Read header information
+    FILE *fpIn = FOPEN(inFile, "r");
+    fgets(header, 100, fpIn);
+    sscanf(header, "%f %f %f %f %f %f", &x_pix, &y_pix, &x_map_ll, &y_map_ll, 
+      &x_map_ur, &y_map_ur);
+    fgets(header, 100, fpIn);
+    int params = sscanf(header, "%f %f %d %d", 
+      &inc, &cat, &sample_count, &line_count);
+    if (params == 3) {
+      sscanf(header, "%f %d %d", &cat, &sample_count, &line_count);
+      inc = 0;
     }
-    else if (strcmp_case(ext, ".BSH") == 0) {
-      image_data_type = BACKSCATTER_HISTOGRAM;
-      bshFlag = TRUE;
-      nBsh++;
-      bBsh = num;
+    else if (params == 2) {
+      sscanf(header, "%d %d", &sample_count, &line_count);
+      inc = 0;
+      cat = 1;
     }
-    else if (strcmp_case(ext, ".MYR") == 0) {
+    num = (int) cat;
+    if (num > 1)
+      asfPrintError("Multiband imagery (%s) not supported for netCDF "
+        "generation!\n", inFile);
+
+    /*  
+    printf("x_pix: %f, y_pix: %f\n", x_pix, y_pix);
+    printf("x_map_ll: %f, y_map_ll: %f\n", x_map_ll, y_map_ll);
+    printf("x_map_ur: %f, y_map_ur: %f\n", x_map_ur, y_map_ur);
+    printf("sample_count: %d, line_count: %d\n\n", sample_count, line_count);
+    */
+      
+    // Check extension
+    split_base_and_ext(inFileName, 1, '.', baseName, ext);
+    asfPrintStatus("Processing %s ...\n", inFileName);
+    sprintf(imgFile, "%s%c%s_%s.img", tmpDir, DIR_SEPARATOR, baseName, &ext[1]);
+    sprintf(metaFile, "%s%c%s_%s.meta", tmpDir, DIR_SEPARATOR, baseName, 
+      &ext[1]);
+    
+    jdRef.year = firstYear;
+    jdRef.jd = 1;
+    jdStart.year = startYear;
+    jdStart.jd = startDay;
+    jdEnd.year = endYear;
+    jdEnd.jd = endDay;
+    double startSec = date2sec(&jdStart, &hms) - date2sec(&jdRef, &hms);
+    double endSec = date2sec(&jdEnd, &hms) - date2sec(&jdRef, &hms);
+    if (strcmp_case(ext, ".MYR") == 0) {
+      fprintf(fpOutList, "    <multiyear_ice_fraction start=\"%.0f\" end=\"%.0f"
+        "\">%s</multiyear_ice_fraction>\n", startSec, endSec, imgFile);
       image_data_type = MULTIYEAR_ICE_FRACTION;
       myrFlag = TRUE;
-      nMyr++;
-      bMyr = num;
     }
     else if (strcmp_case(ext, ".DIV") == 0) {
+      fprintf(fpOutList, "    <divergence start=\"%.0f\" end=\"%.0f\">%s"
+        "</divergence>\n", startSec, endSec, imgFile);
       image_data_type = DIVERGENCE;
       divFlag = TRUE;
-      nDiv++;
-      bDiv = num;
     }
     else if (strcmp_case(ext, ".VRT") == 0) {
+      fprintf(fpOutList, "    <vorticity start=\"%.0f\" end=\"%.0f\">%s"
+        "</vorticity>\n", startSec, endSec, imgFile);
       image_data_type = VORTICITY;
       vrtFlag = TRUE;
-      nVrt++;
-      bVrt = num;
     }
     else if (strcmp_case(ext, ".SHR") == 0) {
+      fprintf(fpOutList, "    <shear start=\"%.0f\" end=\"%.0f\">%s</shear>", 
+        startSec, endSec, imgFile);
       image_data_type = SHEAR;
       shrFlag = TRUE;
-      nShr++;
-      bShr = num;
     }
+
+    // Generate basic metadata
+    meta = raw_init();
+    meta->general->line_count = line_count;
+    meta->general->sample_count = sample_count;
+    meta->general->band_count = 1;
+    meta->general->data_type = REAL32;
     meta->general->image_data_type = image_data_type;
     strcpy(meta->general->basename, inFile);
-    inFile[ii] = '\0';
     meta->general->x_pixel_size = x_pix*1000.0;
     meta->general->y_pixel_size = y_pix*1000.0;
     meta->general->start_line = 0;
     meta->general->start_sample = 0;
     meta->general->no_data = MAGIC_UNSET_DOUBLE;
     strcpy(meta->general->sensor, "RGPS MEaSUREs");
-    sprintf(meta->general->bands, "%s", 
-	    lc(image_data_type2str(meta->general->image_data_type)));
-    sprintf(meta->general->acquisition_date, "%s", inFile);
+    char *tmp = image_data_type2str(meta->general->image_data_type);
+    sprintf(meta->general->bands, "%s", lc(tmp));
+    FREE(tmp);
+    sprintf(meta->general->acquisition_date, "%s", baseName);
     
     // Sort out map projection
-    read_proj_file("polar_stereographic_north_ssmi.proj", 
-		   &pps, &proj_type, &datum, &spheroid);
-    pps.ps.false_easting = 0.0;
-    pps.ps.false_northing = 0.0;
-    meta_projection *proj = meta_projection_init();
-    proj->type = proj_type;
-    proj->datum = HUGHES_DATUM;
-    proj->spheroid = spheroid;
-    proj->param = pps;
-    strcpy(proj->units, "meters");
-    proj->hem = 'N';
-    spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
-    proj->startX = x_map_ll*1000.0 - x_pix*1000.0;
-    proj->startY = y_map_ur*1000.0 - y_pix*1000.0;
+    proj->startX = x_map_ll*1000.0;
+    proj->startY = y_map_ur*1000.0;
     proj->perX = x_pix*1000.0;
     proj->perY = -y_pix*1000.0;
     meta->projection = proj;
     meta_write(meta, metaFile);
-    meta_parameters *metaByte = meta_read(metaFile);
-    metaByte->general->data_type = ASF_BYTE;
-    strcpy(metaByte->general->bands, "water mask");
+    strcpy(meta->general->bands, "water mask");
     sprintf(metaFile, "%s%cwater_mask.meta", tmpDir, DIR_SEPARATOR);
-    meta_write(metaByte, metaFile);  
-    sprintf(metaFile, "%s%cimage_%d.meta", tmpDir, DIR_SEPARATOR, nFiles);
+    meta_write(meta, metaFile);  
+    sprintf(metaFile, "%s%c%s_%s.meta", tmpDir, DIR_SEPARATOR, baseName, 
+      &ext[1]);
     
-    float *floatBuf = (float *) MALLOC(sizeof(float)*sample_count*num);
-    float *floatBand = (float *) MALLOC(sizeof(float)*sample_count);
-    float *maskBuf = (float *) MALLOC(sizeof(float)*sample_count);
-    
+    float *floatBuf = (float *) MALLOC(sizeof(float)*sample_count);
+
     // Write gridded data to ASF internal format
-    // Write separate water mask file
     fpOut = FOPEN(imgFile, "wb");
-    fpMask = FOPEN(maskFile, "wb");
     for (ii=0; ii<line_count; ii++) {
-      for (kk=0; kk<sample_count*num; kk++) {
+      for (kk=0; kk<sample_count; kk++) {
 	      FREAD(&floatBuf[kk], sizeof(float), 1, fpIn);
 	      ieee_big32(floatBuf[kk]);
+        if (floatBuf[kk] > 10000000000.0 || 
+          FLOAT_EQUIVALENT(floatBuf[kk], 10000000000.0))
+          floatBuf[kk] = MAGIC_UNSET_DOUBLE;
       }
-      for (ll=0; ll<num; ll++) {
-        for (kk=0; kk<sample_count; kk++) {
-          if (floatBuf[kk*num+ll] < 10000000000.0) {
-            floatBand[kk] = floatBuf[kk*num+ll];
-            maskBuf[kk] = 1.0;
-          }
-          else if (floatBuf[kk*num+ll] > 10000000000.0) {
-            maskBuf[kk] = 1.0;
-            floatBand[kk] = MAGIC_UNSET_DOUBLE;
-          }
-          else {
-            maskBuf[kk] = 0.0;
-            floatBand[kk] = MAGIC_UNSET_DOUBLE;
-          }
-        }
-        put_band_float_line(fpOut, meta, ll, line_count-ii-1, floatBand);
-        if (ll == 0)
-          put_float_line(fpMask, metaByte, line_count-ii-1, maskBuf);
-      }
+      put_float_line(fpOut, meta, line_count-ii-1, floatBuf);
     }
     FCLOSE(fpOut);
-    FCLOSE(fpMask);
-    fprintf(fpOutList, "%s\n", imgFile);
+    FREE(floatBuf);
+    
+    double lat1, lon1, lat2, lon2, lat3, lon3, lat4, lon4;
+    proj_to_latlon(proj, x_map_ll*1000.0, y_map_ll*1000.0, 0.0, 
+      &lat1, &lon1, &height);
+    proj_to_latlon(proj, x_map_ll*1000.0, y_map_ur*1000.0, 0.0, 
+      &lat2, &lon2, &height);
+    proj_to_latlon(proj, x_map_ur*1000.0, y_map_ur*1000.0, 0.0, 
+      &lat3, &lon3, &height);
+    proj_to_latlon(proj, x_map_ur*1000.0, y_map_ll*1000.0, 0.0, 
+      &lat4, &lon4, &height);
+    westBoundLon = minValue(lon1*R2D, lon2*R2D, lon3*R2D, lon4*R2D);
+    eastBoundLon = maxValue(lon1*R2D, lon2*R2D, lon3*R2D, lon4*R2D);
+    northBoundLat = maxValue(lat1*R2D, lat2*R2D, lat3*R2D, lat4*R2D);
+    southBoundLat = minValue(lat1*R2D, lat2*R2D, lat3*R2D, lat4*R2D);
+    if (westBoundLon < minLon)
+      minLon = westBoundLon;
+    if (eastBoundLon > maxLon)
+      maxLon = eastBoundLon;
+    if (southBoundLat < minLat)
+      minLat = southBoundLat;
+    if (northBoundLat > maxLat)
+      maxLat = northBoundLat;
+
     meta_free(meta);
-    meta_free(metaByte);
     nFiles++;
   }
-  fprintf(fpOutList, "%s\n", maskFile);
   FCLOSE(fpInList);
-  FCLOSE(fpOutList);
-  int band_count = ageFlag + thkFlag + bshFlag + myrFlag + divFlag + vrtFlag;
-  band_count += shrFlag;
-
-  // Define bands
-  band_t *band = (band_t *) MALLOC(sizeof(band_t)*(band_count+7));
   
-  // RGPS MEaSUREs products
-  for (ii=0; ii<band_count; ii++) {
-    if (ageFlag) {
-      strcpy(band[ii].name, "ice_age");
-      ageFlag = FALSE;
-    }
-    else if (thkFlag) {
-      strcpy(band[ii].name, "ice_thickness");
-      thkFlag = FALSE;
-    }
-    else if (bshFlag) {
-      strcpy(band[ii].name, "backscatter_histogram");
-      bshFlag = FALSE;
-    }
-    else if (myrFlag) {
-      strcpy(band[ii].name, "multiyear_ice_fraction");
-      myrFlag = FALSE;
-    }
-    else if (divFlag) {
-      strcpy(band[ii].name, "divergence");
-      divFlag = FALSE;
-    }
-    else if (vrtFlag) {
-      strcpy(band[ii].name, "vorticity");
-      vrtFlag = FALSE;
-    }
-    else if (shrFlag) {
-      strcpy(band[ii].name, "shear");
-      shrFlag = FALSE;
-    }
-    strcpy(band[ii].axis, "");
-    sprintf(band[ii].cell_methods, "area: %s value", band[ii].name);
-    strcpy(band[ii].coordinates, "longitude latitude");
-    strcpy(band[ii].grid_mapping, "projection");
-    sprintf(band[ii].long_name, "RGPS MEaSUREs %s", band[ii].name);
-    strcpy(band[ii].references, "");
-    strcpy(band[ii].standard_name, "");
-    strcpy(band[ii].units, "1");
-    strcpy(band[ii].units_description, "unitless");
-    strcpy(band[ii].bounds, "");
-    band[ii].fill_value = MAGIC_UNSET_DOUBLE;
-    if (strcmp_case(band[ii].name, "backscatter_histogram") == 0) {
-      band[ii].valid_range[0] = 0.0;
-      band[ii].valid_range[1] = 1000.0;
-      band[ii].time_count = nBsh;
-      band[ii].cat_count = bBsh;
-    }
-    else if (strcmp_case(band[ii].name, "divergence") == 0) {
-      band[ii].valid_range[0] = -0.04;
-      band[ii].valid_range[1] = 0.04;
-      band[ii].time_count = nDiv;
-      band[ii].cat_count = bDiv;
-    }
-    else if (strcmp_case(band[ii].name, "vorticity") == 0) {
-      band[ii].valid_range[0] = -0.06;
-      band[ii].valid_range[1] = 0.06;
-      band[ii].time_count = nVrt;
-      band[ii].cat_count = bVrt;
-    }
-    else if (strcmp_case(band[ii].name, "shear") == 0) {
-      band[ii].valid_range[0] = 0.0;
-      band[ii].valid_range[1] = 0.08;
-      band[ii].time_count = nShr;
-      band[ii].cat_count = bShr;
-    }
-    else {
-      if (strcmp_case(band[ii].name, "ice_age") == 0) {
-	      band[ii].time_count = nAge;
-	      band[ii].cat_count = bAge;
-      }
-      else if (strcmp_case(band[ii].name, "ice_thickness") == 0) {
-	      band[ii].time_count = nThk;
-	      band[ii].cat_count = bThk;
-      }
-      else if (strcmp_case(band[ii].name, "multiyear_ice_fraction") == 0) {
-	      band[ii].time_count = nMyr;
-	      band[ii].cat_count = bMyr;
-      }
-      band[ii].valid_range[0] = MAGIC_UNSET_DOUBLE;
-      band[ii].valid_range[1] = MAGIC_UNSET_DOUBLE;
-    }
-    if (image_data_type == ICE_AGE ||
-	    image_data_type == ICE_THICKNESS ||
-	    image_data_type == BACKSCATTER_HISTOGRAM)
-      band[ii].dim_count = 4;
-    else
-      band[ii].dim_count = 3;
-    band[ii].datatype = NC_FLOAT;
+  fprintf(fpOutList, "  </data>\n");
+  fprintf(fpOutList, "  <metadata>\n");
+  fprintf(fpOutList, "    <time>\n");
+  fprintf(fpOutList, "      <axis type=\"string\" definition=\"name of axis\">T"
+    "</axis>\n");
+  fprintf(fpOutList, "      <long_name type=\"string\" definition=\"long "
+    "descriptive name\">serial date</long_name>\n");
+  fprintf(fpOutList, "      <references type=\"string\" definition=\"reference "
+    "of the value\">start time of 3-day average</references>\n");
+  fprintf(fpOutList, "      <standard_name type=\"string\" definition=\"name "
+    "used to identify the physical quantity\">time</standard_name>\n");
+  fprintf(fpOutList, "      <units type=\"string\" definition=\"unit of "
+    "dimensional quantity\">seconds since %d-01-01T00:00:00Z</units>\n",
+    firstYear);
+  fprintf(fpOutList, "      <bounds type=\"string\" definition=\"variable "
+    "containing data range\">time_bounds</bounds>\n");
+  fprintf(fpOutList, "      <FillValue type=\"double\" definition=\"default "
+    "value\">0</FillValue>\n");
+  fprintf(fpOutList, "    </time>\n");
+  fprintf(fpOutList, "    <time_bounds>\n");
+  fprintf(fpOutList, "      <long_name type=\"string\" definition=\"long "
+    "descriptive name\">serial date</long_name>\n");
+  fprintf(fpOutList, "      <references type=\"string\" definition=\"reference "
+    "of the value\">start and end time of 3-day average</references>\n");
+  fprintf(fpOutList, "      <standard_name type=\"string\" definition=\"name "
+    "used to identify the physical quantity\">time</standard_name>\n");
+  fprintf(fpOutList, "      <units type=\"string\" definition=\"unit of "
+    "dimensional quantity\">seconds since %d-01-01T00:00:00Z</units>\n",
+    firstYear);
+  fprintf(fpOutList, "      <FillValue type=\"double\" definition=\"default "
+    "value\">0</FillValue>\n");
+  fprintf(fpOutList, "    </time_bounds>\n");
+  fprintf(fpOutList, "    <latitude>\n");
+  fprintf(fpOutList, "      <long_name type=\"string\" definition=\"long "
+    "descriptive name\">latitude</long_name>\n");
+  fprintf(fpOutList, "      <standard_name type=\"string\" definition=\"name "
+    "used to identify the physical quantity\">latitude</standard_name>\n");
+  fprintf(fpOutList, "      <units type=\"string\" definition=\"unit of "
+    "dimensional quantity\">degrees_north</units>\n");
+  fprintf(fpOutList, "      <FillValue type=\"float\" definition=\"default "
+    "value\">-999</FillValue>\n");
+  fprintf(fpOutList, "      <valid_min type=\"float\" definition=\"minimum "
+    "valid value\">-90.0</valid_min>\n");
+  fprintf(fpOutList, "      <valid_max type=\"float\" definition=\"minimum "
+    "valid value\">90.0</valid_max>\n");
+  fprintf(fpOutList, "    </latitude>\n");
+  fprintf(fpOutList, "    <longitude>\n");
+  fprintf(fpOutList, "      <long_name type=\"string\" definition=\"long "
+    "descriptive name\">longitude</long_name>\n");
+  fprintf(fpOutList, "      <standard_name type=\"string\" definition=\"name "
+    "used to identify the physical quantity\">longitude</standard_name>\n");
+  fprintf(fpOutList, "      <units type=\"string\" definition=\"unit of "
+    "dimensional quantity\">degrees_east</units>\n");
+  fprintf(fpOutList, "      <FillValue type=\"float\" definition=\"default "
+    "value\">-999</FillValue>\n");
+  fprintf(fpOutList, "      <valid_min type=\"float\" definition=\"minimum "
+    "valid value\">-180.0</valid_min>\n");
+  fprintf(fpOutList, "      <valid_max type=\"float\" definition=\"minimum "
+    "valid value\">180.0</valid_max>\n");
+  fprintf(fpOutList, "    </longitude>\n");
+  fprintf(fpOutList, "    <xgrid>\n");
+  fprintf(fpOutList, "      <axis type=\"string\" definition=\"name of axis\">X"
+    "</axis>\n");
+  fprintf(fpOutList, "      <long_name type=\"string\" definition=\"long "
+    "descriptive name\">projection_grid_x_center</long_name>\n");
+  fprintf(fpOutList, "      <standard_name type=\"string\" definition=\"name "
+    "used to identify the physical quantity\">projection_x_coordinate"
+    "</standard_name>\n");
+  fprintf(fpOutList, "      <units type=\"string\" definition=\"unit of "
+    "dimensional quantity\">meters</units>\n");
+  fprintf(fpOutList, "      <FillValue type=\"float\" definition=\"default "
+    "value\">NaN</FillValue>\n");
+  fprintf(fpOutList, "    </xgrid>\n");
+  fprintf(fpOutList, "    <ygrid>\n");
+  fprintf(fpOutList, "      <axis type=\"string\" definition=\"name of axis\">Y"
+    "</axis>\n");
+  fprintf(fpOutList, "      <long_name type=\"string\" definition=\"long "
+    "descriptive name\">projection_grid_y_center</long_name>\n");
+  fprintf(fpOutList, "      <standard_name type=\"string\" definition=\"name "
+    "used to identify the physical quantity\">projection_y_coordinate"
+    "</standard_name>\n");
+  fprintf(fpOutList, "      <units type=\"string\" definition=\"unit of "
+    "dimensional quantity\">meters</units>\n");
+  fprintf(fpOutList, "      <FillValue type=\"float\" definition=\"default "
+    "value\">NaN</FillValue>\n");
+  fprintf(fpOutList, "    </ygrid>\n");
+  fprintf(fpOutList, "    <Polar_Stereographic>\n");
+  fprintf(fpOutList, "      <grid_mapping_name>polar_stereographic"
+    "</grid_mapping_name>\n");
+  fprintf(fpOutList, "      <straight_vertical_longitude_from_pole>%.1f"
+    "</straight_vertical_longitude_from_pole>\n", pps.ps.slon);
+  fprintf(fpOutList, "      <longitude_of_central_meridian>90.0"
+    "</longitude_of_central_meridian>\n");
+  fprintf(fpOutList, "      <standard_parallel>%.1f</standard_parallel>\n", 
+    pps.ps.slat);
+  fprintf(fpOutList, "      <false_easting>%.1f</false_easting>\n", 
+    pps.ps.false_easting);
+  fprintf(fpOutList, "      <false_northing>%.1f</false_northing>\n",
+    pps.ps.false_northing);
+  fprintf(fpOutList, "      <projection_x_coordinate>xgrid"
+    "</projection_x_coordinate>\n");
+  fprintf(fpOutList, "      <projection_y_coordinate>ygrid"
+    "</projection_y_coordinate>\n");
+  fprintf(fpOutList, "      <units>meters</units>\n");
+  fprintf(fpOutList, "    </Polar_Stereographic>\n");
+  fprintf(fpOutList, "    <mask>\n");
+  fprintf(fpOutList, "      <coordinates type=\"string\" definition=\""
+    "coordinate reference\">ygrid xgrid</coordinates>\n");
+  fprintf(fpOutList, "      <grid_mapping type=\"string\" definition=\"\">"
+    "Polar_Stereographic</grid_mapping>\n");
+  fprintf(fpOutList, "      <long_name type=\"string\" definition=\"long "
+    "descriptive name\">projection_grid_y_center</long_name>\n");
+  fprintf(fpOutList, "      <units type=\"string\" definition=\"unit of "
+    "dimensional quantity\">1</units>\n");
+  fprintf(fpOutList, "      <units_description type=\"string\" definition=\""
+    "descriptive information about dimensionless quantity\">unitless"
+    "</units_description>\n");
+  fprintf(fpOutList, "      <FillValue type=\"int\" definition=\"default "
+    "value\">0</FillValue>\n");
+  fprintf(fpOutList, "    </mask>\n");
+  if (myrFlag) {
+    fprintf(fpOutList, "    <multiyear_ice_fraction>\n");
+    fprintf(fpOutList, "      <cell_methods type=\"string\" definition=\""
+      "characteristic of a field that is represented by cell values\">area: "
+      "multiyear ice fraction value</cell_methods>\n");
+    fprintf(fpOutList, "      <coordinates type=\"string\" definition=\""
+      "coordinate reference\">ygrid xgrid</coordinates>\n");
+    fprintf(fpOutList, "      <grid_mapping type=\"string\" definition=\"\">"
+      "Polar_Stereographic</grid_mapping>\n");
+    fprintf(fpOutList, "      <long_name type=\"string\" definition=\"long "
+      "descriptive name\">RGPS MEaSUREs multiyear ice fraction</long_name>\n");
+    fprintf(fpOutList, "      <units type=\"string\" definition=\"unit of "
+      "dimensional quantity\">1</units>\n");
+    fprintf(fpOutList, "      <units_description type=\"string\" definition=\""
+      "descriptive information about dimensionless quantity\">unitless"
+      "</units_description>\n");
+    fprintf(fpOutList, "      <FillValue type=\"float\" definition=\"default "
+      "value\">NaN</FillValue>\n");
+    fprintf(fpOutList, "    </multiyear_ice_fraction>\n");
   }
+  if (divFlag) {
+    fprintf(fpOutList, "    <divergence>\n");
+    fprintf(fpOutList, "      <cell_methods type=\"string\" definition=\""
+      "characteristic of a field that is represented by cell values\">area: "
+      "divergence value</cell_methods>\n");
+    fprintf(fpOutList, "      <coordinates type=\"string\" definition=\""
+      "coordinate reference\">ygrid xgrid</coordinates>\n");
+    fprintf(fpOutList, "      <grid_mapping type=\"string\" definition=\"\">"
+      "Polar_Stereographic</grid_mapping>\n");
+    fprintf(fpOutList, "      <long_name type=\"string\" definition=\"long "
+      "descriptive name\">RGPS MEaSUREs divergence</long_name>\n");
+    fprintf(fpOutList, "      <units type=\"string\" definition=\"unit of "
+      "dimensional quantity\">1</units>\n");
+    fprintf(fpOutList, "      <units_description type=\"string\" definition=\""
+      "descriptive information about dimensionless quantity\">unitless"
+      "</units_description>\n");
+    fprintf(fpOutList, "      <FillValue type=\"float\" definition=\"default "
+      "value\">NaN</FillValue>\n");
+    fprintf(fpOutList, "    </divergence>\n");
+  }
+  if (vrtFlag) {
+    fprintf(fpOutList, "    <vorticity>\n");
+    fprintf(fpOutList, "      <cell_methods type=\"string\" definition=\""
+      "characteristic of a field that is represented by cell values\">area: "
+      "vorticity value</cell_methods>\n");
+    fprintf(fpOutList, "      <coordinates type=\"string\" definition=\""
+      "coordinate reference\">ygrid xgrid</coordinates>\n");
+    fprintf(fpOutList, "      <grid_mapping type=\"string\" definition=\"\">"
+      "Polar_Stereographic</grid_mapping>\n");
+    fprintf(fpOutList, "      <long_name type=\"string\" definition=\"long "
+      "descriptive name\">RGPS MEaSUREs vorticity</long_name>\n");
+    fprintf(fpOutList, "      <units type=\"string\" definition=\"unit of "
+      "dimensional quantity\">1</units>\n");
+    fprintf(fpOutList, "      <units_description type=\"string\" definition=\""
+      "descriptive information about dimensionless quantity\">unitless"
+      "</units_description>\n");
+    fprintf(fpOutList, "      <FillValue type=\"float\" definition=\"default "
+      "value\">NaN</FillValue>\n");
+    fprintf(fpOutList, "    </vorticity>\n");
+  }
+  if (shrFlag) {
+    fprintf(fpOutList, "    <shear>\n");
+    fprintf(fpOutList, "      <cell_methods type=\"string\" definition=\""
+      "characteristic of a field that is represented by cell values\">area: "
+      "shear value</cell_methods>\n");
+    fprintf(fpOutList, "      <coordinates type=\"string\" definition=\""
+      "coordinate reference\">ygrid xgrid</coordinates>\n");
+    fprintf(fpOutList, "      <grid_mapping type=\"string\" definition=\"\">"
+      "Polar_Stereographic</grid_mapping>\n");
+    fprintf(fpOutList, "      <long_name type=\"string\" definition=\"long "
+      "descriptive name\">RGPS MEaSUREs shear</long_name>\n");
+    fprintf(fpOutList, "      <units type=\"string\" definition=\"unit of "
+      "dimensional quantity\">1</units>\n");
+    fprintf(fpOutList, "      <units_description type=\"string\" definition=\""
+      "descriptive information about dimensionless quantity\">unitless"
+      "</units_description>\n");
+    fprintf(fpOutList, "      <FillValue type=\"float\" definition=\"default "
+      "value\">NaN</FillValue>\n");
+    fprintf(fpOutList, "    </shear>\n");
+  }
+  fprintf(fpOutList, "  </metadata>\n");
+  fprintf(fpOutList, "  <parameter>\n");
+  if (myrFlag)
+    fprintf(fpOutList, "    <multiyear_ice_fraction type=\"float\"/>\n");
+  if (divFlag)
+    fprintf(fpOutList, "    <divergence type=\"float\"/>\n");
+  if (vrtFlag)
+    fprintf(fpOutList, "    <vorticity type=\"float\"/>\n");
+  if (shrFlag)
+    fprintf(fpOutList, "    <shear type=\"float\"/>\n");
+  fprintf(fpOutList, "  </parameter>\n");
+  
+  char startStr[15], endStr[15];
+  jdStart.year = firstYear;
+  jdStart.jd = firstDay;
+  jdEnd.year = endYear;
+  jdEnd.jd = endDay;
+  jd2date(&jdStart, startStr);
+  jd2date(&jdEnd, endStr);
+  if (firstYear != endYear || firstDay != endDay)
+    sprintf(citation, "%s to %s", startStr, endStr);
+  else
+    sprintf(citation, "%s", startStr);
+  fprintf(fpOutList, "  <root>\n");
+  fprintf(fpOutList, "    <Conventions>CF-1.6</Conventions>\n");
+  fprintf(fpOutList, "    <institution>Alaska Satellite Facility</institution>\n");
+  fprintf(fpOutList, "    <title>Kwok, Ron. 2008. MEaSUREs Small-Scale Kinematics"
+    " of Arctic Ocean Sea Ice, Version 01, %s. Jet Propulsion Laboratory "
+    "Pasadena, CA USA and Alaska Satellite Facility Fairbanks, AK USA. "
+    "Digital media.</title>\n", citation);
+  fprintf(fpOutList, "    <source>Products derived from RADARSAT-1 SWB imagery at "
+    "100 m resolution</source>\n");
+  fprintf(fpOutList, "    <comment>Imagery the products are derived from: Copyright "
+    "Canadian Space Agency (1996 to 2008)</comment>\n");
+  fprintf(fpOutList, "    <reference>Documentation available at: www.asf.alaska.edu"
+    "</reference>\n");
+  fprintf(fpOutList, "    <history>%s: netCDF file created.</history>\n", isoStr);
+  fprintf(fpOutList, "  </root>\n");
+  fprintf(fpOutList, "</netcdf>\n");
+  FCLOSE(fpOutList);
 
-  // Water mask
-  strcpy(band[band_count].name, "water_mask");
-  strcpy(band[band_count].axis, "");
-  strcpy(band[band_count].cell_methods, "");
-  strcpy(band[band_count].coordinates, "longitude latitude");
-  strcpy(band[band_count].grid_mapping, "projection");
-  sprintf(band[band_count].long_name, "water mask for gridded products");
-  strcpy(band[band_count].references, "");
-  strcpy(band[band_count].standard_name, "");
-  strcpy(band[band_count].units, "1");
-  strcpy(band[band_count].units_description, "unitless");
-  strcpy(band[band_count].bounds, "");
-  band[band_count].fill_value = 0.0;
-  band[band_count].valid_range[0] = MAGIC_UNSET_DOUBLE;
-  band[band_count].valid_range[1] = MAGIC_UNSET_DOUBLE;
-  band[band_count].time_count = 1;
-  band[band_count].cat_count = 1;
-  band[band_count].dim_count = 2;
-  band[band_count].datatype = NC_INT;
+  // Generate supplemental files: water mask, lat/lon, x/y grids
+  asfPrintStatus("Generating supplemental files ...\n");
+  float *floatBuf = (float *) MALLOC(sizeof(float)*sample_count);
+  float *maskBuf = (float *) MALLOC(sizeof(float)*sample_count);
+  float *latBuf = (float *) MALLOC(sizeof(float)*sample_count);
+  float *lonBuf = (float *) MALLOC(sizeof(float)*sample_count);
+  float *xBuf = (float *) MALLOC(sizeof(float)*sample_count);
+  float *yBuf = (float *) MALLOC(sizeof(float)*sample_count);
+  meta = meta_read(metaFile);
+  
+  fpIn = FOPEN(inFile, "r");
+  fgets(header, 100, fpIn);
+  sscanf(header, "%f %f %f %f %f %f", &x_pix, &y_pix, &x_map_ll, &y_map_ll, 
+    &x_map_ur, &y_map_ur);
+  fgets(header, 100, fpIn);
+  sscanf(header, "%d %d", &sample_count, &line_count);
+  
+  FILE *fpMask = FOPEN(maskFile, "wb");
+  FILE *fpLat = FOPEN(latFile, "wb");
+  FILE *fpLon = FOPEN(lonFile, "wb");
+  FILE *fpXgrid = FOPEN(xFile, "wb");
+  FILE *fpYgrid = FOPEN(yFile, "wb");
+  for (ii=0; ii<line_count; ii++) {
+    for (kk=0; kk<sample_count; kk++) {
+      FREAD(&floatBuf[kk], sizeof(float), 1, fpIn);
+      ieee_big32(floatBuf[kk]);
+    }
+    for (kk=0; kk<sample_count; kk++) {
+      meta_get_latLon(meta, line_count-ii-1, kk, 0.0, &lat, &lon);
+      latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &x, &y, &z);
+      latBuf[kk] = lat;
+      lonBuf[kk] = lon;
+      xBuf[kk] = x;
+      yBuf[kk] = y;
+      if (floatBuf[kk] < 10000000000.0) {
+        maskBuf[kk] = 1.0;
+      }
+      else if (floatBuf[kk] > 10000000000.0) {
+        maskBuf[kk] = 1.0;
+      }
+      else {
+        maskBuf[kk] = 0.0;
+      }
+    }
+    put_float_line(fpMask, meta, line_count-ii-1, maskBuf);
+    put_float_line(fpLat, meta, line_count-ii-1, latBuf);
+    put_float_line(fpLon, meta, line_count-ii-1, lonBuf);
+    put_float_line(fpXgrid, meta, line_count-ii-1, xBuf);
+    put_float_line(fpYgrid, meta, line_count-ii-1, yBuf);
+  }
+  FCLOSE(fpIn);
+  FCLOSE(fpMask);
+  FCLOSE(fpLat);
+  FCLOSE(fpLon);
+  FREE(floatBuf);
+  FREE(maskBuf);
+  FREE(latBuf);
+  FREE(lonBuf);
+  FREE(xBuf);
+  FREE(yBuf);
+  meta_write(meta, latFile);
+  meta_write(meta, lonFile);
+  meta_write(meta, xFile);
+  meta_write(meta, yFile);
 
-  // Time
-  strcpy(band[band_count+1].name, "time");
-  strcpy(band[band_count+1].axis, "T");
-  strcpy(band[band_count+1].cell_methods, "");
-  strcpy(band[band_count+1].coordinates, "");
-  strcpy(band[band_count+1].grid_mapping, "");
-  strcpy(band[band_count+1].long_name, "serial date");
-  strcpy(band[band_count+1].references, "center time of 3-day average");
-  strcpy(band[band_count+1].standard_name, "time");
-  strcpy(band[band_count+1].units, "seconds since 1995-01-01T00:00:00Z");
-  strcpy(band[band_count+1].units_description, "");
-  strcpy(band[band_count+1].bounds, "time_bnds");
-  band[band_count+1].fill_value = 0.0;
-  band[band_count+1].valid_range[0] = MAGIC_UNSET_DOUBLE;
-  band[band_count+1].valid_range[1] = MAGIC_UNSET_DOUBLE;
-  band[band_count+1].time_count = nFiles/band_count;
-  band[band_count+1].cat_count = 1;
-  band[band_count+1].dim_count = 1;
-  band[band_count+1].datatype = NC_FLOAT;
+  // Write ISO meatadata for netCDF
+  asfPrintStatus("Generating metadata for netCDF file ...\n");
 
-  // Time bounds
-  strcpy(band[band_count+2].name, "time_bnds");
-  strcpy(band[band_count+2].axis, "");
-  strcpy(band[band_count+2].cell_methods, "");
-  strcpy(band[band_count+2].coordinates, "");
-  strcpy(band[band_count+2].grid_mapping, "");
-  strcpy(band[band_count+2].long_name, "serial date");
-  strcpy(band[band_count+2].references, "start and end time of 3-day average");
-  strcpy(band[band_count+2].standard_name, "time");
-  strcpy(band[band_count+2].units, "seconds since 1995-01-01T00:00:00Z");
-  strcpy(band[band_count+2].units_description, "");
-  strcpy(band[band_count+2].bounds, "");
-  band[band_count+2].fill_value = 0.0;
-  band[band_count+2].valid_range[0] = MAGIC_UNSET_DOUBLE;
-  band[band_count+2].valid_range[1] = MAGIC_UNSET_DOUBLE;
-  band[band_count+2].time_count = nFiles/band_count;
-  band[band_count+2].cat_count = 1;
-  band[band_count+2].dim_count = 2;
-  band[band_count+2].datatype = NC_FLOAT;
+  char *ncXmlBase = get_basename(outFile);
+  char *ncXmlFile = appendExt(outFile, ".xml");
+  fpXml = FOPEN(ncXmlFile, "w");
+  fprintf(fpXml, "<rgps>\n");
+  fprintf(fpXml, "  <granule>%s</granule>\n", ncXmlBase);
+  fprintf(fpXml, "  <metadata_creation>%s</metadata_creation>\n", isoStr);
+  fprintf(fpXml, "  <metadata>\n");
+  fprintf(fpXml, "    <product>\n");
+  fprintf(fpXml, "      <file type=\"string\" definition=\"name of product "
+    "file\">%s.nc</file>\n", ncXmlBase);
+  if (divFlag && vrtFlag && shrFlag)
+    fprintf(fpXml, "      <type type=\"string\" definition=\"product type\">"
+    "divergence, vorticity, shear</type>\n");
+  else if (myrFlag)
+    fprintf(fpXml, "      <type type=\"string\" definition=\"product type\">"
+    "multiyear ice fraction</type>\n");
+  fprintf(fpXml, "      <format type=\"string\" definition=\"name of the data "
+    "format\">netCDF</format>\n");
 
-  // Longitude
-  strcpy(band[band_count+3].name, "longitude");
-  strcpy(band[band_count+3].axis, "");
-  strcpy(band[band_count+3].cell_methods, "");
-  strcpy(band[band_count+3].coordinates, "");
-  strcpy(band[band_count+3].grid_mapping, "");
-  strcpy(band[band_count+3].long_name, "longitude");
-  strcpy(band[band_count+3].references, "");
-  strcpy(band[band_count+3].standard_name, "longitude");
-  strcpy(band[band_count+3].units, "degrees_east");
-  strcpy(band[band_count+3].units_description, "");
-  strcpy(band[band_count+3].bounds, "");
-  band[band_count+3].fill_value = -999.0;
-  band[band_count+3].valid_range[0] = -180.0;
-  band[band_count+3].valid_range[1] = 180.0;
-  band[band_count+3].time_count = 1;
-  band[band_count+3].cat_count = 1;
-  band[band_count+3].dim_count = 2;
-  band[band_count+3].datatype = NC_FLOAT;
+  fpInList = FOPEN(listInFile, "r");
+  while (fgets(inFile, 512, fpInList)) {
+    chomp(inFile);
+    split_dir_and_file(inFile, dirName, baseName);
+    fprintf(fpXml, "      <source type=\"string\" definition=\"name of the data"
+    " source\">%s</source>\n", baseName);
+  }
+  FCLOSE(fpInList);
 
-  // Latitude
-  strcpy(band[band_count+4].name, "latitude");
-  strcpy(band[band_count+4].axis, "");
-  strcpy(band[band_count+4].cell_methods, "");
-  strcpy(band[band_count+4].coordinates, "");
-  strcpy(band[band_count+4].grid_mapping, "");
-  strcpy(band[band_count+4].long_name, "latitude");
-  strcpy(band[band_count+4].references, "");
-  strcpy(band[band_count+4].standard_name, "latitude");
-  strcpy(band[band_count+4].units, "degrees_north");
-  strcpy(band[band_count+4].units_description, "");
-  strcpy(band[band_count+4].bounds, "");
-  band[band_count+4].fill_value = -999.0;
-  band[band_count+4].valid_range[0] = -90.0;
-  band[band_count+4].valid_range[1] = 90.0;
-  band[band_count+4].time_count = 1;
-  band[band_count+4].cat_count = 1;
-  band[band_count+4].dim_count = 2;
-  band[band_count+4].datatype = NC_FLOAT;
-
-  // XGrid
-  strcpy(band[band_count+5].name, "xgrid");
-  strcpy(band[band_count+5].axis, "X");
-  strcpy(band[band_count+5].cell_methods, "");
-  strcpy(band[band_count+5].coordinates, "");
-  strcpy(band[band_count+5].grid_mapping, "");
-  strcpy(band[band_count+5].long_name, "projection_grid_x_center");
-  strcpy(band[band_count+5].references, "");
-  strcpy(band[band_count+5].standard_name, "projection_x_coordinate");
-  strcpy(band[band_count+5].units, "meters");
-  strcpy(band[band_count+5].units_description, "");
-  strcpy(band[band_count+5].bounds, "");
-  band[band_count+5].fill_value = MAGIC_UNSET_DOUBLE;
-  band[band_count+5].valid_range[0] = MAGIC_UNSET_DOUBLE;
-  band[band_count+5].valid_range[1] = MAGIC_UNSET_DOUBLE;
-  band[band_count+5].time_count = 1;
-  band[band_count+5].cat_count = 1;
-  band[band_count+5].dim_count = 2;
-  band[band_count+5].datatype = NC_FLOAT;
-
-  // YGrid
-  strcpy(band[band_count+6].name, "ygrid");
-  strcpy(band[band_count+6].axis, "Y");
-  strcpy(band[band_count+6].cell_methods, "");
-  strcpy(band[band_count+6].coordinates, "");
-  strcpy(band[band_count+6].grid_mapping, "");
-  strcpy(band[band_count+6].long_name, "projection_grid_y_center");
-  strcpy(band[band_count+6].references, "");
-  strcpy(band[band_count+6].standard_name, "projection_y_coordinate");
-  strcpy(band[band_count+6].units, "meters");
-  strcpy(band[band_count+6].units_description, "");
-  strcpy(band[band_count+6].bounds, "");
-  band[band_count+6].fill_value = MAGIC_UNSET_DOUBLE;
-  band[band_count+6].valid_range[0] = MAGIC_UNSET_DOUBLE;
-  band[band_count+6].valid_range[1] = MAGIC_UNSET_DOUBLE;
-  band[band_count+6].time_count = 1;
-  band[band_count+6].cat_count = 1;
-  band[band_count+6].dim_count = 2;
-  band[band_count+6].datatype = NC_FLOAT;
+  fprintf(fpXml, "      <cell_size_x type=\"double\" definition=\"cell size "
+    "in x direction\" units=\"m\">%.2f</cell_size_x>\n", x_pix*1000.0);
+  fprintf(fpXml, "      <cell_size_y type=\"double\" definition=\"cell size "
+    "in y direction\" units=\"m\">%.2f</cell_size_y>\n", y_pix*1000.0);
+  fprintf(fpXml, "      <map_x_lower_left type=\"double\" definition=\"x "
+    "coordinate of lower left corner\" units=\"m\">%.6f</map_x_lower_left>\n",
+    x_map_ll*1000.0);
+  fprintf(fpXml, "      <map_y_lower_left type=\"double\" definition=\"y "
+    "coordinate of lower left corner\" units=\"m\">%.6f</map_y_lower_left>\n",
+    y_map_ll*1000.0);
+  fprintf(fpXml, "      <map_x_upper_right type=\"double\" definition=\"x "
+    "coordinate of upper right corner\" units=\"m\">%.6f</map_x_upper_right>"
+    "\n", x_map_ur*1000.0);
+  fprintf(fpXml, "      <map_y_upper_right type=\"double\" definition=\"y "
+    "coordinate of upper right corner\" units=\"m\">%.6f</map_y_upper_right>"
+    "\n", y_map_ur*1000.0);
+  fprintf(fpXml, "      <cell_dimension_x type=\"int\" definition=\"cell "
+    "dimension in x direction\">%d</cell_dimension_x>\n", 
+    sample_count);
+  fprintf(fpXml, "      <cell_dimension_y type=\"int\" definition=\"cell "
+    "dimension in y direction\">%d</cell_dimension_y>\n",
+      line_count);
+  fprintf(fpXml, "      <projection_string type=\"string\" definition=\"map "
+    "projection information as well known text\">%s</projection_string>\n", 
+  meta2esri_proj(meta, NULL));
+  fprintf(fpXml, "    </product>\n");
+  fprintf(fpXml, "  </metadata>\n");
+  fprintf(fpXml, "  <extent>\n");
+  fprintf(fpXml, "    <product>\n");
+  fprintf(fpXml, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
+    minLon);
+  fprintf(fpXml, "      <eastBoundLongitude>%.5f</eastBoundLongitude>\n",
+    maxLon);
+  fprintf(fpXml, "      <northBoundLatitude>%.5f</northBoundLatitude>\n",
+    maxLat);
+  fprintf(fpXml, "      <southBoundLatitude>%.5f</southBoundLatitude>\n",
+    minLat);
+  fprintf(fpXml, "      <start_datetime>%s</start_datetime>\n", first);
+  fprintf(fpXml, "      <end_datetime>%s</end_datetime>\n", end);
+  fprintf(fpXml, "    </product>\n");
+  fprintf(fpXml, "  </extent>\n");
+  fprintf(fpXml, "</rgps>\n");
+  FCLOSE(fpXml);
+  FREE(ncXmlBase);
+  FREE(ncXmlFile);
+  meta_free(meta);
 
   // Export to netCDF
-  export_netcdf_list(listOutFile, band, band_count+7, outFile);
+  asfPrintStatus("Exporting to netCDF file ...\n");
+  export_netcdf_xml(listOutFile, outFile);
 
   // Clean up
-  FREE(inFile);
-  FREE(outFile);
-  FREE(imgFile);
-  FREE(metaFile);
   remove_dir(tmpDir);
   FREE(tmpDir);
+  FREE(outFile);
+  FREE(listInFile);
+  FREE(isoStr);
 
   return 0;
 }

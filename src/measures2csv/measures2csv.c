@@ -191,284 +191,6 @@ static void rgps2iso_date(int year, double day, char *isoStr)
         date.year, date.month, date.day, time.hour, time.min, time.sec);
 }
 
-static char *iso_date(void)
-{
-  time_t t;
-  char *t_stamp;
-
-  t_stamp = (char*) MALLOC(30*sizeof(char));
-  t = time(NULL);
-  strftime(t_stamp, 30, "%Y-%m-%dT%H:%M:%S.000000Z", gmtime(&t));
-
-  return t_stamp;
-}
-
-static char *meta2esri_proj(meta_parameters *meta, char *projFile)
-{
-  FILE *fpIn;
-  char projcsStr[100], geogcsStr[200], projStr[500], datumStr[150];
-  char spheroidStr[100], *error;
-  static char out[1024];
-
-  project_parameters_t pps;
-  projection_type_t proj_type;
-  datum_type_t datum;
-  spheroid_type_t spheroid;
-  double semimajor;
-  double inv_flattening ;
-
-  // Get projection information
-  if (meta &&
-      (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR ||
-       meta->projection->type == POLAR_STEREOGRAPHIC ||
-       meta->projection->type == ALBERS_EQUAL_AREA ||
-       meta->projection->type == LAMBERT_CONFORMAL_CONIC ||
-       meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA)) {
-    
-    pps = meta->projection->param;
-    proj_type = meta->projection->type;
-    datum = meta->projection->datum;
-    spheroid = meta->projection->spheroid;
-    semimajor = meta->projection->re_major;
-    inv_flattening = 
-      semimajor / (semimajor - meta->projection->re_minor);
-  }
-  else if (projFile) {
-    parse_proj_args_file(projFile, &pps, &proj_type, &datum, &spheroid, &error);
-    fpIn = FOPEN(projFile, "r");
-    //spheroid = get_spheroid(fpIn);
-    FCLOSE(fpIn);
-
-    switch (spheroid)
-      {
-      case BESSEL_SPHEROID:
-      	semimajor = BESSEL_SEMIMAJOR;
-      	inv_flattening = BESSEL_INV_FLATTENING;
-    	  break;
-      case CLARKE1866_SPHEROID:
-      	semimajor = CLARKE1866_SEMIMAJOR;
-      	inv_flattening = CLARKE1866_INV_FLATTENING;
-    	  break;
-      case GEM6_SPHEROID:
-      	semimajor = GEM6_SEMIMAJOR;
-      	inv_flattening = GEM6_INV_FLATTENING;
-    	  break;
-      case GEM10C_SPHEROID:
-      	semimajor = GEM10C_SEMIMAJOR;
-      	inv_flattening = GEM10C_INV_FLATTENING;			\
-    	  break;
-      case GRS1980_SPHEROID:
-      	semimajor = GRS1980_SEMIMAJOR;
-      	inv_flattening = GRS1980_INV_FLATTENING;
-    	  break;
-      case INTERNATIONAL1924_SPHEROID:
-      	semimajor = INTERNATIONAL1924_SEMIMAJOR;
-      	inv_flattening = INTERNATIONAL1924_INV_FLATTENING;
-    	  break;
-      case INTERNATIONAL1967_SPHEROID:
-      	semimajor = INTERNATIONAL1967_SEMIMAJOR;
-      	inv_flattening = INTERNATIONAL1967_INV_FLATTENING;
-    	  break;
-      case WGS72_SPHEROID:
-      	semimajor = WGS72_SEMIMAJOR;
-      	inv_flattening = WGS72_INV_FLATTENING;
-    	  break;
-      case WGS84_SPHEROID:
-      	semimajor = WGS84_SEMIMAJOR;
-      	inv_flattening = WGS84_INV_FLATTENING;
-    	  break;
-      case HUGHES_SPHEROID:
-      	semimajor = HUGHES_SEMIMAJOR;
-      	inv_flattening = HUGHES_INV_FLATTENING;
-    	  break;
-      default:
-        asfPrintError("Unknown spheroid: %d\n", spheroid);
-        break;
-      }
-  }
-
-  // Convert the projection information into ESRI projection format
-  if ((meta &&
-       (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR ||
-        meta->projection->type == POLAR_STEREOGRAPHIC ||
-        meta->projection->type == ALBERS_EQUAL_AREA ||
-        meta->projection->type == LAMBERT_CONFORMAL_CONIC ||
-        meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA)) || projFile) {
-
-    // Construct geographic coordinate system string
-    sprintf(geogcsStr, "GEOGCS[");
-    sprintf(datumStr, "DATUM[");
-    switch (datum)
-      {
-      case EGM96_DATUM:
-      	break;
-      case ED50_DATUM:
-      	strcat(geogcsStr, "\"GCS_European_1950\",");
-      	strcat(datumStr, "\"D_European_1950\",");
-    	  break;
-      case ETRF89_DATUM:
-      	strcat(geogcsStr, "\"GCS_ETRS_1989\",");
-      	strcat(datumStr, "\"D_ETRS_1989\",");
-    	  break;
-      case ITRF97_DATUM:
-    	  break;
-      case NAD27_DATUM:
-      	strcat(geogcsStr, "\"GCS_North_American_1927\",");
-      	strcat(datumStr, "\"D_North_American_1927\",");
-    	  break;
-      case NAD83_DATUM:
-      	strcat(geogcsStr, "\"GCS_North_American_1983\",");
-      	strcat(datumStr, "\"D_North_American_1983\",");
-    	  break;
-      case WGS72_DATUM:
-      	strcat(geogcsStr, "\"GCS_WGS_1972\",");
-      	strcat(datumStr, "\"D_WGS_1972\",");
-    	  break;
-      case WGS84_DATUM:
-      	strcat(geogcsStr, "\"GCS_WGS_1984\",");
-      	strcat(datumStr, "\"D_WGS_1984\",");
-    	  break;
-      case HUGHES_DATUM:
-      	strcat(geogcsStr, "\"GCS_HUGHES\",");
-      	strcat(datumStr, "\"D_HUGHES\",");
-    	  break;
-      default:
-        asfPrintError("Unknown datum: %d\n", datum);
-        break;
-      }
-    strcat(geogcsStr, datumStr);
-    switch (spheroid)
-      {
-      case BESSEL_SPHEROID:
-      	sprintf(spheroidStr, "SPHEROID[\"BESSEL\",%.0f,%.9f]]",
-      		semimajor, inv_flattening);
-    	  break;
-      case CLARKE1866_SPHEROID:
-      	sprintf(spheroidStr, "SPHEROID[\"CLARKE_1866\",%.0f,%.9f]]",
-    	  	semimajor, inv_flattening);
-    	  break;
-      case GEM6_SPHEROID:
-      	sprintf(spheroidStr, "SPHEROID[\"GEM6\",%.0f,%.9f]]",
-      		semimajor, inv_flattening);
-    	  break;
-      case GEM10C_SPHEROID:
-      	sprintf(spheroidStr, "SPHEROID[\"GEM10C\",%.0f,%.9f]]",
-		      semimajor, inv_flattening);
-    	  break;
-      case GRS1980_SPHEROID:
-      	sprintf(spheroidStr, "SPHEROID[\"GRS_1980\",%.0f,%.9f]]", 
-      		semimajor, inv_flattening);
-    	  break;
-      case INTERNATIONAL1924_SPHEROID:
-      	sprintf(spheroidStr, "SPHEROID[\"International_1924\",%.0f,%.9f]]",
-      		semimajor, inv_flattening);
-    	  break;
-      case INTERNATIONAL1967_SPHEROID:
-      	sprintf(spheroidStr, "SPHEROID[\"International_1967\",%.0f,%.9f]]",
-      		semimajor, inv_flattening);
-    	  break;
-      case WGS72_SPHEROID:
-      	sprintf(spheroidStr, "SPHEROID[\"WGS_1972\",%.0f,%.9f]]",
-      		semimajor, inv_flattening);
-    	  break;
-      case WGS84_SPHEROID:
-      	sprintf(spheroidStr, "SPHEROID[\"WGS_1984\",%.0f,%.9f]]",
-      		semimajor, inv_flattening);
-    	  break;
-      case HUGHES_SPHEROID:
-      	sprintf(spheroidStr, "SPHEROID[\"HUGHES\",%.0f,%9f]]",
-      		semimajor, inv_flattening);
-    	  break;
-      default:
-        asfPrintError("Unknown spheroid: %d\n", spheroid);
-        break;
-      }
-    strcat(geogcsStr, spheroidStr);  
-    
-    // Construct projection string
-    switch (proj_type)
-      {
-      default:
-        asfPrintError("Unknown proj_type: %d\n", proj_type);
-        break;
-      case LAT_LONG_PSEUDO_PROJECTION:
-    	  break;
-      case UNIVERSAL_TRANSVERSE_MERCATOR:
-      	sprintf(projcsStr, "PROJCS[\"Universal_Transverse_Mercator\"");
-      	sprintf(projStr, "PROJECTION[\"Transverse_Mercator\"],PARAMETER[\""
-      		"False_Easting\",%.1f],PARAMETER[\"False_Northing\",%.1f],"
-      		"PARAMETER[\"Central_Meridian\",%.1f],PARAMETER["
-      		"\"Scale_Factor\",%.4f],PARAMETER[\"Latitude_Of_Origin\",%.1f],"
-      		"UNIT[\"Meter\",1.0]",
-    		pps.utm.false_easting, pps.utm.false_northing, 
-		    pps.utm.lon0, pps.utm.scale_factor, pps.utm.lat0);
-    	  break;
-      case POLAR_STEREOGRAPHIC:
-      	if (!isfinite(pps.ps.false_easting))
-	        pps.ps.false_easting = 0.0;
-      	if (!isfinite(pps.ps.false_northing))
-      	  pps.ps.false_northing = 0.0;
-      	sprintf(projcsStr, "PROJCS[\"Polar_Stereographic\"");
-      	sprintf(projStr, "PROJECTION[\"Stereographic\"],PARAMETER["
-      		"\"False_Easting\",%.1f],PARAMETER[\"False_Northing\",%.1f],"
-      		"PARAMETER[\"Central_Meridian\",%.1f],PARAMETER["
-      		"\"Scale_Factor\",1.0],PARAMETER[\"Latitude_Of_Origin\",%.1f],"
-      		"UNIT[\"Meter\",1.0]",
-    		pps.ps.false_easting, pps.ps.false_northing, pps.ps.slat, 
-		    pps.ps.slon);
-    	  break;
-      case ALBERS_EQUAL_AREA:
-      	sprintf(projcsStr, "PROJCS[\"Albers_Equal_Area_Conic\"");
-      	sprintf(projStr, "PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\","
-      		"%.1f],PARAMETER[\"False_Northing\",%.1f],PARAMETER["
-      		"\"Central_Meridian\",%.1f],PARAMETER[\"Standard_Parallel_1\","
-      		"%.1f],PARAMETER[\"Standard_Parallel_2\",%.1f],PARAMETER["
-      		"\"Latitude_Of_Origin\",%.1f],UNIT[\"Meter\",1.0]",
-      		pps.albers.false_easting, pps.albers.false_northing, 
-      		pps.albers.center_meridian, pps.albers.std_parallel1, 
-      		pps.albers.std_parallel2, pps.albers.orig_latitude);
-    	  break;
-      case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-      	sprintf(projcsStr, "PROJCS[\"Lambert_Azimuthal_Equal_Area\"");
-      	sprintf(projStr, "PROJECTION[\"\"],PARAMETER[\"False_Easting\","
-      		"%.1f],PARAMETER[\"False_Northing\",%.1f],PARAMETER["
-      		"\"Central_Meridian\",%.1f],PARAMETER["
-      		"\"Latitude_Of_Origin\",%.1f],UNIT[\"Meter\",1.0]",
-      		pps.lamaz.false_easting, pps.lamaz.false_northing, 
-      		pps.lamaz.center_lat, pps.lamaz.center_lon);
-    	  break;
-      case LAMBERT_CONFORMAL_CONIC:
-      	sprintf(projcsStr, "PROJCS[\"Lambert_Conformal_Conic\"");
-      	sprintf(projStr, "PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER["
-      		"\"False_Easting\",%.1f],PARAMETER[\"False_Northing\",%.1f],"
-      		"PARAMETER[\"Central_Meridian\",%.1f],PARAMETER["
-      		"\"Standard_Parallel_1\",%.1f],PARAMETER["
-      		"\"Standard_Parallel_2\",%.1f],PARAMETER["
-      		"\"Latitude_Of_Origin\",%.1f],UNIT[\"Meter\",1.0]",
-      		pps.lamcc.false_easting, pps.lamcc.false_northing, 
-      		pps.lamcc.lon0, pps.lamcc.plat1, pps.lamcc.plat2, 
-      		pps.lamcc.lat0);
-    	  break;
-      case MERCATOR:
-        break;
-      case EQUI_RECTANGULAR:
-    	  break;
-      }
-    
-    sprintf(out, "%s,%s,PRIMEM[\"Greenwich\",0],UNIT[\"Degree\","
-	    "0.0174532925199432955]],%s]\n", projcsStr, geogcsStr, projStr);
-  }
-  else
-    sprintf(out,
-	    "GEOGCS[\"GCS_WGS_1984\","
-	    "DATUM[\"D_WGS_1984\","
-	    "SPHEROID[\"WGS_1984\",6378137,298.257223563]],"
-	    "PRIMEM[\"Greenwich\",0],"
-	    "UNIT[\"Degree\",0.017453292519943295]]");
-
-  return out;
-}
-
 int main(int argc, char **argv)
 {
   FILE *fpIn, *fpOut=NULL;
@@ -509,6 +231,7 @@ int main(int argc, char **argv)
   short	n_images=0;	 // Number of images used in the create of this product
   int n_trajectories=0;      // Number of trajectories
   int n_cells;               // Number of cells
+  char stream;
   char prod_type[15];        // Product type
   short	create_year=0;	     // Product creation year
   double create_time=0.0;	   // Product creation time
@@ -556,10 +279,18 @@ int main(int argc, char **argv)
   fpIn = FOPEN(inFile, "rb");
 
   FREAD(&pid, 24, 1, fpIn);
-  FREAD(&prod_description, 40, 1, fpIn);  
+  stream = pid[5];
+  FREAD(&prod_description, 40, 1, fpIn);
+  if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) != 0 &&
+    strncmp_case(prod_description, "Ice Deformation", 15) != 0 &&
+    strncmp_case(prod_description, "Ice Age", 7) != 0 &&
+    strncmp_case(prod_description, "Backscatter Histogram", 21) != 0)
+    asfPrintError("Could not determine product type!\n");
+
   snprintf(product_id, 18, "%s", pid);
   printf("PID: %s\n", product_id);
   printf("Product description: %s\n", prod_description);
+  printf("Stream: %c\n", stream);
   
   if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) == 0) {
     FREAD(&n_images, 2, 1, fpIn);
@@ -636,9 +367,9 @@ int main(int argc, char **argv)
     }
 
     fpOut = FOPEN(csvFile, "w");
-    fprintf(fpOut, "IMAGE_ID,IMAGE_YEAR,IMAGE_TIME,MAP_X,MAP_Y,GPID,BIRTH_YEAR,"
-      "BIRTH_TIME,DEATH_YEAR,DEATH_TIME,N_OBS,OBS_YEAR,OBS_TIME,X_MAP,Y_MAP,"
-      "LAT,LON,Q_FLAG\n");
+    fprintf(fpOut, "IMAGE_ID,STREAM,IMAGE_YEAR,IMAGE_TIME,MAP_X,MAP_Y,GPID,"
+      "BIRTH_YEAR,BIRTH_TIME,DEATH_YEAR,DEATH_TIME,N_OBS,OBS_YEAR,OBS_TIME,"
+      "X_MAP,Y_MAP,LAT,LON,Q_FLAG\n");
     for (ii=0; ii<n_trajectories; ii++) {
       FREAD(&gpid, 4, 1, fpIn);
       ieee_big32(gpid);
@@ -690,8 +421,8 @@ int main(int argc, char **argv)
         pps.ps.false_northing = 0.0;
         proj = meta_projection_init();
         proj->type = proj_type;
-        proj->datum = HUGHES_DATUM; //datum;
-        proj->spheroid = spheroid;
+        proj->datum = HUGHES_DATUM;
+        proj->spheroid = HUGHES_SPHEROID;
         proj->param = pps;
         strcpy(proj->units, "meters");
         proj->hem = 'N';
@@ -701,7 +432,7 @@ int main(int argc, char **argv)
         meta->projection = proj;
         for (ll=0; ll<n_images; ll++) {
           if ((obs[kk].year == image[ll].year) &&
-              FLOAT_COMPARE_TOLERANCE(obs[kk].time, image[ll].time, 0.000001)) {
+              FLOAT_COMPARE_TOLERANCE(obs[kk].time, image[ll].time, 0.001)) {
             image_id = STRDUP(image[ll].id);
             image_year = image[ll].year;
             image_time = image[ll].time;
@@ -709,9 +440,9 @@ int main(int argc, char **argv)
             image_map_y = image[ll].map_y*1000.0;
           }
         }
-        fprintf(fpOut,"%s,%d,%.6f,%.4f,%.4f,%d,%d,%.6f,%d,%.6f,%d,", image_id, 
-          image_year, image_time, image_map_x, image_map_y, gpid, birth_year, 
-          birth_time, death_year, death_time, n_int_obs);
+        fprintf(fpOut,"%s,%c,%d,%.6f,%.4f,%.4f,%d,%d,%.6f,%d,%.6f,%d,", 
+          image_id, stream, image_year, image_time, image_map_x, image_map_y, 
+          gpid, birth_year, birth_time, death_year, death_time, n_int_obs);
         fprintf(fpOut, "%d,%.6f,%.4f,%.4f,%.5f,%.5f,%d\n", obs[kk].year, 
           obs[kk].time, map_x, map_y, lat*R2D, lon*R2D, obs[kk].q_flag);
       }
@@ -771,9 +502,9 @@ int main(int argc, char **argv)
     southBoundLat = minValue(n_w_lat, n_e_lat, s_w_lat, s_e_lat);
     
     fpOut = FOPEN(csvFile, "w");
-    fprintf(fpOut, "CELL_ID,BIRTH_YEAR,BIRTH_TIME,N_OBS,OBS_YEAR,OBS_TIME,"
-      "X_MAP,Y_MAP,LAT,LON,X_DISP,Y_DISP,C_AREA,D_AREA,DTP,DUDX,DUDY,DVDX,DVDY"
-      "\n");
+    fprintf(fpOut, "CELL_ID,STREAM,BIRTH_YEAR,BIRTH_TIME,N_OBS,OBS_YEAR,"
+      "OBS_TIME,X_MAP,Y_MAP,LAT,LON,X_DISP,Y_DISP,C_AREA,D_AREA,DTP,DUDX,DUDY,"
+      "DVDX,DVDY\n");
     for (ii=0; ii<n_cells; ii++) {
       FREAD(&cell_id, 4, 1, fpIn);
       ieee_big32(cell_id);
@@ -838,7 +569,7 @@ int main(int argc, char **argv)
         proj = meta_projection_init();
         proj->type = proj_type;
         proj->datum = HUGHES_DATUM;
-        proj->spheroid = spheroid;
+        proj->spheroid = HUGHES_SPHEROID;
         proj->param = pps;
         strcpy(proj->units, "meters");
         proj->hem = 'N';
@@ -846,7 +577,8 @@ int main(int argc, char **argv)
         proj_to_latlon(proj, map_x, map_y, 0.0, &lat, &lon, &height);
         meta = raw_init();
         meta->projection = proj;
-        fprintf(fpOut, "%d,%d,%.6f,", cell_id, birth_year, birth_time);
+        fprintf(fpOut, "%d,%c,%d,%.6f,", cell_id, stream, birth_year, 
+          birth_time);
         fprintf(fpOut, "%d,%d,%.6f,", n_short_obs, obs[kk].year, obs[kk].time);
         fprintf(fpOut, "%.4f,%.4f,%.5f,%.5f,", map_x, map_y, lat*R2D, lon*R2D);
         fprintf(fpOut, "%.6f,%.6f,", obs[kk].disp_x, obs[kk].disp_y);
@@ -913,7 +645,7 @@ int main(int argc, char **argv)
     southBoundLat = minValue(n_w_lat, n_e_lat, s_w_lat, s_e_lat);
     
     fpOut = FOPEN(csvFile, "w");
-    fprintf(fpOut, "CELL_ID,BIRTH_YEAR,BIRTH_TIME,I_AREA,N_OBS,OBS_YEAR,"
+    fprintf(fpOut, "CELL_ID,STREAM,BIRTH_YEAR,BIRTH_TIME,I_AREA,N_OBS,OBS_YEAR,"
       "OBS_TIME,X_MAP,Y_MAP,LAT,LON,C_TEMP,FDD,C_AREA,N_AGE,R_AR,I_AR,AGE_FAR,"
       "R_FDD,I_FDD,N_THICK,THICK_FAR,FAR_FYR,FAR_MY,N_RIDGE,R_RIDGE_AR,"
       "I_RIDGE_AR,R_RIDGE_TR,I_RIDGE_TR,RIDGE_FAR,R_RIDGE_FDD,I_RIDGE_FDD,"
@@ -975,7 +707,7 @@ int main(int argc, char **argv)
         proj = meta_projection_init();
         proj->type = proj_type;
         proj->datum = HUGHES_DATUM;
-        proj->spheroid = spheroid;
+        proj->spheroid = HUGHES_SPHEROID;
         proj->param = pps;
         strcpy(proj->units, "meters");
         proj->hem = 'N';
@@ -1076,8 +808,8 @@ int main(int argc, char **argv)
           }
         }
         for (ll=0; ll<n_max; ll++) {
-          fprintf(fpOut, "%d,%d,%.6f,%.6f,%d,", cell_id, birth_year, birth_time,
-            init_area, n_int_obs);
+          fprintf(fpOut, "%d,%c,%d,%.6f,%.6f,%d,", cell_id, stream, birth_year, 
+            birth_time, init_area, n_int_obs);
           fprintf(fpOut, "%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%d,", 
             obs[kk].year, obs[kk].time, map_x, map_y, lat*R2D, lon*R2D,
             obs[kk].center_temp, obs[kk].fdd, obs[kk].cell_area, obs[kk].n_age);
@@ -1177,7 +909,7 @@ int main(int argc, char **argv)
     }
     // Backscatter histogram data
     fpOut = FOPEN(csvFile, "w");
-    fprintf(fpOut, "CELL_ID,BIRTH_YEAR,BIRTH_TIME,I_AREA,N_OBS,OBS_YEAR,"
+    fprintf(fpOut, "CELL_ID,STREAM,BIRTH_YEAR,BIRTH_TIME,I_AREA,N_OBS,OBS_YEAR,"
       "OBS_TIME,MAP_X,MAP_Y,LAT,LON,CELL_TEMP,C_AREA,MYFRAC,OWFRAC,");
     for (ll=0; ll<25; ll++)
       fprintf(fpOut, "FBSR_%d,", ll+1);
@@ -1247,15 +979,14 @@ int main(int argc, char **argv)
         proj = meta_projection_init();
         proj->type = proj_type;
         proj->datum = HUGHES_DATUM;
-        proj->spheroid = spheroid;
+        proj->spheroid = HUGHES_SPHEROID;
         proj->param = pps;
         strcpy(proj->units, "meters");
         proj->hem = 'N';
         spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
         proj_to_latlon(proj, map_x, map_y, 0.0, &lat, &lon, &height);
-        meta = raw_init();
-        meta->projection = proj;
-        fprintf(fpOut, "%d,%d,%.6f,", cell_id, birth_year, birth_time);
+        fprintf(fpOut, "%d,%c,%d,%.6f,", cell_id, stream, birth_year, 
+          birth_time);
         fprintf(fpOut, "%.6f,%d,", init_area, n_int_obs);
         fprintf(fpOut, "%d,%.6f,", obs[kk].year, obs[kk].time);
         fprintf(fpOut, "%.4f,%.4f,", map_x, map_y);
@@ -1279,7 +1010,12 @@ int main(int argc, char **argv)
   fprintf(fpXml, "  <metadata_creation>%s</metadata_creation>\n", isoStr);
   fprintf(fpXml, "  <metadata>\n");
   fprintf(fpXml, "    <product>\n");
-  fprintf(fpXml, "      <file>%s</file>\n", product_id);
+  fprintf(fpXml, "      <file type=\"string\" definition=\"name of the product "
+    "file\">%s</file>\n", product_id);
+  fprintf(fpXml, "      <format type=\"string\" definition=\"name of the data "
+    "format\">CSV</format>\n");
+  fprintf(fpXml, "      <stream type=\"string\" definition=\"name of the stream"
+    "the product was tracked in\">%c</stream>\n", stream);
   if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) == 0) {
     fprintf(fpXml, "      <description type=\"string\" definition=\"description"
       " of this product\">Lagrangian Ice Motion</description>\n");
@@ -1319,17 +1055,6 @@ int main(int argc, char **argv)
     }
     fprintf(fpXml, "      </backscatter_histogram>\n");
   }
-  rgps2iso_date(prod_start_year, prod_start_time, dateStr);
-  snprintf(citation, 11, "%s", dateStr);
-  strcat(citation, " to ");
-  fprintf(fpXml, "      <start_datetime type=\"string\" definition=\"start "
-    "time of the image acquisition for the product \">%s</start_datetime>\n", 
-    dateStr);
-  rgps2iso_date(prod_end_year, prod_end_time, dateStr);
-  strcat(citation, dateStr);
-  citation[24] = '\0';
-  fprintf(fpXml, "      <end_datetime type=\"string\" definition=\"end time of"
-    " the image acquisition for the product\">%s</end_datetime>\n", dateStr);
   fprintf(fpXml, "      <start_year type=\"int\" definition=\"product start "
     "year\">%d</start_year>\n", prod_start_year);
   fprintf(fpXml, "      <start_day type=\"double\" definition=\"product start "
@@ -1343,6 +1068,16 @@ int main(int argc, char **argv)
     meta2esri_proj(meta, NULL));
   fprintf(fpXml, "    </product>\n");
   fprintf(fpXml, "  </metadata>\n");
+  fprintf(fpXml, "  <boundary>\n");
+  fprintf(fpXml, "    <nw_lat>%.5f</nw_lat>\n", n_w_lat);
+  fprintf(fpXml, "    <nw_lon>%.5f</nw_lon>\n", n_w_lon);
+  fprintf(fpXml, "    <ne_lat>%.5f</ne_lat>\n", n_e_lat);
+  fprintf(fpXml, "    <ne_lon>%.5f</ne_lon>\n", n_e_lon);
+  fprintf(fpXml, "    <sw_lat>%.5f</sw_lat>\n", s_w_lat);
+  fprintf(fpXml, "    <sw_lon>%.5f</sw_lon>\n", s_w_lon);
+  fprintf(fpXml, "    <se_lat>%.5f</se_lat>\n", s_e_lat);
+  fprintf(fpXml, "    <se_lon>%.5f</se_lon>\n", s_e_lon);
+  fprintf(fpXml, "  </boundary>\n");
   fprintf(fpXml, "  <extent>\n");
   fprintf(fpXml, "    <product>\n");
   fprintf(fpXml, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
@@ -1353,6 +1088,14 @@ int main(int argc, char **argv)
     northBoundLat);
   fprintf(fpXml, "      <southBoundLatitude>%.5f</southBoundLatitude>\n",
     southBoundLat);
+  rgps2iso_date(prod_start_year, prod_start_time, dateStr);
+  snprintf(citation, 11, "%s", dateStr);
+  strcat(citation, " to ");
+  fprintf(fpXml, "      <start_datetime>%s</start_datetime>\n", dateStr);
+  rgps2iso_date(prod_end_year, prod_end_time, dateStr);
+  strcat(citation, dateStr);
+  citation[24] = '\0';
+  fprintf(fpXml, "      <end_datetime>%s</end_datetime>\n", dateStr);
   fprintf(fpXml, "    </product>\n");
   fprintf(fpXml, "  </extent>\n");
   fprintf(fpXml, "  <processing>\n");
@@ -1381,7 +1124,6 @@ int main(int argc, char **argv)
   FREE(inFile);
   FREE(csvFile);
   FREE(xmlFile);
-  meta_free(meta);
   
   return 0;
 }

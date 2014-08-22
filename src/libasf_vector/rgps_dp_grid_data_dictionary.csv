@@ -1,0 +1,21 @@
+META,Shape,Type,Length,Decimals,Definition
+cell ID,CELL_ID,integer,6,0,cell identifier
+stream,STREAM,string,1,0,stream cell is tracked in
+birth year,BIRTH_YEAR,integer,5,0,year the grid point was created
+birth time,BIRTH_TIME,double,12,6,day the grid point was created [day]
+number observations,N_OBS,integer,8,0,number of observations of the grid point
+observation year,OBS_YEAR,integer,5,0,year of the observation
+observation time,OBS_TIME,double,12,6,day of the observation [day]
+x map,X_MAP,double,16,4,x map coordinate of the grid point [m]
+y map,Y_MAP,double,16,4,y map coordinate of the grid point [m]
+lat,LAT,double,12,5,latitude of grid point [degrees]
+lon,LON,double,12,5,longitude of grid point [degrees]
+x displacement,X_DISP,double,12,6,x displacement of the cell center [km]
+y displacement,Y_DISP,double,12,6,y displacement of the cell center [km]
+cell area,C_AREA,double,12,6,cell area at the time of the observation [sq km]
+difference area,D_AREA,double,12,6,change in cell area between observations [sq km]
+time interval,DTP,double,12,6,time interval between observations 
+dudx,DUDX,double,12,6,du/dx ice motion partial of observation
+dudy,DUDY,double,12,6,du/dy ice motion partial of observation
+dvdx,DVDX,double,12,6,dv/dx ice motion partial of observation
+dvdy,DVDY,double,12,6,dv/dy ice motion partial of observation

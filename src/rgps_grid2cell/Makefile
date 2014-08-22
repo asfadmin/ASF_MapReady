@@ -1,4 +1,4 @@
-# Makefile for rgps2vector
+# Makefile for rgps_grid2cell
 
 include ../../make_support/system_rules
 
@@ -31,12 +31,12 @@ CFLAGS += \
 	$(GLIB_CFLAGS) \
 	$(SHAPELIB_CFLAGS)
 
-OBJS  = rgps2vector.o
+OBJS  = rgps_grid2cell.o
 
-all: rgps2vector clean
+all: rgps_grid2cell clean
 
-rgps2vector: $(OBJS)
-	$(CC) $(CFLAGS) -o rgps2vector $(OBJS) $(LIBS) $(LDFLAGS)
-	mv rgps2vector$(BIN_POSTFIX) $(BINDIR)
+rgps_grid2cell: $(OBJS)
+	$(CC) $(CFLAGS) -o rgps_grid2cell $(OBJS) $(LIBS) $(LDFLAGS)
+	mv rgps_grid2cell$(BIN_POSTFIX) $(BINDIR)
 clean:
 	rm -f core* $(OBJS) *~
