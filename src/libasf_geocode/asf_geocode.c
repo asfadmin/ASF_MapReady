@@ -1490,18 +1490,21 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
   switch ( resample_method ) {
     case RESAMPLE_NEAREST_NEIGHBOR:
+      asfPrintStatus("Resample Method: Nearest Neighbor\n");
       float_image_sample_method =
         FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
       uint8_image_sample_method =
         UINT8_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
       break;
     case RESAMPLE_BILINEAR:
+      asfPrintStatus("Resample Method: Bilinear\n");
       float_image_sample_method =
         FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
       uint8_image_sample_method =
         UINT8_IMAGE_SAMPLE_METHOD_BILINEAR;
       break;
     case RESAMPLE_BICUBIC:
+      asfPrintStatus("Resample Method: Bicubic\n");
       float_image_sample_method =
         FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;
       uint8_image_sample_method =
