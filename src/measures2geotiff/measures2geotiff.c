@@ -395,7 +395,6 @@ int main(int argc, char **argv)
   FREE(floatBuf);
   FREE(floatBand);
   FCLOSE(fpList);
-  FCLOSE(fpIn);
 
   // Adding map projection information to metadata    
   fprintf(fpXml, "      <projection_string type=\"string\" definition=\"map "
