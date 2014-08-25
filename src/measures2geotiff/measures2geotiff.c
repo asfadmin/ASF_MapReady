@@ -299,7 +299,7 @@ int main(int argc, char **argv)
     else if (image_data_type == ICE_THICKNESS) {
       if (inc > 0)
         fprintf(fpXml, "      <ice_thickness_increment type=\"float\" "
-          "definition=\"ice thickness increment\" type=\"m\">%.3f"
+          "definition=\"ice thickness increment\" unit=\"m\">%.3f"
           "</ice_thickness_increment>\n", inc*0.01);
       fprintf(fpXml, "      <number_ice_thickness_categories type=\"int\" "
         "definition=\"number of ice thickness categories\">%d"
