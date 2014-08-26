@@ -1642,6 +1642,12 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
       }
       mp->perX = pixel_scale[0];
       mp->perY = -pixel_scale[1];
+
+      if (raster_type == RasterPixelIsPoint) {
+        mp->startX -= mp->perX / 2.0; 
+        //mp->startY -= fabs(mp->perY) / 2.0;
+        mp->startY -= mp->perY / 2.0; 
+      }    
   }
 
   // These fields should be the same as the ones in the general block.
