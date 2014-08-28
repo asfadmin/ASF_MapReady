@@ -179,7 +179,8 @@ src_subs = lib_subs + [
     "asf_logscale",
     "measures2csv",
     "measures2netcdf",
-    "measures2geotiff"
+    "measures2geotiff",
+    "measures_hdf2csv"
     ]
 
 # paths where the libraries will be built

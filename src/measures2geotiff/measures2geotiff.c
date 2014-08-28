@@ -295,7 +295,7 @@ int main(int argc, char **argv)
   if (num > 1) {
     if (image_data_type == ICE_AGE)
       fprintf(fpXml, "      <number_ice_age_categories type=\"int\" definition="
-      "\"number of ice age categories\">%d</number_ice_categories>\n", num);
+      "\"number of ice age categories\">%d</number_ice_age_categories>\n", num);
     else if (image_data_type == ICE_THICKNESS) {
       if (inc > 0)
         fprintf(fpXml, "      <ice_thickness_increment type=\"float\" "
