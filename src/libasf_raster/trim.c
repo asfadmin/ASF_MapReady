@@ -505,6 +505,8 @@ void trim_latlon(char *infile, char *outfile, double lat_min, double lat_max,
     asfPrintError("Metadata file not found: %s\n", infile_meta);
 
   meta_parameters *meta = meta_read(infile_meta);
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
 
   double l1, l2, l3, l4, s1, s2, s3, s4;
   meta_get_lineSamp(meta, lat_min, lon_min, 0, &l1, &s1);
@@ -517,8 +519,21 @@ void trim_latlon(char *infile, char *outfile, double lat_min, double lat_max,
   double end_line = max4(l1,l2,l3,l4);
   double end_sample = max4(s1,s2,s3,s4);
 
+  if (start_line < 0) start_line = 0;
+  if (start_line > nl-1) start_line = nl-1;
+  if (end_line < 0) end_line = 0;
+  if (end_line > nl-1) end_line = nl-1;
+
+  if (start_sample < 0) start_sample = 0;
+  if (start_sample > nl-1) start_sample = nl-1;
+  if (end_sample < 0) end_sample = 0;
+  if (end_sample > nl-1) end_sample = nl-1;
+
   double height = end_line - start_line;
   double width = end_sample - start_sample;
+
+  if (height <= 1 || width <= 1)
+    asfPrintError("Out of image: (%f %f)-(%f %f)\n", start_line, start_sample, end_line, end_sample);
 
   int startX = (int)floor(start_sample);
   int startY = (int)floor(start_line);
