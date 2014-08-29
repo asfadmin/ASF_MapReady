@@ -497,6 +497,40 @@ void trim_wedges(char *infile, char *outfile)
   meta_free(metaIn);
 }
 
+void trim_latlon(char *infile, char *outfile, double lat_min, double lat_max,
+                 double lon_min, double lon_max)
+{
+  char *infile_meta = appendExt(infile, ".meta");
+  if (!fileExists(infile_meta))
+    asfPrintError("Metadata file not found: %s\n", infile_meta);
+
+  meta_parameters *meta = meta_read(infile_meta);
+
+  double l1, l2, l3, l4, s1, s2, s3, s4;
+  meta_get_lineSamp(meta, lat_min, lon_min, 0, &l1, &s1);
+  meta_get_lineSamp(meta, lat_min, lon_max, 0, &l2, &s2);
+  meta_get_lineSamp(meta, lat_max, lon_min, 0, &l3, &s3);
+  meta_get_lineSamp(meta, lat_max, lon_max, 0, &l4, &s4);
+
+  double start_line = min4(l1,l2,l3,l4);
+  double start_sample = min4(s1,s2,s3,s4);
+  double end_line = max4(l1,l2,l3,l4);
+  double end_sample = max4(s1,s2,s3,s4);
+
+  double height = end_line - start_line;
+  double width = end_sample - start_sample;
+
+  int startX = (int)floor(start_sample);
+  int startY = (int)floor(start_line);
+  int sizeX = (int)floor(width);
+  int sizeY = (int)floor(height);
+
+  meta_free(meta);
+  FREE(infile_meta);
+
+  trim(infile, outfile, startX, startY, sizeX, sizeY);
+}
+
 void trim_to(char *infile, char *outfile, char *metadata_file)
 {
   char *mf = appendExt(metadata_file, ".meta");
