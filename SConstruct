@@ -180,7 +180,8 @@ src_subs = lib_subs + [
     "measures2csv",
     "measures2netcdf",
     "measures2geotiff",
-    "measures_hdf2csv"
+    "measures_hdf2csv",
+    "rgps2vector"
     ]
 
 # paths where the libraries will be built
