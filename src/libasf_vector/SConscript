@@ -49,7 +49,7 @@ shares = localenv.File([
     "rgps_dp_cell_data_dictionary.csv",
     "rgps_dp_grid_data_dictionary.csv",
     "rgps_ep_data_dictionary.csv",
-    "rgps_lp_data_dictionary.csv	
+    "rgps_lp_data_dictionary.csv"
 ])
 
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)

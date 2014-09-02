@@ -525,20 +525,23 @@ void trim_latlon(char *infile, char *outfile, double lat_min, double lat_max,
   if (end_line > nl-1) end_line = nl-1;
 
   if (start_sample < 0) start_sample = 0;
-  if (start_sample > nl-1) start_sample = nl-1;
+  if (start_sample > ns-1) start_sample = ns-1;
   if (end_sample < 0) end_sample = 0;
-  if (end_sample > nl-1) end_sample = nl-1;
+  if (end_sample > ns-1) end_sample = ns-1;
 
   double height = end_line - start_line;
   double width = end_sample - start_sample;
 
-  if (height <= 1 || width <= 1)
+  if (height < 0 || width < 0)
     asfPrintError("Out of image: (%f %f)-(%f %f)\n", start_line, start_sample, end_line, end_sample);
 
   int startX = (int)floor(start_sample);
   int startY = (int)floor(start_line);
   int sizeX = (int)floor(width);
   int sizeY = (int)floor(height);
+
+  if (sizeX == 0) sizeX = 1;
+  if (sizeY == 0) sizeY = 1;
 
   meta_free(meta);
   FREE(infile_meta);
