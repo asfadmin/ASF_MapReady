@@ -432,7 +432,7 @@ int main(int argc, char **argv)
         meta->projection = proj;
         for (ll=0; ll<n_images; ll++) {
           if ((obs[kk].year == image[ll].year) &&
-              FLOAT_COMPARE_TOLERANCE(obs[kk].time, image[ll].time, 0.001)) {
+              FLOAT_COMPARE_TOLERANCE(obs[kk].time, image[ll].time, 0.002)) {
             image_id = STRDUP(image[ll].id);
             image_year = image[ll].year;
             image_time = image[ll].time;
