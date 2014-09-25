@@ -378,7 +378,7 @@ int main(int argc, char **argv)
     fpOut = FOPEN(imgFile, "wb");
     for (ii=0; ii<line_count; ii++) {
       for (kk=0; kk<sample_count; kk++) {
-	      FREAD(&floatBuf[kk], sizeof(float), 1, fpIn);
+	      ASF_FREAD(&floatBuf[kk], sizeof(float), 1, fpIn);
 	      ieee_big32(floatBuf[kk]);
         if (floatBuf[kk] > 10000000000.0 || 
           FLOAT_EQUIVALENT(floatBuf[kk], 10000000000.0))
@@ -681,7 +681,7 @@ int main(int argc, char **argv)
   FILE *fpYgrid = FOPEN(yFile, "wb");
   for (ii=0; ii<line_count; ii++) {
     for (kk=0; kk<sample_count; kk++) {
-      FREAD(&floatBuf[kk], sizeof(float), 1, fpIn);
+      ASF_FREAD(&floatBuf[kk], sizeof(float), 1, fpIn);
       ieee_big32(floatBuf[kk]);
     }
     for (kk=0; kk<sample_count; kk++) {
