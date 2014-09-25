@@ -103,6 +103,13 @@ typedef enum {
   IMAGE_LAYER_STACK,
   RGB_STACK,
   MOSAIC,
+  ICE_AGE,
+  ICE_THICKNESS,
+  BACKSCATTER_HISTOGRAM,
+  MULTIYEAR_ICE_FRACTION,
+  DIVERGENCE,
+  VORTICITY,
+  SHEAR,
   UNKNOWN_IMAGE_DATA_TYPE
 } image_data_type_t;
 
@@ -1037,6 +1044,7 @@ int isCEOS(const char *dataFile, char **error);
 int isTerrasar(char *dataFile, char **error);
 int isTerrasar_ext(char *dataFile, int checkPolarimetry, char **error);
 int isRadarsat2(char *dataFile, char **error);
+int isRadarsat2_ext(char *dataFile, int check_data, char **error);
 int isUAVSAR(char *dataFile, char **error);
 
 // Prototypes for meta_geotiff.c

@@ -13,6 +13,7 @@ localenv.AppendUnique(CPPPATH = [
 
 localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
 
 localenv.AppendUnique(LIBS = [
     "m",
@@ -26,32 +27,29 @@ localenv.AppendUnique(LIBS = [
 
 libs = localenv.SharedLibrary("libasf_vector", [
         "convert2vector.c",
-        "convert2vector.t.c",
+        "vector.c",
         "utils.c",
-        "header.c",
-        "geotiff.c",
-        "polygon.c",
-        "point.c",
-        "auig.c",
-        "multimatch.c",
-        "meta.c",
-        "terrasar.c",
         "kml.c",
         "shape.c",
-        "generic_csv.c",
-        "ursa.c",
-        "datapool.c",
-        "high_altitude_photography.c",
-        "smap.c",
-        "custom.c",
         "config.c",
-        "granule.c",
-        "rgps.c",
         ])
 
 shares = localenv.File([
     "header.lst",
     "convert2vector.config",
+    "datapool_data_dictionary.csv",
+    "geotiff_data_dictionary.csv",
+    "granule_data_dictionary.csv",
+    "latlon_data_dictionary.csv",
+    "meta_data_dictionary.csv",
+    "point_data_dictionary.csv",
+    "polygon_data_dictionary.csv",
+    "smap_data_dictionary.csv",
+    "ursa_data_dictionary.csv",
+    "rgps_dp_cell_data_dictionary.csv",
+    "rgps_dp_grid_data_dictionary.csv",
+    "rgps_ep_data_dictionary.csv",
+    "rgps_lp_data_dictionary.csv"
 ])
 
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)

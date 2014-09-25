@@ -416,7 +416,8 @@ static void print_matches(offset_point_t *matches, int num_x, int num_y, FILE *f
 }
 
 int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
-          float *avgLocX, float *avgLocY, float *certainty)
+                     float *avgLocX, float *avgLocY, float *certainty,
+                     int size, double tol, int overlap)
 {
   meta_parameters *meta1 = meta_read(inFile1);
   meta_parameters *meta2 = meta_read(inFile2);
@@ -424,15 +425,21 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   int nl = mini(meta1->general->line_count, meta2->general->line_count);
   int ns = mini(meta1->general->sample_count, meta2->general->sample_count);
 
-  const int size = 512;
-  const int overlap = 256;
-  const double tol = .28;
+  if (size<0) size = 512;
+  if (overlap<0) overlap = 256;
+  if (tol<0) tol = .28;
+
+  asfPrintStatus("Tile size is %dx%d pixels\n", size, size);
+  asfPrintStatus("Tile overlap is %d pixels\n", overlap);
+  asfPrintStatus("Match tolerance is %.2f\n", tol);
 
   long long lsz = (long long)size;
 
   int num_x = (ns - size) / (size - overlap);
   int num_y = (nl - size) / (size - overlap);
   int len = num_x*num_y;
+
+  asfPrintStatus("Number of tiles is %dx%d\n", num_x, num_y);
 
   offset_point_t *matches = MALLOC(sizeof(offset_point_t)*len); 
 
@@ -522,7 +529,7 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
     }
   }
 
-  if (valid_points < 10) {
+  if (valid_points < 1) {
      asfPrintStatus("Too few points for a good match.\n");
   
      *avgLocX = 0;
@@ -532,18 +539,21 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   else {
     *avgLocX = 0;
     *avgLocY = 0;
+    *certainty = 0;
     int n = 0;
     for (ii=0; ii<len; ++ii) {
       if (matches[ii].valid) {
         *avgLocX += matches[ii].x_offset;
         *avgLocY += matches[ii].y_offset;
+        *certainty += matches[ii].cert;
         ++n;
       }
     }
 
     *avgLocX /= (float)n;
     *avgLocY /= (float)n;
-    *certainty = (float)n / (float)len;
+    //*certainty = (float)n / (float)len;
+    *certainty /= (float)n;
   }
 
   asfPrintStatus("Found %d offsets.\n", valid_points);
@@ -560,6 +570,236 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   FREE(name);
 
   return (0);
+}
+
+int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
+{
+  // Determine the offsets based on metadata
+  meta_parameters *refMeta = meta_read(inFile1);
+  if (!refMeta->projection)
+    asfPrintError("File (%s) is not map projected!\n", inFile1);
+  meta_parameters *testMeta = meta_read(inFile2);
+  if (!testMeta->projection)
+    asfPrintError("File (%s) is not map projected!\n", inFile2);
+  double testStartX = testMeta->projection->startX + 
+    testMeta->general->start_sample*testMeta->projection->perX;
+  double testStartY = testMeta->projection->startY +
+    testMeta->general->start_line*testMeta->projection->perY;
+  double refStartX = refMeta->projection->startX +
+    refMeta->general->start_sample*refMeta->projection->perX;
+  double refStartY = refMeta->projection->startY +
+    refMeta->general->start_line*refMeta->projection->perY;
+  float diffX = (testStartX - refStartX) / testMeta->projection->perX;
+  float diffY = (testStartY - refStartY) / testMeta->projection->perY;
+  meta_free(refMeta);
+  meta_free(testMeta);
+
+  // Figure out what FFT parameters are going to be
+  int size = 512;
+  double tol = -1;
+  float diff; 
+  if (fabs(diffX) > fabs(diffY))
+    diff = fabs(diffX);
+  else
+    diff = fabs(diffY);
+  while ((size/4) < diff) {
+    size *= 2; 
+  }
+  int overlap = size / 2;
+
+  // Determine the offsets based on mapping
+  float offX, offY, cert;
+  asfPrintStatus("Determing offsets by FFT matching\n\n");
+  fftMatch_gridded(inFile1, inFile2, NULL, &offX, &offY, &cert, size, tol, 
+    overlap);
+
+  // Compare both offsets
+  *offsetX = diffX - offX;
+  *offsetY = diffY - offY;
+
+  return (0);
+}
+
+int fftMatch_opt(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
+{ 
+  // Generate temporary directory
+  char tmpDir[1024];
+  char metaFile[1024], outFile[1024], sarFile[1024], opticalFile[1024];
+  char *baseName = get_basename(inFile1);
+  strcpy(tmpDir, baseName);
+  strcat(tmpDir, "-");
+  strcat(tmpDir, time_stamp_dir());
+  create_clean_dir(tmpDir);
+  
+  // Cutting optical to SAR extent
+  asfPrintStatus("Cutting optical to SAR extent ...\n");
+  sprintf(metaFile, "%s.meta", inFile1);
+  sprintf(outFile, "%s%c%s_sub.img", tmpDir, DIR_SEPARATOR, inFile2);
+  trim_to(inFile2, outFile, metaFile);
+  
+  // Clipping optical image including blackfill
+  asfPrintStatus("\nClipping optical image including blackfill ...\n");
+  meta_parameters *metaOpt = meta_read(outFile);
+  meta_parameters *metaSAR = meta_read(metaFile);
+  int line_count = metaSAR->general->line_count;
+  int sample_count = metaSAR->general->sample_count;
+  float *floatLine = (float *) MALLOC(sizeof(float)*sample_count);
+  unsigned char *byteLine = (unsigned char *) MALLOC(sizeof(char)*sample_count);
+  FILE *fpOptical = FOPEN(outFile, "rb");
+  sprintf(sarFile, "%s.img", inFile1);
+  FILE *fpSAR = FOPEN(sarFile, "rb");
+  sprintf(outFile, "%s%c%s_mask.img", tmpDir, DIR_SEPARATOR, inFile2);
+  sprintf(metaFile, "%s%c%s_mask.meta", tmpDir, DIR_SEPARATOR, inFile2);
+  FILE *fpOut = FOPEN(outFile, "wb");
+  int ii, kk;
+  for (ii=0; ii<line_count; ii++) {
+    get_float_line(fpSAR, metaSAR, ii, floatLine);
+    get_byte_line(fpOptical, metaOpt, ii, byteLine);
+    for (kk=0; kk<sample_count; kk++) {
+      if (!FLOAT_EQUIVALENT(floatLine[kk], 0.0))
+        floatLine[kk] = (float) byteLine[kk];
+    }
+    put_float_line(fpOut, metaSAR, ii, floatLine);
+  }
+  FCLOSE(fpOptical);
+  FCLOSE(fpSAR);
+  FCLOSE(fpOut);
+  meta_write(metaSAR, metaFile);
+
+  // Edge filtering optical image
+  asfPrintStatus("\nEdge filtering optical image ...\n");
+  sprintf(opticalFile, "%s%c%s_sobel.img", tmpDir, DIR_SEPARATOR, inFile2);
+  kernel_filter(outFile, opticalFile, SOBEL, 3, 0, 0);
+
+  // Edge filtering SAR image
+  asfPrintStatus("\nEdge filtering SAR image ...\n");
+  sprintf(sarFile, "%s%c%s_sobel.img", tmpDir, DIR_SEPARATOR, inFile1);
+  kernel_filter(inFile1, sarFile, SOBEL, 3, 0, 0);
+
+  // FFT matching on a grid
+  asfPrintStatus("\nFFT matching on a grid ...\n");
+  fftMatch_proj(sarFile, opticalFile, offsetX, offsetY);
+
+  // Clean up
+  remove_dir(tmpDir);
+
+  return (0);
+}
+
+double distance_to(int index, float *x, float *y, int num)
+{
+  int i;
+  double d=0;
+
+  float xref = index >= 0 ? x[index] : 0;
+  float yref = index >= 0 ? y[index] : 0;
+
+  for (i=0; i<num; ++i)
+    d += hypot((double)(x[i] - xref), (double)(y[i] - yref));
+
+  return d + hypot(xref,yref);
+}
+
+int fftMatch_projList(char *inFile, char *descFile)
+{
+  FILE *fp = FOPEN(inFile, "r");
+  if (!fp) asfPrintError("Failed to open %s\n", inFile);
+
+  char line[255], master[255];
+  float x_offs[255], y_offs[255];
+  int n=0;
+
+  while (NULL != fgets(line, 255, fp)) {
+    if (line[strlen(line)-1]=='\n')
+      line[strlen(line)-1] = '\0';
+    if (line[0] == '#' || line[0] == '\0')
+      continue;
+
+    if (n==0) {
+      strcpy(master, line);
+    }
+    else {
+      fftMatch_proj(master, line, &x_offs[n-1], &y_offs[n-1]);
+    }
+
+    ++n;
+    if (n>=255)
+      asfPrintError("Too many granules: max 255");
+  }
+
+  FCLOSE(fp);
+
+  FILE *fpd=NULL;
+  if (descFile) {
+    fpd = FOPEN(descFile, "w");
+    fprintf(fpd, "master,slave,offsetX,offsetY,total offsets\n");
+  }
+
+  int num=n-1;
+  n=0;
+
+  char best[255];
+  double min_dist;
+
+  fp = FOPEN(inFile, "r");
+  while (NULL != fgets(line, 255, fp)) {
+    if (line[strlen(line)-1]=='\n')
+      line[strlen(line)-1] = '\0';
+    if (line[0] == '#' || line[0] == '\0')
+      continue;
+
+    if (n==0) {
+      min_dist = distance_to(-1, x_offs, y_offs, num);
+      fprintf(fpd ? fpd : stdout, "%s,%s,%.5f,%.5f,%.5f\n",
+              master, master, 0., 0., min_dist);
+      strcpy(best, master);
+    }
+    else {
+      double d = distance_to(n-1, x_offs, y_offs, num);
+      fprintf(fpd ? fpd : stdout, "%s,%s,%.5f,%.5f,%.5f\n",
+              master, line, x_offs[n-1], y_offs[n-1], d);
+      if (d < min_dist) {
+        min_dist = d;
+        strcpy(best, line);
+      }
+    }
+
+    ++n;
+  }
+
+  asfPrintStatus("Best is %s\n", best);
+
+  if (descFile) {
+    asfPrintStatus("Generated match file (%s)!\n", descFile);
+    FCLOSE(fpd);
+  }
+
+  FCLOSE(fp);
+
+  if (strcmp(master, best) == 0) {
+    asfPrintStatus("Reference granule is already the best: %s\n", master);
+  }
+  else {
+    char *new = appendExt(inFile, ".new");
+    fpd = FOPEN(new, "w");
+    fprintf(fpd,"%s\n", best);
+
+    fp = FOPEN(inFile, "r");
+    while (NULL != fgets(line, 255, fp)) {
+      if (line[strlen(line)-1]=='\n')
+        line[strlen(line)-1] = '\0';
+      if (line[0] == '#' || line[0] == '\0')
+        continue;
+
+      if (strcmp(line, best) != 0) {
+        fprintf(fpd,"%s\n", line);
+      } 
+    }
+    FCLOSE(fpd);
+    FCLOSE(fp);
+  }
+ 
+  return 0;
 }
 
 int fftMatch(char *inFile1, char *inFile2, char *corrFile,

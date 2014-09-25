@@ -53,6 +53,7 @@
 #define VERSION 1.0
 
 typedef struct {
+  char *format;
 	char *granule;
 	char *master_meta_file;
 	char *slave_meta_file;
@@ -64,6 +65,7 @@ typedef struct {
 	char *wrapped_interferogram;
 	char *unwrapped_interferogram;
 	char *correlation;
+	char *browse_overview;
 	char *browse_amplitude;
 	char *browse_wrapped_interferogram;
 	char *browse_unwrapped_interferogram;
@@ -80,6 +82,7 @@ typedef struct {
 	char *troposphere_url;
   double master_faraday_rotation;
 	double slave_faraday_rotation;
+	char *data;
 	char *metadata;
 	char *input_HH_file;
 	char *input_HV_file;
@@ -95,11 +98,21 @@ typedef struct {
 	char *rtc_VV_file;
 	char *rtc_log;
 	char *main_log;
+	char *mk_geo_radcal_0_log;
+	char *mk_geo_radcal_1_log;
 	char *mk_geo_radcal_2_log;
+	char *mk_geo_radcal_3_log;
 	char *coreg_check_log;
 	char *mli_par_file;
 	char *gamma_version;
+	char *gap_rtc;
 	char *dem_source;
+	char *incidence_angle_file;
+	char *incidence_angle_meta;
+	char *xml;
+	char *latitude;
+	char *longitude;
+	char *sigma0_hh_fore;
 } params_t;
 
 void usage(char *name)
@@ -260,6 +273,8 @@ params_t *params_init(char *type) {
 
 	params_t *params = (params_t *) MALLOC(sizeof(params_t));
 	if (strcmp_case(type, "InSAR") == 0) {
+	  params->format = (char *) MALLOC(sizeof(char)*10);
+	  strcpy(params->format, "HDF5");
     params->granule = NULL;
     params->master_meta_file = NULL;
     params->slave_meta_file = NULL;
@@ -276,6 +291,7 @@ params_t *params_init(char *type) {
     params->dem_url = NULL;
     params->troposphere = NULL;
     params->troposphere_url = NULL;
+    params->browse_overview = NULL;
     params->browse_amplitude = NULL;
     params->browse_wrapped_interferogram = NULL;
     params->browse_unwrapped_interferogram = NULL;
@@ -284,6 +300,8 @@ params_t *params_init(char *type) {
     params->slave_faraday_rotation = MAGIC_UNSET_DOUBLE;
 	}
 	else if (strcmp_case(type, "GAMMA RTC") == 0) {
+	  params->format = (char *) MALLOC(sizeof(char)*10);
+	  strcpy(params->format, "GeoTIFF");
 	  params->granule = NULL;
     params->metadata = NULL;
     params->layover_shadow_mask = NULL;
@@ -304,7 +322,10 @@ params_t *params_init(char *type) {
     params->rtc_VH_file = NULL;
     params->rtc_VV_file = NULL;
     params->rtc_log = NULL;
+    params->mk_geo_radcal_0_log = NULL;
+    params->mk_geo_radcal_1_log = NULL;
     params->mk_geo_radcal_2_log = NULL;
+    params->mk_geo_radcal_3_log = NULL;
     params->coreg_check_log = NULL;
     params->mli_par_file = NULL;
     params->processing_log = NULL;
@@ -312,13 +333,27 @@ params_t *params_init(char *type) {
     params->browse_amplitude = NULL;
     params->kml_overlay = NULL;
     params->gamma_version = NULL;
+    params->gap_rtc = NULL;
     params->dem_source = NULL;
+    params->incidence_angle_file = NULL;
+    params->incidence_angle_meta = NULL;
 	}
+	else if (strcmp_case(type, "SMAP") == 0) {
+	  params->format = (char *) MALLOC(sizeof(char)*10);
+	  strcpy(params->format, "netCDF");
+	  params->data = NULL;
+	  params->metadata = NULL;
+	  params->xml = NULL;
+	  params->latitude = NULL;
+	  params->longitude = NULL;
+	  params->sigma0_hh_fore = NULL;
+  }
 	
 	return params;
 }
 
 void params_free(params_t *params) {
+  FREE(params->format);
   FREE(params->granule);
   FREE(params->master_meta_file);
   FREE(params->slave_meta_file);
@@ -344,6 +379,7 @@ void params_free(params_t *params) {
   FREE(params->browse_unwrapped_interferogram);
   FREE(params->browse_correlation);
   FREE(params->kml_overlay);
+  FREE(params->data);
   FREE(params->metadata);
   FREE(params->input_HH_file);
   FREE(params->input_HV_file);
@@ -358,12 +394,22 @@ void params_free(params_t *params) {
   FREE(params->rtc_VH_file);
   FREE(params->rtc_VV_file);
   FREE(params->rtc_log);
+  FREE(params->mk_geo_radcal_0_log);
+  FREE(params->mk_geo_radcal_1_log);
   FREE(params->mk_geo_radcal_2_log);
+  FREE(params->mk_geo_radcal_3_log);
   FREE(params->coreg_check_log);
   FREE(params->mli_par_file);
   FREE(params->main_log);
   FREE(params->gamma_version);
+  FREE(params->gap_rtc);
   FREE(params->dem_source);
+  FREE(params->incidence_angle_file);
+  FREE(params->incidence_angle_meta);
+  FREE(params->xml);
+  FREE(params->latitude);
+  FREE(params->longitude);
+  FREE(params->sigma0_hh_fore);
   FREE(params);
 }
 
@@ -388,6 +434,8 @@ void read_filenames(const char * file, params_t **params, char *type)
 		while (NULL != fgets(line, n, fp)) {
 			p = strchr(line, '=');
 			sprintf(value, "%s", p+1);
+			if (matches_key(line, "format"))
+				list->format = trim_spaces(value);
 			if (strncmp_case(line, "granule", 7) == 0) {
 				list->granule = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->granule, "%s", trim_spaces(value));
@@ -452,6 +500,10 @@ void read_filenames(const char * file, params_t **params, char *type)
 				list->troposphere_url = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->troposphere_url, "%s", trim_spaces(value));
 			}
+			if (strncmp_case(line, "browse overview", 15) == 0) {
+				list->browse_overview = (char *) MALLOC(sizeof(char)*n);
+				sprintf(list->browse_overview, "%s", trim_spaces(value));
+			}
 			if (strncmp_case(line, "browse amplitude", 16) == 0) {
 				list->browse_amplitude = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->browse_amplitude, "%s", trim_spaces(value));
@@ -480,6 +532,8 @@ void read_filenames(const char * file, params_t **params, char *type)
 		while (NULL != fgets(line, n, fp)) {
 			p = strchr(line, '=');
 			sprintf(value, "%s", p+1);
+			if (matches_key(line, "format"))
+				list->format = trim_spaces(value);
 			if (strncmp_case(line, "granule", 7) == 0) {
 				list->granule = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->granule, "%s", trim_spaces(value));
@@ -564,8 +618,14 @@ void read_filenames(const char * file, params_t **params, char *type)
 				list->rtc_log = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->rtc_log, "%s", trim_spaces(value));
 			}
+			if (matches_key(line, "mk_geo_radcal_0 log"))
+				list->mk_geo_radcal_0_log = trim_spaces(value);
+			if (matches_key(line, "mk_geo_radcal_1 log"))
+				list->mk_geo_radcal_1_log = trim_spaces(value);
 			if (matches_key(line, "mk_geo_radcal_2 log"))
 				list->mk_geo_radcal_2_log = trim_spaces(value);
+			if (matches_key(line, "mk_geo_radcal_3 log"))
+				list->mk_geo_radcal_3_log = trim_spaces(value);
 			if (matches_key(line, "coreg_check log"))
 				list->coreg_check_log = trim_spaces(value);
 			if (matches_key(line, "mli.par file"))
@@ -577,6 +637,10 @@ void read_filenames(const char * file, params_t **params, char *type)
 			if (strncmp_case(line, "gamma version", 13) == 0) {
 				list->gamma_version = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->gamma_version, "%s", trim_spaces(value));
+			}
+			if (strncmp_case(line, "gap_rtc version", 15) == 0) {
+			  list->gap_rtc = (char *) MALLOC(sizeof(char)*n);
+			  sprintf(list->gap_rtc, "%s", trim_spaces(value));
 			}
 			if (strncmp_case(line, "dem source", 10) == 0) {
 				list->dem_source = (char *) MALLOC(sizeof(char)*n);
@@ -590,6 +654,30 @@ void read_filenames(const char * file, params_t **params, char *type)
 				list->kml_overlay = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->kml_overlay, "%s", trim_spaces(value));
 			}
+			if (matches_key(line, "incidence angle file"))
+				list->incidence_angle_file = trim_spaces(value);
+			if (matches_key(line, "incidence angle meta"))
+				list->incidence_angle_meta = trim_spaces(value);
+		}
+  }
+  else if (matches_key(line, "[SMAP]")) {
+  	list = params_init("SMAP");
+  	sprintf(type, "SMAP");
+		while (NULL != fgets(line, n, fp)) {
+			p = strchr(line, '=');
+			sprintf(value, "%s", p+1);
+			if (matches_key(line, "format"))
+				list->format = trim_spaces(value);
+			if (matches_key(line, "metadata"))
+			  list->metadata = trim_spaces(value);
+			if (matches_key(line, "xml"))
+			  list->xml = trim_spaces(value);
+			if (matches_key(line, "latitude"))
+			  list->latitude = trim_spaces(value);
+			if (matches_key(line, "longitude"))
+			  list->longitude = trim_spaces(value);
+			if (matches_key(line, "sigma0_hh_fore"))
+			  list->sigma0_hh_fore = trim_spaces(value);
 		}
   }
   *params = list;
@@ -1102,9 +1190,12 @@ int main(int argc, char **argv)
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "wrapped interferogram\">%s</file>\n", filename);
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">Alaska Satellite Facility</source>\n");				
-      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-        "projection of the data\">geographic</map_projection>\n");
+        "data\">Alaska Satellite Facility</source>\n");
+      fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection as well known text\">GEOGCS[\"GCS_WGS_1984\",DATUM[\""
+      "D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\""
+      "Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      "</projection_string>\n");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "WIDTH", 5) == 0)
@@ -1193,9 +1284,12 @@ int main(int argc, char **argv)
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "unwrapped interferogram\">%s</file>\n", filename);
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">Alaska Satellite Facility</source>\n");				
-      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-        "projection of the data\">geographic</map_projection>\n");
+        "data\">Alaska Satellite Facility</source>\n");
+      fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection as well known text\">GEOGCS[\"GCS_WGS_1984\",DATUM[\""
+      "D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\""
+      "Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      "</projection_string>\n");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "WIDTH", 5) == 0) {
@@ -1306,9 +1400,12 @@ int main(int argc, char **argv)
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "correlation image\">%s</file>\n", filename);
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">Alaska Satellite Facility</source>\n");				
-      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-        "projection of the data\">geographic</map_projection>\n");
+        "data\">Alaska Satellite Facility</source>\n");
+      fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection as well known text\">GEOGCS[\"GCS_WGS_1984\",DATUM[\""
+      "D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\""
+      "Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      "</projection_string>\n");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "WIDTH", 5) == 0)
@@ -1399,9 +1496,12 @@ int main(int argc, char **argv)
       fprintf(fp, "      <file type=\"string\" definition=\"file name of "
         "incidence angle map\">%s</file>\n", filename);
       fprintf(fp, "      <source type=\"string\" definition=\"source of the "
-        "data\">Alaska Satellite Facility</source>\n");				
-      fprintf(fp, "      <map_projection type=\"string\" definition=\"map "
-        "projection of the data\">geographic</map_projection>\n");
+        "data\">Alaska Satellite Facility</source>\n");
+      fprintf(fp, "      <projection_string type=\"string\" definition=\"map "
+      "projection as well known text\">GEOGCS[\"GCS_WGS_1984\",DATUM[\""
+      "D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\""
+      "Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]"
+      "</projection_string>\n");
       while (NULL != fgets(line, 255, fpFiles)) {
         sprintf(str, "%s", line+40);
         if (strncmp_case(line, "WIDTH", 5) == 0)
@@ -1452,9 +1552,12 @@ int main(int argc, char **argv)
           sprintf(str, "%s", line+13);
           if (strncmp_case(line, "PROJECTION", 10) == 0) {
             sprintf(map_projection, "%s", trim_spaces(str));
-            if (strcmp_case(map_projection, "LATLON") == 0)
-              fprintf(fp, "      <map_projection type=\"string\" definition=\""
-              "map projection of the data\">geographic</map_projection>\n");
+            if (strcmp_case(map_projection, "LATLON") == 0)            
+              fprintf(fp, "      <projection_string type=\"string\" definition"
+              "=\"map projection as well known text\">GEOGCS[\"GCS_WGS_1984\","
+              "DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563"
+              "]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295"
+              "]]</projection_string>\n");
           }
           if (strncmp_case(line, "WIDTH", 5) == 0) {
             dem_width = atoi(trim_spaces(str));
@@ -1519,8 +1622,11 @@ int main(int argc, char **argv)
           if (strncmp_case(line, "PROJECTION", 10) == 0) {
             sprintf(map_projection, "%s", trim_spaces(str));
             if (strcmp_case(map_projection, "LATLON") == 0)
-              fprintf(fp, "      <map_projection type=\"string\" definition=\""
-              "map projection of the data\">geographic</map_projection>\n");
+              fprintf(fp, "      <projection_string type=\"string\" definition"
+              "=\"map projection as well known text\">GEOGCS[\"GCS_WGS_1984\","
+              "DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563"
+              "]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295"
+              "]]</projection_string>\n");
           }
           if (strncmp_case(line, "WIDTH", 5) == 0) {
             tropo_width = atoi(trim_spaces(str));
@@ -1853,7 +1959,8 @@ int main(int argc, char **argv)
     fprintf(fp, "    <comment>Copyright %s</comment>\n", copyright);
     fprintf(fp, "    <reference>Documentation available at: www.asf.alaska.edu"
       "</reference>\n");
-    fprintf(fp, "    <history>%s: H5 file created.</history>\n", creation);
+    fprintf(fp, "    <history>%s: %s file created.</history>\n", creation,
+      params->format);
     fprintf(fp, "  </root>\n");
     
     fprintf(fp, "</hdf5>\n");
@@ -1882,6 +1989,10 @@ int main(int argc, char **argv)
     if (params->rtc_HH_file && !fileExists(params->rtc_HH_file))
       asfPrintError("Terrain corrected file (%s) is missing!\n", 
         params->rtc_HH_file);
+    if (params->incidence_angle_file && 
+      !fileExists(params->incidence_angle_file))
+      asfPrintError("Incidence angle map (%s) is missing!\n", 
+        params->incidence_angle_file);
     if ((params->browse_amplitude && fileExists(params->browse_amplitude)) ||
       (params->kml_overlay && fileExists(params->kml_overlay)))
         browse = TRUE;
@@ -1909,6 +2020,8 @@ int main(int argc, char **argv)
       params->original_dem);
     fprintf(fp, "    <layover_shadow_mask>%s</layover_shadow_mask>\n",
       params->layover_shadow_mask);
+    fprintf(fp, "    <incidence_angle_map>%s</incidence_angle_map>\n",
+      params->incidence_angle_file);
     fprintf(fp, "  </data>\n");
 
     // Add metadata
@@ -1958,20 +2071,22 @@ int main(int argc, char **argv)
     double range_offset=0, azimuth_offset=0;
     double range_stddev=0, azimuth_stddev=0;
     int patches_accepted=0, patches_attempted=0;
-    fpFiles = FOPEN(params->mk_geo_radcal_2_log, "r");
-    while (NULL != fgets(line, 255, fpFiles)) {
-      char *key, *value;
-      split2(line, ':', &key, &value);
-      if (strcmp(key, "final range offset poly. coeff.") == 0)
-        range_offset = atof(value);
-      else if (strcmp(key, "final azimuth offset poly. coeff.") == 0)
-        azimuth_offset = atof(value);
-      else if (strcmp(key, "final model fit std. dev. (samples) range") == 0)
-        sscanf(value, "%lf azimuth: %lf", &range_stddev, &azimuth_stddev);
-      else if (strcmp(key, "final solution") == 0 && strstr(value, "offset estimates accepted out of"))
-        sscanf(value, "%d offset estimates accepted out of %d samples", &patches_accepted, &patches_attempted);
+    if (fileExists(params->mk_geo_radcal_2_log)) {
+      fpFiles = FOPEN(params->mk_geo_radcal_2_log, "r");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        char *key, *value;
+        split2(line, ':', &key, &value);
+        if (strcmp(key, "final range offset poly. coeff.") == 0)
+          range_offset = atof(value);
+        else if (strcmp(key, "final azimuth offset poly. coeff.") == 0)
+          azimuth_offset = atof(value);
+        else if (strcmp(key, "final model fit std. dev. (samples) range") == 0)
+          sscanf(value, "%lf azimuth: %lf", &range_stddev, &azimuth_stddev);
+        else if (strcmp(key, "final solution") == 0 && strstr(value, "offset estimates accepted out of"))
+          sscanf(value, "%d offset estimates accepted out of %d samples", &patches_accepted, &patches_attempted);
+      }
+      FCLOSE(fpFiles);
     }
-    FCLOSE(fpFiles);
 
     int passed;
     if (fileExists(params->coreg_check_log)) {
@@ -2204,7 +2319,31 @@ int main(int argc, char **argv)
     fprintf(fp, "    </layover_shadow_mask>\n");
     meta_free(meta);
 
+    // Incidence angle map
+    split_dir_and_file(params->incidence_angle_file, directory, filename);
+    meta = meta_read(params->rtc_HH_metadata);
+    fprintf(fp, "    <incidence_angle_map>\n");
+    fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
+      "incidence angle map\">%s</file>\n", filename);
+    fprintf(fp, "      <width type=\"int\" definition=\"width of the image\">"
+      "%d</width>\n", meta->general->sample_count);
+    fprintf(fp, "      <height type=\"int\" definition=\"height of the image\">"
+      "%d</height>\n", meta->general->line_count);
+    fprintf(fp, "      <x_spacing type=\"double\" definition=\"spacing in x "
+      "direction\">%g</x_spacing>\n", meta->general->x_pixel_size);
+    fprintf(fp, "      <y_spacing type=\"double\" definition=\"spacing in y "
+      "direction\">%g</y_spacing>\n", meta->general->y_pixel_size);
+    fprintf(fp, "    </incidence_angle_map>\n");
+    meta_free(meta);
+
+    // Terrain correction processing parameters
     fprintf(fp, "    <terrain_correction>\n");
+    fprintf(fp, "      <gamma_version type=\"string\" definition=\"version "
+      "number of the GAMMA software used for processing\">%s</gamma_version>\n",
+      params->gamma_version);
+    fprintf(fp, "      <gap_rtc_version type=\"string\" definition=\"version "
+      "number of gap_rtc script used for terrain correction processing\">%s"
+      "</gap_rtc_version>\n", params->gap_rtc);
     fprintf(fp, "      <patches_attempted type=\"int\" definition=\"number of patches used to coregister\""
       ">%d</patches_attempted>\n", patches_attempted);
     fprintf(fp, "      <patches_accepted type=\"int\" definition=\"number of patches successfully coregistered\""
@@ -2428,6 +2567,23 @@ int main(int argc, char **argv)
           valid_values*100.0);
         fprintf(fp, "    </layover_shadow_mask>\n");
       }
+      if (params->incidence_angle_meta) {
+        meta = meta_read(params->incidence_angle_meta);
+        if (meta->stats) {
+          fprintf(fp, "    <incidence_angle_map>\n");
+          fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+            meta->stats->band_stats[0].min);
+          fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+            meta->stats->band_stats[0].max);
+          fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+            meta->stats->band_stats[0].mean);
+          fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+            meta->stats->band_stats[0].std_deviation);
+          fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+            meta->stats->band_stats[0].percent_valid);
+          fprintf(fp, "    </incidence_angle_map>\n");
+        }
+      }
       fprintf(fp, "  </statistics>\n");
       meta_free(dem_meta);
     }
@@ -2448,7 +2604,7 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);
 
     // Terrain correction
-    fpFiles = FOPEN(params->rtc_log, "rt");
+    fpFiles = FOPEN(params->mk_geo_radcal_0_log, "r");
     while (NULL != fgets(line, 255, fpFiles)) {
       if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
           strstr(line, "mode: 0")) {
@@ -2456,18 +2612,34 @@ int main(int argc, char **argv)
         gamma2iso_date(p+18, str);
         fprintf(fp, "    <simulate_sar>%s</simulate_sar>\n", str);
       }
-      if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
-          strstr(line, "mode: 1")) {
-        p = strstr(line, "processing start:");
-        gamma2iso_date(p+18, str);
-        fprintf(fp, "    <initial_offset>%s</initial_offset>\n", str);
+    }
+    FCLOSE(fpFiles);
+    if (fileExists(params->mk_geo_radcal_1_log)) {
+      fpFiles = FOPEN(params->mk_geo_radcal_1_log, "r");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
+            strstr(line, "mode: 1")) {
+          p = strstr(line, "processing start:");
+          gamma2iso_date(p+18, str);
+          fprintf(fp, "    <initial_offset>%s</initial_offset>\n", str);
+        }
       }
-      if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
-          strstr(line, "mode: 2")) {
-        p = strstr(line, "processing start:");
-        gamma2iso_date(p+18, str);
-        fprintf(fp, "    <refined_offset>%s</refined_offset>\n", str);
+      FCLOSE(fpFiles);
+    }
+    if (fileExists(params->mk_geo_radcal_2_log)) {
+      fpFiles = FOPEN(params->mk_geo_radcal_2_log, "r");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
+            strstr(line, "mode: 2")) {
+          p = strstr(line, "processing start:");
+          gamma2iso_date(p+18, str);
+          fprintf(fp, "    <refined_offset>%s</refined_offset>\n", str);
+        }
       }
+      FCLOSE(fpFiles);
+    }
+    fpFiles = FOPEN(params->mk_geo_radcal_3_log, "r");
+    while (NULL != fgets(line, 255, fpFiles)) {
       if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
           strstr(line, "mode: 3")) {
         p = strstr(line, "processing start:");
@@ -2507,11 +2679,187 @@ int main(int argc, char **argv)
     fprintf(fp, "    <comment>Copyright %s</comment>\n", copyright);
     fprintf(fp, "    <reference>Documentation available at: www.asf.alaska.edu"
       "</reference>\n");
-    fprintf(fp, "    <history>%s: H5 file created.</history>\n", creation);
+    fprintf(fp, "    <history>%s: %s file created.</history>\n", creation,
+      params->format);
     fprintf(fp, "  </root>\n");
-    
     fprintf(fp, "</hdf5>\n");
     FCLOSE(fp);
+  }
+  else if (strcmp_case(type, "SMAP") == 0) {
+
+    // check data entries in parameter list
+    int found_data = FALSE;
+    if (params->latitude || params->longitude || params->sigma0_hh_fore)
+      found_data = TRUE;
+
+    // update output XML file
+    FILE *fpXml = FOPEN(params->xml, "r");
+    fp = FOPEN(xml_name, "wt");
+    while (fgets(line, 1024, fpXml) != NULL) {
+      if (strstr(line, "<data/>")) {
+        if (found_data) {
+          fprintf(fp, "  <format>%s</format>\n", params->format);
+          fprintf(fp, "  <data>\n");          
+          if (params->latitude) 
+            fprintf(fp, "    <latitude>%s</latitude>\n", params->latitude);
+          if (params->longitude)
+            fprintf(fp, "    <longitude>%s</longitude>\n", params->longitude);
+          if (params->sigma0_hh_fore)
+            fprintf(fp, "    <sigma0_hh_fore>%s</sigma0_hh_fore>\n", 
+              params->sigma0_hh_fore);
+          fprintf(fp, "  </data>\n");
+        }
+        else {
+          meta = meta_read(params->metadata);
+          int band_count = meta->general->band_count;
+          char **bands = extract_band_names(meta->general->bands, band_count);
+          fprintf(fp, "  <format>%s</format>\n", params->format);
+          fprintf(fp, "  <data>\n");
+          int ii;
+          for (ii=0; ii<band_count; ii++) {
+            fprintf(fp, "    <%s>%s:%s</%s>\n", 
+              bands[ii], params->data, bands[ii], bands[ii]);
+          }
+          fprintf(fp, "  </data>\n");
+          meta_free(meta);
+        }
+      }
+      else if (strstr(line, "<projection/>")) {
+        meta = meta_read(params->metadata);
+        meta_projection *mp = meta->projection;
+        if (mp && mp->type != SCANSAR_PROJECTION) {
+          fprintf(fp, "  <projection>\n");
+          if (mp->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
+            fprintf(fp, "    <grid_mapping_name>transverse_mercator"
+              "</grid_mapping_name>\n");
+            fprintf(fp, "    <scale_factor_at_central_meridian>%.6f</scale_"
+              "factor_at_central_meridian>\n", mp->param.utm.scale_factor);
+            fprintf(fp, "    <longitude_of_central_meridian>%.1f</longitude_"
+              "of_central_meridian>\n", mp->param.utm.lon0);
+            fprintf(fp, "    <latitude_of_projection_origin>%.1f</latitude_"
+              "of_projection_origin>\n", mp->param.utm.lat0);
+            fprintf(fp, "    <false_easting>%.0f</false_easting>\n",
+              mp->param.utm.false_easting);
+            fprintf(fp, "    <false_northing>%.0f</false_northing>\n",
+              mp->param.utm.false_northing);
+          }
+          else if (mp->type == POLAR_STEREOGRAPHIC) {
+            double lon_pole;
+            fprintf(fp, "    <grid_mapping_name>polar_stereographic"
+              "</grid_mapping_name>\n");
+            fprintf(fp, "    <straight_vertical_longitude_from_pole>%.1f"
+              "</straight_vertical_longitude_from_pole>\n", mp->param.ps.slon);
+            if (mp->param.ps.slat > 0)
+              lon_pole = 90.0;
+            else
+              lon_pole = -90.0;
+            fprintf(fp, "    <latitude_of_projection_origin>%.1f</latitude_"
+              "of_projection_origin>\n", lon_pole);
+            fprintf(fp, "    <standard_parallel>%.1f</standard_parallel>\n",
+              mp->param.ps.slat);
+            fprintf(fp, "    <false_easting>%.0f</false_easting>\n",
+              mp->param.ps.false_easting);
+            fprintf(fp, "    <false_northing>%.0f</false_northing>\n",
+              mp->param.ps.false_northing);
+          }
+          else if (mp->type == ALBERS_EQUAL_AREA) {
+            fprintf(fp, "    <grid_mapping_name>albers_conical_equal_area"
+              "</grid_mapping_name>\n");
+            fprintf(fp, "    <standard_parallel_1>%.1f</standard_parallel_1>\n",
+              mp->param.albers.std_parallel1);
+            fprintf(fp, "    <standard_parallel_2>%.1f</standard_parallel_2>\n",
+              mp->param.albers.std_parallel2);
+            fprintf(fp, "    <longitude_of_central_meridian>%.1f</longitude_of_"
+              "central_meridian>\n", mp->param.albers.center_meridian);
+            fprintf(fp, "    <latitude_of_projection_origin>%.1f</latitude_of_"
+              "projection_origin>\n", mp->param.albers.orig_latitude);
+            fprintf(fp, "    <false_easting>%.0f</false_easting>\n",
+              mp->param.albers.false_easting);
+            fprintf(fp, "    <false_northing>%.0f</false_northing>\n",
+              mp->param.albers.false_northing);
+          }
+          else if (mp->type == LAMBERT_CONFORMAL_CONIC) {
+            fprintf(fp, "    <grid_mapping_name>lambert_conformal_conic"
+              "</grid_mapping_name>\n");
+            fprintf(fp, "    <standard_parallel_1>%.1f</standard_parallel_1>\n",
+              mp->param.lamcc.plat1);
+            fprintf(fp, "    <standard_parallel_2>%.1f</standard_parallel_2>\n",
+              mp->param.lamcc.plat2);
+            fprintf(fp, "    <longitude_of_central_meridian>%.1f</longitude_of_"
+              "central_meridian>\n", mp->param.lamcc.lon0);
+            fprintf(fp, "    <latitude_of_projection_origin>%.1f</latitude_of_"
+              "projection_origin>\n", mp->param.lamcc.lat0);
+            fprintf(fp, "    <false_easting>%.0f</false_easting>\n",
+              mp->param.lamcc.false_easting);
+            fprintf(fp, "    <false_northing>%.0f</false_northing>\n",
+              mp->param.lamcc.false_northing);
+          }
+          else if (mp->type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
+            fprintf(fp, "    <grid_mapping_name>lambert_azimuthal_equal_area"
+              "</grid_mapping_name>\n");
+            fprintf(fp, "    <longitude_of_projection_origin>%.1f</longitude_"
+              "of_projection_origin>\n", mp->param.lamaz.center_lon);
+            fprintf(fp, "    <latitude_of_projection_origin>%.1f</latitude_of_"
+              "projection_origin>\n", mp->param.lamaz.center_lat);
+            fprintf(fp, "    <false_easting>%.0f</false_easting>\n",
+              mp->param.lamaz.false_easting);
+            fprintf(fp, "    <false_northing>%.0f</false_northing>\n",
+              mp->param.lamaz.false_northing);
+          }
+          fprintf(fp, "    <semi_major_axis>%.3f</semi_major_axis>\n",
+            mp->re_major);
+          fprintf(fp, "    <semi_minor_axis>%.3f</semi_minor_axis>\n",
+            mp->re_minor);
+          fprintf(fp, "  </projection>\n");
+        }
+        meta_free(meta);
+      }
+      else if (strstr(line, "<extent/>")) {
+        double plat_min, plat_max, plon_min, plon_max;
+        fprintf(fp, "  <extent>\n");
+        meta = meta_read(params->metadata);
+        meta_get_bounding_box(meta, &plat_min, &plat_max, &plon_min, &plon_max);
+        fprintf(fp, "    <smap_data>\n");
+        fprintf(fp, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
+          plon_min);
+        fprintf(fp, "      <eastBoundLongitude>%.5f</eastBoundLongitude>\n",
+          plon_max);
+        fprintf(fp, "      <northBoundLatitude>%.5f</northBoundLatitude>\n",
+          plat_max);
+        fprintf(fp, "      <southBoundLatitude>%.5f</southBoundLatitude>\n",
+          plat_min);
+        fprintf(fp, "    </smap_data>\n");
+        fprintf(fp, "  </extent>\n");
+        meta_free(meta);
+      }
+      else if (strstr(line, "<statistics/>")) {
+        meta = meta_read(params->metadata);
+        if (meta->stats) {
+          int ii;
+          fprintf(fp, "  <statistics>\n");
+          for (ii=0; ii<meta->stats->band_count; ii++) {
+            fprintf(fp, "    <%s>\n", meta->stats->band_stats[ii].band_id);
+            fprintf(fp, "      <minimum_value>%.11g</minimum_value>\n",
+              meta->stats->band_stats[ii].min);
+            fprintf(fp, "      <maximum_value>%.11g</maximum_value>\n",
+              meta->stats->band_stats[ii].max);
+            fprintf(fp, "      <mean_value>%.11g</mean_value>\n",
+              meta->stats->band_stats[ii].mean);
+            fprintf(fp, "      <standard_deviation>%.11g</standard_deviation>\n",
+              meta->stats->band_stats[ii].std_deviation);
+            fprintf(fp, "      <percent_valid_values>%.3f</percent_valid_values>\n",
+              meta->stats->band_stats[ii].percent_valid);
+            fprintf(fp, "    </%s>\n", meta->stats->band_stats[ii].band_id);
+          }
+          fprintf(fp, "  </statistics>\n");
+        }
+        meta_free(meta);
+      }
+      else
+        fprintf(fp, "%s", line);
+    }
+    FCLOSE(fp);
+    FCLOSE(fpXml);
   }
   
   // FIXME: This is the Seasat metadata that needs to be stored new style.

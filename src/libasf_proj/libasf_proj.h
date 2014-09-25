@@ -673,4 +673,6 @@ int get_tiff_data_config(TIFF *tif, short *sample_format,
 int get_bands_from_citation(int *num_bands, char **band_str, int *empty, 
 			    char *citation, int num_expected);
 
+int crosses_dateline(double *lon, int start, int end);
+
 #endif

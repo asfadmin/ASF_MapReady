@@ -10,157 +10,12 @@
 #include "asf_vector.h"
 #include "geotiff_support.h"
 #include "get_ceos_names.h"
+#include "terrasar.h"
+#include "xml_util.h"
 
 #define FILENAME_LINE_MAX   (1024)
 #define FILENAME_LEN        (256)
 #define LINE_MAX_LEN        (1024)
-
-// Convert metadata to text
-// NOTE: inFile will either be a leader data file, a geotiff,
-// or an ASF metadata file
-void meta2text(char *inFile, FILE *outFP)
-{
-    double ulLong=0.0, urLong=0.0, lrLong=0.0, llLong=0.0; // Clockwise polygon
-    double ulLat=0.0, urLat=0.0, lrLat=0.0, llLat=0.0;
-    int no_location_info=1;
-    meta_parameters *meta = NULL;
-
-    if (isgeotiff(inFile)) {
-        int i, ignore[MAX_BANDS];
-        for (i=0; i<MAX_BANDS; i++) ignore[i] = 0; // Default to ignoring no bands
-        meta = read_generic_geotiff_metadata(inFile, ignore, NULL);
-    }
-    else if (isleader(inFile)) {
-        meta = meta_create(inFile);
-    }
-    else if (ismetadata(inFile)) {
-        meta = meta_read(inFile);
-    }
-    if (meta && meta->location) {
-        meta_location *ml = meta->location; // Convenience pointer
-        no_location_info = 0; // false ...location info was found
-        ulLong = ml->lon_start_near_range;
-        ulLat  = ml->lat_start_near_range;
-        urLong = ml->lon_start_far_range;
-        urLat  = ml->lat_start_far_range;
-        lrLong = ml->lon_end_far_range;
-        lrLat  = ml->lat_end_far_range;
-        llLong = ml->lon_end_near_range;
-        llLat  = ml->lat_end_near_range;
-    }
-    meta_free(meta);
-
-    if (no_location_info)
-      asfPrintWarning("No location coordinates found in %s\n", inFile);
-    fprintf(outFP, "# File type        , polygon\n");
-    // Use inFile for name ...for lack of a better idea
-    fprintf(outFP, "# Polygon ID (name), %s\n", inFile);
-    fprintf(outFP, "#\n");
-    fprintf(outFP, "# Latitude, Longitude\n");
-    if (no_location_info) {
-      fprintf(outFP, "# WARNING: No location information found in "
-              "source file (%s)\n", inFile);
-      fprintf(outFP, "#          Values shown below are invalid\n");
-    }
-    fprintf(outFP, "%f, %f\n", ulLat, ulLong);
-    fprintf(outFP, "%f, %f\n", urLat, urLong);
-    fprintf(outFP, "%f, %f\n", lrLat, lrLong);
-    fprintf(outFP, "%f, %f\n", llLat, llLong);
-    fprintf(outFP, "\n");
-    // FCLOSE() is called by the calling function
-
-    return;
-}
-
-void geotiff2text(char *inFile, FILE *outFP)
-{
-    meta2text(inFile, outFP);
-
-    return;
-}
-
-int ismetadata(char *inFile)
-{
-    int isMetadata=0;
-    int foundGeneral=0;
-    char *line=NULL, *s;
-    FILE *fp = NULL;
-
-    fp = fopen(inFile, "r");
-    if (!fp) {
-        char n[1024];
-        sprintf(n, "%s.meta", inFile);
-        fp = fopen(n, "r");
-    }
-    if (!fp) {
-        char *basename = get_basename(inFile);
-        char n[1024];
-        sprintf(n, "%s.meta", basename);
-        fp = fopen(n, "r");
-        FREE(basename);
-    }
-    if (fp) {
-        int line_count = 0;
-        line = (char*)MALLOC(sizeof(char)*(1+LINE_MAX_LEN));
-        while (fgets(line, LINE_MAX_LEN, fp)) {
-            line[strlen(line)-1] = '\0';
-            s=line;
-            while(isspace((int)(*s))) ++s;
-            if (s && strlen(s) && strncmp(uc(s), "GENERAL {", 9) == 0) {
-                foundGeneral = 1;
-            }
-            if (foundGeneral && s && strlen(s) && strncmp_case(s, "NAME:", 5) == 0) {
-                isMetadata = 1;
-                break;
-            }
-            // avoid scanning the entire contents of a huge file
-            if (++line_count>100)
-              break;
-        }
-    }
-    FREE(line);
-    FCLOSE(fp);
-
-    return isMetadata;
-}
-
-int isparfile(char *file)
-{
-  char *inFile = STRDUP(file);
-  int isParfile=0;
-  char *line=NULL, *s;
-  FILE *fp = NULL;
-
-  if (findExt(inFile) && (strcmp_case(findExt(inFile), ".PAR") != 0)) {
-    strcat(inFile, ".par");
-    if (!fileExists(inFile))
-      return FALSE;
-  }
-
-  fp = fopen(inFile, "r");
-  if (fp) {
-    int line_count = 0;
-    line = (char*)MALLOC(sizeof(char)*(1+LINE_MAX_LEN));
-    while (fgets(line, LINE_MAX_LEN, fp)) {
-      line[strlen(line)-1] = '\0';
-      s=line;
-      while(isspace((int)(*s))) ++s;
-      if (s && strlen(s) && 
-	  strncmp_case(s, "processor_name: SKY", 19) == 0) {
-	isParfile = 1;
-	break;
-      }
-      // avoid scanning the entire contents of a huge file
-      if (++line_count>10000)
-	break;
-    }
-  }
-  FREE(line);
-  FREE(inFile);
-  FCLOSE(fp);
-  
-  return isParfile;
-}
 
 int isleader(char *inFile)
 {
@@ -175,112 +30,6 @@ int isleader(char *inFile)
     }
 
     return isLeader;
-}
-
-int ispoint(char *inFile)
-{
-    int isPoint=0;
-    char *line=NULL, *s;
-    FILE *fp;
-
-    fp = fopen(inFile, "r");
-    if (!fp) {
-        char n[1024];
-        sprintf(n, "%s.csv", inFile);
-        fp = fopen(n, "r");
-    }
-    if (!fp) {
-        char *basename = get_basename(inFile);
-        char n[1024];
-        sprintf(n, "%s.csv", basename);
-        fp = fopen(n, "r");
-        FREE(basename);
-    }
-    if (fp) {
-        line = (char*)MALLOC(sizeof(char)*(1+LINE_MAX_LEN));
-        int line_count=0;
-        while (fgets(line, LINE_MAX_LEN, fp)) {
-            line[strlen(line)-1] = '\0';
-            s=line;
-            while(isspace((int)(*s))) ++s;
-            if (*s == '#') {
-                char *tok = strtok(s,",");
-                if (tok) {
-                    s = strstr(uc(tok), "FILE");
-                    if (s && strncmp(uc(s), "FILE", 4) == 0) {
-                        tok = strtok(NULL, ",");
-                        if (tok) {
-                            s = strstr(uc(tok), "POINT");
-                            if (s && strncmp(uc(s), "POINT", 5) == 0) {
-                                isPoint = 1;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            // avoid scanning the entire contents of a huge file
-            if (++line_count>100)
-              break;
-        }
-    }
-    FREE(line);
-    FCLOSE(fp);
-
-    return isPoint;
-}
-
-int ispolygon(char *inFile)
-{
-    int isPolygon=0;
-    char *line=NULL, *s;
-    FILE *fp;
-
-    fp = fopen(inFile, "r");
-    if (!fp) {
-        char n[1024];
-        sprintf(n, "%s.csv", inFile);
-        fp = fopen(n, "r");
-    }
-    if (!fp) {
-        char *basename = get_basename(inFile);
-        char n[1024];
-        sprintf(n, "%s.csv", basename);
-        fp = fopen(n, "r");
-        FREE(basename);
-    }
-    if (fp) {
-        line = (char*)MALLOC(sizeof(char)*(1+LINE_MAX_LEN));
-        int line_count=0;
-        while (fgets(line, LINE_MAX_LEN, fp)) {
-            line[strlen(line)-1] = '\0';
-            s=line;
-            while(isspace((int)(*s))) ++s;
-            if (*s == '#') {
-                char *tok = strtok(s,",");
-                if (tok) {
-                    s = strstr(uc(tok), "FILE");
-                    if (s && strncmp(uc(s), "FILE", 4) == 0) {
-                        tok = strtok(NULL, ",");
-                        if (tok) {
-                            s = strstr(uc(tok), "POLYGON");
-                            if (s && strncmp(uc(s), "POLYGON", 7) == 0) {
-                                isPolygon = 1;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            // avoid scanning the entire contents of a huge file
-            if (++line_count>100)
-              break;
-        }
-    }
-    FREE(line);
-    FCLOSE(fp);
-
-    return isPolygon;
 }
 
 int isshape(char *inFile)
@@ -388,10 +137,227 @@ int isgeotiff(char *inFile)
     return isGeotiff;
 }
 
-int isrgps(char *inFile)
+int isterrasar(char *inFile)
 {
-    // FIXME: Don't know how to check this yet ...Rudi?
-    int isRGPS = 0;
+  int found = FALSE;
+  char *ext = findExt(inFile);
 
-    return isRGPS;
+  if (ext && strcmp_case(ext, ".xml") == 0) {
+    char *satellite = (char *) MALLOC(sizeof(char)*25);
+    xmlDoc *doc = xmlReadFile(inFile, NULL, 0);
+    if (doc) {
+      strcpy(satellite, xml_get_string_value(doc, 
+        "level1Product.productInfo.missionInfo.mission"));
+      if (satellite &&
+    	  (strncmp_case(satellite, "TSX", 3) == 0 ||
+	       strncmp_case(satellite, "TDX", 3) == 0))
+        found = TRUE;
+    }
+    xmlFreeDoc(doc);
+    xmlCleanupParser();
+    if (satellite)
+      FREE(satellite);
+  }
+  return found;
+}
+
+int read_header_config(const char *format, dbf_header_t **dbf, 
+	int *nAttr, char *shape_type)
+{
+  if (!format)
+    return FALSE;
+  strcpy(shape_type, "UNKNOWN");
+
+  char header_file[1024];
+  sprintf(header_file, "%s%c%s", 
+	  get_asf_share_dir(), DIR_SEPARATOR, "header.lst");
+  
+  FILE *fp;
+  char line[1024], params[255], format_str[255], dictionary[255], *str=NULL;
+  int found_format=FALSE;
+  sprintf(format_str, "[%s]", uc(format));
+
+  // Check how many parameters we have in the section
+  fp = FOPEN(header_file, "r");
+  while (fgets(line, 255, fp)) {
+    if (strncmp_case(line, format_str, strlen(format_str)-1) == 0)
+      strcpy(params, format);
+    if (strcmp_case(params, format) == 0) {
+      found_format = TRUE;
+      str = strstr(line, "=");
+      if (strncmp_case(line, "type =", 6) == 0 && str) 
+	      sprintf(shape_type, "%s", trim_spaces(str+1));
+      str = strstr(line, "=");
+      if (strncmp_case(line, "dictionary =", 12) == 0 && str)
+        sprintf(dictionary, "%s", trim_spaces(str+1));
+      if (line[0] == '[' && 
+        strncmp(line, format_str, strlen(format_str)-1) != 0) {
+	      break;
+      }
+    }
+  }
+  FCLOSE(fp);
+
+  // Return if we can't find the format we are looking for
+  if (!found_format)
+    return FALSE;
+
+  // Fill the header information
+  char dictionary_file[1024], type[25];
+  sprintf(dictionary_file, "%s%c%s", 
+    get_asf_share_dir(), DIR_SEPARATOR, dictionary);
+  fp = FOPEN(dictionary_file, "r");
+  fgets(line, 1024, fp);
+  int n = 0;
+  while (fgets(line, 1024, fp))
+    n++;
+  FCLOSE(fp);
+  dbf_header_t *header = (dbf_header_t *) MALLOC(sizeof(dbf_header_t)*n);
+
+  fp = FOPEN(dictionary_file, "r");
+  fgets(line, 1024, fp);
+  n = 0;
+  int nCols;
+  char **column;
+  while (fgets(line, 1024, fp)) {
+    chomp(line);
+    split_into_array(line, ',', &nCols, &column);
+    header[n].meta = STRDUP(column[0]);
+    header[n].shape = STRDUP(column[1]);
+    sprintf(type, "%s", column[2]);
+    if (strncmp_case(type, "DOUBLE", 6) == 0)
+      header[n].format = DBF_DOUBLE;
+    else if (strncmp_case(type, "INTEGER", 7) == 0)
+      header[n].format = DBF_INTEGER;
+    else if (strncmp_case(type, "STRING", 6) == 0)
+      header[n].format = DBF_STRING;
+    else
+      asfPrintError("Unknown data format (%s) for '%s'!\n", 
+        type, header[n].meta);
+    header[n].length = atoi(column[3]);
+    header[n].decimals = atoi(column[4]);
+    header[n].definition = STRDUP(column[5]); 
+  	n++;
+  }
+  FCLOSE(fp);
+
+  *dbf = header;
+  *nAttr = n;
+
+  return TRUE;
+}
+
+void split_polygon(double *lat, double *lon, int nCoords, 
+  int *start, double *mLat, double *mLon)
+{
+  double projX1, projY1, projX2, projY2, mProjX, mProjY;
+  double dateX1, dateY1, dateX2, dateY2, m, mDate, height, maxLat = 0.0;
+  double minLon = 180.0, maxLon = -180.0;
+  int nCols = nCoords + 5;
+  int ii, nNegative = 0;
+  for (ii=0; ii<nCoords-1; ii++) {
+    if (lon[ii] < 0)
+      nNegative++;
+    if (lat[ii] > 0 && lat[ii] > maxLat)
+      maxLat = lat[ii];
+    else if (lat[ii] < 0 && lat[ii] < maxLat)
+      maxLat = lat[ii];
+    if (lon[ii] > maxLon)
+      maxLon = lon[ii];
+    if (lon[ii] < minLon)
+      minLon = lon[ii];
+  }
+  int nNeg = start[0] = 0;
+  int nPos = start[1] = nNegative + 3;
+  for (ii=0; ii<nCoords-1; ii++) {
+    // normal case
+    if (lon[ii] > 0) {
+      mLat[nPos] = lat[ii];
+      mLon[nPos] = lon[ii];
+      nPos++;
+    }
+    if (lon[ii] < 0) {
+      mLat[nNeg] = lat[ii];
+      mLon[nNeg] = lon[ii];
+      nNeg++;
+    }
+    // check longitude range - stay with geographic coordinates
+    if ((maxLon - minLon) < 60.0) {
+      // crossing dateline
+      if ((lon[ii] < 0 && lon[ii+1] > 0) || (lon[ii] > 0 && lon[ii+1] < 0)) {
+        char projFile[255];
+        datum_type_t datum = WGS84_DATUM;
+        spheroid_type_t spheroid = WGS84_SPHEROID;
+        project_parameters_t pps;
+        projection_type_t proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
+        meta_projection *proj = meta_projection_init();
+        if (fabs(maxLat < 83.0)) {
+          pps.utm.zone = 60;
+          pps.utm.scale_factor = 0.9996;
+          pps.utm.lat0 = 0.0;
+          pps.utm.lon0 = (double) (pps.utm.zone - 1) * 6.0 - 177.0;
+          if (maxLat > 0.0)
+            pps.utm.false_northing = 0.0;
+          else
+            pps.utm.false_northing = 10000000.0;
+        }
+        else {
+          proj->type = POLAR_STEREOGRAPHIC;
+          if (maxLat > 0) {
+            strcpy(projFile, "polar_stereographic_north_ssmi.proj");
+          }
+          else
+            strcpy(projFile, "polar_stereographic_south_ssmi.proj");
+          read_proj_file(projFile, &pps, &proj_type, &datum, &spheroid);
+        }      
+        proj->type = proj_type;
+        proj->datum = datum;
+        proj->spheroid = spheroid;
+        proj->param = pps;
+        latlon_to_proj(proj, 'R', lat[ii]*D2R, 180.0*D2R, 0.0, 
+          &dateX1, &dateY1, &height);
+        latlon_to_proj(proj, 'R', lat[ii+1]*D2R, 180.0*D2R, 0.0, 
+          &dateX2, &dateY2, &height);
+        mDate = (dateY2 - dateY1)/(dateX2 - dateX1);
+        latlon_to_proj(proj, 'R', lat[ii]*D2R, lon[ii]*D2R, 0.0, 
+          &projX1, &projY1, &height);
+        latlon_to_proj(proj, 'R', lat[ii+1]*D2R, lon[ii+1]*D2R, 0.0, 
+          &projX2, &projY2, &height);
+        m = (projY1 - projY2)/(projX1 - projX2);
+        mProjX = (m*projX2 - mDate*dateX2 + dateY2 - projY2)/(m - mDate);
+        mProjY = m*(mProjX - projX2) + projY2;
+        proj_to_latlon(proj, mProjX, mProjY, 0.0, 
+          &mLat[nPos], &mLon[nPos], &height);
+        mLat[nPos] *= R2D;
+        mLat[nNeg] = mLat[nPos];
+        mLon[nPos] = 180.0;
+        mLon[nNeg] = -180.0;
+        nPos++;
+        nNeg++;
+      }
+    }
+    else {
+      // crossing dateline
+      if (lon[ii] < 0 && lon[ii+1] > 0) { 
+        m = (lat[ii+1] - lat[ii])/(fabs(lon[ii+1] - lon[ii]) - 360.0);
+        mLat[nPos] = mLat[nNeg] = m*(180.0 - lon[ii+1]) + lat[ii+1];
+        mLon[nPos] = 180.0;
+        mLon[nNeg] = -180.0;
+        nPos++;
+        nNeg++;
+      }
+      else if (lon[ii] > 0 && lon[ii+1] < 0) {
+        m = (lat[ii+1] - lat[ii])/(360.0 - fabs(lon[ii+1] - lon[ii]));
+        mLat[nPos] = mLat[nNeg] = m*(180.0 - lon[ii]) + lat[ii];
+        mLon[nPos] = 180.0;
+        mLon[nNeg] = -180.0;
+        nPos++;
+        nNeg++;
+      }
+    }
+  }
+  mLat[nNegative+2] = mLat[0];
+  mLon[nNegative+2] = mLon[0];
+  mLat[nCols-1] = mLat[nNegative+3];
+  mLon[nCols-1] = mLon[nNegative+3];
 }

@@ -6,7 +6,7 @@
 int asf_export(output_format_t format, scale_t sample_mapping,
                char *in_base_name, char *output_name)
 {
-  return asf_export_bands(format, sample_mapping, 0, 0, 0, NULL,
+  return asf_export_bands(format, sample_mapping, 0, 0, 0, NULL, 0,
               in_base_name, output_name, NULL, NULL, NULL);
 }
 
@@ -14,13 +14,14 @@ int asf_export_with_lut(output_format_t format, scale_t sample_mapping,
             char *lutFile, char *inFile, char *outFile)
 {
   return asf_export_bands(format, sample_mapping, 1, 0, 0,
-              lutFile, inFile, outFile, NULL, NULL, NULL);
+              lutFile, 0, inFile, outFile, NULL, NULL, NULL);
 }
 
 
 int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                      int true_color, int false_color,
-                     char *look_up_table_name, char *in_base_name,
+                     char *look_up_table_name, int use_pixel_is_point,
+                     char *in_base_name,
                      char *output_name, char **band_name,
                      int *noutputs, char ***output_names)
 {
@@ -32,7 +33,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   int i, nouts = 0, is_polsarpro = 0, is_matrix = 0;
   char **outs = NULL;
 
-  if (format != HDF) {
+  if (format != HDF && format != NC) {
     in_data_name = appendExt(in_base_name, ".img");
     in_meta_name = appendExt(in_base_name, ".meta");
     md = meta_read(in_meta_name);
@@ -69,7 +70,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, TIF,
+                        look_up_table_name, TIF, 0,
                         &nouts, &outs);
 
   }
@@ -83,7 +84,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, GEOTIFF,
+                        look_up_table_name, GEOTIFF, use_pixel_is_point,
                         &nouts, &outs);
       
   }
@@ -97,7 +98,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, JPEG,
+                        look_up_table_name, JPEG, 0,
                         &nouts, &outs);
   }
   else if ( format == PNG ) {
@@ -110,7 +111,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, PNG,
+                        look_up_table_name, PNG, 0,
                         &nouts, &outs);
   }
   else if ( format == PNG_ALPHA ) {
@@ -123,7 +124,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, PNG_ALPHA,
+                        look_up_table_name, PNG_ALPHA, 0,
                         &nouts, &outs);
   }
   else if ( format == PNG_GE ) {
@@ -136,7 +137,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, PNG_GE,
+                        look_up_table_name, PNG_GE, 0,
                         &nouts, &outs);
   }
   else if ( format == PGM ) {
@@ -160,7 +161,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, PGM,
+                        look_up_table_name, 0, PGM,
                         &nouts, &outs);
   }
   else if ( format == POLSARPRO_HDR ) {
@@ -176,11 +177,10 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   else if ( format == NC ) {
     out_name = MALLOC(sizeof(char)*(strlen(output_name)+32));
     strcpy(out_name, output_name);
-    export_netcdf(in_meta_name, in_data_name, out_name, band_name,
-		  &nouts, &outs);
+    export_netcdf(in_base_name, out_name, &nouts, &outs);
   }
 
-  if (format != HDF) {
+  if (format != HDF && format != NC) {
     if (should_write_insar_rgb(md->general->bands)) {
         write_insar_rgb(format, in_meta_name, in_data_name, out_name);
     }
@@ -265,7 +265,7 @@ write_insar_rgb(output_format_t format, char *in_meta_name, char *in_data_name, 
     strcpy(band_name[0], "INTERFEROGRAM_PHASE");
     export_band_image(in_meta_name, in_data_name, out_name,
 		      MINMAX, band_name, FALSE, FALSE, FALSE,
-		      "interferogram.lut", format, &nouts, &outs);
+		      "interferogram.lut", format, 0, &nouts, &outs);
     FREE(band_name[0]);
     FREE(band_name);
     for (ii=0; ii<nouts; ii++)

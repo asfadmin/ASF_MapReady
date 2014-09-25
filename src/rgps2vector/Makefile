@@ -38,6 +38,5 @@ all: rgps2vector clean
 rgps2vector: $(OBJS)
 	$(CC) $(CFLAGS) -o rgps2vector $(OBJS) $(LIBS) $(LDFLAGS)
 	mv rgps2vector$(BIN_POSTFIX) $(BINDIR)
-	cp *.png $(SHAREDIR)
 clean:
 	rm -f core* $(OBJS) *~

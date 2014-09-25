@@ -32,13 +32,11 @@ double calc_sum(float *inbuf, int nSamples, int xSample, int kernel_size)
 {
   register int i,j;
   double sum=0.0;
-  int half = (kernel_size-1)/2, base;
+  int half = (kernel_size-1)/2;
 
   for (i=0; i<kernel_size; i++) {
-    base = (xSample-half);
-    for (j=0; j<kernel_size; j++) { 
-      sum += inbuf[base+j*nSamples];
-      base++;
+    for (j=xSample-half; j<=xSample+half; j++) { 
+      sum += inbuf[j+i*nSamples];
     }
   }
 
@@ -47,20 +45,7 @@ double calc_sum(float *inbuf, int nSamples, int xSample, int kernel_size)
 
 double calc_mean(float *inbuf, int nSamples, int xSample, int kernel_size)
 {
-  register int i,j;
-  double sum=0.0, mean;
-  int half = (kernel_size-1)/2, base;
-
-  for (i=0; i<kernel_size; i++) {
-    base = (xSample-half);
-    for (j=0; j<kernel_size; j++) {
-      sum += inbuf[base+j*nSamples];
-      base++;
-    }
-  }
-  mean = sum / (SQR(kernel_size));
-
-  return mean;
+  return calc_sum(inbuf, nSamples, xSample, kernel_size) / SQR(kernel_size);
 }
 
 double calc_std_dev(float *inbuf, int nSamples, int xSample, int kernel_size,
@@ -68,14 +53,11 @@ double calc_std_dev(float *inbuf, int nSamples, int xSample, int kernel_size,
 {
   register int i,j;
   double sum_vv=0.0, standard_deviation;
-  int half = (kernel_size-1)/2, base;
+  int half = (kernel_size-1)/2;
 
   for (i=0; i<kernel_size; i++) {
-    base = (xSample-half);
-    for (j=0; j<kernel_size; j++) {
-      sum_vv += SQR(inbuf[base+j+nSamples] - mean);
-      base++;
-    }
+    for (j=xSample-half; j<=xSample+half; j++)
+      sum_vv += SQR(inbuf[j+i*nSamples] - mean);
   }
   standard_deviation = sqrt(sum_vv / (SQR(kernel_size)-1));
 
@@ -85,11 +67,11 @@ double calc_std_dev(float *inbuf, int nSamples, int xSample, int kernel_size,
 float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples, 
 	     int yLine, int xSample, int kernel_size, float damping_factor, 
 	     int nLooks)
-{                    
-  double sum = 0.0, mean, standard_deviation, weight, value = 0.0;         
+{
+  double sum = 0.0, mean, standard_deviation, weight, value = 0.0, sigmsq=4;
   int half = (kernel_size-1)/2;
-  int base = xSample-half+(nLines-half)*nSamples;
-  int total = 0, sigmsq=4;
+  int base = xSample-half; //+(nLines-half)*nSamples;
+  int total = 0;
   double ci, cu, cmax, center, a, b, d, rf = 0.0, x, y, m;
   float *pix;
   register int i, j;
@@ -97,16 +79,14 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
   switch(filter_type)
     {
     case AVERAGE:
-      for (i=yLine-half; i<=yLine-half; i++)
-	for (j=xSample-half; j<=xSample+half; j++)
-	  sum += inbuf[i*nSamples+j];
-      total = kernel_size * kernel_size;
-      value = sum/total;
+      value = calc_mean(inbuf,nSamples,xSample,kernel_size);
       break;
 
     case GAUSSIAN:
-      sum = calc_sum(inbuf, nSamples, xSample, kernel_size);
-      for (i=yLine-half; i<=yLine-half; i++) {
+      sum = calc_sum(inbuf,nSamples,xSample,kernel_size);
+      mean = sum/SQR(kernel_size);
+      sigmsq = calc_std_dev(inbuf,nSamples,xSample,kernel_size,mean);
+      for (i=0; i<kernel_size; i++) {
         for (j=xSample-half; j<=xSample+half; j++) {
           value += exp(- (SQR(i-half)+SQR(j-xSample)) / (2*sigmsq)) 
                    * inbuf[base] / sum;
@@ -154,14 +134,25 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
                   -1  0  1     -1 -2 -1
 
                       x            y      */
-
       x = -inbuf[base] + inbuf[base+2] - 2*inbuf[base+nSamples] 
         + 2*inbuf[base+2+nSamples] - inbuf[base+2*nSamples]
         + inbuf[base+2+2*nSamples];
       y = inbuf[base] + 2*inbuf[base+1] + inbuf[base+2]
         - inbuf[base+2*nSamples] - 2*inbuf[base+1+2*nSamples] 
         - inbuf[base+2+2*nSamples];
-      value = sqrt(SQR(x) + SQR(y));
+      value = hypot(x,y);
+      if (!meta_is_valid_double(value)) {
+        printf("nLines=%d\n", nLines);
+        printf("nSamples=%d\n", nSamples);
+        printf("yLine=%d\n", yLine);
+        printf("xSample=%d\n", xSample);                    
+        printf("base=%d\n", base);
+        printf("%f %f %f\n", inbuf[base], inbuf[base+1], inbuf[base+2]);
+        printf("%f %f %f\n", inbuf[base+nSamples], inbuf[base+1+nSamples], inbuf[base+2+nSamples]);
+        printf("%f %f %f\n", inbuf[base+2*nSamples], inbuf[base+1+2*nSamples], inbuf[base+2+2*nSamples]);
+        printf("x,y,value = %f %f %f\n",x,y,value);
+        exit(-1);
+      }
       break;
 
     case SOBEL_X:

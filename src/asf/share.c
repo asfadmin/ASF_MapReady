@@ -432,7 +432,7 @@ get_asf_share_dir()
 
 	    //printf("Checking %s ...\n", buf);
 	    /* only try this one if it ends with 'bin' */
-	    if (strcmp(buf + strlen(buf) - 3, "bin") == 0) {
+	    if (strlen(buf) > 3 && strcmp(buf + strlen(buf) - 3, "bin") == 0) {
                 *(buf + strlen(buf) - 4) = '\0';
                 strcat(buf, share);
 

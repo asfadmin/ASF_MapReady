@@ -193,15 +193,33 @@ int open_google_earth()
         return FALSE;
     }
 
+    dbf_header_t *dbf;
+    int nAttr, nCoords;
+    double *lat, *lon, center_lat, center_lon;
+    char configFile[255], *name;
+    meta_parameters *meta;
+
+    sprintf(configFile, "%s/convert2vector.config", get_asf_share_dir());
+    c2v_config *cfg = read_c2v_config(configFile);
+
     kml_header(kml_file);
 
-    meta_parameters *meta = curr->meta;
+    meta = meta2vector(curr->filename, &dbf, &nAttr, &lat, &lon, &nCoords);
+    //meta_parameters *meta = curr->meta;
     if (meta && meta->general &&
         meta_is_valid_double(meta->general->center_latitude) &&
         meta_is_valid_double(meta->general->center_longitude))
     {
         pixbuf2png(pixbuf_small, png_file);
-        kml_entry_with_overlay(kml_file, meta, basename, png_file, dirname);
+        //kml_entry_with_overlay(kml_file, meta, basename, png_file, dirname);
+        name = get_basename(kml_filename);
+        center_lat = meta->general->center_latitude;
+        center_lon = meta->general->center_longitude;
+        write_kml_placemark(kml_file, name, center_lat, center_lon, png_file, 
+          dbf, nAttr, lat, lon, nCoords, cfg);
+        FREE(lat);
+        FREE(lon);
+        FREE(dbf);
     }
     else
     {

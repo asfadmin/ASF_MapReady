@@ -1,0 +1,12 @@
+META,Shape,Type,Length,Decimals,Definition
+source_lat,LAT1,double,12,4,latitude of source grid point [degrees]
+source_lon,LON1,double,12,4,longitude of source grid point [degrees]
+source_x,X_MAP1,double,16,4,x coordinate of source grid point [m]
+source_y,Y_MAP1,double,16,4,y coordinate of source grid point [m]
+target_lat,LAT2,double,12,4,latitude of target grid point [degrees]
+target_lon,LON2,double,12,4,longitude of target grid point [degrees]
+target_x,X_MAP2,double,16,4,x coordinate of target grid point [m]
+target_y,Y_MAP2,double,16,4,y coordinate of target grid point [m]
+x_grid,X_GRID,double,16,4,x displacement of the grid point [m]
+y_grid,Y_GRID,double,16,4,y displacement of the grid point [m]
+quality_flag,QUALITY,integer,4,0,quality flag - lower values indicate that the confidence of the matches are high

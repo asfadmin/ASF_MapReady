@@ -783,6 +783,38 @@ void parse_date(const char *s,ymd_date *date,hms_time *time)
 #undef subStr
 }
 
+double date2sec_1995(julian_date *date,hms_time *time)
+{
+    double ret=date_hms2sec(time);
+    int year;
+    for (year=1995;year<date->year;year++)
+        ret+=date_getDaysInYear(year)*DAY2SEC;
+    ret+=(date->jd-1)*DAY2SEC;
+    return ret;
+}
+
+double measures2sec(const char *inStr)
+{
+  char buf[100];
+  julian_date jd;
+  hms_time time;
+#define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
+  if (strcmp_case(inStr, MAGIC_UNSET_STRING) == 0) {
+    jd.year = 1995;
+    jd.jd = 1;
+  }
+  else {
+    subStr(0,4,&jd.year);
+    subStr(4,2,&jd.jd);
+  }
+  date_sec2hms(36384.0, &time);
+
+  return date2sec_1995(&jd, &time);
+
+#undef subStr
+  
+}
+
 // input is seconds since midnight Jan 1, 1900
 // output is a string of the form "MM/DD HH:MM"
 const char *date_str(double s)

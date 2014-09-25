@@ -131,6 +131,7 @@ src_subs = lib_subs + [
     "diffimage",
     "diffmeta",
     "trim",
+    "asf_subset",
     "make_overlay",
     "asf_kml_overlay",
     "sample_plugin",
@@ -171,6 +172,16 @@ src_subs = lib_subs + [
     "convert2vector",
     "change_value",
     "addapole",
+    "trim_wedges",
+    "point_target_analysis",
+    "raster_calc",
+    "kernel",
+    "asf_logscale",
+    "measures2csv",
+    "measures2netcdf",
+    "measures2geotiff",
+    "measures_hdf2csv",
+    "rgps2vector"
     ]
 
 # paths where the libraries will be built

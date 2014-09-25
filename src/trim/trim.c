@@ -111,8 +111,10 @@ BUGS: none known
 int main(int argc, char *argv[])
 {
   long long startX,startY,sizeX=-1,sizeY=-1;
-  char *infile,*outfile;
+  char *infile,*outfile,trim_to_metafile[512];
+  double lat1, lat2, lon1, lon2;
 
+  strcpy(trim_to_metafile,"");
   logflag=0;
   currArg=1;      /* from cla.h in asf.h, points to current argv string */
   printf("Program: trim\n\n");
@@ -127,6 +129,29 @@ int main(int argc, char *argv[])
     usage();
     return 0;
   }
+
+  extract_string_options(&argc, &argv, trim_to_metafile, "-to", "--to", NULL);
+
+  int lat1_given = extract_double_options(&argc, &argv, &lat1,
+                         "-lat1", "--lat1",
+                         "--lat-min", "-lat-min",
+                         "--lat_min", "-lat_min", NULL);
+  int lat2_given = extract_double_options(&argc, &argv, &lat2,
+                         "-lat2", "--lat2",
+                         "--lat-max", "-lat-max",
+                         "--lat_max", "-lat_max", NULL);
+  int lon1_given = extract_double_options(&argc, &argv, &lon1,
+                         "-lon1", "--lon1",
+                         "--lon-min", "-lon-min",
+                         "--lon_min", "-lon_min", NULL);
+  int lon2_given = extract_double_options(&argc, &argv, &lon2,
+                         "-lon2", "--lon2",
+                         "--lon-max", "-lon-max",
+                         "--lon_max", "-lon_max", NULL);
+ 
+  int doing_latlon = lat1_given + lat2_given + lon1_given + lon2_given;
+  if (doing_latlon > 1 && doing_latlon != 4)
+    asfPrintError("When specifying a lat/lon boundary, you must specify all 4 boundaries");
 
   while (currArg < (argc-4))
   {
@@ -153,18 +178,35 @@ int main(int argc, char *argv[])
       usage(argv[0]);
     }
   }
-  if ((argc-currArg) < 4) {
-    printf("   Insufficient arguments.\n"); usage(argv[0]);
+
+  if (trim_to_metafile && strlen(trim_to_metafile)>0) {
+    if (argc-currArg < 2) { 
+      printf("   Insufficient arguments.\n"); usage(argv[0]);
+    }
+
+    trim_to(argv[currArg], argv[currArg+1], trim_to_metafile); 
   }
+  else if (doing_latlon == 4) {
+    if (argc-currArg < 2) { 
+      printf("   Insufficient arguments.\n"); usage(argv[0]);
+    }
 
- /*Compute filenames*/
-  infile=argv[currArg];
-  outfile=argv[currArg+1];
-  startX=atoi(argv[currArg+3]);
-  startY=atoi(argv[currArg+2]);
+    trim_latlon(argv[currArg], argv[currArg+1], lat1, lat2, lon1, lon2);
+  }
+  else { 
+    if ((argc-currArg) < 4) {
+      printf("   Insufficient arguments.\n"); usage(argv[0]);
+    }
 
-  /* Call library function */
-  trim(infile, outfile, startX, startY, sizeX, sizeY);
+    /*Compute filenames*/
+    infile=argv[currArg];
+    outfile=argv[currArg+1];
+    startX=atoi(argv[currArg+3]);
+    startY=atoi(argv[currArg+2]);
+
+    /* Call library function */
+    trim(infile, outfile, startX, startY, sizeX, sizeY);
+  }
 
   return(0);
 }

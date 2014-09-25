@@ -13,7 +13,7 @@
 char **get_uavsar_products(const char *data_type, char *type, int *num_product)
 {  
   char *rest, *token;
-  int ii, product_count=0;
+  int ii, product_count = 0;
   char *tmp = (char *) MALLOC(sizeof(char)*60);
   strcpy(tmp, data_type);
 

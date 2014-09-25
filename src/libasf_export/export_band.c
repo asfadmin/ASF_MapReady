@@ -97,9 +97,11 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *metadata_file_name,
                            int is_geotiff, scale_t sample_mapping,
                            int rgb, int *palette_color_tiff, char **band_names,
-                           char *look_up_table_name, int is_colormapped);
+                           char *look_up_table_name, int is_colormapped,
+                           int use_pixel_is_point);
 GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
-                              int rgb, char **band_names, int palette_color_tiff);
+                              int rgb, char **band_names, int palette_color_tiff,
+                              int use_pixel_is_point);
 void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
 void append_band_names(char **band_names, int rgb, char *citation, int have_look_up_table);
 int lut_to_tiff_palette(unsigned short **colors, int size, char *look_up_table_name);
@@ -144,7 +146,8 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *metadata_file_name,
                            int is_geotiff, scale_t sample_mapping,
                            int rgb, int *palette_color_tiff, char **band_names,
-                           char *look_up_table_name, int is_colormapped)
+                           char *look_up_table_name, int is_colormapped,
+                           int use_pixel_is_point)
 {
   unsigned short sample_size;
   int max_dn, map_size = 0, palette_color = 0;
@@ -280,7 +283,8 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   TIFFSetField(*otif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 
   if (is_geotiff) {
-      *ogtif = write_tags_for_geotiff (*otif, metadata_file_name, rgb, band_names, palette_color);
+      *ogtif = write_tags_for_geotiff (*otif, metadata_file_name, rgb, band_names,
+                   palette_color, use_pixel_is_point);
   }
 
   if (should_write_insar_xml_meta(md)) {
@@ -441,7 +445,8 @@ void initialize_pgm_file(const char *output_file_name,
 }
 
 GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
-                             int rgb, char **band_names, int palette_color_tiff)
+                             int rgb, char **band_names, int palette_color_tiff,
+                             int use_pixel_is_point)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
@@ -482,7 +487,10 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
   if (map_projected)
   {
     // Write common tags for map-projected GeoTIFFs
-    GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
+    if (use_pixel_is_point)
+      GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsPoint);
+    else
+      GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
     if (md->projection->type != LAT_LONG_PSEUDO_PROJECTION)
       GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
     else
@@ -525,8 +533,13 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
       tie_point[1] = 0.0;
       tie_point[2] = 0.0;
 
+      if (use_pixel_is_point) {
+        md->projection->startX += 0.5 * md->projection->perX;
+        md->projection->startY += 0.5 * md->projection->perY;
+      }
+
       // these are both meters
-      tie_point[3] = md->projection->startX +
+      tie_point[3] = md->projection->startX + 
                      md->general->start_sample * md->projection->perX;
       tie_point[4] = md->projection->startY +
                      md->general->start_line * md->projection->perY;
@@ -1327,6 +1340,7 @@ export_band_image (const char *metadata_file_name,
                    int true_color, int false_color,
                    char *look_up_table_name,
                    output_format_t format,
+                   int use_pixel_is_point,
                    int *noutputs,
                    char ***output_names)
 {
@@ -1418,12 +1432,13 @@ export_band_image (const char *metadata_file_name,
       is_geotiff = 0;
       initialize_tiff_file(&otif, &ogtif, output_file_name,
          metadata_file_name, is_geotiff,
-         sample_mapping, rgb, &palette_color_tiff, band_name, lut_file, 0);
+         sample_mapping, rgb, &palette_color_tiff, band_name, lut_file, 0, 0);
     }
     else if (format == GEOTIFF) {
       initialize_tiff_file(&otif, &ogtif, output_file_name,
          metadata_file_name, is_geotiff,
-         sample_mapping, rgb, &palette_color_tiff, band_name, lut_file, 0);
+         sample_mapping, rgb, &palette_color_tiff, band_name, lut_file, 0,
+         use_pixel_is_point);
     }
     else if (format == JPEG) {
       initialize_jpeg_file(output_file_name, md, &ojpeg, &cinfo, rgb);
@@ -2400,14 +2415,14 @@ export_band_image (const char *metadata_file_name,
               metadata_file_name, is_geotiff,
               sample_mapping, rgb,
               &palette_color_tiff, band_name,
-              lut_file, TRUE);
+              lut_file, TRUE, use_pixel_is_point);
           }
           else {
             initialize_tiff_file(&otif, &ogtif, out_file,
               metadata_file_name, is_geotiff,
               sample_mapping, rgb,
               &palette_color_tiff, band_name,
-              NULL, FALSE);
+              NULL, FALSE, use_pixel_is_point);
           }
         }
         else if (format == JPEG) {

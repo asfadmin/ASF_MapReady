@@ -86,58 +86,31 @@ void usage(char *name);
 
 int main(int argc,char **argv)
 {
-  char *descFile=NULL,*inFile1=NULL,*inFile2=NULL;
-  extern int optind;            /* argv index of the next argument */
-  extern char *optarg;          /* current argv[] */
-  int c;                        /* option letter from getopt() */
-  extern FILE *fLog;
-  extern int logflag,quietflag;
+  char descFile[512];
+  char *inFile1=NULL,*inFile2=NULL;
   float bestLocX, bestLocY, certainty;
+  double tolerance = -1;
+  int size=-1, overlap=-1;
 
-  fLog=NULL;
-  logflag=quietflag=0;
+  handle_common_asf_args(&argc, &argv, "fftMatchGrid");
+  extract_double_options(&argc, &argv, &tolerance, "-tolerance",
+                              "--tolerance", NULL);
+  extract_int_options(&argc, &argv, &size, "-size", "--size", NULL);
+  extract_int_options(&argc, &argv, &overlap, "-overlap", "--overlap", NULL);
+  extract_string_options(&argc, &argv, descFile, "-m", NULL);
 
-  /* process command line */
-  /* q has a : because we want to have it be -quiet (: = uiet) */
-  while ((c=getopt(argc,argv,"m:c:l:q:")) != EOF)
-    {
-      switch (c) {
-      case 'm':
-	descFile=optarg;
-	break;
-      case 'l':/* -log <filename>, get logfile; this is sorta hacked */
-	if (0==strncmp(optarg,"og",2))
-	  {
-	    sscanf(argv[optind++], "%s", logFile);
-	    logflag=1;
-	    fLog = FOPEN(logFile, "a");
-	  }
-	else usage(argv[0]);
-	break;
-      case 'q':/* -quiet flag; this is also hacked */
-	if (0==strncmp(optarg,"uiet",4))
-	  quietflag=1;
-	else usage(argv[0]);
-	break;
-      default:
-	if (fLog) FCLOSE(fLog);
-	usage(argv[0]);
-	break;
-      }
-    }
-
-  if ((argc-optind) != 2) {
-    if ((argc-optind) > 2) printf("\nToo many inputs.\n");
-    if ((argc-optind) < 2) printf("\nToo few inputs.\n");
-    if (fLog) FCLOSE(fLog);
+  if (argc != 3) {
+    if (argc > 3) printf("\nToo many inputs.\n");
+    if (argc < 3) printf("\nToo few inputs.\n");
     usage(argv[0]);
   }
   else {
-    inFile1=argv[optind];
-    inFile2=argv[optind+1];
+    inFile1=argv[1];
+    inFile2=argv[2];
   }
 
-  fftMatch_gridded(inFile1, inFile2, descFile, &bestLocX, &bestLocY, &certainty);
+  fftMatch_gridded(inFile1, inFile2, descFile, &bestLocX, &bestLocY, &certainty,
+                   size, tolerance, overlap);
 
   return (0);
 }
@@ -153,8 +126,12 @@ void usage(char *name)
 	 "                       should be shifted to line up with image 1:\n"
 	 "                       <shift x (pixels)>   <shift y (pixels)>\n"
 	 "                       <confidence (percent)>\n"
-	 "   -c <corrImg.ext>: an image of the correlation between the two\n"
-	 "                       source images.  This is useful for debugging.\n"
+         "   -size <size>:     edge size of the tiles to use (default: 512)\n"
+         "                       the tiles are square, the value is in pixels\n"
+         "   -overlap <val>:   amount of overlap between successive tiles\n"
+         "                       value is in pixels (default: 128)\n"
+         "   -tolerance <val>: fft matches with less than this certainty\n"
+         "                       are ignored (default: .28)\n"
 	 "   -log <file>:      allows the output to be written to a log file\n"
 	 "   -quiet:           suppresses the output to the essentials\n"
 	 "\nINPUTS:\n"

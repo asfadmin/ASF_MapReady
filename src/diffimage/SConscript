@@ -7,6 +7,7 @@ localenv.AppendUnique(CPPPATH = [
         "#src/asf_meta",
         "#src/libasf_proj",
         "#src/libasf_raster",
+        "#src/libasf_sar",
         "#src/libasf_export",
         "#src/asf_fft",
         ])

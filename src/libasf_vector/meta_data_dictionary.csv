@@ -1,0 +1,47 @@
+META,SHAPE,Type,Length,Decimals,Definition
+meta.general.basename,BASENAME,string,255,0,File name
+meta.general.sensor,SENSOR,string,25,0,Imaging satellite
+meta.general.sensor_name,NAME,string,25,0,Imaging sensor
+meta.general.mode,MODE,string,25,0,Imaging mode
+meta.general.acquisition_date,ACQ_DATE,string,35,0,Acquisition date of the data
+meta.general.orbit,ORBIT,integer,7,0,Orbit number for this datatake
+meta.general.orbit_direction,DIRECTION,string,12,0,Ascending or descending
+meta.general.frame,FRAME,integer,5,0,Frame number for this image [-1 is n/a]
+meta.general.x_pixel_size,X_PIX_SIZE,double,16,7,Range pixel size [m]
+meta.general.y_pixel_size,Y_PIX_SIZE,double,16,7,Azimuth pixel size [m]
+meta.general.center_latitude,CENTER_LAT,double,12,5,Image center latitude [degrees]
+meta.general.center_longitude,CENTER_LON,double,12,5,Image center longitude [degrees]
+meta.sar.image_type,IMAGE_TYPE,string,25,0,Image type
+meta.sar.look_direction,LOOK_DIR,string,10,0,SAR satellite look direction
+meta.sar.wavelength,WAVELEN,double,16,7,SAR carrier wavelength [m]
+meta.sar.prf,PRF,double,16,7,Pulse repetition frequency [Hz]
+meta.sar.range_doppler_coefficients[0],RNG_DOP_1,double,16,7,Range Doppler centroid [Hz]
+meta.sar.range_doppler_coefficients[1],RNG_DOP_2,double,16,7,Range Doppler per range pixel [Hz/pixel]
+meta.sar.range_doppler_coefficients[2],RNG_DOP_3,double,16,7,Range Doppler per range pixel square [Hz/(pixel^2)]
+meta.sar.polarization,POLARIZE,string,25,0,Signal polarization
+meta.optical.pointing_direction,POINT_DIR,string,15,0,Pointing direction of the sensor
+meta.optical.off_nadir_angle,OFF_NADIR,double,9,4,Off-nadir angle of the sensor [degrees]
+meta.airsar.scale_factor,AS_SCALE,double,16,7,General scale factor
+meta.airsar.gps_altitude,AS_GPS_HGT,double,16,7,GPS altitude [m]
+meta.airsar.lat_peg_point,AS_LAT_PEG,double,9,4,Latitude of peg point [degrees]
+meta.airsar.lon_peg_point,AS_LON_PEG,double,9,4,Longitude of peg point [degrees]
+meta.airsar.head_peg_point,AS_HEADPEG,double,9,4,Heading at peg point [degrees]
+meta.airsar.along_track_offset,AS_AT_OFF,double,16,7,Along-track offset S0 [m]
+meta.airsar.cross_track_offset,AS_CT_OFF,double,16,7,Cross-track offset C0 [m]
+meta.uavsar.id,UA_ID,string,255,0,File name
+meta.uavsar.scale_factor,UA_SCALE,double,16,7,General scale factor
+meta.uavsar.gps_altitude,UA_GPS_HGT,double,9,3,GPS altitude [m]
+meta.uavsar.lat_peg_point,UA_LAT_PEG,double,9,4,Latitude of peg point [degrees]
+meta.uavsar.lon_peg_point,UA_LON_PEG,double,9,4,Longitude of peg point [degrees]
+meta.uavsar.head_peg_point,UA_HEADPEG,double,9,4,Heading at peg point [degrees]
+meta.uavsar.along_track_offset,UA_AT_OFF,double,12,4,Along-track offset S0 [m]
+meta.uavsar.cross_track_offset,UA_CT_OFF,double,12,4,Cross-track offset C0 [m]
+meta.projection,PROC_STR,string,255,0,Map projection
+meta.location.lat_start_near_range,LOC_LAT1,double,12,5,Latitude at image start in near range [degrees]
+meta.location.lon_start_near_range,LOC_LON1,double,12,5,Longitude at image start in near range [degrees]
+meta.location.lat_start_far_range,LOC_LAT2,double,12,5,Latitude at image start in far range [degrees]
+meta.location.lon_start_far_range,LOC_LON2,double,12,5,Longitude at image start in far range [degrees]
+meta.location.lat_end_near_range,LOC_LAT3,double,12,5,Latitude at image end in near range [degrees]
+meta.location.lon_end_near_range,LOC_LON3,double,12,5,Longitude at image end in near range [degrees]
+meta.location.lat_end_far_range,LOC_LAT4,double,12,5,Latitude at image end in far range [degrees]
+meta.location.lon_end_far_range,LOC_LON4,double,12,5,Longitude at image end in far range [degrees]

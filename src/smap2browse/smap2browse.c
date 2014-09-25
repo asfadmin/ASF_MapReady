@@ -11,9 +11,7 @@ void usage()
 {
   printf("\n"
    "USAGE:\n"
-   "   smap2browse [ -cells <grid points> <attributes> <connectivity> \n"
-   "                 <cell definition> <grid definition> <input type> | \n"
-   "                 -weather <table> <date> ] <inFile>\n");
+   "   smap2browse <inFile>\n");
   printf("\n"
    "REQUIRED ARGUMENTS:\n"
    "   inFile		Name of the SMAP HDF5 file\n");

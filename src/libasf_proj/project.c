@@ -574,7 +574,8 @@ char *ps_projection_desc(project_parameters_t *pps, datum_type_t datum)
   static char ps_projection_description[128];
 
   /* Establish description of output projection. */
-  if (datum == WGS84_DATUM || datum == NAD27_DATUM || datum == NAD83_DATUM) {
+  if (datum == WGS84_DATUM || datum == NAD27_DATUM || datum == NAD83_DATUM ||
+    datum == ITRF97_DATUM) {
     sprintf(ps_projection_description,
       "+proj=stere +lat_0=%s +lat_ts=%f +lon_0=%f "
         "+k_0=%f +datum=%s",
@@ -1310,4 +1311,27 @@ int utm_zone(double lon)
 {
     double lon_nudged = utm_nudge(lon);
     return (int) ((lon_nudged + 180.0) / 6.0 + 1.0);
+}
+
+int crosses_dateline(double *lon, int start, int end)
+{
+  int ii, dateline = FALSE;
+  double left, right, diff;
+  for (ii=start; ii<end-1; ii++) {
+    left = lon[ii];
+    right = lon[ii+1];
+    if (left < 0)
+      left += 360.0;
+    if (right < 0)
+      right += 360.0;
+    diff = fabs(right - left);
+    
+    // We allow a maximum difference in longitude of 2.0 degrees
+    // between neighboring vertices
+    if ((left < 180.0 && right > 180.0 && diff < 2.0) ||
+      (left > 180.0 && right < 180.0 && diff < 2.0))
+      dateline = TRUE;
+  }
+
+  return dateline;
 }

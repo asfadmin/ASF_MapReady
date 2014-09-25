@@ -593,7 +593,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     // Those need a shift by half a pixel
     if (raster_type == RasterPixelIsPoint) {
       mp->startX -= mp->perX / 2.0;
-      mp->startY -= fabs(mp->perY) / 2.0;
+      //mp->startY -= fabs(mp->perY) / 2.0;
+      mp->startY -= mp->perY / 2.0;
     }
     mp->height = 0.0;
     if (linear_units == Linear_Meter) {
@@ -1641,6 +1642,12 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
       }
       mp->perX = pixel_scale[0];
       mp->perY = -pixel_scale[1];
+
+      if (raster_type == RasterPixelIsPoint) {
+        mp->startX -= mp->perX / 2.0; 
+        //mp->startY -= fabs(mp->perY) / 2.0;
+        mp->startY -= mp->perY / 2.0; 
+      }    
   }
 
   // These fields should be the same as the ones in the general block.
@@ -3317,6 +3324,7 @@ void classify_geotiff(GTIF *input_gtif,
             // Found a vintage ASF UTM geotiff
             *geographic_geotiff    = *geocentric_geotiff  = 0;
             *map_projected_geotiff = *geotiff_data_exists = 1;
+            GTIFKeyGet (input_gtif, GTRasterTypeGeoKey, raster_type, 0, 0);
             return;
         }
     }
