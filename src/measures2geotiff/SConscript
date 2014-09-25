@@ -18,6 +18,7 @@ localenv.AppendUnique(LIBS = [
     "asf_meta",
     "asf_raster",
     "asf_export",
+    "asf_proj",
 ])
 
 bins = localenv.Program("measures2geotiff", Glob("*.c"))
