@@ -2071,20 +2071,22 @@ int main(int argc, char **argv)
     double range_offset=0, azimuth_offset=0;
     double range_stddev=0, azimuth_stddev=0;
     int patches_accepted=0, patches_attempted=0;
-    fpFiles = FOPEN(params->mk_geo_radcal_2_log, "r");
-    while (NULL != fgets(line, 255, fpFiles)) {
-      char *key, *value;
-      split2(line, ':', &key, &value);
-      if (strcmp(key, "final range offset poly. coeff.") == 0)
-        range_offset = atof(value);
-      else if (strcmp(key, "final azimuth offset poly. coeff.") == 0)
-        azimuth_offset = atof(value);
-      else if (strcmp(key, "final model fit std. dev. (samples) range") == 0)
-        sscanf(value, "%lf azimuth: %lf", &range_stddev, &azimuth_stddev);
-      else if (strcmp(key, "final solution") == 0 && strstr(value, "offset estimates accepted out of"))
-        sscanf(value, "%d offset estimates accepted out of %d samples", &patches_accepted, &patches_attempted);
+    if (fileExists(params->mk_geo_radcal_2_log)) {
+      fpFiles = FOPEN(params->mk_geo_radcal_2_log, "r");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        char *key, *value;
+        split2(line, ':', &key, &value);
+        if (strcmp(key, "final range offset poly. coeff.") == 0)
+          range_offset = atof(value);
+        else if (strcmp(key, "final azimuth offset poly. coeff.") == 0)
+          azimuth_offset = atof(value);
+        else if (strcmp(key, "final model fit std. dev. (samples) range") == 0)
+          sscanf(value, "%lf azimuth: %lf", &range_stddev, &azimuth_stddev);
+        else if (strcmp(key, "final solution") == 0 && strstr(value, "offset estimates accepted out of"))
+          sscanf(value, "%d offset estimates accepted out of %d samples", &patches_accepted, &patches_attempted);
+      }
+      FCLOSE(fpFiles);
     }
-    FCLOSE(fpFiles);
 
     int passed;
     if (fileExists(params->coreg_check_log)) {
@@ -2602,7 +2604,7 @@ int main(int argc, char **argv)
     FCLOSE(fpFiles);
 
     // Terrain correction
-    fpFiles = FOPEN(params->mk_geo_radcal_0_log, "rt");
+    fpFiles = FOPEN(params->mk_geo_radcal_0_log, "r");
     while (NULL != fgets(line, 255, fpFiles)) {
       if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
           strstr(line, "mode: 0")) {
@@ -2612,27 +2614,31 @@ int main(int argc, char **argv)
       }
     }
     FCLOSE(fpFiles);
-    fpFiles = FOPEN(params->mk_geo_radcal_1_log, "rt");
-    while (NULL != fgets(line, 255, fpFiles)) {
-      if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
-          strstr(line, "mode: 1")) {
-        p = strstr(line, "processing start:");
-        gamma2iso_date(p+18, str);
-        fprintf(fp, "    <initial_offset>%s</initial_offset>\n", str);
+    if (fileExists(params->mk_geo_radcal_1_log)) {
+      fpFiles = FOPEN(params->mk_geo_radcal_1_log, "r");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
+            strstr(line, "mode: 1")) {
+          p = strstr(line, "processing start:");
+          gamma2iso_date(p+18, str);
+          fprintf(fp, "    <initial_offset>%s</initial_offset>\n", str);
+        }
       }
+      FCLOSE(fpFiles);
     }
-    FCLOSE(fpFiles);
-    fpFiles = FOPEN(params->mk_geo_radcal_2_log, "rt");
-    while (NULL != fgets(line, 255, fpFiles)) {
-      if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
-          strstr(line, "mode: 2")) {
-        p = strstr(line, "processing start:");
-        gamma2iso_date(p+18, str);
-        fprintf(fp, "    <refined_offset>%s</refined_offset>\n", str);
+    if (fileExists(params->mk_geo_radcal_2_log)) {
+      fpFiles = FOPEN(params->mk_geo_radcal_2_log, "r");
+      while (NULL != fgets(line, 255, fpFiles)) {
+        if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
+            strstr(line, "mode: 2")) {
+          p = strstr(line, "processing start:");
+          gamma2iso_date(p+18, str);
+          fprintf(fp, "    <refined_offset>%s</refined_offset>\n", str);
+        }
       }
+      FCLOSE(fpFiles);
     }
-    FCLOSE(fpFiles);
-    fpFiles = FOPEN(params->mk_geo_radcal_3_log, "rt");
+    fpFiles = FOPEN(params->mk_geo_radcal_3_log, "r");
     while (NULL != fgets(line, 255, fpFiles)) {
       if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
           strstr(line, "mode: 3")) {
