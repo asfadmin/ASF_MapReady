@@ -14,6 +14,7 @@ localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 localenv.AppendUnique(LIBS = [
     "asf",
     "asf_meta",
+    "m",
 ])
 
 bins = localenv.Program("annotate_image", Glob("*.c"))

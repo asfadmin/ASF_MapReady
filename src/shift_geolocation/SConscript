@@ -17,6 +17,7 @@ localenv.AppendUnique(LIBS = [
     "asf",
     "asf_meta",
     "asf_sar",
+    "asf_proj",
 ])
 
 bins = localenv.Program("shift_geolocation", Glob("*.c"))
