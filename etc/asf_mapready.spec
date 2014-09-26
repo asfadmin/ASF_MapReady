@@ -8,6 +8,8 @@ URL: http://www.asf.alaska.edu
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Prefix: /usr/local
 
+Requires: proj-nad
+
 %description
 The ASF MapReady Remote Sensing Toolkit is a set of tools for
 processing SAR data, including importing the raw CEOS data,
