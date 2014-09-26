@@ -223,11 +223,15 @@ int main(int argc, char **argv)
   strcpy(csvFile, argv[2]);
   char *xmlFile = (char *) MALLOC(sizeof(char)*(strlen(csvFile)+10));
   create_name(xmlFile, csvFile, ".xml");
+
+  // field lengths in the source files
+  const int pid_field_len = 24;
+  const int prod_description_field_len = 40;
+  const int sw_version_field_len = 12;
   
   // General header information
-  char pid[25];	             // RGPS Product Identifier
-  char product_id[20];
-  char prod_description[50]; // Description of this product
+  char pid[pid_field_len + 1];	             // RGPS Product Identifier
+  char prod_description[prod_description_field_len + 1]; // Description of this product
   short	n_images=0;	 // Number of images used in the create of this product
   int n_trajectories=0;      // Number of trajectories
   int n_cells;               // Number of cells
@@ -239,8 +243,7 @@ int main(int argc, char **argv)
   double prod_start_time=0;  // Product start time
   short	prod_end_year=0;     // Product end year
   double prod_end_time=0;	   // Product end time
-  char sw_version[12];       // Software version used to create this product
-  char sw_ver[5];
+  char sw_version[sw_version_field_len + 1];       // Software version used to create this product
   float	n_w_lat;             // North West Latitude of initial datatake
   float	n_w_lon;             // North West Longitude of inital datatake
   float	n_e_lat;             // North East Latitude of initial datatake
@@ -278,17 +281,25 @@ int main(int argc, char **argv)
   
   fpIn = FOPEN(inFile, "rb");
 
-  FREAD(&pid, 24, 1, fpIn);
+  // read the PID field and create a string from it
+  FREAD(&pid, sizeof(pid) - 1, 1, fpIn);
+  pid[sizeof(pid) - 1] = '\0';
+
+  // extract the stream ID character
   stream = pid[5];
-  FREAD(&prod_description, 40, 1, fpIn);
+
+  // read in the product description field and create a string from it
+  FREAD(&prod_description, sizeof(prod_description) - 1, 1, fpIn);
+  prod_description[sizeof(prod_description) - 1] = '\0';
+
   if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) != 0 &&
     strncmp_case(prod_description, "Ice Deformation", 15) != 0 &&
     strncmp_case(prod_description, "Ice Age", 7) != 0 &&
     strncmp_case(prod_description, "Backscatter Histogram", 21) != 0)
     asfPrintError("Could not determine product type!\n");
 
-  snprintf(product_id, 18, "%s", pid);
-  printf("PID: %s\n", product_id);
+
+  printf("PID: %s\n", pid);
   printf("Product description: %s\n", prod_description);
   printf("Stream: %c\n", stream);
   
@@ -310,7 +321,9 @@ int main(int argc, char **argv)
     ieee_big16(prod_end_year);
     FREAD(&prod_end_time, 8, 1, fpIn);
     ieee_big64(prod_end_time);
-    FREAD(&sw_version, 12, 1, fpIn);
+    // read in the version field and create a string from it
+    FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
+    sw_version[sizeof(sw_version) - 1] = '\0';
     FREAD(&n_w_lat, 4, 1, fpIn);
     ieee_big32(n_w_lat);
     FREAD(&n_w_lon, 4, 1, fpIn);
@@ -337,8 +350,7 @@ int main(int argc, char **argv)
     printf("Product start time: %.6f\n", prod_start_time);
     printf("Product end year: %d\n", prod_end_year);
     printf("Product end time: %.6f\n", prod_end_time);
-    snprintf(sw_ver, 5, "%s", sw_version);
-    printf("Software version: %s\n", sw_ver);
+    printf("Software version: %s\n", sw_version);
     printf("NW: %.6f %.6f\n", n_w_lat, n_w_lon);
     printf("NE: %.6f %.6f\n", n_e_lat, n_e_lon);
     printf("SW: %.6f %.6f\n", s_w_lat, s_w_lon);
@@ -465,7 +477,9 @@ int main(int argc, char **argv)
     ieee_big16(prod_end_year);
     FREAD(&prod_end_time, 8, 1, fpIn);
     ieee_big64(prod_end_time);
-    FREAD(&sw_version, 12, 1, fpIn);
+    // read in the version field and create a string from it
+    FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
+    sw_version[sizeof(sw_version) - 1] = '\0';
     FREAD(&n_w_lat, 4, 1, fpIn);
     ieee_big32(n_w_lat);
     FREAD(&n_w_lon, 4, 1, fpIn);
@@ -490,8 +504,7 @@ int main(int argc, char **argv)
     printf("Product start time: %.6f\n", prod_start_time);
     printf("Product end year: %d\n", prod_end_year);
     printf("Product end time: %.6f\n", prod_end_time);
-    snprintf(sw_ver, 5, "%s", sw_version);
-    printf("Software version: %s\n", sw_ver);
+    printf("Software version: %s\n", sw_version);
     printf("NW: %.6f %.6f\n", n_w_lat, n_w_lon);
     printf("NE: %.6f %.6f\n", n_e_lat, n_e_lon);
     printf("SW: %.6f %.6f\n", s_w_lat, s_w_lon);
@@ -605,7 +618,9 @@ int main(int argc, char **argv)
     ieee_big16(prod_end_year);
     FREAD(&prod_end_time, 8, 1, fpIn);
     ieee_big64(prod_end_time);
-    FREAD(&sw_version, 12, 1, fpIn);
+    // read in the version field and create a string from it
+    FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
+    sw_version[sizeof(sw_version) - 1] = '\0';
     FREAD(&n_w_lat, 4, 1, fpIn);
     ieee_big32(n_w_lat);
     FREAD(&n_w_lon, 4, 1, fpIn);
@@ -632,8 +647,7 @@ int main(int argc, char **argv)
     printf("Product start time: %.6f\n", prod_start_time);
     printf("Product end year: %d\n", prod_end_year);
     printf("Product end time: %.6f\n", prod_end_time);
-    snprintf(sw_ver, 5, "%s", sw_version);
-    printf("Software version: %s\n", sw_ver);
+    printf("Software version: %s\n", sw_version);
     printf("NW: %.6f %.6f\n", n_w_lat, n_w_lon);
     printf("NE: %.6f %.6f\n", n_e_lat, n_e_lon);
     printf("SW: %.6f %.6f\n", s_w_lat, s_w_lon);
@@ -863,7 +877,9 @@ int main(int argc, char **argv)
     ieee_big16(prod_end_year);
     FREAD(&prod_end_time, 8, 1, fpIn);
     ieee_big64(prod_end_time);
-    FREAD(&sw_version, 12, 1, fpIn);
+    // read in the version field and create a string from it
+    FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
+    sw_version[sizeof(sw_version) - 1] = '\0';
     FREAD(&n_w_lat, 4, 1, fpIn);
     ieee_big32(n_w_lat);
     FREAD(&n_w_lon, 4, 1, fpIn);
@@ -888,8 +904,7 @@ int main(int argc, char **argv)
     printf("Product start time: %.6f\n", prod_start_time);
     printf("Product end year: %d\n", prod_end_year);
     printf("Product end time: %.6f\n", prod_end_time);
-    snprintf(sw_ver, 5, "%s", sw_version);
-    printf("Software version: %s\n", sw_ver);
+    printf("Software version: %s\n", sw_version);
     printf("NW: %.6f %.6f\n", n_w_lat, n_w_lon);
     printf("NE: %.6f %.6f\n", n_e_lat, n_e_lon);
     printf("SW: %.6f %.6f\n", s_w_lat, s_w_lon);
@@ -1011,7 +1026,7 @@ int main(int argc, char **argv)
   fprintf(fpXml, "  <metadata>\n");
   fprintf(fpXml, "    <product>\n");
   fprintf(fpXml, "      <file type=\"string\" definition=\"name of the product "
-    "file\">%s</file>\n", product_id);
+    "file\">%s</file>\n", pid);
   fprintf(fpXml, "      <format type=\"string\" definition=\"name of the data "
     "format\">CSV</format>\n");
   fprintf(fpXml, "      <stream type=\"string\" definition=\"name of the stream"
@@ -1101,7 +1116,7 @@ int main(int argc, char **argv)
   fprintf(fpXml, "  <processing>\n");
   rgps2iso_date(create_year, create_time, dateStr);
   fprintf(fpXml, "    <creation_time>%s</creation_time>\n", dateStr);
-  fprintf(fpXml, "    <software_version>%s</software_version>\n", sw_ver);
+  fprintf(fpXml, "    <software_version>%s</software_version>\n", sw_version);
   fprintf(fpXml, "  </processing>\n");
   fprintf(fpXml, "  <root>\n");
   fprintf(fpXml, "    <institution>Alaska Satellite Facility</institution>\n");
