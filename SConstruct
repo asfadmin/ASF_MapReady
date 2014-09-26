@@ -193,7 +193,7 @@ lib_build_paths = [os.path.join("#", rpath_link_path) for rpath_link_path in rpa
 globalenv.AppendUnique(LIBPATH = lib_build_paths)
 
 # common command line options
-globalenv.AppendUnique(CCFLAGS = ["-Wall", "-g", "-DMAPREADY_VERSION_STRING=\\\"" + pkg_version + "\\\""])
+globalenv.AppendUnique(CCFLAGS = ["-Wall", "-g", "-O0", "-DMAPREADY_VERSION_STRING=\\\"" + pkg_version + "\\\""])
 globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined", "-Wl,-rpath=\\$$ORIGIN/../lib"] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
 
 # common include directories
