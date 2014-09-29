@@ -378,7 +378,7 @@ get_asf_share_dir()
       /* on UNIX, assume ASF_SHARE_DIR has been set by the configure */
       /* script -- in config.h                                       */
 
-    s_share_dir = ASF_SHARE_DIR;
+    s_share_dir = strdup(ASF_SHARE_DIR);
 
     /* See if this works - check for a known file which              */
     /* is in the asf share directory.                                */
