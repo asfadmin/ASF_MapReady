@@ -310,6 +310,7 @@ void catFile(char *file);
 /***************************************************************************
  * Get the location of the ASF Share Directory, (and some other stuff) */
 const char * get_asf_share_dir(void);
+void cleanup_asf_share_dir(void);
 const char * get_asf_share_dir_with_argv0(const char *);
 const char * get_asf_bin_dir(void);
 const char * get_asf_bin_dir_win(void);
@@ -333,6 +334,7 @@ int asfSystem_NoWait(const char *format, ...);
  * etc should be put).  The application is in charge of setting this!     */
 void set_asf_tmp_dir(const char *tmp_dir);
 const char * get_asf_tmp_dir(void);
+void cleanup_asf_tmp_dir(void);
 FILE * fopen_tmp_file(const char * filename, const char * mode);
 int unlink_tmp_file(const char *filename);
 

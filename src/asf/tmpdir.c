@@ -35,6 +35,14 @@ get_asf_tmp_dir()
   return s_tmp_dir;
 }
 
+/* Reset the s_tmp_dir pointer like it was never initialized. */
+void
+cleanup_asf_tmp_dir(void)
+{
+  FREE(s_tmp_dir);
+  s_tmp_dir = 0;
+}
+
 // internal function, prepending tmp dir to a filename
 // caller must free returned memory
 static char * full_tmp_name (const char *filename)

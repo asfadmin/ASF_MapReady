@@ -218,7 +218,9 @@ FILE *fopen_proj_file(const char *file, const char *mode)
     char share_dir[1024];
 
     // go through files in the share dir
-    sprintf(share_dir, "%s/projections", get_asf_share_dir());
+    char* share_base = get_asf_share_dir();
+    snprintf(share_dir, sizeof(share_dir), "%s/projections", share_base);
+    cleanup_asf_share_dir();
 
     struct dirent *dp;
     DIR *dfd;
