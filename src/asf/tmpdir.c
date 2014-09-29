@@ -28,7 +28,7 @@ get_asf_tmp_dir()
   if (!s_tmp_dir) {
 
     // default to current directory
-    s_tmp_dir = strdup(".");
+    s_tmp_dir = ".";
 
   }
 
