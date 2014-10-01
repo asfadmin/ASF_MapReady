@@ -334,7 +334,7 @@ int asfSystem_NoWait(const char *format, ...);
  * etc should be put).  The application is in charge of setting this!     */
 void set_asf_tmp_dir(const char *tmp_dir);
 const char * get_asf_tmp_dir(void);
-void cleanup_asf_tmp_dir(void);
+void cleanup_asf_share_dir(void);
 FILE * fopen_tmp_file(const char * filename, const char * mode);
 int unlink_tmp_file(const char *filename);
 
