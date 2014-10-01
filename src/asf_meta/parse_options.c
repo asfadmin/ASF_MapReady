@@ -831,6 +831,10 @@ static resample_method_t parse_resample_method_option(int *argc, char **argv[])
     {
       ret = RESAMPLE_BICUBIC;
     }
+    else
+    {
+      asfPrintError("Unrecognized resampling method: %s\n", resample_method);
+    }
   }
   else
   {

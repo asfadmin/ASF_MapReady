@@ -1490,18 +1490,21 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
   switch ( resample_method ) {
     case RESAMPLE_NEAREST_NEIGHBOR:
+      asfPrintStatus("Resample Method: Nearest Neighbor\n");
       float_image_sample_method =
         FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
       uint8_image_sample_method =
         UINT8_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
       break;
     case RESAMPLE_BILINEAR:
+      asfPrintStatus("Resample Method: Bilinear\n");
       float_image_sample_method =
         FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
       uint8_image_sample_method =
         UINT8_IMAGE_SAMPLE_METHOD_BILINEAR;
       break;
     case RESAMPLE_BICUBIC:
+      asfPrintStatus("Resample Method: Bicubic\n");
       float_image_sample_method =
         FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;
       uint8_image_sample_method =
@@ -2513,11 +2516,16 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 	      }
 	    } // end of for-each-sample-in-line set output values
 	    
+	    /* Removing all of this -- we will make the user do the geoid
+             * correction themselves since we can't reliably tell if has
+             * been done or not
+             * KH 8/21/14
+             *
 	    // If we are reprojecting a DEM, need to account for the height
 	    // difference between the vertical datum (NGVD27) and our WGS84
 	    // ellipsoid. Since geoid heights closely match vertical datum
 	    // heights, this will work for SAR imagery
-	    if ( imd->general->image_data_type == DEM ) {
+	    if (imd->general->image_data_type == DEM ) {
 	      
 	      // At present, don't handle byte DEMs.  Don't think such a thing
 	      // is even possible, really.
@@ -2559,7 +2567,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 	      free(lat);
 	      free(lon);
 	    }
-	    
+	    */
+
 	    // write the line, if we're doing line-by-line output
 	    if (output_by_line) {
               put_float_line(outFp, omd, oiy, output_line);

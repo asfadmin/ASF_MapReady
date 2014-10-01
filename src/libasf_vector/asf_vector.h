@@ -99,16 +99,24 @@ typedef struct {
   int gpid;
   int obs_year;
   double obs_time;
+  int birth_year;
+  double birth_time;
+  int death_year;
+  double death_time;
   double x;
   double y;
 } rgps_grid_t;
 
-// RGPS connectivity
+// RGPS cell
 typedef struct {
   int cell_id;
   int grid_id;
   int order;
-} rgps_con_t;
+  int birth_year;
+  double birth_time;
+  int death_year;
+  double death_time;
+} rgps_cell_t;
 
 // Prototype from config.c
 typedef struct

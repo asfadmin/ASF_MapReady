@@ -32,20 +32,7 @@ localenv.AppendUnique(LIBS = [
     "tiff",
 ])
 
-libs = localenv.SharedLibrary("libasf_export", [
-        "asf_export.c",
-        "export_band.c",
-	"export_geotiff.c",
-        "export_netcdf.c",
-        "export_hdf.c",
-        "export_polsarpro.c",
-        "export_as_envi.c",
-        "export_as_esri.c",
-        "util.c",
-        "keys.c",
-        "brs2jpg.c",
-        "write_line.c",
-        ])
+bins = localenv.Program("measures_hdf2csv", Glob("*.c"))
 
-localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)
 

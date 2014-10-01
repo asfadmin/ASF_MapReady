@@ -208,6 +208,9 @@ void export_netcdf_xml(const char *xmlFile, char *outFile);
 void export_hdf(const char *in_base_name, char *output_file_name,
   int *noutputs,char ***output_names);
 
+// Prototypes from export_geotiff.c
+void export_geotiff(const char *input_file_list, const char *output_file_name);
+
 // Prototypes from export_polsarpro.c
 void initialize_polsarpro_file(const char *output_file_name,
 			       meta_parameters *meta, FILE **fpOut);

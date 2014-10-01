@@ -27,6 +27,7 @@
 #define TOOL_USAGE \
     TOOL_NAME" [-log <logfile>] [-height height] [-width width] \n "\
     "        [-to <metadata file>] [-license] [-version] [-help]\n"\
+    "        [-lat1 <lat> -lat2 <lat> -lon1 <lon> -lon2 <lon>]\n"\
     "        <infile> <outfile> <new_top_line> <new_left_sample>\n"
 
 // TOOL_DESCRIPTION is required
@@ -76,6 +77,10 @@
     "        Trims the input file to the extent of the metadata file.  With this\n" \
     "        option you would not use -width, -height, or the new start line and\n" \
     "        sample values.\n"\
+    "   -lat1 <lat> -lat2 <lat> -lon1 <lon> -lon2 <lon>\n"\
+    "        Specifies a lat/lon boundary box to use for trimming.  With these\n"\
+    "        options you would not use -width, -height, or the new start lien and\n"\
+    "        sample vaules.\n"\
     "   -license\n" \
     "        Print copyright and license for this software then exit.\n" \
     "   -version\n" \
@@ -93,7 +98,10 @@
     "   > trim -width 100 -height 100 test test_trimmed 50 200\n"\
     "\n"\
     "   Trim test.img to the extent of \"section.meta\".\n"\
-    "   > trim -to section test test_trimmed\n"
+    "   > trim -to section test test_trimmed\n"\
+    "\n"\
+    "   Trim test.img to the lat/lon area (64,-146) - (65,-147)\n"\
+    "   > trim -lat1 64 -lat2 65 -lon1 -146 -lon2 -147 test test_trimmed\n"
 
 // TOOL_LIMITATIONS is required but is allowed to be an empty string
 #ifdef  TOOL_LIMITATIONS

@@ -40,11 +40,11 @@ dictionary = rgps_lp_data_dictionary.csv
 
 [RGPS_DP_GRID]
 type = point
-dictionary = rgps_dp_data_dictionary.csv
+dictionary = rgps_dp_grid_data_dictionary.csv
 
 [RGPS_DP_CELL]
 type = polygon
-dictionary = rgps_dp_data_dictionary.csv
+dictionary = rgps_dp_cell_data_dictionary.csv
 
 [RGPS_EP_GRID]
 type = line

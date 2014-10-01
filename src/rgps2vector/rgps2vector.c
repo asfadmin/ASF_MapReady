@@ -55,7 +55,7 @@ void rgps_cell2shape(char *line, int nCols, DBFHandle dbase, SHPHandle shape,
     x[ii] = atof(col[nCols+ii*2]);
     y[ii] = atof(col[nCols+ii*2+1]);
   }
-  FREE(col);
+  free_char_array(&col, nColumns);
 
   // Write information into database file
   for (ii=0; ii<nCols; ii++) {
@@ -98,7 +98,8 @@ void rgps_grid2shape(char *line, DBFHandle dbase, SHPHandle shape, int n,
     else if (dbf[ii].format == CSV_INTEGER)
       dbf[ii].nValue = atoi(col[ii]);
   }
-  FREE(col);
+  free_char_array(&col, nCols);
+
 
   // Write information into database file
   for (ii=0; ii<nCols; ii++) {
@@ -150,7 +151,7 @@ void rgps_line2shape(char *line, int nCols, DBFHandle dbase, SHPHandle shape,
   int nCoords = nXMap;
   double *x = (double *) MALLOC(sizeof(double)*nCoords);
   double *y = (double *) MALLOC(sizeof(double)*nCoords);
-  FREE(col);
+  free_char_array(&col, nColumns);
 
   // Write information into database file
   for (ii=0; ii<nCols; ii++) {
