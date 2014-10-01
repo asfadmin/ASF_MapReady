@@ -271,12 +271,12 @@ int main(int argc, char **argv)
   // Time and projection
   double lat, lon, height;
   float bsr_low[25], bsr_high[25];
-  meta_parameters *meta = raw_init();
+  meta_parameters *meta=NULL;
   project_parameters_t pps;
   projection_type_t proj_type;
   datum_type_t datum;
   spheroid_type_t spheroid;
-  meta_projection *proj = meta_projection_init();
+  meta_projection *proj;
   char dateStr[30];
   
   fpIn = FOPEN(inFile, "rb");
@@ -431,7 +431,7 @@ int main(int argc, char **argv)
           &pps, &proj_type, &datum, &spheroid);
         pps.ps.false_easting = 0.0;
         pps.ps.false_northing = 0.0;
-        //proj = meta_projection_init();
+        proj = meta_projection_init();
         proj->type = proj_type;
         proj->datum = HUGHES_DATUM;
         proj->spheroid = HUGHES_SPHEROID;
@@ -440,7 +440,7 @@ int main(int argc, char **argv)
         proj->hem = 'N';
         spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
         proj_to_latlon(proj, map_x, map_y, 0.0, &lat, &lon, &height);
-        //meta = raw_init();
+        meta = raw_init();
         meta->projection = proj;
         for (ll=0; ll<n_images; ll++) {
           if ((obs[kk].year == image[ll].year) &&
@@ -579,7 +579,7 @@ int main(int argc, char **argv)
                  &pps, &proj_type, &datum, &spheroid);
         pps.ps.false_easting = 0.0;
         pps.ps.false_northing = 0.0;
-        //proj = meta_projection_init();
+        proj = meta_projection_init();
         proj->type = proj_type;
         proj->datum = HUGHES_DATUM;
         proj->spheroid = HUGHES_SPHEROID;
@@ -588,7 +588,7 @@ int main(int argc, char **argv)
         proj->hem = 'N';
         spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
         proj_to_latlon(proj, map_x, map_y, 0.0, &lat, &lon, &height);
-        //meta = raw_init();
+        meta = raw_init();
         meta->projection = proj;
         fprintf(fpOut, "%d,%c,%d,%.6f,", cell_id, stream, birth_year, 
           birth_time);
@@ -718,7 +718,7 @@ int main(int argc, char **argv)
                  &pps, &proj_type, &datum, &spheroid);
         pps.ps.false_easting = 0.0;
         pps.ps.false_northing = 0.0;
-        //proj = meta_projection_init();
+        proj = meta_projection_init();
         proj->type = proj_type;
         proj->datum = HUGHES_DATUM;
         proj->spheroid = HUGHES_SPHEROID;
@@ -727,7 +727,7 @@ int main(int argc, char **argv)
         proj->hem = 'N';
         spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
         proj_to_latlon(proj, map_x, map_y, 0.0, &lat, &lon, &height);
-        //meta = raw_init();
+        meta = raw_init();
         meta->projection = proj;
       
         // Read ice age information
@@ -991,7 +991,7 @@ int main(int argc, char **argv)
                  &pps, &proj_type, &datum, &spheroid);
         pps.ps.false_easting = 0.0;
         pps.ps.false_northing = 0.0;
-        //proj = meta_projection_init();
+        proj = meta_projection_init();
         proj->type = proj_type;
         proj->datum = HUGHES_DATUM;
         proj->spheroid = HUGHES_SPHEROID;
@@ -1018,14 +1018,10 @@ int main(int argc, char **argv)
   }
   
   // Generate metadata
-  char* iso_str = iso_date();
-  sprintf(isoStr, "%s", iso_str);
-  FREE(iso_str);
+  sprintf(isoStr, "%s", iso_date());
   FILE *fpXml = FOPEN(xmlFile, "w");
   fprintf(fpXml, "<rgps>\n");
-  char* granule_str = stripExt(csvFile);
-  fprintf(fpXml, "  <granule>%s</granule>\n", granule_str);
-  FREE(granule_str);
+  fprintf(fpXml, "  <granule>%s</granule>\n", stripExt(csvFile));
   fprintf(fpXml, "  <metadata_creation>%s</metadata_creation>\n", isoStr);
   fprintf(fpXml, "  <metadata>\n");
   fprintf(fpXml, "    <product>\n");
@@ -1143,7 +1139,6 @@ int main(int argc, char **argv)
   FREE(inFile);
   FREE(csvFile);
   FREE(xmlFile);
-  meta_free(meta);
   
   return 0;
 }
