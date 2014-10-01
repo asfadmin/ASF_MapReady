@@ -451,8 +451,8 @@ get_asf_share_dir()
 	}
 	while (*p++ != '\0');
 
-	//if (!found)
-	//    printf("Using default share dir: %s\n", s_share_dir);
+	if (!found)
+	    printf("Using default share dir: %s\n", s_share_dir);
 
 	FREE(buf);
 	FREE(share);
@@ -470,13 +470,6 @@ get_asf_share_dir()
   }
 
   return s_share_dir;
-}
-
-void
-cleanup_asf_share_dir(void)
-{
-  FREE(s_share_dir);
-  s_share_dir = 0;
 }
 
 FILE * 

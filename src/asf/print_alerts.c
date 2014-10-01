@@ -12,9 +12,7 @@ report_level_t g_report_level=REPORT_LEVEL_WARNING;
 
 static void check_stop()
 {
-    char* tmp_dir = get_asf_tmp_dir();
-    snprintf(logbuf, sizeof(logbuf), "%s/stop.txt", tmp_dir);
-    cleanup_asf_tmp_dir();
+    snprintf(logbuf, sizeof(logbuf), "%s/stop.txt", get_asf_tmp_dir());
     if (fileExists(logbuf)) {
         remove(logbuf);
         asfPrintError("Interrupted by user.\n");
