@@ -294,23 +294,17 @@ int main(int argc, char **argv)
   
   fpIn = FOPEN(inFile, "rb");
 
-<<<<<<< HEAD
-  ASF_FREAD(&pid, 24, 1, fpIn);
-  stream = pid[5];
-  ASF_FREAD(&prod_description, 40, 1, fpIn);
-=======
   // read the PID field and create a string from it
-  FREAD(&pid, sizeof(pid) - 1, 1, fpIn);
+  ASF_FREAD(&pid, sizeof(pid) - 1, 1, fpIn);
   pid[sizeof(pid) - 1] = '\0';
 
   // extract the stream ID character
   stream = pid[5];
 
   // read in the product description field and create a string from it
-  FREAD(&prod_description, sizeof(prod_description) - 1, 1, fpIn);
+  ASF_FREAD(&prod_description, sizeof(prod_description) - 1, 1, fpIn);
   prod_description[sizeof(prod_description) - 1] = '\0';
 
->>>>>>> ef760e236b31af6e21815e133e3032e3786995c1
   if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) != 0 &&
     strncmp_case(prod_description, "Ice Deformation", 15) != 0 &&
     strncmp_case(prod_description, "Ice Age", 7) != 0 &&
