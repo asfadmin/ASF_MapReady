@@ -160,7 +160,7 @@ int main(int argc,char *argv[])
 		short int	refVal;
 
 		proj_x = metaSource->projection->startX;
-		FREAD(inBuf, sample_count*sizeof(float),1, fpIn);
+		ASF_FREAD(inBuf, sample_count*sizeof(float),1, fpIn);
 
 		/* For each sample in this line */
 		for (samp = 0; samp < sample_count; 
@@ -308,7 +308,7 @@ short int getRefValue(int rline,int rsamp, int sample_count)
 		exit(1);
 	      }
 	    FSEEK64(fpRefIn,file_offset,SEEK_SET);
-	    FREAD(dataValues,bufSize*sample_count*sizeof(short int),1,fpRefIn);
+	    ASF_FREAD(dataValues,bufSize*sample_count*sizeof(short int),1,fpRefIn);
 	    start_line = rline-bufSize/2;
 	  }
 	line_off = rline - start_line;

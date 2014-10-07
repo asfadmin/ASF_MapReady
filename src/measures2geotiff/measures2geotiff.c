@@ -270,7 +270,7 @@ int main(int argc, char **argv)
   // Read the data
   long pixel_count = line_count*sample_count;
   float *floatBuf = (float *) MALLOC(sizeof(float)*pixel_count*num);
-  FREAD(&floatBuf[0], sizeof(float), pixel_count*num, fpIn);
+  ASF_FREAD(&floatBuf[0], sizeof(float), pixel_count*num, fpIn);
   FCLOSE(fpIn);
   
   // Work the metadata

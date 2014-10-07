@@ -106,7 +106,7 @@ int read_terrasar_client(int row_start, int n_rows_to_get,
     long long offset = 
       (long long) (info->header + (ii*skip + row_start) * info->width);
     FSEEK(info->fp, offset, SEEK_SET);
-    FREAD(shorts, sizeof(short int), ns*2, info->fp);
+    ASF_FREAD(shorts, sizeof(short int), ns*2, info->fp);
     for (jj=0; jj<ns; jj++) 
       dest[jj + ii*ns] = hypot(shorts[jj*2], shorts[jj*2+1]);
   }
@@ -136,7 +136,7 @@ int get_terrasar_thumbnail_data(int thumb_size_x, int thumb_size_y,
     int line = ii*sf;
     long long offset = (long long) (info->header + line*info->width);
     FSEEK(info->fp, offset, SEEK_SET);
-    FREAD(shorts, sizeof(short int), ns*2, info->fp);
+    ASF_FREAD(shorts, sizeof(short int), ns*2, info->fp);
     for (jj=0; jj<thumb_size_x; jj++)
       dest[jj + ii*thumb_size_x] = hypot(shorts[jj*sf*2], shorts[jj*sf*2+1]);
     asfPercentMeter((float)ii/(thumb_size_y - 1));
@@ -181,28 +181,28 @@ meta_parameters *open_terrasar(const char *data_name, const char *meta_name,
   
   unsigned char intValue[4];
   int asfv, aslv, rsfv, rslv;
-  FREAD(&intValue, 1, 4, fpIn);
+  ASF_FREAD(&intValue, 1, 4, fpIn);
   //int bytes_in_burst = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
+  ASF_FREAD(&intValue, 1, 4, fpIn);
   //int range_sample_relative_index = bigInt32(intValue);;
-  FREAD(&intValue, 1, 4, fpIn);
+  ASF_FREAD(&intValue, 1, 4, fpIn);
   int range_samples = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
+  ASF_FREAD(&intValue, 1, 4, fpIn);
   int azimuth_samples = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
+  ASF_FREAD(&intValue, 1, 4, fpIn);
   //int burst_index = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
+  ASF_FREAD(&intValue, 1, 4, fpIn);
   int rangeline_total_number_bytes = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
+  ASF_FREAD(&intValue, 1, 4, fpIn);
   int total_number_lines = bigInt32(intValue);
-  FREAD(&intValue, 1, 4, fpIn);
+  ASF_FREAD(&intValue, 1, 4, fpIn);
   
   // Check for the first and last azimuth and range pixel
   int kk;
   asfv = 1; // azimuth sample first valid
   FSEEK(fpIn, 2*rangeline_total_number_bytes+8, SEEK_SET);
   for (kk=2; kk<range_samples; kk++) {
-    FREAD(&intValue, 1, 4, fpIn);
+    ASF_FREAD(&intValue, 1, 4, fpIn);
     if (bigInt32(intValue) > asfv)
       asfv = bigInt32(intValue);
   }
@@ -210,7 +210,7 @@ meta_parameters *open_terrasar(const char *data_name, const char *meta_name,
   aslv = azimuth_samples; // azimuth sample last valid
   FSEEK(fpIn, 3*rangeline_total_number_bytes+8, SEEK_SET);
   for (kk=2; kk<range_samples; kk++) {
-    FREAD(&intValue, 1, 4, fpIn);
+    ASF_FREAD(&intValue, 1, 4, fpIn);
     if (bigInt32(intValue) < aslv)
       aslv = bigInt32(intValue);
   }
@@ -219,10 +219,10 @@ meta_parameters *open_terrasar(const char *data_name, const char *meta_name,
   rslv = range_samples; // range sample last valid
   for (kk=4; kk<total_number_lines; kk++) {
     FSEEK(fpIn, 4*rangeline_total_number_bytes, SEEK_SET);
-    FREAD(&intValue, 1, 4, fpIn);
+    ASF_FREAD(&intValue, 1, 4, fpIn);
     if (bigInt32(intValue) > rsfv)
       rsfv = bigInt32(intValue);
-    FREAD(&intValue, 1, 4, fpIn);
+    ASF_FREAD(&intValue, 1, 4, fpIn);
     if (bigInt32(intValue) < rslv)
       rslv = bigInt32(intValue);
   }

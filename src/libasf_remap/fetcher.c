@@ -108,7 +108,7 @@ void read_line(fetchRec *g,int y,float *destBuf,int destLen)
 		unsigned int bytesPerLine=2*sizeof(float)*maxInX;
 		float *inputBuffer=(float *)MALLOC(bytesPerLine);
 		FSEEK64(g->inFile,(long long) y*bytesPerLine,0);
-		FREAD(inputBuffer,1,bytesPerLine,g->inFile);
+		ASF_FREAD(inputBuffer,1,bytesPerLine,g->inFile);
 		
 		if (g->getRealCpx) /*Fetch Real fields from complex data.*/
 			for (x=0;x<maxInX;x++) {
@@ -185,7 +185,7 @@ float *readBlock(fetchRec *g,int imgX,int imgY)
 	int by=PIX2BLOCK(imgY);
 	/*printf("Loading block at %d,%d: %d\n",imgX,imgY,by*g->blockWid+bx);*/
 	FSEEK64(g->blockIn,(long long)BLOCK_SIZE*(by*g->blockWid+bx),0);
-	FREAD(retBlock,1,BLOCK_SIZE,g->blockIn);
+	ASF_FREAD(retBlock,1,BLOCK_SIZE,g->blockIn);
 	
 /*Now we make sure our pixel buffer isn't getting TOO big.*/
 	g->blocksInCache++;

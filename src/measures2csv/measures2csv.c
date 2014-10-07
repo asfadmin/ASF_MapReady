@@ -295,14 +295,14 @@ int main(int argc, char **argv)
   fpIn = FOPEN(inFile, "rb");
 
   // read the PID field and create a string from it
-  FREAD(&pid, sizeof(pid) - 1, 1, fpIn);
+  ASF_FREAD(&pid, sizeof(pid) - 1, 1, fpIn);
   pid[sizeof(pid) - 1] = '\0';
 
   // extract the stream ID character
   stream = pid[5];
 
   // read in the product description field and create a string from it
-  FREAD(&prod_description, sizeof(prod_description) - 1, 1, fpIn);
+  ASF_FREAD(&prod_description, sizeof(prod_description) - 1, 1, fpIn);
   prod_description[sizeof(prod_description) - 1] = '\0';
 
   if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) != 0 &&
@@ -317,41 +317,42 @@ int main(int argc, char **argv)
   printf("Stream: %c\n", stream);
   
   if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) == 0) {
-    FREAD(&n_images, 2, 1, fpIn);
+    ASF_FREAD(&n_images, 2, 1, fpIn);
     ieee_big16(n_images);
-    FREAD(&n_trajectories, 4, 1, fpIn);
+    ASF_FREAD(&n_trajectories, 4, 1, fpIn);
     ieee_big32(n_trajectories);
-    FREAD(&prod_type, 8, 1, fpIn);
-    FREAD(&create_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_type, 8, 1, fpIn);
+    ASF_FREAD(&create_year, 2, 1, fpIn);
     ieee_big16(create_year);
-    FREAD(&create_time, 8, 1, fpIn);
+    ASF_FREAD(&create_time, 8, 1, fpIn);
     ieee_big64(create_time);
-    FREAD(&prod_start_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_start_year, 2, 1, fpIn);
     ieee_big16(prod_start_year);
-    FREAD(&prod_start_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_start_time, 8, 1, fpIn);
     ieee_big64(prod_start_time);
-    FREAD(&prod_end_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_end_year, 2, 1, fpIn);
     ieee_big16(prod_end_year);
-    FREAD(&prod_end_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_end_time, 8, 1, fpIn);
     ieee_big64(prod_end_time);
+
     // read in the version field and create a string from it
-    FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
+    ASF_FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
     sw_version[sizeof(sw_version) - 1] = '\0';
-    FREAD(&n_w_lat, 4, 1, fpIn);
+    ASF_FREAD(&n_w_lat, 4, 1, fpIn);
     ieee_big32(n_w_lat);
-    FREAD(&n_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_w_lon, 4, 1, fpIn);
     ieee_big32(n_w_lon);
-    FREAD(&n_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lat, 4, 1, fpIn);
     ieee_big32(n_e_lat);
-    FREAD(&n_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lon, 4, 1, fpIn);
     ieee_big32(n_e_lon);
-    FREAD(&s_w_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lat, 4, 1, fpIn);
     ieee_big32(s_w_lat);
-    FREAD(&s_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lon, 4, 1, fpIn);
     ieee_big32(s_w_lon);
-    FREAD(&s_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lat, 4, 1, fpIn);
     ieee_big32(s_e_lat);
-    FREAD(&s_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lon, 4, 1, fpIn);
     ieee_big32(s_e_lon);
     
     printf("Number images: %d\n", n_images);
@@ -375,14 +376,14 @@ int main(int argc, char **argv)
         
     image = (image_t *) MALLOC(sizeof(image_t)*n_images);
     for (ii=0; ii<n_images; ii++) {
-      FREAD(&image[ii].id, 16, 1, fpIn);
-      FREAD(&image[ii].year, 2, 1, fpIn);
+      ASF_FREAD(&image[ii].id, 16, 1, fpIn);
+      ASF_FREAD(&image[ii].year, 2, 1, fpIn);
       ieee_big16(image[ii].year);
-      FREAD(&image[ii].time, 8, 1, fpIn);
+      ASF_FREAD(&image[ii].time, 8, 1, fpIn);
       ieee_big64(image[ii].time);
-      FREAD(&image[ii].map_x, 8, 1, fpIn);
+      ASF_FREAD(&image[ii].map_x, 8, 1, fpIn);
       ieee_big64(image[ii].map_x);
-      FREAD(&image[ii].map_y, 8, 1, fpIn);
+      ASF_FREAD(&image[ii].map_y, 8, 1, fpIn);
       ieee_big64(image[ii].map_y);
       /*
       printf("Image (%d) ID: %s\n", ii+1, image[ii].id);
@@ -396,17 +397,17 @@ int main(int argc, char **argv)
       "BIRTH_YEAR,BIRTH_TIME,DEATH_YEAR,DEATH_TIME,N_OBS,OBS_YEAR,OBS_TIME,"
       "X_MAP,Y_MAP,LAT,LON,Q_FLAG\n");
     for (ii=0; ii<n_trajectories; ii++) {
-      FREAD(&gpid, 4, 1, fpIn);
+      ASF_FREAD(&gpid, 4, 1, fpIn);
       ieee_big32(gpid);
-      FREAD(&birth_year, 2, 1, fpIn);
+      ASF_FREAD(&birth_year, 2, 1, fpIn);
       ieee_big16(birth_year);
-      FREAD(&birth_time, 8, 1, fpIn);
+      ASF_FREAD(&birth_time, 8, 1, fpIn);
       ieee_big64(birth_time);
-      FREAD(&death_year, 2, 1, fpIn);
+      ASF_FREAD(&death_year, 2, 1, fpIn);
       ieee_big16(death_year);
-      FREAD(&death_time, 8, 1, fpIn);
+      ASF_FREAD(&death_time, 8, 1, fpIn);
       ieee_big64(death_time);
-      FREAD(&n_int_obs, 4, 1, fpIn);
+      ASF_FREAD(&n_int_obs, 4, 1, fpIn);
       ieee_big32(n_int_obs);
       
       printf("GPID: %d\r", gpid);
@@ -418,15 +419,15 @@ int main(int argc, char **argv)
       ice_motion_obs_t *obs = 
       	(ice_motion_obs_t *) MALLOC(sizeof(ice_motion_obs_t)*n_int_obs);
       for (kk=0; kk<n_int_obs; kk++) {
-        FREAD(&obs[kk].year, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].year, 2, 1, fpIn);
         ieee_big16(obs[kk].year);
-        FREAD(&obs[kk].time, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].time, 8, 1, fpIn);
         ieee_big64(obs[kk].time);
-        FREAD(&obs[kk].map_x, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_x, 8, 1, fpIn);
         ieee_big64(obs[kk].map_x);
-        FREAD(&obs[kk].map_y, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_y, 8, 1, fpIn);
         ieee_big64(obs[kk].map_y);
-        FREAD(&obs[kk].q_flag, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].q_flag, 2, 1, fpIn);
         ieee_big16(obs[kk].q_flag);
         /*
         printf("Observation: %d, %.6f\n", obs[kk].year, obs[kk].time);
@@ -464,38 +465,39 @@ int main(int argc, char **argv)
     FREE(image);
   }
   else if (strncmp_case(prod_description, "Ice Deformation", 15) == 0) {
-    FREAD(&n_cells, 4, 1, fpIn);
+    ASF_FREAD(&n_cells, 4, 1, fpIn);
     ieee_big32(n_cells);
-    FREAD(&create_year, 2, 1, fpIn);
+    ASF_FREAD(&create_year, 2, 1, fpIn);
     ieee_big16(create_year);
-    FREAD(&create_time, 8, 1, fpIn);
+    ASF_FREAD(&create_time, 8, 1, fpIn);
     ieee_big64(create_time);
-    FREAD(&prod_start_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_start_year, 2, 1, fpIn);
     ieee_big16(prod_start_year);
-    FREAD(&prod_start_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_start_time, 8, 1, fpIn);
     ieee_big64(prod_start_time);
-    FREAD(&prod_end_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_end_year, 2, 1, fpIn);
     ieee_big16(prod_end_year);
-    FREAD(&prod_end_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_end_time, 8, 1, fpIn);
     ieee_big64(prod_end_time);
+
     // read in the version field and create a string from it
-    FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
+    ASF_FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
     sw_version[sizeof(sw_version) - 1] = '\0';
-    FREAD(&n_w_lat, 4, 1, fpIn);
+    ASF_FREAD(&n_w_lat, 4, 1, fpIn);
     ieee_big32(n_w_lat);
-    FREAD(&n_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_w_lon, 4, 1, fpIn);
     ieee_big32(n_w_lon);
-    FREAD(&n_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lat, 4, 1, fpIn);
     ieee_big32(n_e_lat);
-    FREAD(&n_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lon, 4, 1, fpIn);
     ieee_big32(n_e_lon);
-    FREAD(&s_w_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lat, 4, 1, fpIn);
     ieee_big32(s_w_lat);
-    FREAD(&s_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lon, 4, 1, fpIn);
     ieee_big32(s_w_lon);
-    FREAD(&s_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lat, 4, 1, fpIn);
     ieee_big32(s_e_lat);
-    FREAD(&s_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lon, 4, 1, fpIn);
     ieee_big32(s_e_lon);
         
     printf("Number cells: %d\n", n_cells);
@@ -520,13 +522,13 @@ int main(int argc, char **argv)
       "OBS_TIME,X_MAP,Y_MAP,LAT,LON,X_DISP,Y_DISP,C_AREA,D_AREA,DTP,DUDX,DUDY,"
       "DVDX,DVDY\n");
     for (ii=0; ii<n_cells; ii++) {
-      FREAD(&cell_id, 4, 1, fpIn);
+      ASF_FREAD(&cell_id, 4, 1, fpIn);
       ieee_big32(cell_id);
-      FREAD(&birth_year, 2, 1, fpIn);
+      ASF_FREAD(&birth_year, 2, 1, fpIn);
       ieee_big16(birth_year);
-      FREAD(&birth_time, 8, 1, fpIn);
+      ASF_FREAD(&birth_time, 8, 1, fpIn);
       ieee_big64(birth_time);
-      FREAD(&n_short_obs, 2, 1, fpIn);
+      ASF_FREAD(&n_short_obs, 2, 1, fpIn);
       ieee_big16(n_short_obs);
       
       printf("Cell ID: %d\r", cell_id);
@@ -537,31 +539,31 @@ int main(int argc, char **argv)
       ice_deform_obs_t *obs = 
       	(ice_deform_obs_t *) MALLOC(sizeof(ice_deform_obs_t)*n_short_obs);
       for (kk=0; kk<n_short_obs; kk++) {
-        FREAD(&obs[kk].year, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].year, 2, 1, fpIn);
         ieee_big16(obs[kk].year);
-        FREAD(&obs[kk].time, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].time, 8, 1, fpIn);
         ieee_big64(obs[kk].time);
-        FREAD(&obs[kk].map_x, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_x, 8, 1, fpIn);
         ieee_big64(obs[kk].map_x);
-        FREAD(&obs[kk].map_y, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_y, 8, 1, fpIn);
         ieee_big64(obs[kk].map_y);
-        FREAD(&obs[kk].disp_x, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].disp_x, 8, 1, fpIn);
         ieee_big64(obs[kk].disp_x);
-        FREAD(&obs[kk].disp_y, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].disp_y, 8, 1, fpIn);
         ieee_big64(obs[kk].disp_y);
-        FREAD(&obs[kk].cell_area, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].cell_area, 4, 1, fpIn);
         ieee_big32(obs[kk].cell_area);
-        FREAD(&obs[kk].diff_area, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].diff_area, 4, 1, fpIn);
         ieee_big32(obs[kk].diff_area);
-        FREAD(&obs[kk].dtp, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].dtp, 4, 1, fpIn);
         ieee_big32(obs[kk].dtp);
-        FREAD(&obs[kk].dudx, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].dudx, 4, 1, fpIn);
         ieee_big32(obs[kk].dudx);
-        FREAD(&obs[kk].dudy, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].dudy, 4, 1, fpIn);
         ieee_big32(obs[kk].dudy);
-        FREAD(&obs[kk].dvdx, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].dvdx, 4, 1, fpIn);
         ieee_big32(obs[kk].dvdx);
-        FREAD(&obs[kk].dvdy, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].dvdy, 4, 1, fpIn);
         ieee_big32(obs[kk].dvdy);
         /*
         printf("\nObservation: %d, %.6f\n", obs[kk].year, obs[kk].time);
@@ -593,40 +595,41 @@ int main(int argc, char **argv)
     }
   }  
   else if (strncmp_case(prod_description, "Ice Age", 7) == 0) {
-    FREAD(&n_cells, 4, 1, fpIn);
+    ASF_FREAD(&n_cells, 4, 1, fpIn);
     ieee_big32(n_cells);
-    FREAD(&create_year, 2, 1, fpIn);
+    ASF_FREAD(&create_year, 2, 1, fpIn);
     ieee_big16(create_year);
-    FREAD(&create_time, 8, 1, fpIn);
+    ASF_FREAD(&create_time, 8, 1, fpIn);
     ieee_big64(create_time);
-    FREAD(&prod_start_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_start_year, 2, 1, fpIn);
     ieee_big16(prod_start_year);
-    FREAD(&prod_start_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_start_time, 8, 1, fpIn);
     ieee_big64(prod_start_time);
-    FREAD(&prod_end_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_end_year, 2, 1, fpIn);
     ieee_big16(prod_end_year);
-    FREAD(&prod_end_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_end_time, 8, 1, fpIn);
     ieee_big64(prod_end_time);
+
     // read in the version field and create a string from it
-    FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
+    ASF_FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
     sw_version[sizeof(sw_version) - 1] = '\0';
-    FREAD(&n_w_lat, 4, 1, fpIn);
+    ASF_FREAD(&n_w_lat, 4, 1, fpIn);
     ieee_big32(n_w_lat);
-    FREAD(&n_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_w_lon, 4, 1, fpIn);
     ieee_big32(n_w_lon);
-    FREAD(&n_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lat, 4, 1, fpIn);
     ieee_big32(n_e_lat);
-    FREAD(&n_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lon, 4, 1, fpIn);
     ieee_big32(n_e_lon);
-    FREAD(&s_w_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lat, 4, 1, fpIn);
     ieee_big32(s_w_lat);
-    FREAD(&s_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lon, 4, 1, fpIn);
     ieee_big32(s_w_lon);
-    FREAD(&s_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lat, 4, 1, fpIn);
     ieee_big32(s_e_lat);
-    FREAD(&s_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lon, 4, 1, fpIn);
     ieee_big32(s_e_lon);
-    FREAD(&thick_step, 4, 1, fpIn);
+    ASF_FREAD(&thick_step, 4, 1, fpIn);
     ieee_big32(thick_step);
     
     printf("Number cells: %d\n", n_cells);
@@ -655,15 +658,15 @@ int main(int argc, char **argv)
       "RIDGE_FLAG\n");
 
     for (ii=0; ii<n_cells; ii++) {
-      FREAD(&cell_id, 4, 1, fpIn);
+      ASF_FREAD(&cell_id, 4, 1, fpIn);
       ieee_big32(cell_id);
-      FREAD(&birth_year, 2, 1, fpIn);
+      ASF_FREAD(&birth_year, 2, 1, fpIn);
       ieee_big16(birth_year);
-      FREAD(&birth_time, 8, 1, fpIn);
+      ASF_FREAD(&birth_time, 8, 1, fpIn);
       ieee_big64(birth_time);
-      FREAD(&init_area, 4, 1, fpIn);
+      ASF_FREAD(&init_area, 4, 1, fpIn);
       ieee_big32(init_area);
-      FREAD(&n_int_obs, 4, 1, fpIn);
+      ASF_FREAD(&n_int_obs, 4, 1, fpIn);
       ieee_big32(n_int_obs);
       
       printf("Cell ID: %d\r", cell_id);
@@ -675,21 +678,21 @@ int main(int argc, char **argv)
       ice_age_obs_t *obs = 
       	(ice_age_obs_t *) MALLOC(sizeof(ice_age_obs_t)*n_int_obs);
       for (kk=0; kk<n_int_obs; kk++) {
-        FREAD(&obs[kk].year, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].year, 2, 1, fpIn);
         ieee_big16(obs[kk].year);
-        FREAD(&obs[kk].time, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].time, 8, 1, fpIn);
         ieee_big64(obs[kk].time);
-        FREAD(&obs[kk].map_x, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_x, 8, 1, fpIn);
         ieee_big64(obs[kk].map_x);
-        FREAD(&obs[kk].map_y, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_y, 8, 1, fpIn);
         ieee_big64(obs[kk].map_y);
-        FREAD(&obs[kk].center_temp, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].center_temp, 4, 1, fpIn);
         ieee_big32(obs[kk].center_temp);
-        FREAD(&obs[kk].fdd, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].fdd, 4, 1, fpIn);
         ieee_big32(obs[kk].fdd);
-        FREAD(&obs[kk].cell_area, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].cell_area, 4, 1, fpIn);
         ieee_big32(obs[kk].cell_area);
-        FREAD(&obs[kk].n_age, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].n_age, 2, 1, fpIn);
         ieee_big16(obs[kk].n_age);
         /*
         printf("\nObservation: %d, %.6f\n", obs[kk].year, obs[kk].time);
@@ -712,15 +715,15 @@ int main(int argc, char **argv)
         if (obs[kk].n_age > 0) {
           age = (ice_age_t *) MALLOC(sizeof(ice_age_t)*obs[kk].n_age);
           for (ll=0; ll<obs[kk].n_age; ll++) {
-            FREAD(&age[ll].r_age, 4, 1, fpIn);
+            ASF_FREAD(&age[ll].r_age, 4, 1, fpIn);
             ieee_big32(age[ll].r_age);
-            FREAD(&age[ll].i_age, 4, 1, fpIn);
+            ASF_FREAD(&age[ll].i_age, 4, 1, fpIn);
             ieee_big32(age[ll].i_age);
-            FREAD(&age[ll].frac_area, 2, 1, fpIn);
+            ASF_FREAD(&age[ll].frac_area, 2, 1, fpIn);
             ieee_big16(age[ll].frac_area);
-            FREAD(&age[ll].r_fdd, 4, 1, fpIn);
+            ASF_FREAD(&age[ll].r_fdd, 4, 1, fpIn);
             ieee_big32(age[ll].r_fdd);
-            FREAD(&age[ll].i_fdd, 4, 1, fpIn);
+            ASF_FREAD(&age[ll].i_fdd, 4, 1, fpIn);
             ieee_big32(age[ll].i_fdd);
             /*
             printf("Bin: %d\n", ll+1);
@@ -732,7 +735,7 @@ int main(int argc, char **argv)
           }
         }
         // Read ice thickness information
-        FREAD(&obs[kk].n_thick, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].n_thick, 2, 1, fpIn);
         ieee_big16(obs[kk].n_thick);
         //printf("Number of thickness categories: %d\n", obs[kk].n_thick);
         if (obs[kk].n_thick > n_max)
@@ -741,7 +744,7 @@ int main(int argc, char **argv)
         if (obs[kk].n_thick > 0) {
           thick_far = (short *) MALLOC(sizeof(short)*obs[kk].n_thick);
           for (ll=0; ll<obs[kk].n_thick; ll++) {
-            FREAD(&thick_far[ll], 2, 1, fpIn);
+            ASF_FREAD(&thick_far[ll], 2, 1, fpIn);
             ieee_big16(thick_far[ll]);
             /*
             printf("Fractional area in thickness: %.6f\n", 
@@ -750,16 +753,16 @@ int main(int argc, char **argv)
           }
         }
         // Read general fractional area information
-        FREAD(&obs[kk].far_fyr, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].far_fyr, 2, 1, fpIn);
         ieee_big16(obs[kk].far_fyr);
-        FREAD(&obs[kk].far_my, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].far_my, 2, 1, fpIn);
         ieee_big16(obs[kk].far_my);
         /*
         printf("Area first-year ice: %.6f\n", (obs[kk].far_fyr)*0.001);
         printf("Area multi-year ice: %.6f\n", (obs[kk].far_my)*0.001);
         */
         // Read ice ridge information
-        FREAD(&obs[kk].n_ridge, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].n_ridge, 2, 1, fpIn);
         ieee_big16(obs[kk].n_ridge);
         //printf("Number of ridging events: %d\n", obs[kk].n_ridge);
         if (obs[kk].n_ridge > n_max)
@@ -768,21 +771,21 @@ int main(int argc, char **argv)
         if (obs[kk].n_ridge > 0) {
           ridge = (ice_ridge_t *) MALLOC(sizeof(ice_ridge_t)*obs[kk].n_ridge);
           for (ll=0; ll<obs[kk].n_ridge; ll++) {
-            FREAD(&ridge[ll].r_ridge_ar, 4, 1, fpIn);
+            ASF_FREAD(&ridge[ll].r_ridge_ar, 4, 1, fpIn);
             ieee_big32(ridge[ll].r_ridge_ar);
-            FREAD(&ridge[ll].i_ridge_ar, 4, 1, fpIn);
+            ASF_FREAD(&ridge[ll].i_ridge_ar, 4, 1, fpIn);
             ieee_big32(ridge[ll].i_ridge_ar);
-            FREAD(&ridge[ll].r_ridge_tr, 4, 1, fpIn);
+            ASF_FREAD(&ridge[ll].r_ridge_tr, 4, 1, fpIn);
             ieee_big32(ridge[ll].r_ridge_tr);
-            FREAD(&ridge[ll].i_ridge_tr, 4, 1, fpIn);
+            ASF_FREAD(&ridge[ll].i_ridge_tr, 4, 1, fpIn);
             ieee_big32(ridge[ll].i_ridge_tr);
-            FREAD(&ridge[ll].ridge_far, 2, 1, fpIn);
+            ASF_FREAD(&ridge[ll].ridge_far, 2, 1, fpIn);
             ieee_big16(ridge[ll].ridge_far);
-            FREAD(&ridge[ll].r_ridge_fdd, 4, 1, fpIn);
+            ASF_FREAD(&ridge[ll].r_ridge_fdd, 4, 1, fpIn);
             ieee_big32(ridge[ll].r_ridge_fdd);
-            FREAD(&ridge[ll].i_ridge_fdd, 4, 1, fpIn);
+            ASF_FREAD(&ridge[ll].i_ridge_fdd, 4, 1, fpIn);
             ieee_big32(ridge[ll].i_ridge_fdd);
-            FREAD(&ridge[ll].ridge_flag, 2, 1, fpIn);
+            ASF_FREAD(&ridge[ll].ridge_flag, 2, 1, fpIn);
             ieee_big16(ridge[ll].ridge_flag);
             /*
             printf("Ridge: %d\n", ll+1);
@@ -839,38 +842,39 @@ int main(int argc, char **argv)
     }
   }
   else if (strncmp_case(prod_description, "Backscatter Histogram", 21) == 0) {
-    FREAD(&n_cells, 4, 1, fpIn);
+    ASF_FREAD(&n_cells, 4, 1, fpIn);
     ieee_big32(n_cells);
-    FREAD(&create_year, 2, 1, fpIn);
+    ASF_FREAD(&create_year, 2, 1, fpIn);
     ieee_big16(create_year);
-    FREAD(&create_time, 8, 1, fpIn);
+    ASF_FREAD(&create_time, 8, 1, fpIn);
     ieee_big64(create_time);
-    FREAD(&prod_start_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_start_year, 2, 1, fpIn);
     ieee_big16(prod_start_year);
-    FREAD(&prod_start_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_start_time, 8, 1, fpIn);
     ieee_big64(prod_start_time);
-    FREAD(&prod_end_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_end_year, 2, 1, fpIn);
     ieee_big16(prod_end_year);
-    FREAD(&prod_end_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_end_time, 8, 1, fpIn);
     ieee_big64(prod_end_time);
+
     // read in the version field and create a string from it
-    FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
+    ASF_FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
     sw_version[sizeof(sw_version) - 1] = '\0';
-    FREAD(&n_w_lat, 4, 1, fpIn);
+    ASF_FREAD(&n_w_lat, 4, 1, fpIn);
     ieee_big32(n_w_lat);
-    FREAD(&n_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_w_lon, 4, 1, fpIn);
     ieee_big32(n_w_lon);
-    FREAD(&n_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lat, 4, 1, fpIn);
     ieee_big32(n_e_lat);
-    FREAD(&n_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lon, 4, 1, fpIn);
     ieee_big32(n_e_lon);
-    FREAD(&s_w_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lat, 4, 1, fpIn);
     ieee_big32(s_w_lat);
-    FREAD(&s_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lon, 4, 1, fpIn);
     ieee_big32(s_w_lon);
-    FREAD(&s_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lat, 4, 1, fpIn);
     ieee_big32(s_e_lat);
-    FREAD(&s_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lon, 4, 1, fpIn);
     ieee_big32(s_e_lon);
     
     printf("Number cells: %d\n", n_cells);
@@ -892,9 +896,9 @@ int main(int argc, char **argv)
     
     // Backscatter range record
     for (ii=0; ii<25; ii++) {
-      FREAD(&bsr_low[ii], 4, 1, fpIn);
+      ASF_FREAD(&bsr_low[ii], 4, 1, fpIn);
       ieee_big32(bsr_low[ii]);
-      FREAD(&bsr_high[ii], 4, 1, fpIn);
+      ASF_FREAD(&bsr_high[ii], 4, 1, fpIn);
       ieee_big32(bsr_high[ii]);
       printf("BSR[%2d]: %.6f, %.6f\n", ii+1, bsr_low[ii], bsr_high[ii]);
     }
@@ -906,15 +910,15 @@ int main(int argc, char **argv)
       fprintf(fpOut, "FBSR_%d,", ll+1);
     fprintf(fpOut, "INC_ANG\n");
     for (ii=0; ii<n_cells; ii++) {
-      FREAD(&cell_id, 4, 1, fpIn);
+      ASF_FREAD(&cell_id, 4, 1, fpIn);
       ieee_big32(cell_id);
-      FREAD(&birth_year, 2, 1, fpIn);
+      ASF_FREAD(&birth_year, 2, 1, fpIn);
       ieee_big16(birth_year);
-      FREAD(&birth_time, 8, 1, fpIn);
+      ASF_FREAD(&birth_time, 8, 1, fpIn);
       ieee_big64(birth_time);
-      FREAD(&init_area, 4, 1, fpIn);
+      ASF_FREAD(&init_area, 4, 1, fpIn);
       ieee_big32(init_area);
-      FREAD(&n_int_obs, 4, 1, fpIn);
+      ASF_FREAD(&n_int_obs, 4, 1, fpIn);
       ieee_big32(n_int_obs);
       
       printf("Cell ID: %d\r", cell_id);
@@ -926,27 +930,27 @@ int main(int argc, char **argv)
       backscatter_t *obs = 
       	(backscatter_t *) MALLOC(sizeof(backscatter_t)*n_int_obs);
       for (kk=0; kk<n_int_obs; kk++) {
-        FREAD(&obs[kk].year, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].year, 2, 1, fpIn);
         ieee_big16(obs[kk].year);
-        FREAD(&obs[kk].time, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].time, 8, 1, fpIn);
         ieee_big64(obs[kk].time);
-        FREAD(&obs[kk].map_x, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_x, 8, 1, fpIn);
         ieee_big64(obs[kk].map_x);
-        FREAD(&obs[kk].map_y, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_y, 8, 1, fpIn);
         ieee_big64(obs[kk].map_y);
-        FREAD(&obs[kk].center_temp, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].center_temp, 4, 1, fpIn);
         ieee_big32(obs[kk].center_temp);
-        FREAD(&obs[kk].cell_area, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].cell_area, 4, 1, fpIn);
         ieee_big32(obs[kk].cell_area);
-        FREAD(&obs[kk].multi_year, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].multi_year, 2, 1, fpIn);
         ieee_big16(obs[kk].multi_year);
-        FREAD(&obs[kk].open_water, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].open_water, 2, 1, fpIn);
         ieee_big16(obs[kk].open_water);
         for (ll=0; ll<25; ll++) {
-          FREAD(&obs[kk].frac_back[ll], 2, 1, fpIn);
+          ASF_FREAD(&obs[kk].frac_back[ll], 2, 1, fpIn);
           ieee_big16(obs[kk].frac_back[ll]);
         }
-        FREAD(&obs[kk].inc_ang, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].inc_ang, 4, 1, fpIn);
         ieee_big32(obs[kk].inc_ang);
         /*
         printf("\nObservation: %d, %.6f\n", obs[kk].year, obs[kk].time);

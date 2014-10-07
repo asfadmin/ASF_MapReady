@@ -200,7 +200,7 @@ void ALOS_readNextCeosPulse(bin_state *s, iqType *iqBuf, char *inName,
   JRS_raw_aux raux;
   JRS_aux aux;
   sig=getNextCeosLine(s->binary, s, inName, outName);
-  //FREAD(iqBuf, sizeof(iqType), s->nSamp*2, s->binary);
+  //ASF_FREAD(iqBuf, sizeof(iqType), s->nSamp*2, s->binary);
   for (i=0;i<2*samplesPerFrame;i++)
     iqBuf[i]=125+sig[datPerAux+i];
 

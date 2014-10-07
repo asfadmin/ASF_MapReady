@@ -75,7 +75,7 @@ int main(int argc,char *argv[])
 
   int npts = range_pts*az_pts*2;
   float *offsets = (float *)MALLOC(npts*sizeof(float));
-  FREAD(offsets,sizeof(float),npts,fp2);
+  ASF_FREAD(offsets,sizeof(float),npts,fp2);
   FCLOSE(fp2);
 
   double inc; 
