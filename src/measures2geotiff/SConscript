@@ -21,6 +21,6 @@ localenv.AppendUnique(LIBS = [
     "asf_proj",
 ])
 
-bins = localenv.Program("measures2netcdf", Glob("*.c"))
+bins = localenv.Program("measures2geotiff", Glob("*.c"))
 
 localenv.Install(globalenv["inst_dirs"]["bins"], bins)

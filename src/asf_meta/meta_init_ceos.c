@@ -1108,12 +1108,12 @@ static void get_alos_linehdr(struct PHEADER *linehdr, int line_number,
     long offset = firstRecordLen(fName);
     FILE *fp = FOPEN(fName, "rb");
     FSEEK64(fp, offset, SEEK_SET);
-    FREAD(&hdr, sizeof(struct HEADER), 1, fp);
+    ASF_FREAD(&hdr, sizeof(struct HEADER), 1, fp);
     length = bigInt32(hdr.recsiz)-12;
     offset = length * line_number;
     FSEEK64(fp, offset, SEEK_SET);
-    FREAD(&hdr, sizeof(struct HEADER), 1, fp);
-    FREAD(linehdr, sizeof(struct PHEADER), 1, fp);
+    ASF_FREAD(&hdr, sizeof(struct HEADER), 1, fp);
+    ASF_FREAD(linehdr, sizeof(struct PHEADER), 1, fp);
     fclose(fp);
 }
 
@@ -3196,15 +3196,15 @@ double get_firstTime (const char *fName)
    char *buff;
 
    fp = FOPEN(fName, "rb");
-   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
-   FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
+   ASF_FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   ASF_FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
    length = bigInt32(hdr.recsiz) - (sizeof(struct RHEADER)
             + sizeof(struct HEADER));
    buff = (char *) MALLOC(sizeof(char)*(length+5));
    //buff = (char *) MALLOC(sizeof(char)*30000);
-   FREAD (buff, length, 1, fp);
-   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
-   FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
+   ASF_FREAD (buff, length, 1, fp);
+   ASF_FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   ASF_FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
    FCLOSE(fp);
 
    FREE(buff);
@@ -3248,12 +3248,12 @@ char *get_polarization (const char *fName)
    polarization = (char *) MALLOC(sizeof(char)*3);
 
    fp = FOPEN(fName, "rb");
-   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   ASF_FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    length = bigInt32(hdr.recsiz)-12;
    buff = (char *) MALLOC(sizeof(char)*(length+5));
-   FREAD (buff, length, 1, fp);
-   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
-   FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
+   ASF_FREAD (buff, length, 1, fp);
+   ASF_FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   ASF_FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
    FCLOSE(fp);
 
    if (bigInt16(linehdr.tran_polar) == 0)
@@ -3280,12 +3280,12 @@ int get_alos_band_number(const char *fName)
   char *buff;
 
   fp = FOPEN(fName, "rb");
-  FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+  ASF_FREAD (&hdr, sizeof(struct HEADER), 1, fp);
   length = bigInt32(hdr.recsiz)-12;
   buff = (char *) MALLOC(sizeof(char)*(length+5));
-  FREAD (buff, length, 1, fp);
-  FREAD (&hdr, sizeof(struct HEADER), 1, fp);
-  FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
+  ASF_FREAD (buff, length, 1, fp);
+  ASF_FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+  ASF_FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
   FCLOSE(fp);
 
   FREE(buff);
@@ -3302,12 +3302,12 @@ double get_chirp_rate (const char *fName)
    char *buff;
 
    fp = FOPEN(fName, "rb");
-   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   ASF_FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    length = bigInt32(hdr.recsiz)-12;
    buff = (char *) MALLOC(sizeof(char)*(length+5));
-   FREAD (buff, length, 1, fp);
-   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
-   FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
+   ASF_FREAD (buff, length, 1, fp);
+   ASF_FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   ASF_FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
    FCLOSE(fp);
 
    FREE(buff);
@@ -3324,12 +3324,12 @@ double get_sensor_orientation (const char *fName)
    char *buff;
 
    fp = FOPEN(fName, "rb");
-   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   ASF_FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    length = bigInt32(hdr.recsiz)-12;
    buff = (char *) MALLOC(sizeof(char)*(length+5));
-   FREAD (buff, length, 1, fp);
-   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
-   FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
+   ASF_FREAD (buff, length, 1, fp);
+   ASF_FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   ASF_FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
    FCLOSE(fp);
 
    FREE(buff);

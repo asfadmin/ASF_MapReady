@@ -23,7 +23,7 @@ void *CALLOC(size_t nmemb, size_t size);
 void FREE(void *ptr);
 void FREE_BANDS(char **ptr);
 FILE *FOPEN(const char *file,const char *mode);
-size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream);
+size_t ASF_FREAD(void *ptr,size_t size,size_t nitems,FILE *stream);
 size_t FREADZ(void *ptr,size_t size,size_t nitems,FILE *stream);
 size_t FREAD_CHECKED(void *ptr, size_t size, size_t nitems, FILE *stream, int short_ok);
 size_t FWRITE(const void *ptr,size_t size,size_t nitems,FILE *stream);

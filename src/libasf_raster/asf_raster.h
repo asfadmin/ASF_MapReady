@@ -151,6 +151,8 @@ void trim_zeros(char *infile, char *outfile, int *startX, int *endX);
 void trim_zeros_ext(char *infile, char *outfile, int update_meta,
                     int do_top, int do_left);
 void trim_wedges(char *infile, char *outfile);
+void trim_latlon(char *infile, char *outfile, double lat_min, double lat_max,
+                 double lon_min, double lon_max);
 void trim_to(char *infile, char *outfile, char *metadata_file);
 void subset_by_latlon(char *infile, char *outfile, double *lat, double *lon, 
   int nCoords);

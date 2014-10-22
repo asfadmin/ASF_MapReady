@@ -1,41 +1,16 @@
-/******************************************************************************
- *                                                                             *
- * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
- * All rights reserved.                                                        *
- *                                                                             *
- * Redistribution and use in source and binary forms, with or without          *
- * modification, are permitted provided that the following conditions are met: *
- *                                                                             *
- *    * Redistributions of source code must retain the above copyright notice, *
- *      this list of conditions and the following disclaimer.                  *
- *    * Redistributions in binary form must reproduce the above copyright      *
- *      notice, this list of conditions and the following disclaimer in the    *
- *      documentation and/or other materials provided with the distribution.   *
- *    * Neither the name of the Geophysical Institute nor the names of its     *
- *      contributors may be used to endorse or promote products derived from   *
- *      this software without specific prior written permission.               *
- *                                                                             *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" *
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE   *
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE  *
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE    *
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR         *
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF        *
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS    *
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN     *
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)     *
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE  *
- * POSSIBILITY OF SUCH DAMAGE.                                                 *
- *                                                                             *
- *       For more information contact us at:                                   *
- *                                                                             *
- *       Alaska Satellite Facility                                             *
- *       Geophysical Institute                   http://www.asf.alaska.edu     *
- *       University of Alaska Fairbanks          uso@asf.alaska.edu            *
- *       P.O. Box 757320                                                       *
- *       Fairbanks, AK 99775-7320                                              *
- *                                                                             *
- ******************************************************************************/
+/*
+measures2csv converts MEaSUREs binaries to CSV
+
+Copyright 2013-2014 US Government. This work, authored by Alaska Satellite Facility employees, was funded in whole or in part by NASA, under US Government contract NNG13HQ05C.
+
+This file is part of ASF Mapready.
+
+ASF Mapready is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+ASF Mapready is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with ASF Mapready. If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "asf.h"
 #include "asf_nan.h"
@@ -223,11 +198,15 @@ int main(int argc, char **argv)
   strcpy(csvFile, argv[2]);
   char *xmlFile = (char *) MALLOC(sizeof(char)*(strlen(csvFile)+10));
   create_name(xmlFile, csvFile, ".xml");
+
+  // field lengths in the source files
+  const int pid_field_len = 24;
+  const int prod_description_field_len = 40;
+  const int sw_version_field_len = 12;
   
   // General header information
-  char pid[25];	             // RGPS Product Identifier
-  char product_id[20];
-  char prod_description[50]; // Description of this product
+  char pid[pid_field_len + 1];	             // RGPS Product Identifier
+  char prod_description[prod_description_field_len + 1]; // Description of this product
   short	n_images=0;	 // Number of images used in the create of this product
   int n_trajectories=0;      // Number of trajectories
   int n_cells;               // Number of cells
@@ -239,8 +218,7 @@ int main(int argc, char **argv)
   double prod_start_time=0;  // Product start time
   short	prod_end_year=0;     // Product end year
   double prod_end_time=0;	   // Product end time
-  char sw_version[12];       // Software version used to create this product
-  char sw_ver[5];
+  char sw_version[sw_version_field_len + 1];       // Software version used to create this product
   float	n_w_lat;             // North West Latitude of initial datatake
   float	n_w_lon;             // North West Longitude of inital datatake
   float	n_e_lat;             // North East Latitude of initial datatake
@@ -268,64 +246,88 @@ int main(int argc, char **argv)
   // Time and projection
   double lat, lon, height;
   float bsr_low[25], bsr_high[25];
-  meta_parameters *meta=NULL;
+  meta_parameters *meta = raw_init();
   project_parameters_t pps;
   projection_type_t proj_type;
   datum_type_t datum;
   spheroid_type_t spheroid;
-  meta_projection *proj;
+  meta_projection *proj = meta_projection_init();
   char dateStr[30];
+
+  // Define common projection block attributes
+  read_proj_file("polar_stereographic_north_ssmi.proj", 
+		 &pps, &proj_type, &datum, &spheroid);
+  pps.ps.false_easting = 0.0;
+  pps.ps.false_northing = 0.0;
+  proj->type = proj_type;
+  proj->datum = HUGHES_DATUM;
+  proj->spheroid = HUGHES_SPHEROID;
+  proj->param = pps;
+  strcpy(proj->units, "meters");
+  proj->hem = 'N';
+  spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
   
   fpIn = FOPEN(inFile, "rb");
 
-  FREAD(&pid, 24, 1, fpIn);
+  // read the PID field and create a string from it
+  ASF_FREAD(&pid, sizeof(pid) - 1, 1, fpIn);
+  pid[sizeof(pid) - 1] = '\0';
+
+  // extract the stream ID character
   stream = pid[5];
-  FREAD(&prod_description, 40, 1, fpIn);
+
+  // read in the product description field and create a string from it
+  ASF_FREAD(&prod_description, sizeof(prod_description) - 1, 1, fpIn);
+  prod_description[sizeof(prod_description) - 1] = '\0';
+
   if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) != 0 &&
     strncmp_case(prod_description, "Ice Deformation", 15) != 0 &&
     strncmp_case(prod_description, "Ice Age", 7) != 0 &&
     strncmp_case(prod_description, "Backscatter Histogram", 21) != 0)
     asfPrintError("Could not determine product type!\n");
 
-  snprintf(product_id, 18, "%s", pid);
-  printf("PID: %s\n", product_id);
+
+  printf("PID: %s\n", pid);
   printf("Product description: %s\n", prod_description);
   printf("Stream: %c\n", stream);
   
   if (strncmp_case(prod_description, "Lagrangian Ice Motion", 21) == 0) {
-    FREAD(&n_images, 2, 1, fpIn);
+    ASF_FREAD(&n_images, 2, 1, fpIn);
     ieee_big16(n_images);
-    FREAD(&n_trajectories, 4, 1, fpIn);
+    ASF_FREAD(&n_trajectories, 4, 1, fpIn);
     ieee_big32(n_trajectories);
-    FREAD(&prod_type, 8, 1, fpIn);
-    FREAD(&create_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_type, 8, 1, fpIn);
+    ASF_FREAD(&create_year, 2, 1, fpIn);
     ieee_big16(create_year);
-    FREAD(&create_time, 8, 1, fpIn);
+    ASF_FREAD(&create_time, 8, 1, fpIn);
     ieee_big64(create_time);
-    FREAD(&prod_start_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_start_year, 2, 1, fpIn);
     ieee_big16(prod_start_year);
-    FREAD(&prod_start_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_start_time, 8, 1, fpIn);
     ieee_big64(prod_start_time);
-    FREAD(&prod_end_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_end_year, 2, 1, fpIn);
     ieee_big16(prod_end_year);
-    FREAD(&prod_end_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_end_time, 8, 1, fpIn);
     ieee_big64(prod_end_time);
-    FREAD(&sw_version, 12, 1, fpIn);
-    FREAD(&n_w_lat, 4, 1, fpIn);
+
+    // read in the version field and create a string from it
+    ASF_FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
+    sw_version[sizeof(sw_version) - 1] = '\0';
+    ASF_FREAD(&n_w_lat, 4, 1, fpIn);
     ieee_big32(n_w_lat);
-    FREAD(&n_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_w_lon, 4, 1, fpIn);
     ieee_big32(n_w_lon);
-    FREAD(&n_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lat, 4, 1, fpIn);
     ieee_big32(n_e_lat);
-    FREAD(&n_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lon, 4, 1, fpIn);
     ieee_big32(n_e_lon);
-    FREAD(&s_w_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lat, 4, 1, fpIn);
     ieee_big32(s_w_lat);
-    FREAD(&s_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lon, 4, 1, fpIn);
     ieee_big32(s_w_lon);
-    FREAD(&s_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lat, 4, 1, fpIn);
     ieee_big32(s_e_lat);
-    FREAD(&s_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lon, 4, 1, fpIn);
     ieee_big32(s_e_lon);
     
     printf("Number images: %d\n", n_images);
@@ -337,8 +339,7 @@ int main(int argc, char **argv)
     printf("Product start time: %.6f\n", prod_start_time);
     printf("Product end year: %d\n", prod_end_year);
     printf("Product end time: %.6f\n", prod_end_time);
-    snprintf(sw_ver, 5, "%s", sw_version);
-    printf("Software version: %s\n", sw_ver);
+    printf("Software version: %s\n", sw_version);
     printf("NW: %.6f %.6f\n", n_w_lat, n_w_lon);
     printf("NE: %.6f %.6f\n", n_e_lat, n_e_lon);
     printf("SW: %.6f %.6f\n", s_w_lat, s_w_lon);
@@ -350,14 +351,14 @@ int main(int argc, char **argv)
         
     image = (image_t *) MALLOC(sizeof(image_t)*n_images);
     for (ii=0; ii<n_images; ii++) {
-      FREAD(&image[ii].id, 16, 1, fpIn);
-      FREAD(&image[ii].year, 2, 1, fpIn);
+      ASF_FREAD(&image[ii].id, 16, 1, fpIn);
+      ASF_FREAD(&image[ii].year, 2, 1, fpIn);
       ieee_big16(image[ii].year);
-      FREAD(&image[ii].time, 8, 1, fpIn);
+      ASF_FREAD(&image[ii].time, 8, 1, fpIn);
       ieee_big64(image[ii].time);
-      FREAD(&image[ii].map_x, 8, 1, fpIn);
+      ASF_FREAD(&image[ii].map_x, 8, 1, fpIn);
       ieee_big64(image[ii].map_x);
-      FREAD(&image[ii].map_y, 8, 1, fpIn);
+      ASF_FREAD(&image[ii].map_y, 8, 1, fpIn);
       ieee_big64(image[ii].map_y);
       /*
       printf("Image (%d) ID: %s\n", ii+1, image[ii].id);
@@ -371,17 +372,17 @@ int main(int argc, char **argv)
       "BIRTH_YEAR,BIRTH_TIME,DEATH_YEAR,DEATH_TIME,N_OBS,OBS_YEAR,OBS_TIME,"
       "X_MAP,Y_MAP,LAT,LON,Q_FLAG\n");
     for (ii=0; ii<n_trajectories; ii++) {
-      FREAD(&gpid, 4, 1, fpIn);
+      ASF_FREAD(&gpid, 4, 1, fpIn);
       ieee_big32(gpid);
-      FREAD(&birth_year, 2, 1, fpIn);
+      ASF_FREAD(&birth_year, 2, 1, fpIn);
       ieee_big16(birth_year);
-      FREAD(&birth_time, 8, 1, fpIn);
+      ASF_FREAD(&birth_time, 8, 1, fpIn);
       ieee_big64(birth_time);
-      FREAD(&death_year, 2, 1, fpIn);
+      ASF_FREAD(&death_year, 2, 1, fpIn);
       ieee_big16(death_year);
-      FREAD(&death_time, 8, 1, fpIn);
+      ASF_FREAD(&death_time, 8, 1, fpIn);
       ieee_big64(death_time);
-      FREAD(&n_int_obs, 4, 1, fpIn);
+      ASF_FREAD(&n_int_obs, 4, 1, fpIn);
       ieee_big32(n_int_obs);
       
       printf("GPID: %d\r", gpid);
@@ -393,15 +394,15 @@ int main(int argc, char **argv)
       ice_motion_obs_t *obs = 
       	(ice_motion_obs_t *) MALLOC(sizeof(ice_motion_obs_t)*n_int_obs);
       for (kk=0; kk<n_int_obs; kk++) {
-        FREAD(&obs[kk].year, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].year, 2, 1, fpIn);
         ieee_big16(obs[kk].year);
-        FREAD(&obs[kk].time, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].time, 8, 1, fpIn);
         ieee_big64(obs[kk].time);
-        FREAD(&obs[kk].map_x, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_x, 8, 1, fpIn);
         ieee_big64(obs[kk].map_x);
-        FREAD(&obs[kk].map_y, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_y, 8, 1, fpIn);
         ieee_big64(obs[kk].map_y);
-        FREAD(&obs[kk].q_flag, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].q_flag, 2, 1, fpIn);
         ieee_big16(obs[kk].q_flag);
         /*
         printf("Observation: %d, %.6f\n", obs[kk].year, obs[kk].time);
@@ -414,25 +415,13 @@ int main(int argc, char **argv)
         int image_year;
         double image_time, image_map_x, image_map_y;
 
-        // Define projection block
-        read_proj_file("polar_stereographic_north_ssmi.proj", 
-          &pps, &proj_type, &datum, &spheroid);
-        pps.ps.false_easting = 0.0;
-        pps.ps.false_northing = 0.0;
-        proj = meta_projection_init();
-        proj->type = proj_type;
-        proj->datum = HUGHES_DATUM;
-        proj->spheroid = HUGHES_SPHEROID;
-        proj->param = pps;
-        strcpy(proj->units, "meters");
-        proj->hem = 'N';
-        spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
+        // Define specific projection block attributes
         proj_to_latlon(proj, map_x, map_y, 0.0, &lat, &lon, &height);
-        meta = raw_init();
         meta->projection = proj;
+
         for (ll=0; ll<n_images; ll++) {
           if ((obs[kk].year == image[ll].year) &&
-              FLOAT_COMPARE_TOLERANCE(obs[kk].time, image[ll].time, 0.001)) {
+              FLOAT_COMPARE_TOLERANCE(obs[kk].time, image[ll].time, 0.002)) {
             image_id = STRDUP(image[ll].id);
             image_year = image[ll].year;
             image_time = image[ll].time;
@@ -451,36 +440,39 @@ int main(int argc, char **argv)
     FREE(image);
   }
   else if (strncmp_case(prod_description, "Ice Deformation", 15) == 0) {
-    FREAD(&n_cells, 4, 1, fpIn);
+    ASF_FREAD(&n_cells, 4, 1, fpIn);
     ieee_big32(n_cells);
-    FREAD(&create_year, 2, 1, fpIn);
+    ASF_FREAD(&create_year, 2, 1, fpIn);
     ieee_big16(create_year);
-    FREAD(&create_time, 8, 1, fpIn);
+    ASF_FREAD(&create_time, 8, 1, fpIn);
     ieee_big64(create_time);
-    FREAD(&prod_start_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_start_year, 2, 1, fpIn);
     ieee_big16(prod_start_year);
-    FREAD(&prod_start_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_start_time, 8, 1, fpIn);
     ieee_big64(prod_start_time);
-    FREAD(&prod_end_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_end_year, 2, 1, fpIn);
     ieee_big16(prod_end_year);
-    FREAD(&prod_end_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_end_time, 8, 1, fpIn);
     ieee_big64(prod_end_time);
-    FREAD(&sw_version, 12, 1, fpIn);
-    FREAD(&n_w_lat, 4, 1, fpIn);
+
+    // read in the version field and create a string from it
+    ASF_FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
+    sw_version[sizeof(sw_version) - 1] = '\0';
+    ASF_FREAD(&n_w_lat, 4, 1, fpIn);
     ieee_big32(n_w_lat);
-    FREAD(&n_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_w_lon, 4, 1, fpIn);
     ieee_big32(n_w_lon);
-    FREAD(&n_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lat, 4, 1, fpIn);
     ieee_big32(n_e_lat);
-    FREAD(&n_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lon, 4, 1, fpIn);
     ieee_big32(n_e_lon);
-    FREAD(&s_w_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lat, 4, 1, fpIn);
     ieee_big32(s_w_lat);
-    FREAD(&s_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lon, 4, 1, fpIn);
     ieee_big32(s_w_lon);
-    FREAD(&s_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lat, 4, 1, fpIn);
     ieee_big32(s_e_lat);
-    FREAD(&s_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lon, 4, 1, fpIn);
     ieee_big32(s_e_lon);
         
     printf("Number cells: %d\n", n_cells);
@@ -490,8 +482,7 @@ int main(int argc, char **argv)
     printf("Product start time: %.6f\n", prod_start_time);
     printf("Product end year: %d\n", prod_end_year);
     printf("Product end time: %.6f\n", prod_end_time);
-    snprintf(sw_ver, 5, "%s", sw_version);
-    printf("Software version: %s\n", sw_ver);
+    printf("Software version: %s\n", sw_version);
     printf("NW: %.6f %.6f\n", n_w_lat, n_w_lon);
     printf("NE: %.6f %.6f\n", n_e_lat, n_e_lon);
     printf("SW: %.6f %.6f\n", s_w_lat, s_w_lon);
@@ -506,13 +497,13 @@ int main(int argc, char **argv)
       "OBS_TIME,X_MAP,Y_MAP,LAT,LON,X_DISP,Y_DISP,C_AREA,D_AREA,DTP,DUDX,DUDY,"
       "DVDX,DVDY\n");
     for (ii=0; ii<n_cells; ii++) {
-      FREAD(&cell_id, 4, 1, fpIn);
+      ASF_FREAD(&cell_id, 4, 1, fpIn);
       ieee_big32(cell_id);
-      FREAD(&birth_year, 2, 1, fpIn);
+      ASF_FREAD(&birth_year, 2, 1, fpIn);
       ieee_big16(birth_year);
-      FREAD(&birth_time, 8, 1, fpIn);
+      ASF_FREAD(&birth_time, 8, 1, fpIn);
       ieee_big64(birth_time);
-      FREAD(&n_short_obs, 2, 1, fpIn);
+      ASF_FREAD(&n_short_obs, 2, 1, fpIn);
       ieee_big16(n_short_obs);
       
       printf("Cell ID: %d\r", cell_id);
@@ -523,31 +514,31 @@ int main(int argc, char **argv)
       ice_deform_obs_t *obs = 
       	(ice_deform_obs_t *) MALLOC(sizeof(ice_deform_obs_t)*n_short_obs);
       for (kk=0; kk<n_short_obs; kk++) {
-        FREAD(&obs[kk].year, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].year, 2, 1, fpIn);
         ieee_big16(obs[kk].year);
-        FREAD(&obs[kk].time, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].time, 8, 1, fpIn);
         ieee_big64(obs[kk].time);
-        FREAD(&obs[kk].map_x, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_x, 8, 1, fpIn);
         ieee_big64(obs[kk].map_x);
-        FREAD(&obs[kk].map_y, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_y, 8, 1, fpIn);
         ieee_big64(obs[kk].map_y);
-        FREAD(&obs[kk].disp_x, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].disp_x, 8, 1, fpIn);
         ieee_big64(obs[kk].disp_x);
-        FREAD(&obs[kk].disp_y, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].disp_y, 8, 1, fpIn);
         ieee_big64(obs[kk].disp_y);
-        FREAD(&obs[kk].cell_area, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].cell_area, 4, 1, fpIn);
         ieee_big32(obs[kk].cell_area);
-        FREAD(&obs[kk].diff_area, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].diff_area, 4, 1, fpIn);
         ieee_big32(obs[kk].diff_area);
-        FREAD(&obs[kk].dtp, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].dtp, 4, 1, fpIn);
         ieee_big32(obs[kk].dtp);
-        FREAD(&obs[kk].dudx, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].dudx, 4, 1, fpIn);
         ieee_big32(obs[kk].dudx);
-        FREAD(&obs[kk].dudy, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].dudy, 4, 1, fpIn);
         ieee_big32(obs[kk].dudy);
-        FREAD(&obs[kk].dvdx, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].dvdx, 4, 1, fpIn);
         ieee_big32(obs[kk].dvdx);
-        FREAD(&obs[kk].dvdy, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].dvdy, 4, 1, fpIn);
         ieee_big32(obs[kk].dvdy);
         /*
         printf("\nObservation: %d, %.6f\n", obs[kk].year, obs[kk].time);
@@ -561,22 +552,10 @@ int main(int argc, char **argv)
         double map_x = obs[kk].map_x * 1000.0;
         double map_y = obs[kk].map_y * 1000.0;
 
-        // Define projection block
-        read_proj_file("polar_stereographic_north_ssmi.proj", 
-                 &pps, &proj_type, &datum, &spheroid);
-        pps.ps.false_easting = 0.0;
-        pps.ps.false_northing = 0.0;
-        proj = meta_projection_init();
-        proj->type = proj_type;
-        proj->datum = HUGHES_DATUM;
-        proj->spheroid = HUGHES_SPHEROID;
-        proj->param = pps;
-        strcpy(proj->units, "meters");
-        proj->hem = 'N';
-        spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
+        // Define specific projection block attributes
         proj_to_latlon(proj, map_x, map_y, 0.0, &lat, &lon, &height);
-        meta = raw_init();
         meta->projection = proj;
+
         fprintf(fpOut, "%d,%c,%d,%.6f,", cell_id, stream, birth_year, 
           birth_time);
         fprintf(fpOut, "%d,%d,%.6f,", n_short_obs, obs[kk].year, obs[kk].time);
@@ -591,38 +570,41 @@ int main(int argc, char **argv)
     }
   }  
   else if (strncmp_case(prod_description, "Ice Age", 7) == 0) {
-    FREAD(&n_cells, 4, 1, fpIn);
+    ASF_FREAD(&n_cells, 4, 1, fpIn);
     ieee_big32(n_cells);
-    FREAD(&create_year, 2, 1, fpIn);
+    ASF_FREAD(&create_year, 2, 1, fpIn);
     ieee_big16(create_year);
-    FREAD(&create_time, 8, 1, fpIn);
+    ASF_FREAD(&create_time, 8, 1, fpIn);
     ieee_big64(create_time);
-    FREAD(&prod_start_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_start_year, 2, 1, fpIn);
     ieee_big16(prod_start_year);
-    FREAD(&prod_start_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_start_time, 8, 1, fpIn);
     ieee_big64(prod_start_time);
-    FREAD(&prod_end_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_end_year, 2, 1, fpIn);
     ieee_big16(prod_end_year);
-    FREAD(&prod_end_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_end_time, 8, 1, fpIn);
     ieee_big64(prod_end_time);
-    FREAD(&sw_version, 12, 1, fpIn);
-    FREAD(&n_w_lat, 4, 1, fpIn);
+
+    // read in the version field and create a string from it
+    ASF_FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
+    sw_version[sizeof(sw_version) - 1] = '\0';
+    ASF_FREAD(&n_w_lat, 4, 1, fpIn);
     ieee_big32(n_w_lat);
-    FREAD(&n_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_w_lon, 4, 1, fpIn);
     ieee_big32(n_w_lon);
-    FREAD(&n_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lat, 4, 1, fpIn);
     ieee_big32(n_e_lat);
-    FREAD(&n_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lon, 4, 1, fpIn);
     ieee_big32(n_e_lon);
-    FREAD(&s_w_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lat, 4, 1, fpIn);
     ieee_big32(s_w_lat);
-    FREAD(&s_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lon, 4, 1, fpIn);
     ieee_big32(s_w_lon);
-    FREAD(&s_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lat, 4, 1, fpIn);
     ieee_big32(s_e_lat);
-    FREAD(&s_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lon, 4, 1, fpIn);
     ieee_big32(s_e_lon);
-    FREAD(&thick_step, 4, 1, fpIn);
+    ASF_FREAD(&thick_step, 4, 1, fpIn);
     ieee_big32(thick_step);
     
     printf("Number cells: %d\n", n_cells);
@@ -632,8 +614,7 @@ int main(int argc, char **argv)
     printf("Product start time: %.6f\n", prod_start_time);
     printf("Product end year: %d\n", prod_end_year);
     printf("Product end time: %.6f\n", prod_end_time);
-    snprintf(sw_ver, 5, "%s", sw_version);
-    printf("Software version: %s\n", sw_ver);
+    printf("Software version: %s\n", sw_version);
     printf("NW: %.6f %.6f\n", n_w_lat, n_w_lon);
     printf("NE: %.6f %.6f\n", n_e_lat, n_e_lon);
     printf("SW: %.6f %.6f\n", s_w_lat, s_w_lon);
@@ -652,15 +633,15 @@ int main(int argc, char **argv)
       "RIDGE_FLAG\n");
 
     for (ii=0; ii<n_cells; ii++) {
-      FREAD(&cell_id, 4, 1, fpIn);
+      ASF_FREAD(&cell_id, 4, 1, fpIn);
       ieee_big32(cell_id);
-      FREAD(&birth_year, 2, 1, fpIn);
+      ASF_FREAD(&birth_year, 2, 1, fpIn);
       ieee_big16(birth_year);
-      FREAD(&birth_time, 8, 1, fpIn);
+      ASF_FREAD(&birth_time, 8, 1, fpIn);
       ieee_big64(birth_time);
-      FREAD(&init_area, 4, 1, fpIn);
+      ASF_FREAD(&init_area, 4, 1, fpIn);
       ieee_big32(init_area);
-      FREAD(&n_int_obs, 4, 1, fpIn);
+      ASF_FREAD(&n_int_obs, 4, 1, fpIn);
       ieee_big32(n_int_obs);
       
       printf("Cell ID: %d\r", cell_id);
@@ -672,21 +653,21 @@ int main(int argc, char **argv)
       ice_age_obs_t *obs = 
       	(ice_age_obs_t *) MALLOC(sizeof(ice_age_obs_t)*n_int_obs);
       for (kk=0; kk<n_int_obs; kk++) {
-        FREAD(&obs[kk].year, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].year, 2, 1, fpIn);
         ieee_big16(obs[kk].year);
-        FREAD(&obs[kk].time, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].time, 8, 1, fpIn);
         ieee_big64(obs[kk].time);
-        FREAD(&obs[kk].map_x, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_x, 8, 1, fpIn);
         ieee_big64(obs[kk].map_x);
-        FREAD(&obs[kk].map_y, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_y, 8, 1, fpIn);
         ieee_big64(obs[kk].map_y);
-        FREAD(&obs[kk].center_temp, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].center_temp, 4, 1, fpIn);
         ieee_big32(obs[kk].center_temp);
-        FREAD(&obs[kk].fdd, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].fdd, 4, 1, fpIn);
         ieee_big32(obs[kk].fdd);
-        FREAD(&obs[kk].cell_area, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].cell_area, 4, 1, fpIn);
         ieee_big32(obs[kk].cell_area);
-        FREAD(&obs[kk].n_age, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].n_age, 2, 1, fpIn);
         ieee_big16(obs[kk].n_age);
         /*
         printf("\nObservation: %d, %.6f\n", obs[kk].year, obs[kk].time);
@@ -699,21 +680,8 @@ int main(int argc, char **argv)
         double map_x = obs[kk].map_x * 1000.0;
         double map_y = obs[kk].map_y * 1000.0;
 
-        // Define projection block
-        read_proj_file("polar_stereographic_north_ssmi.proj", 
-                 &pps, &proj_type, &datum, &spheroid);
-        pps.ps.false_easting = 0.0;
-        pps.ps.false_northing = 0.0;
-        proj = meta_projection_init();
-        proj->type = proj_type;
-        proj->datum = HUGHES_DATUM;
-        proj->spheroid = HUGHES_SPHEROID;
-        proj->param = pps;
-        strcpy(proj->units, "meters");
-        proj->hem = 'N';
-        spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
+        // Define specific projection block attributes
         proj_to_latlon(proj, map_x, map_y, 0.0, &lat, &lon, &height);
-        meta = raw_init();
         meta->projection = proj;
       
         // Read ice age information
@@ -722,15 +690,15 @@ int main(int argc, char **argv)
         if (obs[kk].n_age > 0) {
           age = (ice_age_t *) MALLOC(sizeof(ice_age_t)*obs[kk].n_age);
           for (ll=0; ll<obs[kk].n_age; ll++) {
-            FREAD(&age[ll].r_age, 4, 1, fpIn);
+            ASF_FREAD(&age[ll].r_age, 4, 1, fpIn);
             ieee_big32(age[ll].r_age);
-            FREAD(&age[ll].i_age, 4, 1, fpIn);
+            ASF_FREAD(&age[ll].i_age, 4, 1, fpIn);
             ieee_big32(age[ll].i_age);
-            FREAD(&age[ll].frac_area, 2, 1, fpIn);
+            ASF_FREAD(&age[ll].frac_area, 2, 1, fpIn);
             ieee_big16(age[ll].frac_area);
-            FREAD(&age[ll].r_fdd, 4, 1, fpIn);
+            ASF_FREAD(&age[ll].r_fdd, 4, 1, fpIn);
             ieee_big32(age[ll].r_fdd);
-            FREAD(&age[ll].i_fdd, 4, 1, fpIn);
+            ASF_FREAD(&age[ll].i_fdd, 4, 1, fpIn);
             ieee_big32(age[ll].i_fdd);
             /*
             printf("Bin: %d\n", ll+1);
@@ -742,7 +710,7 @@ int main(int argc, char **argv)
           }
         }
         // Read ice thickness information
-        FREAD(&obs[kk].n_thick, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].n_thick, 2, 1, fpIn);
         ieee_big16(obs[kk].n_thick);
         //printf("Number of thickness categories: %d\n", obs[kk].n_thick);
         if (obs[kk].n_thick > n_max)
@@ -751,7 +719,7 @@ int main(int argc, char **argv)
         if (obs[kk].n_thick > 0) {
           thick_far = (short *) MALLOC(sizeof(short)*obs[kk].n_thick);
           for (ll=0; ll<obs[kk].n_thick; ll++) {
-            FREAD(&thick_far[ll], 2, 1, fpIn);
+            ASF_FREAD(&thick_far[ll], 2, 1, fpIn);
             ieee_big16(thick_far[ll]);
             /*
             printf("Fractional area in thickness: %.6f\n", 
@@ -760,16 +728,16 @@ int main(int argc, char **argv)
           }
         }
         // Read general fractional area information
-        FREAD(&obs[kk].far_fyr, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].far_fyr, 2, 1, fpIn);
         ieee_big16(obs[kk].far_fyr);
-        FREAD(&obs[kk].far_my, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].far_my, 2, 1, fpIn);
         ieee_big16(obs[kk].far_my);
         /*
         printf("Area first-year ice: %.6f\n", (obs[kk].far_fyr)*0.001);
         printf("Area multi-year ice: %.6f\n", (obs[kk].far_my)*0.001);
         */
         // Read ice ridge information
-        FREAD(&obs[kk].n_ridge, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].n_ridge, 2, 1, fpIn);
         ieee_big16(obs[kk].n_ridge);
         //printf("Number of ridging events: %d\n", obs[kk].n_ridge);
         if (obs[kk].n_ridge > n_max)
@@ -778,21 +746,21 @@ int main(int argc, char **argv)
         if (obs[kk].n_ridge > 0) {
           ridge = (ice_ridge_t *) MALLOC(sizeof(ice_ridge_t)*obs[kk].n_ridge);
           for (ll=0; ll<obs[kk].n_ridge; ll++) {
-            FREAD(&ridge[ll].r_ridge_ar, 4, 1, fpIn);
+            ASF_FREAD(&ridge[ll].r_ridge_ar, 4, 1, fpIn);
             ieee_big32(ridge[ll].r_ridge_ar);
-            FREAD(&ridge[ll].i_ridge_ar, 4, 1, fpIn);
+            ASF_FREAD(&ridge[ll].i_ridge_ar, 4, 1, fpIn);
             ieee_big32(ridge[ll].i_ridge_ar);
-            FREAD(&ridge[ll].r_ridge_tr, 4, 1, fpIn);
+            ASF_FREAD(&ridge[ll].r_ridge_tr, 4, 1, fpIn);
             ieee_big32(ridge[ll].r_ridge_tr);
-            FREAD(&ridge[ll].i_ridge_tr, 4, 1, fpIn);
+            ASF_FREAD(&ridge[ll].i_ridge_tr, 4, 1, fpIn);
             ieee_big32(ridge[ll].i_ridge_tr);
-            FREAD(&ridge[ll].ridge_far, 2, 1, fpIn);
+            ASF_FREAD(&ridge[ll].ridge_far, 2, 1, fpIn);
             ieee_big16(ridge[ll].ridge_far);
-            FREAD(&ridge[ll].r_ridge_fdd, 4, 1, fpIn);
+            ASF_FREAD(&ridge[ll].r_ridge_fdd, 4, 1, fpIn);
             ieee_big32(ridge[ll].r_ridge_fdd);
-            FREAD(&ridge[ll].i_ridge_fdd, 4, 1, fpIn);
+            ASF_FREAD(&ridge[ll].i_ridge_fdd, 4, 1, fpIn);
             ieee_big32(ridge[ll].i_ridge_fdd);
-            FREAD(&ridge[ll].ridge_flag, 2, 1, fpIn);
+            ASF_FREAD(&ridge[ll].ridge_flag, 2, 1, fpIn);
             ieee_big16(ridge[ll].ridge_flag);
             /*
             printf("Ridge: %d\n", ll+1);
@@ -849,36 +817,39 @@ int main(int argc, char **argv)
     }
   }
   else if (strncmp_case(prod_description, "Backscatter Histogram", 21) == 0) {
-    FREAD(&n_cells, 4, 1, fpIn);
+    ASF_FREAD(&n_cells, 4, 1, fpIn);
     ieee_big32(n_cells);
-    FREAD(&create_year, 2, 1, fpIn);
+    ASF_FREAD(&create_year, 2, 1, fpIn);
     ieee_big16(create_year);
-    FREAD(&create_time, 8, 1, fpIn);
+    ASF_FREAD(&create_time, 8, 1, fpIn);
     ieee_big64(create_time);
-    FREAD(&prod_start_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_start_year, 2, 1, fpIn);
     ieee_big16(prod_start_year);
-    FREAD(&prod_start_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_start_time, 8, 1, fpIn);
     ieee_big64(prod_start_time);
-    FREAD(&prod_end_year, 2, 1, fpIn);
+    ASF_FREAD(&prod_end_year, 2, 1, fpIn);
     ieee_big16(prod_end_year);
-    FREAD(&prod_end_time, 8, 1, fpIn);
+    ASF_FREAD(&prod_end_time, 8, 1, fpIn);
     ieee_big64(prod_end_time);
-    FREAD(&sw_version, 12, 1, fpIn);
-    FREAD(&n_w_lat, 4, 1, fpIn);
+
+    // read in the version field and create a string from it
+    ASF_FREAD(&sw_version, sizeof(sw_version) - 1, 1, fpIn);
+    sw_version[sizeof(sw_version) - 1] = '\0';
+    ASF_FREAD(&n_w_lat, 4, 1, fpIn);
     ieee_big32(n_w_lat);
-    FREAD(&n_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_w_lon, 4, 1, fpIn);
     ieee_big32(n_w_lon);
-    FREAD(&n_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lat, 4, 1, fpIn);
     ieee_big32(n_e_lat);
-    FREAD(&n_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&n_e_lon, 4, 1, fpIn);
     ieee_big32(n_e_lon);
-    FREAD(&s_w_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lat, 4, 1, fpIn);
     ieee_big32(s_w_lat);
-    FREAD(&s_w_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_w_lon, 4, 1, fpIn);
     ieee_big32(s_w_lon);
-    FREAD(&s_e_lat, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lat, 4, 1, fpIn);
     ieee_big32(s_e_lat);
-    FREAD(&s_e_lon, 4, 1, fpIn);
+    ASF_FREAD(&s_e_lon, 4, 1, fpIn);
     ieee_big32(s_e_lon);
     
     printf("Number cells: %d\n", n_cells);
@@ -888,8 +859,7 @@ int main(int argc, char **argv)
     printf("Product start time: %.6f\n", prod_start_time);
     printf("Product end year: %d\n", prod_end_year);
     printf("Product end time: %.6f\n", prod_end_time);
-    snprintf(sw_ver, 5, "%s", sw_version);
-    printf("Software version: %s\n", sw_ver);
+    printf("Software version: %s\n", sw_version);
     printf("NW: %.6f %.6f\n", n_w_lat, n_w_lon);
     printf("NE: %.6f %.6f\n", n_e_lat, n_e_lon);
     printf("SW: %.6f %.6f\n", s_w_lat, s_w_lon);
@@ -901,9 +871,9 @@ int main(int argc, char **argv)
     
     // Backscatter range record
     for (ii=0; ii<25; ii++) {
-      FREAD(&bsr_low[ii], 4, 1, fpIn);
+      ASF_FREAD(&bsr_low[ii], 4, 1, fpIn);
       ieee_big32(bsr_low[ii]);
-      FREAD(&bsr_high[ii], 4, 1, fpIn);
+      ASF_FREAD(&bsr_high[ii], 4, 1, fpIn);
       ieee_big32(bsr_high[ii]);
       printf("BSR[%2d]: %.6f, %.6f\n", ii+1, bsr_low[ii], bsr_high[ii]);
     }
@@ -915,15 +885,15 @@ int main(int argc, char **argv)
       fprintf(fpOut, "FBSR_%d,", ll+1);
     fprintf(fpOut, "INC_ANG\n");
     for (ii=0; ii<n_cells; ii++) {
-      FREAD(&cell_id, 4, 1, fpIn);
+      ASF_FREAD(&cell_id, 4, 1, fpIn);
       ieee_big32(cell_id);
-      FREAD(&birth_year, 2, 1, fpIn);
+      ASF_FREAD(&birth_year, 2, 1, fpIn);
       ieee_big16(birth_year);
-      FREAD(&birth_time, 8, 1, fpIn);
+      ASF_FREAD(&birth_time, 8, 1, fpIn);
       ieee_big64(birth_time);
-      FREAD(&init_area, 4, 1, fpIn);
+      ASF_FREAD(&init_area, 4, 1, fpIn);
       ieee_big32(init_area);
-      FREAD(&n_int_obs, 4, 1, fpIn);
+      ASF_FREAD(&n_int_obs, 4, 1, fpIn);
       ieee_big32(n_int_obs);
       
       printf("Cell ID: %d\r", cell_id);
@@ -935,27 +905,27 @@ int main(int argc, char **argv)
       backscatter_t *obs = 
       	(backscatter_t *) MALLOC(sizeof(backscatter_t)*n_int_obs);
       for (kk=0; kk<n_int_obs; kk++) {
-        FREAD(&obs[kk].year, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].year, 2, 1, fpIn);
         ieee_big16(obs[kk].year);
-        FREAD(&obs[kk].time, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].time, 8, 1, fpIn);
         ieee_big64(obs[kk].time);
-        FREAD(&obs[kk].map_x, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_x, 8, 1, fpIn);
         ieee_big64(obs[kk].map_x);
-        FREAD(&obs[kk].map_y, 8, 1, fpIn);
+        ASF_FREAD(&obs[kk].map_y, 8, 1, fpIn);
         ieee_big64(obs[kk].map_y);
-        FREAD(&obs[kk].center_temp, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].center_temp, 4, 1, fpIn);
         ieee_big32(obs[kk].center_temp);
-        FREAD(&obs[kk].cell_area, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].cell_area, 4, 1, fpIn);
         ieee_big32(obs[kk].cell_area);
-        FREAD(&obs[kk].multi_year, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].multi_year, 2, 1, fpIn);
         ieee_big16(obs[kk].multi_year);
-        FREAD(&obs[kk].open_water, 2, 1, fpIn);
+        ASF_FREAD(&obs[kk].open_water, 2, 1, fpIn);
         ieee_big16(obs[kk].open_water);
         for (ll=0; ll<25; ll++) {
-          FREAD(&obs[kk].frac_back[ll], 2, 1, fpIn);
+          ASF_FREAD(&obs[kk].frac_back[ll], 2, 1, fpIn);
           ieee_big16(obs[kk].frac_back[ll]);
         }
-        FREAD(&obs[kk].inc_ang, 4, 1, fpIn);
+        ASF_FREAD(&obs[kk].inc_ang, 4, 1, fpIn);
         ieee_big32(obs[kk].inc_ang);
         /*
         printf("\nObservation: %d, %.6f\n", obs[kk].year, obs[kk].time);
@@ -971,20 +941,10 @@ int main(int argc, char **argv)
         double map_x = obs[kk].map_x * 1000.0;
         double map_y = obs[kk].map_y * 1000.0;
 
-        // Define projection block
-        read_proj_file("polar_stereographic_north_ssmi.proj", 
-                 &pps, &proj_type, &datum, &spheroid);
-        pps.ps.false_easting = 0.0;
-        pps.ps.false_northing = 0.0;
-        proj = meta_projection_init();
-        proj->type = proj_type;
-        proj->datum = HUGHES_DATUM;
-        proj->spheroid = HUGHES_SPHEROID;
-        proj->param = pps;
-        strcpy(proj->units, "meters");
-        proj->hem = 'N';
-        spheroid_axes_lengths(spheroid, &proj->re_major, &proj->re_minor);
+        // Define specific projection block attributes
         proj_to_latlon(proj, map_x, map_y, 0.0, &lat, &lon, &height);
+	meta->projection = proj;
+
         fprintf(fpOut, "%d,%c,%d,%.6f,", cell_id, stream, birth_year, 
           birth_time);
         fprintf(fpOut, "%.6f,%d,", init_area, n_int_obs);
@@ -1003,15 +963,19 @@ int main(int argc, char **argv)
   }
   
   // Generate metadata
-  sprintf(isoStr, "%s", iso_date());
+  char* iso_str = iso_date();
+  sprintf(isoStr, "%s", iso_str);
+  FREE(iso_str);
   FILE *fpXml = FOPEN(xmlFile, "w");
   fprintf(fpXml, "<rgps>\n");
-  fprintf(fpXml, "  <granule>%s</granule>\n", stripExt(csvFile));
+  char* granule_str = stripExt(csvFile);
+  fprintf(fpXml, "  <granule>%s</granule>\n", granule_str);
+  FREE(granule_str);
   fprintf(fpXml, "  <metadata_creation>%s</metadata_creation>\n", isoStr);
   fprintf(fpXml, "  <metadata>\n");
   fprintf(fpXml, "    <product>\n");
   fprintf(fpXml, "      <file type=\"string\" definition=\"name of the product "
-    "file\">%s</file>\n", product_id);
+    "file\">%s</file>\n", pid);
   fprintf(fpXml, "      <format type=\"string\" definition=\"name of the data "
     "format\">CSV</format>\n");
   fprintf(fpXml, "      <stream type=\"string\" definition=\"name of the stream"
@@ -1101,7 +1065,7 @@ int main(int argc, char **argv)
   fprintf(fpXml, "  <processing>\n");
   rgps2iso_date(create_year, create_time, dateStr);
   fprintf(fpXml, "    <creation_time>%s</creation_time>\n", dateStr);
-  fprintf(fpXml, "    <software_version>%s</software_version>\n", sw_ver);
+  fprintf(fpXml, "    <software_version>%s</software_version>\n", sw_version);
   fprintf(fpXml, "  </processing>\n");
   fprintf(fpXml, "  <root>\n");
   fprintf(fpXml, "    <institution>Alaska Satellite Facility</institution>\n");
@@ -1124,6 +1088,7 @@ int main(int argc, char **argv)
   FREE(inFile);
   FREE(csvFile);
   FREE(xmlFile);
+  meta_free(meta);
   
   return 0;
 }

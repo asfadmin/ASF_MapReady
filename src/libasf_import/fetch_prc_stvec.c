@@ -245,7 +245,7 @@ PRC_REC *fetch_prc_rec(char *file, int recnum)
     asfPrintError("No state vector found - read past end of file \n");
 
   /* Read the current record */
-  FREAD(buf,130,1,fp);
+  ASF_FREAD(buf,130,1,fp);
 
   FCLOSE(fp);
 
@@ -410,10 +410,10 @@ STATE *fetch_prc_header(char *file)
 
   /* Open file & skip over id record */
   fp = FOPEN(file,"r");
-  FREAD(buf,130,1,fp);
+  ASF_FREAD(buf,130,1,fp);
 
   /* Read the header record */
-  FREAD(buf,130,1,fp);
+  ASF_FREAD(buf,130,1,fp);
   FCLOSE(fp);
 
   /* Convert the input buffer */
@@ -467,7 +467,7 @@ DSIDP *fetch_prc_id(char *file)
   tmp->spare[103]='\0';
 
   fp = FOPEN(file,"r");
-  FREAD(buf,130,1,fp);
+  ASF_FREAD(buf,130,1,fp);
   FCLOSE(fp);
 
   sscanf(buf,"%6c%15c%6c%103c",tmp->reckey, tmp->prodid, tmp->dattyp, tmp->spare);
@@ -786,7 +786,7 @@ int update_state_vectors(char *outBaseName, const char *file_in)
 
   // Check for new version of ODR file: xODR
   char spec[5];
-  FREAD(&spec, 1, 4, fpIn); spec[4] = '\0';
+  ASF_FREAD(&spec, 1, 4, fpIn); spec[4] = '\0';
   if (strcmp_case(spec, "xODR") != 0)
     asfPrintError("Unsupported precision state vector file (%s) type\n", 
 		  odrFile);
@@ -813,12 +813,12 @@ int update_state_vectors(char *outBaseName, const char *file_in)
   // Read header information
   char satellite[9];
   int begin, repeat_cycle, arc, nRecords, version;
-  FREAD(&satellite, 1, 8, fpIn); satellite[8] = '\0';
-  FREAD(&begin, 1, 4, fpIn); ieee_big32(begin);
-  FREAD(&repeat_cycle, 1, 4, fpIn); ieee_big32(repeat_cycle);
-  FREAD(&arc, 1, 4, fpIn); ieee_big32(arc);
-  FREAD(&nRecords, 1, 4, fpIn); ieee_big32(nRecords);
-  FREAD(&version, 1, 4, fpIn); ieee_big32(version);
+  ASF_FREAD(&satellite, 1, 8, fpIn); satellite[8] = '\0';
+  ASF_FREAD(&begin, 1, 4, fpIn); ieee_big32(begin);
+  ASF_FREAD(&repeat_cycle, 1, 4, fpIn); ieee_big32(repeat_cycle);
+  ASF_FREAD(&arc, 1, 4, fpIn); ieee_big32(arc);
+  ASF_FREAD(&nRecords, 1, 4, fpIn); ieee_big32(nRecords);
+  ASF_FREAD(&version, 1, 4, fpIn); ieee_big32(version);
 
   // Read state vectors
   doris_prc_polar *stVec = 
@@ -826,10 +826,10 @@ int update_state_vectors(char *outBaseName, const char *file_in)
   int ii, kk, closest = 0, time, nLat, nLon, nHeight;
   double diff = DAY2SEC*100;
   for (ii=0; ii<nRecords; ii++) {
-    FREAD(&time, 1, 4, fpIn); ieee_big32(time);
-    FREAD(&nLat, 1, 4, fpIn); ieee_big32(nLat);
-    FREAD(&nLon, 1, 4, fpIn); ieee_big32(nLon);
-    FREAD(&nHeight, 1, 4, fpIn); ieee_big32(nHeight);
+    ASF_FREAD(&time, 1, 4, fpIn); ieee_big32(time);
+    ASF_FREAD(&nLat, 1, 4, fpIn); ieee_big32(nLat);
+    ASF_FREAD(&nLon, 1, 4, fpIn); ieee_big32(nLon);
+    ASF_FREAD(&nHeight, 1, 4, fpIn); ieee_big32(nHeight);
     stVec[ii].time = time;
     stVec[ii].lat = (double)nLat/10000000.0; 
     stVec[ii].lon = (double)nLon/10000000.0;

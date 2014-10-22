@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 
  	for (ii=0; ii<nl; ii+=size) {
           if ((nl-ii)<BUFSIZE) size = nl-ii;
-/*	  FREAD(inBuf, sizeof(char), ns*size, fpIn);    for layers that require data values */
+/*	  ASF_FREAD(inBuf, sizeof(char), ns*size, fpIn);    for layers that require data values */
 
 	  if (strncmp(projected, "P", 1)==0) {
 	    /* calculation in case the imagery is map projected */

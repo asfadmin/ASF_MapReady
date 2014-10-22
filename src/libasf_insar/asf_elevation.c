@@ -148,7 +148,7 @@ int asf_elevation(char *unwrapped_phase, char *phase_mask,
     double Bn_y,Bp_y;
 
     // Read in data
-    FREAD(mask, sizeof(unsigned char), ncols, fmask);
+    ASF_FREAD(mask, sizeof(unsigned char), ncols, fmask);
     get_float_line(fphase, meta, y, uwp);
     get_float_line(fcoh, meta, y, coh);
     

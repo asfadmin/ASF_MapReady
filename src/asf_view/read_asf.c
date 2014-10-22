@@ -198,7 +198,7 @@ int read_asf_client(int row_start, int n_rows_to_get,
         if (data_type==GREYSCALE_BYTE) {
             // reading byte data directly into the byte cache
             FSEEK64(info->fp, ns*(row_start + nl*info->band_gs), SEEK_SET);
-            FREAD(dest, sizeof(unsigned char), n_rows_to_get*ns, info->fp);
+            ASF_FREAD(dest, sizeof(unsigned char), n_rows_to_get*ns, info->fp);
         }
         else {
             // will have to figure this one out
@@ -223,7 +223,7 @@ int read_asf_client(int row_start, int n_rows_to_get,
                 for (i=0; i<n_rows_to_get; ++i) {
                     int k = 3*ns*i;
                     FSEEK64(info->fp, off + i*ns, SEEK_SET);
-                    FREAD(buf, sizeof(unsigned char), ns, info->fp);
+                    ASF_FREAD(buf, sizeof(unsigned char), ns, info->fp);
                     for (j=0; j<ns; ++j, k += 3)
                         dest[k] = buf[j];
                 }
@@ -235,7 +235,7 @@ int read_asf_client(int row_start, int n_rows_to_get,
                 for (i=0; i<n_rows_to_get; ++i) {
                     int k = 3*ns*i+1;
                     FSEEK64(info->fp, off + i*ns, SEEK_SET);
-                    FREAD(buf, sizeof(unsigned char), ns, info->fp);
+                    ASF_FREAD(buf, sizeof(unsigned char), ns, info->fp);
                     for (j=0; j<ns; ++j, k += 3)
                         dest[k] = buf[j];
                 }
@@ -247,7 +247,7 @@ int read_asf_client(int row_start, int n_rows_to_get,
                 for (i=0; i<n_rows_to_get; ++i) {
                     int k = 3*ns*i+2;
                     FSEEK64(info->fp, off + i*ns, SEEK_SET);
-                    FREAD(buf, sizeof(unsigned char), ns, info->fp);
+                    ASF_FREAD(buf, sizeof(unsigned char), ns, info->fp);
                     for (j=0; j<ns; ++j, k += 3)
                         dest[k] = buf[j];
                 }

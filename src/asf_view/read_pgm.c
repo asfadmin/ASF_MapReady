@@ -99,7 +99,7 @@ int read_pgm_client(int row_start, int n_rows_to_get,
     // iterate over all rows in the pgm
     for ( ii = 0; ii < n_rows_to_get; ii++ )
     {
-      FREAD(buf, sizeof(unsigned char), ns*nchan, info->fp);
+      ASF_FREAD(buf, sizeof(unsigned char), ns*nchan, info->fp);
       for (jj = 0 ; jj < ns; jj++ ) {
         for (b = 0; b<nchan; ++b)
           dest[k+b] = buf[nchan*jj+b];
@@ -138,7 +138,7 @@ meta_parameters* open_pgm(const char *data_name, ClientInterface *client)
     info->fp = fopen(data_name, "rb");
 
     unsigned char magic[3];
-    FREAD(magic, sizeof(unsigned char), 3, info->fp);
+    ASF_FREAD(magic, sizeof(unsigned char), 3, info->fp);
     if (magic[0] == 'P' && (magic[1] == '5' || magic[1] == '6')) {
       info->rgb_flag = magic[1] == '6';
     }
@@ -150,7 +150,7 @@ meta_parameters* open_pgm(const char *data_name, ClientInterface *client)
     // Windows will have an extra byte due to "\r\n" instead of "\n"
     // after the magic characters
     if (magic[2] == '\r') {
-      FREAD(magic, sizeof(unsigned char), 1, info->fp);
+      ASF_FREAD(magic, sizeof(unsigned char), 1, info->fp);
       if (magic[0] != '\n') {
         // should not happen -- reset to just after we read the first 3
         FSEEK(info->fp, 3, SEEK_SET);
@@ -179,7 +179,7 @@ meta_parameters* open_pgm(const char *data_name, ClientInterface *client)
       }
 
       // read "255b" ('b' could be newline or just a space)
-      FREAD(line, sizeof(unsigned char), 4, info->fp);
+      ASF_FREAD(line, sizeof(unsigned char), 4, info->fp);
       if (line[0] != '2' || line[1] != '5' || line[2] != '5' ||
           !isspace(line[3])) {
         printf("Suspicious: '%c%c%c%c' != '255 '\n",
@@ -188,7 +188,7 @@ meta_parameters* open_pgm(const char *data_name, ClientInterface *client)
 
       // For .pgm files generated on Windows, need to read one more byte
       if (line[3] == '\r') {
-        FREAD(line, sizeof(unsigned char), 1, info->fp);
+        ASF_FREAD(line, sizeof(unsigned char), 1, info->fp);
         if (line[0] != '\n') {
           // should not happen -- reset to just after we read the first 3
           FSEEK(info->fp, -1, SEEK_CUR);

@@ -133,7 +133,7 @@ void dumpCeosRecord(const char *inName)
 	     subtype[0], subtype[1], subtype[2]);
       printf("sequence: %d, length: %d\n", rec_seq, length);
 
-      FREAD((buff)+12, length-12, 1, fp);
+      ASF_FREAD((buff)+12, length-12, 1, fp);
     }
     FCLOSE(fp);
     
@@ -203,7 +203,7 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
       if ((long long)total-length > size)
         break;
       else
-	    FREAD((*buff)+12, length-12, 1, fp);
+	    ASF_FREAD((*buff)+12, length-12, 1, fp);
 
       // The JAXA FACDR requires the sequence number to be able to pick
       // the correct one. For level 1.1 it is sequence 17, for level 1.5

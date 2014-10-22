@@ -270,7 +270,7 @@ int main(int argc, char **argv)
   // Read the data
   long pixel_count = line_count*sample_count;
   float *floatBuf = (float *) MALLOC(sizeof(float)*pixel_count*num);
-  FREAD(&floatBuf[0], sizeof(float), pixel_count*num, fpIn);
+  ASF_FREAD(&floatBuf[0], sizeof(float), pixel_count*num, fpIn);
   FCLOSE(fpIn);
   
   // Work the metadata
@@ -295,11 +295,11 @@ int main(int argc, char **argv)
   if (num > 1) {
     if (image_data_type == ICE_AGE)
       fprintf(fpXml, "      <number_ice_age_categories type=\"int\" definition="
-      "\"number of ice age categories\">%d</number_ice_categories>\n", num);
+      "\"number of ice age categories\">%d</number_ice_age_categories>\n", num);
     else if (image_data_type == ICE_THICKNESS) {
       if (inc > 0)
         fprintf(fpXml, "      <ice_thickness_increment type=\"float\" "
-          "definition=\"ice thickness increment\" type=\"m\">%.3f"
+          "definition=\"ice thickness increment\" unit=\"m\">%.3f"
           "</ice_thickness_increment>\n", inc*0.01);
       fprintf(fpXml, "      <number_ice_thickness_categories type=\"int\" "
         "definition=\"number of ice thickness categories\">%d"
@@ -395,7 +395,6 @@ int main(int argc, char **argv)
   FREE(floatBuf);
   FREE(floatBand);
   FCLOSE(fpList);
-  FCLOSE(fpIn);
 
   // Adding map projection information to metadata    
   fprintf(fpXml, "      <projection_string type=\"string\" definition=\"map "
