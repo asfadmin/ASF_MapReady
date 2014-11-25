@@ -5,10 +5,12 @@ Release: %{buildnumber}
 License: GPLv3
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Prefix: /usr/local
-
+Autoprov: 0
 Requires: proj-nad
-
 BuildRequires: scons
+
+%pre
+rm -rf %{prefix}/share/asf_tools
 
 %description
 The ASF MapReady Remote Sensing Toolkit is a set of tools for
