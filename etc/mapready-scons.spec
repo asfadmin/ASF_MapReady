@@ -9,6 +9,9 @@ Autoprov: 0
 Requires: proj-nad
 BuildRequires: scons
 
+# exclude the internal libasf libraries from being required
+%global __requires_exclude ^libasf*$
+
 %pre
 rm -rf %{prefix}/share/asf_tools
 
