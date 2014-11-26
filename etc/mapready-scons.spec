@@ -11,6 +11,7 @@ BuildRequires: scons
 
 # exclude the internal libasf libraries from being required
 %filter_requires_in %{prefix}/lib
+%filter_setup
 
 %pre
 rm -rf %{prefix}/share/asf_tools
