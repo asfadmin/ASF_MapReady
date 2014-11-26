@@ -1,4 +1,4 @@
-Summary: ASF Tools for processing SAR data
+Summary: The ASF Mapready suite for processing SAR and other data
 Name: %{package_name}
 Version: %{asfversion}
 Release: %{buildnumber}
@@ -9,6 +9,11 @@ Autoprov: 0
 Requires: proj-nad
 BuildRequires: scons
 
+# exclude the internal libasf libraries from being required
+%filter_from_requires /libasf/d
+%filter_setup
+
+# clean out the share/asf_tools directory to avoid leaving cruft
 %pre
 rm -rf %{prefix}/share/asf_tools
 
