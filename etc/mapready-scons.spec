@@ -10,8 +10,7 @@ Requires: proj-nad
 BuildRequires: scons
 
 # exclude the internal libasf libraries from being required
-%filter_requires_in %{prefix}/lib
-%filter_setup
+%global __requires_exclude_from %{prefix}/lib
 
 %pre
 rm -rf %{prefix}/share/asf_tools
