@@ -10,7 +10,7 @@ Requires: proj-nad
 BuildRequires: scons
 
 # exclude the internal libasf libraries from being required
-%filter_requires_in %{buildroot}%{prefix}/lib
+%filter_from_requires /libasf/d
 %filter_setup
 
 # clean out the share/asf_tools directory to avoid leaving cruft
