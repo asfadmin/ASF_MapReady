@@ -18,7 +18,6 @@ localenv.AppendUnique(CPPPATH = [
         "/usr/include/libshp",
         ])
 
-localenv.ParseConfig("pkg-config --cflags --libs netcdf")
 localenv.ParseConfig("pkg-config --cflags --libs zlib")
 
 localenv.AppendUnique(LIBS = [

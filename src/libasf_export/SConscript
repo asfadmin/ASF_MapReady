@@ -14,7 +14,6 @@ localenv.AppendUnique(CPPPATH = [
 
 localenv.ParseConfig("pkg-config --cflags --libs libpng")
 localenv.ParseConfig("pkg-config --cflags --libs gsl")
-localenv.ParseConfig("pkg-config --cflags --libs netcdf")
 localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
 
 localenv.AppendUnique(LIBS = [
@@ -30,6 +29,7 @@ localenv.AppendUnique(LIBS = [
     "tiff",
     "geotiff",
     "glib-2.0",
+    "netcdf",
 ])
 
 libs = localenv.SharedLibrary("libasf_export", [
