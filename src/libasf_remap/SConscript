@@ -8,7 +8,6 @@ localenv.AppendUnique(CPPPATH = [
         "#src/libasf_proj/",
         ])
 
-localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 
 localenv.AppendUnique(LIBS = [
     "m",

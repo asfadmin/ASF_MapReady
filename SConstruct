@@ -214,6 +214,12 @@ else:
 # common include directories
 globalenv.AppendUnique(CPPPATH = ["."])
 
+# platform-specific include directories
+if platform.system() == "Linux":
+    globalenv.AppendUnique(CPPPATH = ["/usr/include/libgeotiff",])
+elif platform.system() == "Darwin":
+    globalenv.AppendUnique(CPPPATH = ["/sw/include",])
+
 # do the actual building
 for src_sub in src_subs:
     src_dir = os.path.join(source_root, src_sub)

@@ -12,7 +12,6 @@ localenv.AppendUnique(CPPPATH = [
         "#src/libasf_import/",
         ])
 
-localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs libpng")
 localenv.ParseConfig("pkg-config --cflags --libs gsl")
@@ -30,6 +29,7 @@ localenv.AppendUnique(LIBS = [
     "asf_proj",
     "asf_geocode",
     "tiff",
+    "geotiff",
 ])
 
 libs = localenv.SharedLibrary("libasf_export", [
