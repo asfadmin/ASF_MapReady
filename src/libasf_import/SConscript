@@ -10,7 +10,6 @@ localenv.AppendUnique(CPPPATH = [
     "#src/libasf_sar/",
     ])
 
-localenv.ParseConfig("pkg-config --cflags --libs gdal")
 localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs gsl")
 
@@ -26,6 +25,7 @@ localenv.AppendUnique(LIBS = [
     "tiff",
     "geotiff",
     "glib-2.0",
+    "gdal",
 ])
 
 libs = localenv.SharedLibrary("libasf_import", [

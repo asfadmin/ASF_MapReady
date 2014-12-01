@@ -220,6 +220,7 @@ if platform.system() == "Linux":
         "/usr/include/libgeotiff",
         "/usr/include/glib-2.0",
         "/usr/lib64/glib-2.0/include",
+        "/usr/include/gdal",
     ])
 elif platform.system() == "Darwin":
     globalenv.AppendUnique(CPPPATH = [
