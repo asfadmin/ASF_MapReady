@@ -16,7 +16,6 @@ localenv.AppendUnique(CPPPATH = [
 
 localenv.ParseConfig("pkg-config --cflags --libs libglade-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs libpng")
-localenv.ParseConfig("pkg-config --cflags --libs gtk+-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
 
 localenv.AppendUnique(LIBS = [
