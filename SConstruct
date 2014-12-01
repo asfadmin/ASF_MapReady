@@ -221,6 +221,14 @@ if platform.system() == "Linux":
         "/usr/include/glib-2.0",
         "/usr/lib64/glib-2.0/include",
         "/usr/include/gdal",
+        "/usr/include/gtk-2.0",
+        "/usr/include/cairo",
+        "/usr/include/pango-1.0",
+        "/usr/lib64/gtk-2.0/include",
+        "/usr/include/gdk-pixbuf-2.0",
+        "/usr/include/atk-1.0",
+        "/usr/include/libglade-2.0",
+        "/usr/include/libxml2",
     ])
 elif platform.system() == "Darwin":
     globalenv.AppendUnique(CPPPATH = [
