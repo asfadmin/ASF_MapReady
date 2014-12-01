@@ -10,7 +10,6 @@ localenv.AppendUnique(CPPPATH = [
     "#src/libasf_raster/",
 ])
 
-localenv.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
 
 localenv.AppendUnique(LIBS = [
     "asf",
@@ -19,6 +18,7 @@ localenv.AppendUnique(LIBS = [
     "gtk-x11-2.0",
     "gobject-2.0",
     "glade-2.0",
+    "glib-2.0",
 ])
 
 bins = localenv.Program("proj2proj", [
