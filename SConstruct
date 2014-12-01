@@ -70,10 +70,10 @@ else:
         "docs":   os.path.join(GetOption("header_prefix"), "doc"),
     }
 
-# set up extra paths for various common build systems
+# set up various platform-specific things
 if platform.system() == "Darwin":
-    # Fink
-    globalenv.Environment(ENV = {"PATH": ["/sw/bin", "/sw/sbin"]})
+    # the default Fink binary paths
+    globalenv.AppendUnique(ENV = {"PATH": ["/sw/bin", "/sw/sbin",]})
 
 endian = checkEndian(globalenv)
 
