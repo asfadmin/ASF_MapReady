@@ -216,9 +216,15 @@ globalenv.AppendUnique(CPPPATH = ["."])
 
 # platform-specific include directories
 if platform.system() == "Linux":
-    globalenv.AppendUnique(CPPPATH = ["/usr/include/libgeotiff",])
+    globalenv.AppendUnique(CPPPATH = [
+        "/usr/include/libgeotiff",
+        "/usr/include/glib-2.0",
+        "/usr/lib64/glib-2.0/include",
+    ])
 elif platform.system() == "Darwin":
-    globalenv.AppendUnique(CPPPATH = ["/sw/include",])
+    globalenv.AppendUnique(CPPPATH = [
+        "/sw/include",
+    ])
 
 # do the actual building
 for src_sub in src_subs:
