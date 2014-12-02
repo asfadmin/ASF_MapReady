@@ -45,10 +45,6 @@ pkg_version = GetOption("pkg_version")
 
 globalenv = Environment(TOOLS = ["default", add_UnitTest, checkEndian])
 
-source_root = "src"
-
-build_base_dir = "build"
-
 inst_dirs = {
     "bins":   os.path.join(inst_base, "bin"),
     "libs":   os.path.join(inst_base, "lib"),
@@ -95,8 +91,7 @@ f.write("#define ASF_BIN_DIR \"" + header_dirs["bins"] + "\"\n")
 f.write("#define ASF_DOC_DIR \"" + header_dirs["docs"] + "\"\n") 
 f.close()
 
-# get all the subdirectories under the source root directory, and make these the default targets
-#src_subs = os.walk(source_root).next()[1]
+# List out all the subdirectories we want to build in, with library directories grouped separately.
 lib_subs = [
     "libasf_import",
     "libasf_terrcorr",
@@ -190,11 +185,13 @@ src_subs = lib_subs + [
     ]
 
 # paths where the libraries will be built
+build_base = os.path.join("build", platform.system() + "-" + platform.machine() + "-")
 if release_build == False:
-    build_head_dir = platform.system() + "-" + platform.machine() + "-" + "debug"
+    build_base += "debug"
 else:
-    build_type_path = platform.system() + "-" + platform.machine() + "-" + "release"
-rpath_link_paths = [os.path.join(build_base_dir, build_head_dir, lib_sub) for lib_sub in lib_subs]
+    build_base += "release"
+
+rpath_link_paths = [os.path.join(build_base, lib_sub) for lib_sub in lib_subs]
 
 lib_build_paths = [os.path.join("#", rpath_link_path) for rpath_link_path in rpath_link_paths]
 
@@ -237,14 +234,17 @@ elif platform.system() == "Darwin":
 
 # do the actual building
 for src_sub in src_subs:
-    src_dir = os.path.join(source_root, src_sub)
-    # the next line exists because there seems to be no way of getting the source directory from within a tool run from an SConscript with the variant_dir option
-    globalenv["src_dir"] = src_dir
-    build_dir = os.path.join(build_base_dir, build_head_dir, src_sub)
-    globalenv.SConscript(dirs = src_dir, exports = ["globalenv"], variant_dir = build_dir, duplicate = 0)
+    src_dir = os.path.join("src", src_sub)
+    build_dir = os.path.join(build_base, src_sub)
+    globalenv.SConscript(
+        dirs = src_dir,
+        exports = ["globalenv"],
+        variant_dir = build_dir,
+        duplicate = 0,
+    )
 
 # configure targets, and make "build" the default
-build_subs = [os.path.join("#", build_base_dir, build_head_dir, sub) for sub in src_subs]
+build_subs = [os.path.join("#", build_base, sub) for sub in src_subs]
 
 globalenv.Alias("build", build_subs)
 globalenv.Alias("install", inst_dirs.values())
