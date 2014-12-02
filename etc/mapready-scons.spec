@@ -31,7 +31,7 @@ processing of ALOS data.
 scons --pkg_version=%{version}-%{release} --release_build
 
 %install
-scons install --prefix=%{buildroot}%{prefix} --header_prefix=%{prefix} --pkg_version=%{version}-%{release}
+scons install --prefix=%{buildroot}%{prefix} --header_prefix=%{prefix} --pkg_version=%{version}-%{release} --release_build
 
 %files
 %{prefix}
