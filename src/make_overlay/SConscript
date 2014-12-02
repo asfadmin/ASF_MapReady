@@ -9,8 +9,6 @@ localenv.AppendUnique(CPPPATH = [
         "#src/libasf_raster",
         ])
 
-localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
-localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 
 localenv.AppendUnique(LIBS = [
     "m",

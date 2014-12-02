@@ -5,7 +5,6 @@ localenv.AppendUnique(CPPPATH = [
     "#include",
 ])
     
-localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 
 libs = localenv.SharedLibrary("asf", [
     "asf_tiff.c",

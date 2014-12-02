@@ -2,17 +2,14 @@ Import("globalenv")
 localenv = globalenv.Clone()
 
 localenv.AppendUnique(CPPPATH = [
-        "#src/asf/",
-        "#include/",
-        "#src/asf_meta/",
-        "#src/libasf_proj/",
-        "#src/libasf_raster/",
-        "#src/libasf_sar/",
-        ])
+    "#src/asf/",
+    "#include/",
+    "#src/asf_meta/",
+    "#src/libasf_proj/",
+    "#src/libasf_raster/",
+    "#src/libasf_sar/",
+    ])
 
-localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
-localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
-localenv.ParseConfig("pkg-config --cflags --libs gdal")
 localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs gsl")
 
@@ -26,6 +23,9 @@ localenv.AppendUnique(LIBS = [
     "asf_raster",
     "asf_sar",
     "tiff",
+    "geotiff",
+    "glib-2.0",
+    "gdal",
 ])
 
 libs = localenv.SharedLibrary("libasf_import", [

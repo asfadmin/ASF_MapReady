@@ -1,4 +1,5 @@
 import os.path
+import platform
 
 AddOption("--prefix",
           dest = "prefix",
@@ -7,6 +8,7 @@ AddOption("--prefix",
           action = "store",
           metavar = "DIR",
           help = "The base path where 'scons install' puts things. The config.h header will use this path unless overridden with '--header_prefix'.",
+          default = "/usr/local",
           )
 
 # The header_prefix option, when specified, will write the given directory to the config.h header. This is a hack necessary to allow Jenkins to do the RPM build without hard-coding the Jenkins build root path into the Mapready binaries. config.h itself is an artifact of the make/autotools build system, and when that system goes away, config.h can go away, and a cleaner solution can be found.
@@ -26,26 +28,24 @@ AddOption("--pkg_version",
           action = "store",
           metavar = "DIR",
           help = "This defines the version string applied to the entire package.",
+          default = "UNDEFINED",
+          )
+
+AddOption("--release_build",
+          dest = "release_build",
+          action = "store_true",
+          help = "Set to do a release (i.e., not debug) build.",
+          default = False,
           )
 
 # parse and check command line options
-if GetOption("prefix") is None:
-    inst_base = "/usr/local"
-else:
-    inst_base = GetOption("prefix")
-
-if GetOption("pkg_version") is None:
-    pkg_version = "UNDEFINED"
-else:
-    pkg_version = GetOption("pkg_version")
+release_build = GetOption("release_build")
+inst_base = GetOption("prefix")
+pkg_version = GetOption("pkg_version")
 
 globalenv = Environment(TOOLS = ["default", add_UnitTest, checkEndian])
 
 source_root = "src"
-
-# FIXME hard-coded build params, needed until we 
-platform = "linux64"
-build_type = "debug"
 
 build_base_dir = "build"
 
@@ -69,6 +69,11 @@ else:
         "mans":   os.path.join(GetOption("header_prefix"), "man"),
         "docs":   os.path.join(GetOption("header_prefix"), "doc"),
     }
+
+# set up various platform-specific things
+if platform.system() == "Darwin":
+    # the default Fink binary paths
+    globalenv.AppendUnique(ENV = {"PATH": ["/sw/bin", "/sw/sbin",]})
 
 endian = checkEndian(globalenv)
 
@@ -185,7 +190,11 @@ src_subs = lib_subs + [
     ]
 
 # paths where the libraries will be built
-rpath_link_paths = [os.path.join(build_base_dir, platform + "." + build_type, lib_sub) for lib_sub in lib_subs]
+if release_build == False:
+    build_head_dir = platform.system() + "-" + platform.machine() + "-" + "debug"
+else:
+    build_type_path = platform.system() + "-" + platform.machine() + "-" + "release"
+rpath_link_paths = [os.path.join(build_base_dir, build_head_dir, lib_sub) for lib_sub in lib_subs]
 
 lib_build_paths = [os.path.join("#", rpath_link_path) for rpath_link_path in rpath_link_paths]
 
@@ -193,22 +202,49 @@ lib_build_paths = [os.path.join("#", rpath_link_path) for rpath_link_path in rpa
 globalenv.AppendUnique(LIBPATH = lib_build_paths)
 
 # common command line options
-globalenv.AppendUnique(CCFLAGS = ["-Wall", "-g", "-O0", "-DMAPREADY_VERSION_STRING=\\\"" + pkg_version + "\\\""])
+globalenv.AppendUnique(CCFLAGS = ["-Wall", "-DMAPREADY_VERSION_STRING=\\\"" + pkg_version + "\\\""])
 globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined", "-Wl,-rpath=\\$$ORIGIN/../lib"] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
+
+# release type-specific command line options
+if release_build == False:
+    globalenv.AppendUnique(CCFLAGS = ["-g", "-O0"])
+else:
+    globalenv.AppendUnique(CCFLAGS = ["-O2"])
 
 # common include directories
 globalenv.AppendUnique(CPPPATH = ["."])
+
+# platform-specific include directories
+if platform.system() == "Linux":
+    globalenv.AppendUnique(CPPPATH = [
+        "/usr/include/libgeotiff",
+        "/usr/include/glib-2.0",
+        "/usr/lib64/glib-2.0/include",
+        "/usr/include/gdal",
+        "/usr/include/gtk-2.0",
+        "/usr/include/cairo",
+        "/usr/include/pango-1.0",
+        "/usr/lib64/gtk-2.0/include",
+        "/usr/include/gdk-pixbuf-2.0",
+        "/usr/include/atk-1.0",
+        "/usr/include/libglade-2.0",
+        "/usr/include/libxml2",
+    ])
+elif platform.system() == "Darwin":
+    globalenv.AppendUnique(CPPPATH = [
+        "/sw/include",
+    ])
 
 # do the actual building
 for src_sub in src_subs:
     src_dir = os.path.join(source_root, src_sub)
     # the next line exists because there seems to be no way of getting the source directory from within a tool run from an SConscript with the variant_dir option
     globalenv["src_dir"] = src_dir
-    build_dir = os.path.join(build_base_dir, platform + "." + build_type, src_sub)
+    build_dir = os.path.join(build_base_dir, build_head_dir, src_sub)
     globalenv.SConscript(dirs = src_dir, exports = ["globalenv"], variant_dir = build_dir, duplicate = 0)
 
 # configure targets, and make "build" the default
-build_subs = [os.path.join("#", build_base_dir, platform + "." + build_type, sub) for sub in src_subs]
+build_subs = [os.path.join("#", build_base_dir, build_head_dir, sub) for sub in src_subs]
 
 globalenv.Alias("build", build_subs)
 globalenv.Alias("install", inst_dirs.values())
