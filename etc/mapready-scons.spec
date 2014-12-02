@@ -28,10 +28,10 @@ The ASF MapReady Remote Sensing Toolkit now supports the
 processing of ALOS data.
 
 %build
-scons --pkg_version=%{version}-%{release}
+scons --pkg_version=%{version}-%{release} --release_build
 
 %install
-scons install --prefix=%{buildroot}%{prefix} --header_prefix=%{prefix} --pkg_version=%{version}-%{release}
+scons install --prefix=%{buildroot}%{prefix} --header_prefix=%{prefix} --pkg_version=%{version}-%{release} --release_build
 
 %files
 %{prefix}
