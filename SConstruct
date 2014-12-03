@@ -229,7 +229,8 @@ if platform.system() == "Linux":
     ])
 elif platform.system() == "Darwin":
     globalenv.AppendUnique(CPPPATH = [
-        "/sw/include",
+        "/sw/include", # Fink
+        "/sw/include/glib-2.0", # Fink
     ])
 
 # do the actual building
