@@ -232,6 +232,7 @@ elif platform.system() == "Darwin":
         "/sw/include", # Fink
         "/sw/include/glib-2.0", # Fink
         "/sw/lib/glib-2.0/include", # Fink
+        "/sw/include/gdal1",
     ])
 
 # do the actual building
