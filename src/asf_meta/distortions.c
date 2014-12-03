@@ -1,5 +1,3 @@
-
-#include "projects.h"
 #include "asf_meta.h"
 #include "libasf_proj.h"
 #include "proj_api.h"
