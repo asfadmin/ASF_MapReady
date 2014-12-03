@@ -28,7 +28,7 @@ PROGRAM HISTORY:
     1.25    6/03   P. Denny      - Forget about the DDR file, use meta
                                     Don't let input & output name be the same
                                     Use get/put_*_line routines instead of
-                                     ASF_FREAD/FWRITE 
+                                     ASF_FREAD/ASF_FWRITE 
     1.5     5/07   K. Hogenson   - moved code to libasf_sar
 
 HARDWARE/SOFTWARE LIMITATIONS:

@@ -186,7 +186,7 @@ main(int argc, char **argv)
 #endif
     }
 
-    /* allow FOPEN, ASF_FREAD, FWRITE to fail without aborting */
+    /* allow FOPEN, ASF_FREAD, ASF_FWRITE to fail without aborting */
     caplib_behavior_on_error = BEHAVIOR_ON_ERROR_CONTINUE;
 
     /* add version number to window title, request a default size */

@@ -141,8 +141,8 @@ switch (*action)
 
 		ASF_FREAD(buffer,1,total_len,*fd);
 
-		FWRITE(header,1,HDRL,fdtemp);
-		FWRITE(buffer,1,nbytes,fdtemp);
+		ASF_FWRITE(header,1,HDRL,fdtemp);
+		ASF_FWRITE(buffer,1,nbytes,fdtemp);
 
 		empty = 0;
 		}

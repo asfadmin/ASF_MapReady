@@ -200,7 +200,7 @@ int main(int argc,char *argv[])
 		  }
 
 		/* Write modified data to output file */
-		FWRITE(outBuf, sample_count*sizeof(float),1, fpOut);
+		ASF_FWRITE(outBuf, sample_count*sizeof(float),1, fpOut);
 
 		/* Calculate statistics for this line */
 		for (samp = 0; samp < sample_count; samp++)

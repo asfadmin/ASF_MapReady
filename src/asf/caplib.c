@@ -409,15 +409,15 @@ size_t FREAD_CHECKED(void *ptr, size_t size, size_t nitems, FILE *stream, int sh
     return ret;
 }
 
-size_t FWRITE(const void *ptr,size_t size,size_t nitems,FILE *stream)
+size_t ASF_FWRITE(const void *ptr,size_t size,size_t nitems,FILE *stream)
 {
     size_t ret;
     char error_message[1024];
 
     if (ptr==NULL)
-        programmer_error("NULL data buffer passed to FWRITE.\n");
+        programmer_error("NULL data buffer passed to ASF_FWRITE.\n");
     if (stream==NULL)
-        programmer_error("NULL file pointer passed to FWRITE.\n");
+        programmer_error("NULL file pointer passed to ASF_FWRITE.\n");
     ret=fwrite(ptr,size,nitems,stream);
     if (ret!=nitems)
     {
