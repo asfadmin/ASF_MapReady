@@ -69,7 +69,7 @@ else:
 # set up various platform-specific things
 if platform.system() == "Darwin":
     # the default Fink binary paths
-    globalenv.AppendUnique(ENV = {"PATH": ["/sw/bin", "/sw/sbin",]})
+    globalenv.AppendUnique(ENV = {"PATH": [os.environ["PATH"], "/sw/bin", "/sw/sbin",]})
 
 endian = checkEndian(globalenv)
 
