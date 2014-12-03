@@ -219,6 +219,7 @@ if platform.system() == "Linux":
         "/usr/include/libxml2",
     ])
 elif platform.system() == "Darwin":
+    globalenv.AppendUnique(CCFLAGS = ["-Ddarwin",])
     # the default Fink binary paths
     globalenv.AppendUnique(ENV = {"PATH": [os.environ["PATH"], "/sw/bin", "/sw/sbin",]})
     # the default Fink library paths
