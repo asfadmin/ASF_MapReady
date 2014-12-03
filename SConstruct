@@ -221,6 +221,8 @@ if platform.system() == "Linux":
 elif platform.system() == "Darwin":
     # the default Fink binary paths
     globalenv.AppendUnique(ENV = {"PATH": [os.environ["PATH"], "/sw/bin", "/sw/sbin",]})
+    # the default Fink library paths
+    globalenv.AppendUnique(LIBPATH = ["/sw/lib",])
     globalenv.AppendUnique(CPPPATH = [
         "/sw/include", # Fink
         "/sw/include/glib-2.0", # Fink
