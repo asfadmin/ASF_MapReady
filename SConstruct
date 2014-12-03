@@ -193,7 +193,7 @@ lib_build_paths = [os.path.join("#", rpath_link_path) for rpath_link_path in rpa
 # common options
 globalenv.AppendUnique(LIBPATH = lib_build_paths) # tell the linker where to find the libraries during the link operation
 globalenv.AppendUnique(CCFLAGS = ["-Wall", "-DMAPREADY_VERSION_STRING=\\\"" + pkg_version + "\\\""])
-globalenv.AppendUnique(LINKFLAGS = ["-Wl,--no-undefined", "-Wl,-rpath=\\$$ORIGIN/../lib"] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
+globalenv.AppendUnique(LINKFLAGS = ["-Wl,-rpath=\\$$ORIGIN/../lib"] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
 globalenv.AppendUnique(CPPPATH = ["."])
 
 # release-specific options
@@ -204,7 +204,7 @@ else:
 
 # platform-specific options
 if platform.system() == "Linux":
-    globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed",])
+    globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined",])
     globalenv.AppendUnique(CPPPATH = [
         "/usr/include/libgeotiff",
         "/usr/include/glib-2.0",
