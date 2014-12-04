@@ -49,7 +49,7 @@ void decode_jpeg(FILE *fin,char *foutN)
 	(void)jpeg_destroy_decompress(&cinfo);
 	
 	fout=fopenImage(foutN,"wb");
-	FWRITE(outBuf,ddr.nbands,wid*ht,fout);
+	ASF_FWRITE(outBuf,ddr.nbands,wid*ht,fout);
 	FCLOSE(fout);
 
 	FREE(outBuf);

@@ -154,7 +154,7 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
         if (((outLine >= imgStart) && (outLine <= imgEnd+4096)) ||  /* descending */
             ((outLine >= imgEnd) && (outLine <= imgStart+4096)))    /* ascending */
         {
-            FWRITE(iqBuf,sizeof(iqType),s->nSamp*2,fpOut);
+            ASF_FWRITE(iqBuf,sizeof(iqType),s->nSamp*2,fpOut);
             s->nLines++;
         }
       }

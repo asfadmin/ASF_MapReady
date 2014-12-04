@@ -66,11 +66,6 @@ else:
         "docs":   os.path.join(GetOption("header_prefix"), "doc"),
     }
 
-# set up various platform-specific things
-if platform.system() == "Darwin":
-    # the default Fink binary paths
-    globalenv.AppendUnique(ENV = {"PATH": ["/sw/bin", "/sw/sbin",]})
-
 endian = checkEndian(globalenv)
 
 if endian == "big" :
@@ -195,24 +190,20 @@ rpath_link_paths = [os.path.join(build_base, lib_sub) for lib_sub in lib_subs]
 
 lib_build_paths = [os.path.join("#", rpath_link_path) for rpath_link_path in rpath_link_paths]
 
-# tell the linker where to find the libraries during the link operation
-globalenv.AppendUnique(LIBPATH = lib_build_paths)
-
-# common command line options
+# common options
+globalenv.AppendUnique(LIBPATH = lib_build_paths) # tell the linker where to find the libraries during the link operation
 globalenv.AppendUnique(CCFLAGS = ["-Wall", "-DMAPREADY_VERSION_STRING=\\\"" + pkg_version + "\\\""])
-globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined", "-Wl,-rpath=\\$$ORIGIN/../lib"] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
+globalenv.AppendUnique(CPPPATH = ["."])
 
-# release type-specific command line options
+# release-specific options
 if release_build == False:
     globalenv.AppendUnique(CCFLAGS = ["-g", "-O0"])
 else:
     globalenv.AppendUnique(CCFLAGS = ["-O2"])
 
-# common include directories
-globalenv.AppendUnique(CPPPATH = ["."])
-
-# platform-specific include directories
+# platform-specific options
 if platform.system() == "Linux":
+    globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined", "-Wl,-rpath=\\$$ORIGIN/../lib",] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
     globalenv.AppendUnique(CPPPATH = [
         "/usr/include/libgeotiff",
         "/usr/include/glib-2.0",
@@ -228,8 +219,16 @@ if platform.system() == "Linux":
         "/usr/include/libxml2",
     ])
 elif platform.system() == "Darwin":
+    globalenv.AppendUnique(CCFLAGS = ["-Ddarwin",])
+    # the default Fink binary paths
+    globalenv.AppendUnique(ENV = {"PATH": [os.environ["PATH"], "/sw/bin", "/sw/sbin",]})
+    # the default Fink library paths
+    globalenv.AppendUnique(LIBPATH = ["/sw/lib",])
     globalenv.AppendUnique(CPPPATH = [
-        "/sw/include",
+        "/sw/include", # Fink
+        "/sw/include/glib-2.0", # Fink
+        "/sw/lib/glib-2.0/include", # Fink
+        "/sw/include/gdal1",
     ])
 
 # do the actual building

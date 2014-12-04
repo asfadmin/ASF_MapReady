@@ -257,11 +257,11 @@ int main(int argc, char *argv[])
 	        if (rangeFlag) bufRange[kk+ll*ns] = (float) range;
 	      }
 
-	    if (lookFlag) FWRITE(bufLook, sizeof(float), ns*size, fpLook);
-	    if (incidFlag) FWRITE(bufIncid, sizeof(float), ns*size, fpIncid);
-	    if (latFlag) FWRITE(bufLat, sizeof(float), ns*size, fpLat);
-	    if (lonFlag) FWRITE(bufLon, sizeof(float), ns*size, fpLon);
-	    if (rangeFlag) FWRITE(bufRange, sizeof(float), ns*size, fpRange);
+	    if (lookFlag) ASF_FWRITE(bufLook, sizeof(float), ns*size, fpLook);
+	    if (incidFlag) ASF_FWRITE(bufIncid, sizeof(float), ns*size, fpIncid);
+	    if (latFlag) ASF_FWRITE(bufLat, sizeof(float), ns*size, fpLat);
+	    if (lonFlag) ASF_FWRITE(bufLon, sizeof(float), ns*size, fpLon);
+	    if (rangeFlag) ASF_FWRITE(bufRange, sizeof(float), ns*size, fpRange);
 
             printf("   Completed %3.0f percent\n", (float)((ii+ll)*100/nl));
 	  }

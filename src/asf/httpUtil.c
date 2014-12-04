@@ -176,7 +176,7 @@ int download_url_to_file(const char *url, const char *filename)
   unsigned char *data = download_url(url, FALSE, &len);
 
   FILE *fp = FOPEN(filename, "w");
-  FWRITE(data, sizeof(char), len, fp);
+  ASF_FWRITE(data, sizeof(char), len, fp);
   FCLOSE(fp);
 
   return TRUE;

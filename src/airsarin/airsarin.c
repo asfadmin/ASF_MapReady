@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
     if( meta->general->data_type == ASF_BYTE) {
       for (x = 0; x< ns; x++)
 	obuff_char[x]=(unsigned char)ibuff[x];
-      FWRITE(obuff_char, ns, 1, fpOut);
+      ASF_FWRITE(obuff_char, ns, 1, fpOut);
     }
     else {
       for (x = 0; x < ns; x++){
