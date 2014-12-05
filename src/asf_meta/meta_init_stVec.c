@@ -134,8 +134,8 @@ void ceos_init_stVec(const char *fName, ceos_description *ceos,
     double diff = 99999999;
     for (ii=0; ii<meta->state_vectors->vector_count; ii++) {
       if (fabs(meta->state_vectors->vecs[ii].time) < diff) {
-        diff = fabs(meta->state_vectors->vecs[ii].time);
-        min = ii;
+	diff = fabs(meta->state_vectors->vecs[ii].time);
+	min = ii;
       }
     }
 
@@ -147,7 +147,7 @@ void ceos_init_stVec(const char *fName, ceos_description *ceos,
     img_jd.jd   = meta->state_vectors->julDay;
     date_sec2hms(meta->state_vectors->second,&img_time);
     date_jd2ymd(&img_jd, &img_ymd);
-    add_time((min-4)*60, &img_ymd, &img_time);
+    add_time(ii*60, &img_ymd, &img_time);
     date_ymd2jd(&img_ymd, &img_jd);
     meta_state_vectors *new_st = meta_state_vectors_init(9);
     new_st->year   = img_jd.year;
@@ -157,7 +157,6 @@ void ceos_init_stVec(const char *fName, ceos_description *ceos,
       new_st->vecs[ii] = meta->state_vectors->vecs[ii+min-4];
     FREE(meta->state_vectors);
     meta->state_vectors = new_st;
-    meta->sar->time_shift = 0.0;
   }
   // Propagate three state vectors for regular frames
   else if (ceos->processor != PREC && ceos->processor != unknownProcessor) {
@@ -218,7 +217,8 @@ void ceos_read_stVecs(const char *fName, ceos_description *ceos, meta_parameters
     if (ceos->facility==ASF && ceos->processor!=LZP)
     {/* ASF's state vectors start at the
         same time as the images themselves.*/
-        timeStart = 0.0;
+/*TAL        timeStart = 1.0; */
+        timeStart=get_timeDelta(ceos,&ppdr,meta);
         s->year   = (int) ppdr.year;
         s->julDay = (int) ppdr.gmt_day;
         s->second = ppdr.gmt_sec;
