@@ -27,3 +27,4 @@ make_support/system_rules
 config.log
 config.status
 Makefile
+!src/ksat_ingest/Makefile
