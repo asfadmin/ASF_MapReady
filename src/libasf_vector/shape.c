@@ -1261,6 +1261,8 @@ int convert2shape(char *inFile, char *outFile, char *format, int list,
       shapefile_init(NULL, outFile, format, meta);
       open_shape(outFile, &dbase, &shape);
     }
+    if (strncmp_case(format, "LEGACY", 6) == 0)
+      fgets(line, 1024, fp); // read header line
     while (fgets(line, 1024, fp)) {
       chomp(line);
       if (strcmp_case(format, "META") == 0) {
@@ -1273,12 +1275,25 @@ int convert2shape(char *inFile, char *outFile, char *format, int list,
         write_shape_object(shape, nCoords, lat, lon);
       }      
       else if (strcmp_case(format, "SMAP") == 0) {
-        smap2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
+        smap2vector(line, &dbf, &nAttr, &lat, &lon, &nCoords);
+        write_shape_attributes(dbase, nAttr, n, dbf);
+        write_shape_object_ext(shape, nCoords, lat, lon, cfg->nosplit);
+      }
+      else if (strncmp_case(format, "SENTINEL", 8) == 0) {
+        sentinel2vector(line, "SENTINEL", &dbf, &nAttr, &lat, &lon, &nCoords);
+        write_shape_attributes(dbase, nAttr, n, dbf);
+        write_shape_object_ext(shape, nCoords, lat, lon, cfg->nosplit);
+      }
+      else if (strncmp_case(format, "LEGACY", 6) == 0) {
+        satellite2vector(line, "LEGACY", &dbf, &nAttr, &lat, &lon, &nCoords);
+int ii=0;
+for (ii=0; ii<nAttr; ii++)
+  printf("attribute: %s\n", dbf[ii].sValue);
         write_shape_attributes(dbase, nAttr, n, dbf);
         write_shape_object_ext(shape, nCoords, lat, lon, cfg->nosplit);
       }
       else if (strcmp_case(format, "GEOTIFF") == 0) {
-        geotiff2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
+        geotiff2vector(line, &dbf, &nAttr, &lat, &lon, &nCoords);
         write_shape_attributes(dbase, nAttr, n, dbf);
         write_shape_object(shape, nCoords, lat, lon);
       }
@@ -1310,6 +1325,15 @@ int convert2shape(char *inFile, char *outFile, char *format, int list,
       shapefile_init(NULL, outFile, format, meta);
       open_shape(outFile, &dbase, &shape);
       smap2vector(inFile, &dbf, &nAttr, &lat, &lon, &nCoords);
+      write_shape_attributes(dbase, nAttr, 0, dbf);
+      write_shape_object(shape, nCoords, lat, lon);
+      close_shape(dbase, shape);
+      write_esri_proj_file(outFile);
+    }
+    else if (strncmp_case(format, "SENTINEL", 8) == 0) {
+      shapefile_init(NULL, outFile, format, meta);
+      open_shape(outFile, &dbase, &shape);
+      sentinel2vector(inFile, "SENTINEL", &dbf, &nAttr, &lat, &lon, &nCoords);
       write_shape_attributes(dbase, nAttr, 0, dbf);
       write_shape_object(shape, nCoords, lat, lon);
       close_shape(dbase, shape);

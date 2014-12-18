@@ -1,0 +1,19 @@
+META,SHAPE,Type,Length,Decimals,Definition
+sentinel.granule,GRANULE,string,255,0,Granule
+sentinel.metadata.image.platform,PLATFORM,string,20,0,Platform
+sentinel.metadata.image.mode,MODE,string,20,0,Mode
+sentinel.metadata.image.site,SITE,string,50,0,Site description
+sentinel.metadata.image.product_class,ACQ_TIME,string,35,0,Acquisition
+sentinel.metadata.image.peg_point_latitude,PEG_LAT,double,16,7,Peg point latitude
+sentinel.metadata.image.peg_point_longitude,PEG_LON,double,16,7,Peg point longitude
+sentinel.metadata.image.peg_point_heading,PEG_HEADE,double,16,7,Peg point heading
+sentinel.metadata.image.wavelength,WAVELENGTH,double,16,12,Wavelength
+sentinel.metadata.image,LOOK_DIR,string,10,0,Look direction
+sentinel.metadata.image.yaw,YAW,double,16,7,Yaw
+sentinel.metadata.image.pitch,PITCH,double,5,0,Pitch
+sentinel.metadata.image.roll,ROLL,double,6,0,Roll
+sentinel.metadata.image.electronic_steering_angle,ESA,double,16,7,Electronic steering angle
+sentinel.metadata.image.squint_angle,SQUINT,double,16,7,Squint angle
+sentinel.metadata.image.altitude,ALTITUDE,double,12,4,Altitude
+sentinel.metadata.image.terrain_height,TERRAIN_HGT,double,16,7,Terrain height
+sentinel.metadata.image.url,URL,string,255,0,URL

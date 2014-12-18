@@ -169,8 +169,8 @@ int read_header_config(const char *format, dbf_header_t **dbf,
   strcpy(shape_type, "UNKNOWN");
 
   char header_file[1024];
-  sprintf(header_file, "%s%c%s", 
-	  get_asf_share_dir(), DIR_SEPARATOR, "header.lst");
+  sprintf(header_file, "%s%cdata_dictionaries%c%s", 
+	  get_asf_share_dir(), DIR_SEPARATOR, DIR_SEPARATOR, "header.lst");
   
   FILE *fp;
   char line[1024], params[255], format_str[255], dictionary[255], *str=NULL;
@@ -204,8 +204,8 @@ int read_header_config(const char *format, dbf_header_t **dbf,
 
   // Fill the header information
   char dictionary_file[1024], type[25];
-  sprintf(dictionary_file, "%s%c%s", 
-    get_asf_share_dir(), DIR_SEPARATOR, dictionary);
+  sprintf(dictionary_file, "%s%cdata_dictionaries%c%s", 
+    get_asf_share_dir(), DIR_SEPARATOR, DIR_SEPARATOR, dictionary);
   fp = FOPEN(dictionary_file, "r");
   fgets(line, 1024, fp);
   int n = 0;

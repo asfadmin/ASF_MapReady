@@ -24,6 +24,18 @@ int convert2vector(c2v_config *cfg)
     else if (strcmp_case(outFormat, "KML") == 0)
       asfPrintError("Conversion of SMAP to KML not supported!\n");
   }
+  if (strncmp_case(inFormat, "SENTINEL", 8) == 0) {
+    if (strcmp_case(outFormat, "SHAPE") == 0)
+      ret = convert2shape(inFile, outFile, inFormat, listFlag, cfg);
+    else if (strcmp_case(outFormat, "KML") == 0)
+      asfPrintError("Conversion of SENTINEL to KML not supported!\n");
+  }
+  if (strncmp_case(inFormat, "LEGACY", 6) == 0) {
+    if (strcmp_case(outFormat, "SHAPE") == 0)
+      ret = convert2shape(inFile, outFile, inFormat, TRUE, cfg);
+    else if (strcmp_case(outFormat, "KML") == 0)
+      asfPrintError("Conversion of LEGACY to KML not supported!\n");
+  }
   if (strncmp_case(inFormat, "RGPS", 4) == 0) {
     if (strcmp_case(outFormat, "SHAPE") == 0)
       ret = convert2shape(inFile, outFile, inFormat, listFlag, cfg);      

@@ -898,3 +898,235 @@ void smap2vector(char *inFile, dbf_header_t **dbf, int *nAttr,
   *lonArray = lon;
   *nCoords = vertex_count+1;
 }
+
+static void read_sentinel_outline(char *inDataName, double *lat, double *lon)
+{
+  xmlDoc *doc = xmlReadFile(inDataName, NULL, 0);
+  if (doc == NULL)
+    asfPrintError("Could not parse XML file (%s)!\n", inDataName);
+
+  char *coords = 
+    STRDUP(xml_get_string_value(doc, "sentinel.boundary.coordinates"));
+  sscanf(coords, "%lf,%lf %lf,%lf %lf,%lf %lf,%lf", 
+    &lat[0], &lon[0], &lat[1], &lon[1], &lat[2], &lon[2], &lat[3], &lon[3]);
+  FREE(coords);
+}
+
+void sentinel2vector(char *inFile, char *type, dbf_header_t **dbf, int *nAttr, 
+  double **latArray, double **lonArray, int *nCoords)
+{
+  // Read header information
+  dbf_header_t *header;
+  int n;
+  char shape_type[25];
+  read_header_config("SENTINEL", &header, &n, shape_type);
+
+  // Assign values
+  xmlDoc *doc = xmlReadFile(inFile, NULL, 0);
+  if (doc == NULL)
+    asfPrintError("Could not parse XML file (%s)!\n", inFile);
+  int ii;
+  for (ii=0; ii<n; ii++) {
+    // proof of concept - structure is still changing
+    if (strcmp_case(header[ii].meta, "sentinel.granule") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc, "sentinel.granule"));
+    else if (strcmp_case(header[ii].meta, 
+      "sentinel.metadata.image.platform") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc, 
+        "sentinel.metadata.image.platform"));
+    else if (strcmp_case(header[ii].meta, 
+      "sentinel.metadata.image.sensor") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc, 
+        "sentinel.metadata.image.sensor"));
+    else if (strcmp_case(header[ii].meta, 
+      "sentinel.metadata.image.polarization") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc, 
+        "sentinel.metadata.image.polarization"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.product_class") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc, 
+        "sentinel.metadata.image.product_class"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.processing_level") == 0)
+      header[ii].nValue = xml_get_int_value(doc, 
+        "sentinel.metadata.image.processing_level");
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.product_class_description") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.metadata.image.product_class_description"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.product_consolidation") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.metadata.image.product_consolidation"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.product_composition") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.metadata.image.product_composition"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.product_type") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.metadata.image.product_type"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.product_timeliness_category") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.metadata.image.product_timeliness_category"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.extent.start_datetime") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.extent.start_datetime"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.extent.end_datetime") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.extent.end_datetime"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.beam_mode") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.metadata.image.beam_mode"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.cycle") == 0)
+      header[ii].nValue = xml_get_int_value(doc,
+        "sentinel.metadata.image.cycle");
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.absolute_orbit") == 0)
+      header[ii].nValue = xml_get_int_value(doc,
+        "sentinel.metadata.image.absolute_orbit");
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.relative_orbit") == 0)
+      header[ii].nValue = xml_get_int_value(doc,
+        "sentinel.metadata.image.relative_orbit");
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.flight_direction") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.metadata.image.flight_direction"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.projection") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.metadata.image.projection"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.data_format") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.metadata.image.data_format"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.radar_frequency") == 0)
+      header[ii].fValue = xml_get_double_value(doc,
+        "sentinel.metadata.image.radar_frequency");
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.width") == 0)
+      header[ii].nValue = xml_get_int_value(doc, 
+        "sentinel.metadata.image.width");
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.height") == 0)
+      header[ii].nValue = xml_get_int_value(doc,
+        "sentinel.metadata.image.height");
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.x_spacing") == 0)
+      header[ii].fValue = xml_get_double_value(doc,
+        "sentinel.metadata.image.x_spacing");
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.y_spacing") == 0)
+      header[ii].fValue = xml_get_double_value(doc,
+        "sentinel.metadata.image.y_spacing");
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.ascending_node_time") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.metadata.image.ascending_node_time"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.start_time_anx") == 0)
+      header[ii].fValue = xml_get_double_value(doc,
+        "sentinel.metadata.image.start_time_anx");
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.stop_time_anx") == 0)
+      header[ii].fValue = xml_get_double_value(doc,
+        "sentinel.metadata.image.stop_time_anx");
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.pixel_value") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.metadata.image.pixel_value"));
+    else if (strcmp_case(header[ii].meta,
+      "sentinel.metadata.image.output_pixels") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc,
+        "sentinel.metadata.image.output_pixels"));
+    else if (strcmp_case(header[ii].meta, "sentinel.metadata.image.epsg") == 0)
+      header[ii].nValue = xml_get_int_value(doc, 
+        "sentinel.metadata.image.epsg");
+    else if (strcmp_case(header[ii].meta, "sentinel.metadata.image.url") == 0)
+      header[ii].sValue = STRDUP(xml_get_string_value(doc, 
+        "sentinel.metadata.image.url"));
+  }
+
+  // Read lat/lon for boundary of Sentinel data set
+  double *lat, *lon;
+  int vertex_count = 4;
+  lat = (double *) MALLOC(sizeof(double)*(vertex_count+1));
+  lon = (double *) MALLOC(sizeof(double)*(vertex_count+1));
+  read_sentinel_outline(inFile, lat, lon);  
+  lat[vertex_count] = lat[0];
+  lon[vertex_count] = lon[0];
+
+  *dbf = header;  
+  *nAttr = n;
+  *latArray = lat;
+  *lonArray = lon;
+  *nCoords = vertex_count+1;
+}
+
+void satellite2vector(char *line, char *type, dbf_header_t **dbf, int *nAttr, 
+  double **latArray, double **lonArray, int *nCoords)
+{
+  int ii, n, nCols, vertex_count = 4;
+  char **cols, shape_type[25];
+  double *lat, *lon;
+  lat = (double *) MALLOC(sizeof(double)*(vertex_count+1));
+  lon = (double *) MALLOC(sizeof(double)*(vertex_count+1));
+  dbf_header_t *header;
+  read_header_config("LEGACY", &header, &n, shape_type);
+  split_into_array(line, ',' , &nCols, &cols);
+  
+  // Assign values
+  for (ii=0; ii<n; ii++) {
+    if (strcmp_case(header[ii].shape, "GRANULE") == 0)
+      header[ii].sValue = STRDUP(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "SATELLITE") == 0)
+      header[ii].sValue = STRDUP(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "BEAM_MODE") == 0)
+      header[ii].sValue = STRDUP(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "ORBIT") == 0)
+      header[ii].nValue = atoi(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "FRAME") == 0)
+      header[ii].nValue = atoi(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "ACQ_START") == 0)
+      header[ii].sValue = STRDUP(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "ACQ_END") == 0)
+      header[ii].sValue = STRDUP(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "ORBIT_DIR") == 0)
+      header[ii].sValue = STRDUP(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "PROC_LEVEL") == 0)
+      header[ii].sValue = STRDUP(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "LAT1") == 0)
+      header[ii].fValue = lat[0] = atof(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "LON1") == 0)
+      header[ii].fValue = lon[0] = atof(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "LAT2") == 0)
+      header[ii].fValue = lat[1] = atof(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "LON2") == 0)
+      header[ii].fValue = lon[2] = atof(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "LAT3") == 0)
+      header[ii].fValue = lat[3] = atof(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "LON3") == 0)
+      header[ii].fValue = lon[3] = atof(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "LAT4") == 0)
+      header[ii].fValue = lat[2] = atof(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "LON4") == 0)
+      header[ii].fValue = lon[2] = atof(cols[ii]);
+    else if (strcmp_case(header[ii].shape, "URL") == 0)
+      header[ii].sValue = STRDUP(cols[ii]);
+  }
+  lat[vertex_count] = lat[0];
+  lon[vertex_count] = lon[0];
+
+  *dbf = header;
+  *nAttr = n;
+  *latArray = lat;
+  *lonArray = lon;
+  *nCoords = vertex_count+1;
+}

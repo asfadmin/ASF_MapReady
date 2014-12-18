@@ -1,0 +1,19 @@
+META,SHAPE,Type,Length,Decimals,Definition
+uavsar.granule,GRANULE,string,255,0,Granule
+uavsar.metadata.image.platform,PLATFORM,string,20,0,Platform
+uavsar.metadata.image.mode,MODE,string,20,0,Mode
+uavsar.metadata.image.site,SITE,string,50,0,Site description
+uavsar.metadata.image.product_class,ACQ_TIME,string,35,0,Acquisition
+uavsar.metadata.image.peg_point_latitude,PEG_LAT,double,16,7,Peg point latitude
+uavsar.metadata.image.peg_point_longitude,PEG_LON,double,16,7,Peg point longitude
+uavsar.metadata.image.peg_point_heading,PEG_HEADE,double,16,7,Peg point heading
+uavsar.metadata.image.wavelength,WAVELENGTH,double,16,12,Wavelength
+uavsar.metadata.image,LOOK_DIR,string,10,0,Look direction
+uavsar.metadata.image.yaw,YAW,double,16,7,Yaw
+uavsar.metadata.image.pitch,PITCH,double,5,0,Pitch
+uavsar.metadata.image.roll,ROLL,double,6,0,Roll
+uavsar.metadata.image.electronic_steering_angle,ESA,double,16,7,Electronic steering angle
+uavsar.metadata.image.squint_angle,SQUINT,double,16,7,Squint angle
+uavsar.metadata.image.altitude,ALTITUDE,double,12,4,Altitude
+uavsar.metadata.image.terrain_height,TERRAIN_HGT,double,16,7,Terrain height
+uavsar.metadata.image.url,URL,string,255,0,URL

@@ -30,6 +30,9 @@ void usage(char *name)
    "                          GeoTIFF file, TerraSAR-X XML file, Radarsat-2 XML"
    " file\n"
    "                   SMAP - SMAP file in HDF format\n"
+   "                   SENTINEL_RAW - SENTINEL (raw data) XML metadata file\n"
+   "                   SENTINEL_SLC - SENTINEL (SLC data) XML metadata file\n"
+   "                   SENTINEL_GRD - SENTINEL (GRD data) XML metadata file\n"
    "                   GEOTIFF - GeoTIFF file\n"
    "                   CSV - generic CSV file\n"
    "                   POINT - point CSV file (ID,LAT,LON)\n"
@@ -96,8 +99,8 @@ int main(int argc, char **argv)
       char format[25], data_dictionary[512];
       CHECK_ARG(1);
       strcpy(format, GET_ARG(1));
-      sprintf(data_dictionary, "%s%c%s_data_dictionary.csv", 
-        get_asf_share_dir(), DIR_SEPARATOR, format);
+      sprintf(data_dictionary, "%s%cdata_dictionaries%c%s_data_dictionary.csv", 
+        get_asf_share_dir(), DIR_SEPARATOR, DIR_SEPARATOR, format);
       if (fileExists(data_dictionary)) {
         asfPrintStatus("\nFormat defined in %s_data_dictionary.csv\n\n", 
         format);
