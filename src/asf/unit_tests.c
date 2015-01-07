@@ -58,7 +58,7 @@ void setup(void)
       data[idx1 + idx2] = FIRST_INT_SAMPLE_TEST_VALUE + idx2;
 
     /* Write test data to file.  */
-    FWRITE(data, sizeof(int16_t), 
+    ASF_FWRITE(data, sizeof(int16_t), 
 	   meta->general->sample_count * (TEST_LINE_NUMBER + 1), file);
 
     meta_free(meta);
@@ -84,7 +84,7 @@ void setup(void)
       data[idx1 + idx2] = FIRST_INT_SAMPLE_TEST_VALUE + idx2;
 
     /* Write test data to file.  */
-    FWRITE(data, sizeof(uint8_t), 
+    ASF_FWRITE(data, sizeof(uint8_t), 
 	   meta->general->sample_count * (TEST_LINE_NUMBER + 1), file);
 
     meta_free(meta);
@@ -110,7 +110,7 @@ void setup(void)
       data[idx1 + idx2] = FIRST_FLOAT_SAMPLE_TEST_VALUE + idx2;
 
     /* Write test data to file.  */
-    FWRITE(data, sizeof(double), 
+    ASF_FWRITE(data, sizeof(double), 
 	   meta->general->sample_count * (TEST_LINE_NUMBER + 1), file);
 
     meta_free(meta);

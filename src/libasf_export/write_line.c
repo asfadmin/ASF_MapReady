@@ -614,7 +614,7 @@ void write_pgm_byte2byte(FILE *opgm, unsigned char *byte_line,
     }
   }
 
-  FWRITE(byte_line, sizeof(unsigned char), sample_count, opgm);
+  ASF_FWRITE(byte_line, sizeof(unsigned char), sample_count, opgm);
 }
 
 void write_pgm_float2byte(FILE *opgm, float *float_line,
@@ -631,6 +631,6 @@ void write_pgm_float2byte(FILE *opgm, float *float_line,
       pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max,
                stats.hist, stats.hist_pdf, no_data);
 
-  FWRITE(byte_line, sizeof(unsigned char), sample_count, opgm);
+  ASF_FWRITE(byte_line, sizeof(unsigned char), sample_count, opgm);
   FREE(byte_line);
 }

@@ -103,7 +103,7 @@ int trim(char *infile, char *outfile,
     for (x=0;x<sizeX*pixelSize;x++)
       buffer[x]=0;
     for (y=0;y<-startY && y<sizeY;y++) {
-      FWRITE(buffer,pixelSize,sizeX,out);
+      ASF_FWRITE(buffer,pixelSize,sizeX,out);
       if (y==0)
         asfPrintStatus("   Filling zeros at beginning of output image\n");
     }
@@ -126,14 +126,14 @@ int trim(char *infile, char *outfile,
       FSEEK64(in,offset,SEEK_SET);
     
       ASF_FREAD(buffer+outputX*pixelSize,pixelSize,numInX,in);
-      FWRITE(buffer,pixelSize,sizeX,out);
+      ASF_FWRITE(buffer,pixelSize,sizeX,out);
     }
 
     /* Reset buffer to zeros and fill remaining pixels.*/
     for (x=0;x<sizeX*pixelSize;x++)
       buffer[x]=0;
     for (;y<sizeY;y++) {
-      FWRITE(buffer,pixelSize,sizeX,out);
+      ASF_FWRITE(buffer,pixelSize,sizeX,out);
       if (y==sizeY)
         asfPrintStatus("   Filled zeros after writing output image\n");
     }

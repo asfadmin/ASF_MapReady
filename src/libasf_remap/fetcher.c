@@ -162,7 +162,7 @@ each block using outBuf.*/
 		for (blockX=0;blockX<g->blockWid;blockX++)
 		{
 			for (line=0;line<BLOCK_SIDE;line++)
-				FWRITE(&inBuf[line*(g->blockWid*BLOCK_SIDE)+blockX*BLOCK_SIDE],
+				ASF_FWRITE(&inBuf[line*(g->blockWid*BLOCK_SIDE)+blockX*BLOCK_SIDE],
 					1,sizeof(float)*BLOCK_SIDE,outF);
 		}
 		

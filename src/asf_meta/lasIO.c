@@ -127,7 +127,7 @@ void putFloatLine_mb(FILE *f,const struct DDR *ddr,int yLine,int bandNo,const fl
 			ieee_big32( ((double*)outputBuf)[x] );
 		}
 	}
-	FWRITE(outputBuf,dsize,maxX,f);
+	ASF_FWRITE(outputBuf,dsize,maxX,f);
 	FREE(outputBuf);
 }
 void putFloatLine(FILE *f,const struct DDR *ddr,int yLine,const float *source)

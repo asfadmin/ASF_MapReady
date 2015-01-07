@@ -540,7 +540,7 @@ static int put_data_lines(FILE *file, meta_parameters *meta, int band_number,
       }
       break;
   }
-  samples_put = FWRITE(out_buffer, sample_size, num_samples_to_put, file);
+  samples_put = ASF_FWRITE(out_buffer, sample_size, num_samples_to_put, file);
   FREE(out_buffer);
 
   if ( samples_put != num_samples_to_put ) {

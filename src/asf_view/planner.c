@@ -2279,7 +2279,7 @@ static int download_tle(char **err)
   // write to TLE file in share dir
   FILE *fp = fopen_share_file("tle", "w");
   if (fp) {
-    FWRITE(u_tle_txt, sizeof(char), len, fp);
+    ASF_FWRITE(u_tle_txt, sizeof(char), len, fp);
     fclose(fp);
   }
   else {

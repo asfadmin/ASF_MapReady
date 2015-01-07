@@ -12,7 +12,6 @@ localenv.AppendUnique(CPPPATH = [
     "/usr/include/libshp",
 ])
 
-localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 
 localenv.AppendUnique(LIBS = [
     "asf",
