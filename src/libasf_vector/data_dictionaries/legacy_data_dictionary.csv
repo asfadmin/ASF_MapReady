@@ -1,0 +1,19 @@
+META,SHAPE,Type,Length,Decimals,Definition
+satellite.granule,GRANULE,string,255,0,Granule
+satellite.metadata.image.satellite,SATELLITE,string,20,0,Platform
+satellite.metadata.image.beam_mode,BEAM_MODE,string,25,0,Beam mode
+satellite.metadata.image.orbit,ORBIT,integer,6,0,Orbit number
+satellite.metadata.image.frame,FRAME,integer,4,0,Frame number
+satellite.extent.start_datetime,ACQ_START,string,35,0,Start of acquisition
+satellite.extent.end_datetime,ACQ_END,string,35,0,End of acquisition
+satellite.metadata.image.flight_direction,ORBIT_DIR,string,20,0,Orbit direction
+satellite.metadata.image.processing_level,PROC_LEVEL,string,5,0,Data format
+satellite.extent.near_start_lat,LAT1,double,12,5,Near start latitude [degrees]
+satellite.extent.near_start_lon,LON1,double,12,5,Near start longitude [degrees]
+satellite.extent.far_start_lat,LAT2,double,12,5,Far start latitude [degrees]
+satellite.extent.far_start_lon,LON2,double,12,5,Far start longitude [degrees]
+satellite.extent.near_end_lat,LAT4,double,12,5,Near end latitude [degrees]
+satellite.extent.near_end_lon,LON4,double,12,5,Near end longitude [degrees]
+satellite.extent.far_end_lat,LAT3,double,12,5,Far end latitude [degrees]
+satellite.extent.far_end_lon,LON3,double,12,5,Far end longitude [degrees]
+satellite.metadata.image.url,URL,string,255,0,URL
