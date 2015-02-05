@@ -161,6 +161,6 @@ signalType *getNextCeosLine(FILE *f, bin_state *s, char *inN, char *outN)
   }
 
   length=bigInt32(head.recsiz);
-  FREAD(&buffer,1,length-12,f);
+  ASF_FREAD(&buffer,1,length-12,f);
   return &buffer[totHeaderLen-headerLen];
 }

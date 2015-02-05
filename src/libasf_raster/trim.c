@@ -125,7 +125,7 @@ int trim(char *infile, char *outfile,
       
       FSEEK64(in,offset,SEEK_SET);
     
-      FREAD(buffer+outputX*pixelSize,pixelSize,numInX,in);
+      ASF_FREAD(buffer+outputX*pixelSize,pixelSize,numInX,in);
       FWRITE(buffer,pixelSize,sizeX,out);
     }
 

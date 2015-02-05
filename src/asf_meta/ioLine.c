@@ -103,7 +103,7 @@ int get_data_lines(FILE *file, meta_parameters *meta,
                       offset, sample_size, sample_count, line_number, ii, sample_number);
     }
     FSEEK64(file, offset, SEEK_SET);
-    line_samples_gotten = FREAD(temp_buffer+ii*num_samples_to_get*sample_size,
+    line_samples_gotten = ASF_FREAD(temp_buffer+ii*num_samples_to_get*sample_size,
         sample_size, num_samples_to_get, file);
     samples_gotten += line_samples_gotten;
   }

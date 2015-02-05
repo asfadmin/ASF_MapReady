@@ -77,7 +77,7 @@ offset = -(*clen + *dlen + HDRL);	/* position at start of record  */
 
 FSEEK64(fp, offset, 1);
 
-FREAD (header,sizeof(char),HDRL,fp);
+ASF_FREAD (header,sizeof(char),HDRL,fp);
 
 charlen = datalen = 0;
 if (((ptr = strchr(header,'/')) != NULL) && (ptr - header < LENL))

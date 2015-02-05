@@ -8,7 +8,7 @@ static int intValue(FILE *fp, int offset, int bytes)
   unsigned char value[4];
 
   FSEEK64(fp, offset+bytes-1, SEEK_SET);
-  FREAD(&value, 1, 4, fp);
+  ASF_FREAD(&value, 1, 4, fp);
   return bigInt32(value);
 }
 
@@ -17,7 +17,7 @@ static short int shortValue(FILE *fp, int offset, int bytes)
   unsigned char value[4];
 
   FSEEK64(fp, offset+bytes-1, SEEK_SET);
-  FREAD(&value, 1, 4, fp);
+  ASF_FREAD(&value, 1, 4, fp);
   return bigInt16(value);
 }
 
@@ -38,7 +38,7 @@ alos_processed_line_t *read_alos_proc_line_header(const char *inName,
     
     // Read the header information
     FSEEK64(fp, offset, SEEK_SET);
-    FREAD(&hdr, 1, 12, fp);
+    ASF_FREAD(&hdr, 1, 12, fp);
     length = bigInt32(hdr.recsiz);
     offset += length;
     current_line++;
@@ -105,7 +105,7 @@ rsat_processed_line_t *read_rsat_proc_line_header(const char *inName,
     
     // Read the header information
     FSEEK64(fp, offset, SEEK_SET);
-    FREAD(&hdr, 1, 12, fp);
+    ASF_FREAD(&hdr, 1, 12, fp);
     length = bigInt32(hdr.recsiz);
     offset += length;
     current_line++;
