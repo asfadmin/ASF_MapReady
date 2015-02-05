@@ -550,41 +550,67 @@ void write_spheroid_key (GTIF *ogtif, spheroid_type_t spheroid,
   double inv_flattening = re_major / (re_major - re_minor);
   GTIFKeySet(ogtif, GeogSemiMajorAxisGeoKey, TYPE_DOUBLE, 1, re_major);
   GTIFKeySet(ogtif, GeogSemiMinorAxisGeoKey, TYPE_DOUBLE, 1, re_minor);
-  GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1, inv_flattening);
+  // Use defined inverse flattening values instead for the respective spheroids
+  //GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1, inv_flattening);
 
   switch (spheroid) {
   case BESSEL_SPHEROID:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, Ellipse_Bessel_1841);
+    GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1,
+      BESSEL_INV_FLATTENING);
     break;
   case CLARKE1866_SPHEROID:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, Ellipse_Clarke_1866);
+    GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1,
+      CLARKE1866_INV_FLATTENING);
     break;
   case CLARKE1880_SPHEROID:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 
 	       Ellipse_Clarke_1880_Arc);
+	  GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1,
+	    CLARKE1880_INV_FLATTENING);
+    break;
+  case GEM6_SPHEROID:
+    GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, Ellipse_GEM_10C);
+    GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1,
+      GEM6_INV_FLATTENING);
     break;
   case GEM10C_SPHEROID:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, Ellipse_GEM_10C);
+    GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1,
+      GEM10C_INV_FLATTENING);
     break;
   case GRS1967_SPHEROID:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 7050);
+    GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1,
+      GRS1967_INV_FLATTENING);
     break;
   case GRS1980_SPHEROID:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, Ellipse_GRS_1980);
+    GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1,
+      GRS1980_INV_FLATTENING);
     break;
   case INTERNATIONAL1924_SPHEROID:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 
 	       Ellipse_International_1924);
+	  GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1,
+	    INTERNATIONAL1924_INV_FLATTENING);
     break;
   case INTERNATIONAL1967_SPHEROID:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 
 	       Ellipse_International_1967);
+	  GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1,
+	    INTERNATIONAL1967_INV_FLATTENING);
     break;
   case WGS84_SPHEROID:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, Ellipse_WGS_84);
+    GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1,
+      WGS84_INV_FLATTENING);
     break;
   case HUGHES_SPHEROID:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 7058);
+    GTIFKeySet(ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1,
+      HUGHES_INV_FLATTENING);
     break;
   case AUTHALIC_SPHERE:
     GTIFKeySet(ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, 7057);

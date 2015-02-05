@@ -111,7 +111,7 @@ Modifies and returns the pointed-to frame.
 JRS_frame * JRS_readNextFrame(bin_state *s,JRS_frame *f)
 {
 /*Read next frame in file.*/
-    FREAD(f->data,1,JRS_bytesPerFrame,s->binary);
+    ASF_FREAD(f->data,1,JRS_bytesPerFrame,s->binary);
     s->curFrame++;
 
 /*Extract & decode auxiliary data*/

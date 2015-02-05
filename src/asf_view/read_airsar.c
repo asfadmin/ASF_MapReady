@@ -308,7 +308,7 @@ int read_airsar_client(int row_start, int n_rows_to_get,
       if (!info->is_rgb) {
         for (ii=0; ii<n_rows_to_get; ++ii) {
           for (kk=0; kk<ns; ++kk) {
-            FREAD(byte_buf, sizeof(char), 10, fpIn);
+            ASF_FREAD(byte_buf, sizeof(char), 10, fpIn);
             dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_gs);
           }
         }
@@ -316,7 +316,7 @@ int read_airsar_client(int row_start, int n_rows_to_get,
       else {
         for (ii=0; ii<n_rows_to_get; ++ii) {
           for (kk=0; kk<ns; ++kk) {
-            FREAD(byte_buf, sizeof(char), 10, fpIn);
+            ASF_FREAD(byte_buf, sizeof(char), 10, fpIn);
             dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_r);
             dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_g);
             dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_b);
@@ -378,7 +378,7 @@ int get_airsar_thumbnail_data(int thumb_size_x, int thumb_size_y,
           for (kk=0; kk<thumb_size_x; ++kk) {
             long offset = cal_off*10 + (ii*ns + kk)*10;
             FSEEK(fpIn,offset,1);
-            FREAD(byte_buf, sizeof(unsigned char), 10, fpIn);
+            ASF_FREAD(byte_buf, sizeof(unsigned char), 10, fpIn);
 
             dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_gs);
           }
@@ -390,7 +390,7 @@ int get_airsar_thumbnail_data(int thumb_size_x, int thumb_size_y,
           for (kk=0; kk<thumb_size_x; ++kk) {
             long offset = cal_off*10 + (ii*ns + kk)*10;
             FSEEK(fpIn,offset,1);
-            FREAD(byte_buf, sizeof(unsigned char), 10, fpIn);
+            ASF_FREAD(byte_buf, sizeof(unsigned char), 10, fpIn);
 
             dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_r);
             dest[nn++] = get_airsar_polarimetric(byte_buf, scale, band_g);

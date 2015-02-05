@@ -34,7 +34,7 @@ sat_type determine_satellite(const char *binName)
 /*Open file and read sync*/
   FILE *f=FOPEN(binName,"rb");
   unsigned char sync[3];
-  FREAD(sync,3,1,f);
+  ASF_FREAD(sync,3,1,f);
 
 /*Switch to find which satellite created this file*/
   if (sync[0]==0xFA)

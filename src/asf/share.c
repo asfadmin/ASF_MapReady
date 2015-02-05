@@ -1,6 +1,3 @@
-
-char * strdup(const char *);
-
 static char * s_share_dir = 0;
 static char * s_bin_dir = 0;
 static char * s_argv0 = 0;
@@ -266,14 +263,14 @@ get_asf_bin_dir()
       }
     }
           
-    s_bin_dir = strdup(str_value_fixed);
+    s_bin_dir = STRDUP(str_value_fixed);
     //printf("bin_dir : %s\n", s_bin_dir);
 #else
 
       /* on UNIX, assume ASF_INSTALL_DIR has been set by the configure */
       /* script -- in config.h                                         */
 
-    s_bin_dir = strdup(ASF_BIN_DIR);
+    s_bin_dir = STRDUP(ASF_BIN_DIR);
 
     /* See if this works - check for a known file which              */
     /* is in the asf binaries directory.                             */
@@ -304,7 +301,7 @@ get_asf_bin_dir()
 	    if (check_for_known_file_in_bin_dir(buf))
 	    {
 	        free(s_bin_dir);
-		s_bin_dir = strdup(buf);
+		s_bin_dir = STRDUP(buf);
 		found = 1;
 		//printf("  Found in %s!\n", buf);
 		break;
@@ -371,14 +368,14 @@ get_asf_share_dir()
 
     char str_value[REG_VALUE_SIZE];
     get_string_from_registry(s_asf_share_dir_key, str_value);
-    s_share_dir = strdup(str_value);
+    s_share_dir = STRDUP(str_value);
 
 #else
 
       /* on UNIX, assume ASF_SHARE_DIR has been set by the configure */
       /* script -- in config.h                                       */
 
-    s_share_dir = strdup(ASF_SHARE_DIR);
+    s_share_dir = STRDUP(ASF_SHARE_DIR);
 
     /* See if this works - check for a known file which              */
     /* is in the asf share directory.                                */
@@ -439,7 +436,7 @@ get_asf_share_dir()
 		if (check_for_known_file_in_share_dir(buf))
 		{
                     free(s_share_dir);
-                    s_share_dir = strdup(buf);
+                    s_share_dir = STRDUP(buf);
                     found = 1;
                     //printf("  Found in %s!\n", buf);
                     break;

@@ -14,11 +14,7 @@ localenv.AppendUnique(CPPPATH = [
         "#src/plan/",
         ])
 
-localenv.ParseConfig("pkg-config --cflags --libs gtk+-2.0")
-localenv.ParseConfig("pkg-config --cflags --libs libglade-2.0")
-localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs libpng")
-localenv.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
 
 localenv.AppendUnique(LIBS = [
     "m",
@@ -34,6 +30,14 @@ localenv.AppendUnique(LIBS = [
     "asf_plan",
     "tiff",
     "shp",
+    "geotiff",
+    "xml2",
+    "gdk-x11-2.0",
+    "gdk_pixbuf-2.0",
+    "gobject-2.0",
+    "gtk-x11-2.0",
+    "glade-2.0",
+    "glib-2.0",
 ])
 
 bins = localenv.Program("asf_view", [

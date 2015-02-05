@@ -50,7 +50,7 @@ void getFloatLine_mb(FILE *f,const struct DDR *ddr,int yLine,int bandNo,float *d
 	void *inputBuf = MALLOC(dsize*maxX);
 
 	FSEEK64(f,seekLoc(ddr,yLine,bandNo),0);
-	FREAD(inputBuf,dsize,maxX,f);		
+	ASF_FREAD(inputBuf,dsize,maxX,f);		
 
 	if (ddr->dtype==DTYPE_FLOAT) {
 		for (x=0;x<maxX;x++) {
@@ -127,7 +127,7 @@ void putFloatLine_mb(FILE *f,const struct DDR *ddr,int yLine,int bandNo,const fl
 			ieee_big32( ((double*)outputBuf)[x] );
 		}
 	}
-	FWRITE(outputBuf,dsize,maxX,f);
+	ASF_FWRITE(outputBuf,dsize,maxX,f);
 	FREE(outputBuf);
 }
 void putFloatLine(FILE *f,const struct DDR *ddr,int yLine,const float *source)

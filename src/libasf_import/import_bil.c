@@ -328,7 +328,7 @@ void import_bil(char *inBaseName, char *outBaseName)
   FILE *fp = FOPEN(bil_file, "rb");
   FILE *out = FOPEN(data_filename, "wb");
   for (i=0; i<row_count; ++i) {
-    FREAD(shorts, sizeof(unsigned short), column_count, fp);
+    ASF_FREAD(shorts, sizeof(unsigned short), column_count, fp);
     for (j=0; j<column_count; ++j)
       floats[j] = (float)shorts[j];
     put_float_line(out, meta, i, floats);

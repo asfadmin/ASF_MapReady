@@ -51,8 +51,8 @@ PROGRAM HISTORY:
                                   denomProduct is 0
     1.75    4/02    P. Denny    Update commandline parsing & usage()
                                   fixed histogram values
-    2.0     5/03    P. Denny    Use get_*_line and put_*_line instead of FREAD
-                                  and FWRITE. Change FComplex data type to
+    2.0     5/03    P. Denny    Use get_*_line and put_*_line instead of ASF_FREAD
+                                  and ASF_FWRITE. Change FComplex data type to
                                   complexFloat. Use new meta, kill DDR.
     2.1     2/04    R. Gens     Added log switch
 

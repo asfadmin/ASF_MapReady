@@ -4576,7 +4576,7 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm,
   pgm->num_bands=0;
 
   //// Read magic number that identifies
-  FREAD(pgm->magic, sizeof(unsigned char), 2, fp);
+  ASF_FREAD(pgm->magic, sizeof(unsigned char), 2, fp);
   if (pgm->magic[0] == 'P' && (pgm->magic[1] == '5' || pgm->magic[1] == '6')) {
     pgm->ascii_data = 0;
     pgm->img_offset = 2; // Just past magic number
@@ -4892,7 +4892,7 @@ void ppm_pgm_get_float_line(FILE *fp, float *buf, int row, ppm_pgm_info_t *pgm,
     asfPrintError("Cannot allocate memory for PPM/PGM scanline buffer\n");
   }
 
-  FREAD(pgm_buf, sizeof(unsigned char), pgm->width * pgm->num_bands, fp);
+  ASF_FREAD(pgm_buf, sizeof(unsigned char), pgm->width * pgm->num_bands, fp);
 
   int col;
   for (col=0; col<pgm->width; col++) {

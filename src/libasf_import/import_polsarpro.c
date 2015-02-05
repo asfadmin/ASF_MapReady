@@ -573,7 +573,7 @@ static void ingest_airsar_polsar_amp(char *inFile, char *outFile,
   FSEEK(fpIn, offset, SEEK_SET);
   for (ii=0; ii<meta->general->line_count; ii++) {
     for (kk=0; kk<meta->general->sample_count; kk++) {
-      FREAD(byteBuf, sizeof(char), 10, fpIn);
+      ASF_FREAD(byteBuf, sizeof(char), 10, fpIn);
       power[kk] = sqrt(((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]));
     }
     put_float_line(fpOut, meta, ii, power);

@@ -140,7 +140,7 @@ int read_ceos_client(int row_start, int n_rows_to_get,
 	      info->headerBytes + (ii*skip+row_start)*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
-            FREAD(shorts, sizeof(unsigned short), ns, info->fp);
+            ASF_FREAD(shorts, sizeof(unsigned short), ns, info->fp);
 
             for (jj = 0; jj < ns; ++jj) {
                 big16(shorts[jj]);
@@ -157,7 +157,7 @@ int read_ceos_client(int row_start, int n_rows_to_get,
 	      info->headerBytes + (ii*skip+row_start)*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
-            FREAD(bytes, sizeof(unsigned char), ns, info->fp);
+            ASF_FREAD(bytes, sizeof(unsigned char), ns, info->fp);
 
             for (jj = 0; jj < ns; ++jj)
                 dest[jj + ii*ns] = (float)(bytes[jj]);
@@ -172,7 +172,7 @@ int read_ceos_client(int row_start, int n_rows_to_get,
 	      info->headerBytes + (ii*skip+row_start)*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
-            FREAD(floats, sizeof(float), ns*2, info->fp);
+            ASF_FREAD(floats, sizeof(float), ns*2, info->fp);
 
             for (jj=0; jj<ns*2; ++jj)
                 ieee_big32(floats[jj]);
@@ -190,7 +190,7 @@ int read_ceos_client(int row_start, int n_rows_to_get,
 	      info->headerBytes + (ii*skip+row_start)*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
-            FREAD(bytes, sizeof(unsigned char), ns*2, info->fp);
+            ASF_FREAD(bytes, sizeof(unsigned char), ns*2, info->fp);
 
             for (jj = 0; jj < ns; ++jj)
                 dest[jj + ii*ns] = hypot(bytes[jj*2], bytes[jj*2+1]);
@@ -205,7 +205,7 @@ int read_ceos_client(int row_start, int n_rows_to_get,
 	      info->headerBytes + (ii*skip+row_start)*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
-            FREAD(shorts, sizeof(short), ns*2, info->fp);
+            ASF_FREAD(shorts, sizeof(short), ns*2, info->fp);
 
             for (jj = 0; jj < ns*2; ++jj)
                 ieee_big16(shorts[jj]);
@@ -250,7 +250,7 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
 	      info->headerBytes + line*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
-            FREAD(shorts, sizeof(unsigned short), ns, info->fp);
+            ASF_FREAD(shorts, sizeof(unsigned short), ns, info->fp);
 
             for (jj = 0; jj < ns; ++jj)
                 big16(shorts[jj]);
@@ -271,7 +271,7 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
 	      info->headerBytes + line*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
-            FREAD(bytes, sizeof(unsigned char), ns, info->fp);
+            ASF_FREAD(bytes, sizeof(unsigned char), ns, info->fp);
 
             for (jj = 0; jj < thumb_size_x; ++jj)
                 dest[jj + ii*thumb_size_x] = (float)(bytes[jj*sf]);
@@ -289,7 +289,7 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
 	      info->headerBytes + line*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
-            FREAD(floats, sizeof(float), ns*2, info->fp);
+            ASF_FREAD(floats, sizeof(float), ns*2, info->fp);
 
             for (jj=0; jj<thumb_size_x; ++jj) {
                 ieee_big32(floats[jj*2]);
@@ -309,7 +309,7 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
 	      info->headerBytes + line*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
-            FREAD(bytes, sizeof(unsigned char), ns*2, info->fp);
+            ASF_FREAD(bytes, sizeof(unsigned char), ns*2, info->fp);
 
             for (jj = 0; jj < thumb_size_x; ++jj)
                 dest[jj + ii*thumb_size_x] = hypot(bytes[jj*sf*2],
@@ -328,7 +328,7 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
 	      info->headerBytes + line*(long long)info->reclen;
 
             FSEEK64(info->fp, offset, SEEK_SET);
-            FREAD(shorts, sizeof(unsigned short), ns*2, info->fp);
+            ASF_FREAD(shorts, sizeof(unsigned short), ns*2, info->fp);
 
             
             for (jj = 0; jj < ns*2; ++jj)

@@ -95,7 +95,7 @@ int read_brs_client(int row_start, int n_rows_to_get,
 
     // iterate over all rows in the brs
     for ( ii = 0; ii < n_rows_to_get; ii++ )
-      FREAD(dest + ii*ns, sizeof(unsigned char), ns, info->fp);
+      ASF_FREAD(dest + ii*ns, sizeof(unsigned char), ns, info->fp);
 
     fclose(info->fp);
     info->fp = NULL;
