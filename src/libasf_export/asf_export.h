@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include "asf_raster.h"
 #include "libasf_proj.h"
+#include "spheroids.h"
 #include "asf_nan.h"
 #include "netcdf.h"
 #include "hdf5.h"
