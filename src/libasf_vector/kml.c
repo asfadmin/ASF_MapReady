@@ -104,15 +104,19 @@ void write_kml_attributes(FILE *kml_file, int nAttr, dbf_header_t *dbf)
   
   // Write fields into the KML file
   for (ii=0; ii<nAttr; ii++) {
-    if (dbf[ii].format == DBF_STRING)
+    if (dbf[ii].format == DBF_STRING) {
+      //printf("STR ii=%d nAttr=%d def=%s val=%s\n", ii, nAttr, dbf[ii].definition, dbf[ii].sValue);
       fprintf(kml_file, "  <strong>%s</strong>: %s <br>\n", 
-        dbf[ii].definition, dbf[ii].sValue);
-    else if (dbf[ii].format == DBF_INTEGER)
+        dbf[ii].definition, dbf[ii].sValue ? dbf[ii].sValue : "");
+    } else if (dbf[ii].format == DBF_INTEGER) {
+      //printf("INT ii=%d nAttr=%d val=%s\n", ii, nAttr, dbf[ii].definition);
       fprintf(kml_file, "  <strong>%s</strong>: %d <br>\n",
         dbf[ii].definition, dbf[ii].nValue);
-    else if (dbf[ii].format == DBF_DOUBLE)
+    } else if (dbf[ii].format == DBF_DOUBLE) {
+      //printf("DBL ii=%d nAttr=%d val=%s\n", ii, nAttr, dbf[ii].definition);
       fprintf(kml_file, "  <strong>%s</strong>: %f <br>\n",
         dbf[ii].definition, dbf[ii].fValue);
+    }
   }
   
   fprintf(kml_file, "  </td></tr></table>\n");
