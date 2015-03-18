@@ -367,7 +367,7 @@ int main(int argc,char *argv[])
       "data\n");
     create_name(infile1,argv[3],".img");
     create_name(infile2,argv[4],".img");
-    create_name(outfile,argv[5],".jpg");
+    create_name(outfile,argv[5],".tif");
 
     // Create temporary directory
     char tmpDir[512];
@@ -431,7 +431,7 @@ int main(int argc,char *argv[])
     
     // Export applying 2-sigma stretch
     char *band_names[3] = { "03", "02", "01" };
-    asf_export_bands(JPEG, SIGMA, TRUE, TRUE, FALSE, FALSE, FALSE, 
+    asf_export_bands(GEOTIFF, SIGMA, TRUE, TRUE, FALSE, FALSE, FALSE, 
       tmpBrowse, outfile, band_names, NULL, NULL);
 
     // Clean up
