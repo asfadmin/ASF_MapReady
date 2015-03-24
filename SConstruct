@@ -1,4 +1,5 @@
 import os.path
+import platform
 
 AddOption("--prefix",
           dest = "prefix",
@@ -7,6 +8,7 @@ AddOption("--prefix",
           action = "store",
           metavar = "DIR",
           help = "The base path where 'scons install' puts things. The config.h header will use this path unless overridden with '--header_prefix'.",
+          default = "/usr/local",
           )
 
 # The header_prefix option, when specified, will write the given directory to the config.h header. This is a hack necessary to allow Jenkins to do the RPM build without hard-coding the Jenkins build root path into the Mapready binaries. config.h itself is an artifact of the make/autotools build system, and when that system goes away, config.h can go away, and a cleaner solution can be found.
@@ -26,28 +28,22 @@ AddOption("--pkg_version",
           action = "store",
           metavar = "DIR",
           help = "This defines the version string applied to the entire package.",
+          default = "UNDEFINED",
+          )
+
+AddOption("--release_build",
+          dest = "release_build",
+          action = "store_true",
+          help = "Set to do a release (i.e., not debug) build.",
+          default = False,
           )
 
 # parse and check command line options
-if GetOption("prefix") is None:
-    inst_base = "/usr/local"
-else:
-    inst_base = GetOption("prefix")
-
-if GetOption("pkg_version") is None:
-    pkg_version = "UNDEFINED"
-else:
-    pkg_version = GetOption("pkg_version")
+release_build = GetOption("release_build")
+inst_base = GetOption("prefix")
+pkg_version = GetOption("pkg_version")
 
 globalenv = Environment(TOOLS = ["default", add_UnitTest, checkEndian])
-
-source_root = "src"
-
-# FIXME hard-coded build params, needed until we 
-platform = "linux64"
-build_type = "debug"
-
-build_base_dir = "build"
 
 inst_dirs = {
     "bins":   os.path.join(inst_base, "bin"),
@@ -90,8 +86,7 @@ f.write("#define ASF_BIN_DIR \"" + header_dirs["bins"] + "\"\n")
 f.write("#define ASF_DOC_DIR \"" + header_dirs["docs"] + "\"\n") 
 f.close()
 
-# get all the subdirectories under the source root directory, and make these the default targets
-#src_subs = os.walk(source_root).next()[1]
+# List out all the subdirectories we want to build in, with library directories grouped separately.
 lib_subs = [
     "libasf_import",
     "libasf_terrcorr",
@@ -185,30 +180,70 @@ src_subs = lib_subs + [
     ]
 
 # paths where the libraries will be built
-rpath_link_paths = [os.path.join(build_base_dir, platform + "." + build_type, lib_sub) for lib_sub in lib_subs]
+build_base = os.path.join("build", platform.system() + "-" + platform.machine() + "-")
+if release_build == False:
+    build_base += "debug"
+else:
+    build_base += "release"
+
+rpath_link_paths = [os.path.join(build_base, lib_sub) for lib_sub in lib_subs]
 
 lib_build_paths = [os.path.join("#", rpath_link_path) for rpath_link_path in rpath_link_paths]
 
-# tell the linker where to find the libraries during the link operation
-globalenv.AppendUnique(LIBPATH = lib_build_paths)
-
-# common command line options
-globalenv.AppendUnique(CCFLAGS = ["-Wall", "-g", "-O0", "-DMAPREADY_VERSION_STRING=\\\"" + pkg_version + "\\\""])
-globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined", "-Wl,-rpath=\\$$ORIGIN/../lib"] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
-
-# common include directories
+# common options
+globalenv.AppendUnique(LIBPATH = lib_build_paths) # tell the linker where to find the libraries during the link operation
+globalenv.AppendUnique(CCFLAGS = ["-Wall", "-DMAPREADY_VERSION_STRING=\\\"" + pkg_version + "\\\""])
 globalenv.AppendUnique(CPPPATH = ["."])
+
+# release-specific options
+if release_build == False:
+    globalenv.AppendUnique(CCFLAGS = ["-g", "-O0"])
+else:
+    globalenv.AppendUnique(CCFLAGS = ["-O2"])
+
+# platform-specific options
+if platform.system() == "Linux":
+    globalenv.AppendUnique(LINKFLAGS = ["-Wl,--as-needed", "-Wl,--no-undefined", "-Wl,-rpath=\\$$ORIGIN/../lib",] + ["-Wl,-rpath-link=" + rpath_link_path for rpath_link_path in rpath_link_paths])
+    globalenv.AppendUnique(CPPPATH = [
+        "/usr/include/libgeotiff",
+        "/usr/include/glib-2.0",
+        "/usr/lib64/glib-2.0/include",
+        "/usr/include/gdal",
+        "/usr/include/gtk-2.0",
+        "/usr/include/cairo",
+        "/usr/include/pango-1.0",
+        "/usr/lib64/gtk-2.0/include",
+        "/usr/include/gdk-pixbuf-2.0",
+        "/usr/include/atk-1.0",
+        "/usr/include/libglade-2.0",
+        "/usr/include/libxml2",
+    ])
+elif platform.system() == "Darwin":
+    globalenv.AppendUnique(CCFLAGS = ["-Ddarwin",])
+    # the default Fink binary paths
+    globalenv.AppendUnique(ENV = {"PATH": [os.environ["PATH"], "/sw/bin", "/sw/sbin",]})
+    # the default Fink library paths
+    globalenv.AppendUnique(LIBPATH = ["/sw/lib",])
+    globalenv.AppendUnique(CPPPATH = [
+        "/sw/include", # Fink
+        "/sw/include/glib-2.0", # Fink
+        "/sw/lib/glib-2.0/include", # Fink
+        "/sw/include/gdal1",
+    ])
 
 # do the actual building
 for src_sub in src_subs:
-    src_dir = os.path.join(source_root, src_sub)
-    # the next line exists because there seems to be no way of getting the source directory from within a tool run from an SConscript with the variant_dir option
-    globalenv["src_dir"] = src_dir
-    build_dir = os.path.join(build_base_dir, platform + "." + build_type, src_sub)
-    globalenv.SConscript(dirs = src_dir, exports = ["globalenv"], variant_dir = build_dir, duplicate = 0)
+    src_dir = os.path.join("src", src_sub)
+    build_dir = os.path.join(build_base, src_sub)
+    globalenv.SConscript(
+        dirs = src_dir,
+        exports = ["globalenv"],
+        variant_dir = build_dir,
+        duplicate = 0,
+    )
 
 # configure targets, and make "build" the default
-build_subs = [os.path.join("#", build_base_dir, platform + "." + build_type, sub) for sub in src_subs]
+build_subs = [os.path.join("#", build_base, sub) for sub in src_subs]
 
 globalenv.Alias("build", build_subs)
 globalenv.Alias("install", inst_dirs.values())

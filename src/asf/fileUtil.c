@@ -538,7 +538,7 @@ FILE *fopenImage(const char *fName,const char *access)
 /******************************************************************************
  * fileCopy:
  * Copy the file specified by "src" to the file specified by "dst". Error
- * checking is taken care of by the caplib functions (ie FOPEN, FWRITE, etc) */
+ * checking is taken care of by the caplib functions (ie FOPEN, ASF_FWRITE, etc) */
 void fileCopy(const char *src, const char *dst)
 {
    char buffer[BUFFER_SIZE];

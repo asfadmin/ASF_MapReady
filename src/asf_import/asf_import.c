@@ -271,10 +271,6 @@ following defines.
 #include "asf_raster.h"
 #include <ctype.h>
 
-//#ifdef linux
-//char *strdup(char *);
-//#endif
-
 #define REQUIRED_ARGS 2
 
 #define FLAG_SET 1

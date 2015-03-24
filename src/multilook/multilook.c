@@ -349,11 +349,11 @@ int main(int argc, char *argv[])
 		blu_offset=(long long)(line*outWid+(2*outWid*outLen));
 
 		FSEEK64(flas,red_offset,SEEK_SET);
-		FWRITE(redPtr,1,outWid,flas);
+		ASF_FWRITE(redPtr,1,outWid,flas);
 		FSEEK64(flas,grn_offset,SEEK_SET);
-		FWRITE(grnPtr,1,outWid,flas);
+		ASF_FWRITE(grnPtr,1,outWid,flas);
 		FSEEK64(flas,blu_offset,SEEK_SET);
-		FWRITE(bluPtr,1,outWid,flas);
+		ASF_FWRITE(bluPtr,1,outWid,flas);
     
 		/* reposition data for next read */
 		for (i=0;i<nitems;i++)

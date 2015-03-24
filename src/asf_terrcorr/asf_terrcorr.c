@@ -450,7 +450,7 @@ main (int argc, char *argv[])
         doRadiometric = 5;
 #else
         CHECK_ARG(1);
-        char *form = strdup(GET_ARG(1));
+        char *form = STRDUP(GET_ARG(1));
         doRadiometric = atoi(form);
 
         // give the do-radiometric help in here for now, later should be

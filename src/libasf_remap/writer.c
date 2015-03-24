@@ -44,7 +44,7 @@ void writePixelLine(FILE *out, struct DDR *outDDR,int y,int bandNo, float *thisL
 			break;
 		}
 		FSEEK64(out,(long long) maxOutX*outPixelSize*y,0);
-		FWRITE(outBuf,(unsigned int)outPixelSize,(unsigned int)maxOutX,out);
+		ASF_FWRITE(outBuf,(unsigned int)outPixelSize,(unsigned int)maxOutX,out);
 	} 
 	else 
 	{

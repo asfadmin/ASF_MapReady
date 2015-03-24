@@ -14,8 +14,6 @@ localenv.AppendUnique(CPPPATH = [
         "#src/libasf_geocode",
         ])
 
-localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
-localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs gsl")
 
 localenv.AppendUnique(LIBS = [
