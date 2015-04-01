@@ -87,6 +87,52 @@ int strmatches(const char *key, ...)
     return found;
 }
 
+static int strindex(char s[], char t[])
+{
+  int i, j, k;
+
+  for (i=0; s[i]!='\0'; i++) {
+    for (j=i, k=0; t[k]!='\0' && s[j]==t[k]; j++, k++)
+      ;
+    if (k>0 && t[k]=='\0')
+      return i;
+  }
+  return -1;
+}
+
+static char *read_param(char *line)
+{
+  int i, k;
+  char *value=(char *)CALLOC(256, sizeof(char));
+
+  strcpy(value, "");
+  i=strindex(line, "]");
+  k=strindex(line, "=");
+  if (i>0) strncpy(value, line, i+1);
+  if (k>0) strncpy(value, line, k);
+  return value;
+}
+
+static char *read_str(char *line, char *param)
+{
+  static char value[255];
+  char *p = strchr(line, '=');
+
+  // skip past the '=' sign, and eat up any whitespace
+  ++p;
+  while (isspace(*p))
+      ++p;
+
+  strcpy(value, p);
+
+  // eat up trailing whitespace, too
+  p = value + strlen(value) - 1;
+  while (isspace(*p))
+      *p-- = '\0';
+
+  return value;
+}
+
 int main(int argc,char *argv[])
 {
   char  infile1[256], infile2[256], infile3[256];  // Input file name                         
@@ -362,7 +408,27 @@ int main(int argc,char *argv[])
     meta_write(meta1,outfile);
   }
   else if (mode == SENTINEL_DUAL) {
-
+  
+    // Read temporary directory from MapReady settings file
+    char settingsFile[1024], line[1024], params[25], tmpPath[512]="", *test;
+    
+    sprintf(settingsFile, "%s%cmapready_settings.cfg", 
+      get_asf_share_dir(), DIR_SEPARATOR);
+    FILE *fp = FOPEN(settingsFile, "r");
+    if (fp) {
+      while (fgets(line, 1024, fp) != NULL) {
+        if (strncmp(line, "[General]", 9) == 0)
+          strcpy(params, "general");
+        if (strncmp(params, "general", 7) == 0) {
+          test = read_param(line);
+          if (strncmp(test, "temporary directory", 19) == 0)
+            strcpy(tmpPath, read_str(line, "temporary directory"));
+          FREE(test);
+        }
+      }
+    }
+    FCLOSE(fp);
+  
     asfPrintStatus("Creating colorized browse image from Sentinel dual-pol "
       "data\n");
     create_name(infile1,argv[3],".img");
@@ -370,8 +436,11 @@ int main(int argc,char *argv[])
     create_name(outfile,argv[5],".tif");
 
     // Create temporary directory
-    char tmpDir[512];
-    strcpy(tmpDir, "browse-");
+    char tmpDir[1024];
+    if (strlen(tmpPath) > 0)
+      sprintf(tmpDir, "%s%cbrowse-", tmpPath, DIR_SEPARATOR);
+    else
+      strcpy(tmpDir, "browse-");
     strcat(tmpDir, time_stamp_dir());
     create_clean_dir(tmpDir);
   
