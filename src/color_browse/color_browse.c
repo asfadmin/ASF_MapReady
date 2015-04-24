@@ -140,7 +140,7 @@ int main(int argc,char *argv[])
   browse_type_t mode = NOTYPE;
   int   i,j;
   int   sample_count;
-  double scale;
+  double scale=-1;
   extern int currArg;
 
   // Parse command line
@@ -453,7 +453,9 @@ int main(int argc,char *argv[])
     strcpy(inFiles[1], infile2);
     sprintf(tmpRatio, "%s%cdiv.img", tmpDir, DIR_SEPARATOR);
     raster_calc(tmpRatio, "a/b", 2, inFiles);
-    
+   
+    if (scale<0) asfPrintError("Invalid scale value: %f\n", scale);
+ 
     // Resample all three bands
     meta_parameters *metaIn = meta_read(tmpRatio);
     double scaleFactor = 1.0/(scale/metaIn->general->x_pixel_size);
