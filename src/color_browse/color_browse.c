@@ -22,6 +22,7 @@
 #include "asf_nan.h"
 #include "asf.h"
 #include "asf_meta.h"
+#include "asf_raster.h"
 #include "asf_export.h"
 #include <math.h>
 #include <stdio.h>
@@ -446,7 +447,8 @@ int main(int argc,char *argv[])
     asfPrintStatus("Temp dir is: %s\n", tmpDir);
  
     // Calculate ratio image
-    char tmpRatio[512], tmpRed[512], tmpGreen[512], tmpBlue[512], *inFiles[2]; 
+    char tmpRatio[512], tmpRed[512], tmpGreen[512], tmpBlue[512], tmpIn[512];
+    char *inFiles[2]; 
     inFiles[0] = (char *) MALLOC(sizeof(char)*255);
     inFiles[1] = (char *) MALLOC(sizeof(char)*255);
     strcpy(inFiles[0], infile1);
@@ -456,25 +458,29 @@ int main(int argc,char *argv[])
    
     if (scale<0) asfPrintError("Invalid scale value: %f\n", scale);
  
-    // Resample all three bands
+    // Resample all three bands and scale to byte
     meta_parameters *metaIn = meta_read(tmpRatio);
     double scaleFactor = 1.0/(scale/metaIn->general->x_pixel_size);
     meta_free(metaIn);
-    sprintf(tmpRed, "%s%cred.img", tmpDir, DIR_SEPARATOR);
-    resample(infile1, tmpRed, scaleFactor, scaleFactor);
-    sprintf(tmpGreen, "%s%cgreen.img", tmpDir, DIR_SEPARATOR);
-    resample(infile2, tmpGreen, scaleFactor, scaleFactor);
-    sprintf(tmpBlue, "%s%cblue.img", tmpDir, DIR_SEPARATOR);
-    resample(tmpRatio, tmpBlue, scaleFactor, scaleFactor);    
-    
-    // Layer stack the bands - Need to fake optical metadata to allow for 
-    // 2-sigma stretch on individual bands
+    sprintf(tmpIn, "%s%cred.img", tmpDir, DIR_SEPARATOR);
+    resample(infile1, tmpIn, scaleFactor, scaleFactor);
+    sprintf(tmpRed, "%s%cred_byte.img", tmpDir, DIR_SEPARATOR);
+    floats_to_bytes_from_file(tmpIn, tmpRed, NULL, 0.0, SIGMA);
+    sprintf(tmpIn, "%s%cgreen.img", tmpDir, DIR_SEPARATOR);
+    resample(infile2, tmpIn, scaleFactor, scaleFactor);
+    sprintf(tmpGreen, "%s%cgreen_byte.img", tmpDir, DIR_SEPARATOR);
+    floats_to_bytes_from_file(tmpIn, tmpGreen, NULL, 0.0, SIGMA);
+    sprintf(tmpIn, "%s%cblue.img", tmpDir, DIR_SEPARATOR);
+    resample(tmpRatio, tmpIn, scaleFactor, scaleFactor);    
+    sprintf(tmpBlue, "%s%cblue_byte.img", tmpDir, DIR_SEPARATOR);
+    floats_to_bytes_from_file(tmpIn, tmpBlue, NULL, 0.0, SIGMA);
+
+    // Layer stack the bands
     char tmpBrowse[512];
     sprintf(tmpBrowse, "%s%cbrowse.img", tmpDir, DIR_SEPARATOR);
     FILE *fpOut = FOPEN(tmpBrowse, "w");    
     meta_parameters *metaOut = meta_read(tmpRed);
     metaOut->general->band_count = 3;
-    
     metaIn = meta_read(tmpRed);
     int line_count = metaIn->general->line_count;
     int sample_count = metaIn->general->sample_count;
@@ -482,33 +488,32 @@ int main(int argc,char *argv[])
     float *buf = (float *) MALLOC(sizeof(float)*line_count*sample_count);
     FILE *fpIn = FOPEN(tmpBlue, "r");
     get_float_lines(fpIn, metaIn, 0, line_count, buf);
-    FCLOSE(fpIn);
     put_band_float_lines(fpOut, metaOut, 0, 0, line_count, buf);
+    FCLOSE(fpIn);
     fpIn = FOPEN(tmpGreen, "r");
     get_float_lines(fpIn, metaIn, 0, line_count, buf);
-    FCLOSE(fpIn);
     put_band_float_lines(fpOut, metaOut, 1, 0, line_count, buf);
+    FCLOSE(fpIn);
     fpIn = FOPEN(tmpRed, "r");
     get_float_lines(fpIn, metaIn, 0, line_count, buf);
-    FCLOSE(fpIn);
     put_band_float_lines(fpOut, metaOut, 2, 0, line_count, buf);
+    FCLOSE(fpIn);
     FCLOSE(fpOut);
     FREE(buf);
 
-    metaOut->optical = meta_optical_init();
-    strcpy(metaOut->general->sensor, "ALOS");
-    strcpy(metaOut->general->sensor_name, "AVNIR");
-    strcpy(metaOut->general->bands, "01,02,03");
+    strcpy(metaOut->general->bands, "red,green,blue");
     meta_write(metaOut, tmpBrowse);
     
-    // Export applying 2-sigma stretch
-    char *band_names[3] = { "03", "02", "01" };
-    asf_export_bands(GEOTIFF, SIGMA, TRUE, TRUE, FALSE, FALSE, FALSE, 
+    // Export to GeoTIFF
+    char *band_names[3] = { "blue", "green", "red" };
+    asf_export_bands(GEOTIFF, TRUNCATE , TRUE, FALSE, FALSE, FALSE, FALSE, 
       tmpBrowse, outfile, band_names, NULL, NULL);
 
     // Clean up
     asfPrintStatus("Removing temporary directory: %s\n", tmpDir);
     remove_dir(tmpDir);
+    meta_free(metaIn);
+    meta_free(metaOut);
   }
   else
     asfPrintError("Mode is not defined!\n");
