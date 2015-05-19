@@ -16,11 +16,14 @@
  *
  *  Written by Tom Logan, March 2014
  *  Part of the RTC Project
+ *  Extended by Rudi Gens for Sentinel dual-pol browse images (March 2015)
  *
  *******************************************************************************/
 #include "asf_nan.h"
 #include "asf.h"
 #include "asf_meta.h"
+#include "asf_raster.h"
+#include "asf_export.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,44 +31,160 @@
 #include <asf_contact.h>
 
 typedef enum {
-  TRUNCATE=1,
-  MINMAX,
-  MINMAX_MEDIAN,
-  SIGMA,
-  SIGMA3,
-  HISTOGRAM_EQUALIZE,
-  NONE
-} scale_t3;
-
+  PALSAR_FBD,
+  PALSAR_PLR,
+  SENTINEL_DUAL,
+  NOTYPE
+} browse_type_t;
 
 unsigned char *my_floats_to_bytes (float *data, long long pixel_count, float mask,
-				scale_t3 scaling,float min, float max);
+				scale_t scaling,float min, float max);
+
+#define VERSION 1.1
+
+void usage(char *name)
+{
+  printf("\n"
+   "USAGE:\n"
+   "   color_browse [-sentinel <scale>] <inFile1> <inFile2> [<inFile3>] "
+   "<outFile\n");
+  printf("\n"
+   "REQUIRED ARGUMENTS:\n"
+   "   inFile1   Name of an ASF internal file (HH or VV)\n"
+   "   inFile2   Name of an ASF internal file (HV or VH)\n"
+   "   outFile   Name of the output browse image\n");
+  printf("\n"
+   "OPTIONAL ARGUMENTS:\n"
+   "  -sentinel  Input data is from Sentinel instead of ALOS PALSAR (default)\n"
+   "   inFile3   Name of an ASF internal file (VV for PLR data)\n");
+  printf("\n"
+   "DESCRIPTION:\n"
+   "   This program generates browse images for RTC products and Sentinel data.\n"
+   "   For Sentinel data they are create with associated world and auxiliary"
+   " files for ease of use in a GIS environment.\n");
+  printf("\n"
+   "Version %.2f, ASF SAR Tools\n"
+   "\n",VERSION);
+  exit(EXIT_FAILURE);
+}
+
+int strmatches(const char *key, ...)
+{
+    va_list ap;
+    char *arg = NULL;
+    int found = FALSE;
+
+    va_start(ap, key);
+    do {
+        arg = va_arg(ap, char *);
+        if (arg) {
+            if (strcmp(key, arg) == 0) {
+                found = TRUE;
+                break;
+            }
+        }
+    } while (arg);
+
+    return found;
+}
+
+static int strindex(char s[], char t[])
+{
+  int i, j, k;
+
+  for (i=0; s[i]!='\0'; i++) {
+    for (j=i, k=0; t[k]!='\0' && s[j]==t[k]; j++, k++)
+      ;
+    if (k>0 && t[k]=='\0')
+      return i;
+  }
+  return -1;
+}
+
+static char *read_param(char *line)
+{
+  int i, k;
+  char *value=(char *)CALLOC(256, sizeof(char));
+
+  strcpy(value, "");
+  i=strindex(line, "]");
+  k=strindex(line, "=");
+  if (i>0) strncpy(value, line, i+1);
+  if (k>0) strncpy(value, line, k);
+  return value;
+}
+
+static char *read_str(char *line, char *param)
+{
+  static char value[255];
+  char *p = strchr(line, '=');
+
+  // skip past the '=' sign, and eat up any whitespace
+  ++p;
+  while (isspace(*p))
+      ++p;
+
+  strcpy(value, p);
+
+  // eat up trailing whitespace, too
+  p = value + strlen(value) - 1;
+  while (isspace(*p))
+      *p-- = '\0';
+
+  return value;
+}
 
 int main(int argc,char *argv[])
 {
   char  infile1[256], infile2[256], infile3[256];  // Input file name                         
   char  outfile[256];         			   // Output file name
-  int   mode;
+  browse_type_t mode = NOTYPE;
   int   i,j;
   int   sample_count;
+  double scale=-1;
+  extern int currArg;
 
-
-  if (argc != 4 && argc !=5) {
-      printf("Usage:  %s <infile1> <infile2> [infile3] <outfile>\n",argv[0]);
-      printf("\n%s : **Not enough arguments (need 3, got %d).\n",argv[0],argc);
-      return(1);
+  // Parse command line
+  if ((argc-currArg)<1) {
+    printf("Insufficient arguments.\n"); 
+    usage("");
   }
 
-  if (argc == 4) mode = 0;  /* FBD data */
-  if (argc == 5) mode = 1;  /* PLR data */
+  while (currArg < (argc-2)) {
+    char *key = argv[currArg++];
+    if (strmatches(key, "-sentinel", "--sentinel", NULL)) {
+      CHECK_ARG(1);
+      scale = atof(GET_ARG(1));
+      mode = SENTINEL_DUAL;
+    }
+    else if (strmatches(key, "-log", "--log", NULL)) {
+      CHECK_ARG(1);
+      strcpy(logFile,GET_ARG(1));
+      fLog = FOPEN(logFile, "a");
+      logflag = TRUE;
+    }
+    else if (strmatches(key, "-quiet", "--quiet", "-q", NULL))
+      quietflag = TRUE;
+    else {
+      --currArg;
+      break;
+    }
+  }
+  if ((argc-currArg) < 2) {
+    printf("Insufficient arguments.\n");
+    usage(argv[0]);
+  }
+  if (mode == NOTYPE && argc == 4)
+    mode = PALSAR_FBD;
+  else if (mode == NOTYPE && argc == 5) 
+    mode = PALSAR_PLR;
 
-  printf("Creating colorized browse images from");
-  if (mode == 0) printf(" FBD data\n");
-  else printf(" PLR data\n");
+  if (!quietflag) 
+    asfSplashScreen(argc, argv);
 
-  if (!quietflag) asfSplashScreen(argc, argv);
-
-  if (mode == 0) {
+  if (mode == PALSAR_FBD) {
+  
+    asfPrintStatus("Creating colorized browse image from PALSAR FBD data\n");
     create_name(infile1,argv[1],".img");
     create_name(infile2,argv[2],".img");
     create_name(outfile,argv[3],".img");
@@ -78,7 +197,7 @@ int main(int argc,char *argv[])
       {
         asfPrintError("Images must be the same size!!!\n");
         exit(1);
-      }    
+      }
     strcpy(meta1->general->bands,"HH");
     strcpy(meta2->general->bands,"HV");
 
@@ -203,9 +322,11 @@ int main(int argc,char *argv[])
 
     meta_write(meta1,outfile);
 
-  } else {
-
+  } 
+  else if (mode == PALSAR_PLR) {
+  
     /* Mode 1 - Create Color Browse from 3 bands using 3sigma stretch */
+    asfPrintStatus("Creating colorized browse image from PALSAR PLR data\n");
     create_name(infile1,argv[1],".img");
     create_name(infile2,argv[2],".img");
     create_name(infile3,argv[3],".img");
@@ -287,14 +408,122 @@ int main(int argc,char *argv[])
 
     meta_write(meta1,outfile);
   }
+  else if (mode == SENTINEL_DUAL) {
+  
+    // Read temporary directory from MapReady settings file
+    char settingsFile[1024], line[1024], params[25], tmpPath[512]="", *test;
+    
+    sprintf(settingsFile, "%s%cmapready_settings.cfg", 
+      get_asf_share_dir(), DIR_SEPARATOR);
+    FILE *fp = FOPEN(settingsFile, "r");
+    if (fp) {
+      while (fgets(line, 1024, fp) != NULL) {
+        if (strncmp(line, "[General]", 9) == 0)
+          strcpy(params, "general");
+        if (strncmp(params, "general", 7) == 0) {
+          test = read_param(line);
+          if (strncmp(test, "temporary directory", 19) == 0)
+            strcpy(tmpPath, read_str(line, "temporary directory"));
+          FREE(test);
+        }
+      }
+    }
+    FCLOSE(fp);
+  
+    asfPrintStatus("Creating colorized browse image from Sentinel dual-pol "
+      "data\n");
+    create_name(infile1,argv[3],".img");
+    create_name(infile2,argv[4],".img");
+    create_name(outfile,argv[5],".tif");
 
+    // Create temporary directory
+    char tmpDir[1024];
+    if (strlen(tmpPath) > 0)
+      sprintf(tmpDir, "%s%cbrowse-", tmpPath, DIR_SEPARATOR);
+    else
+      strcpy(tmpDir, "browse-");
+    strcat(tmpDir, time_stamp_dir());
+    create_clean_dir(tmpDir);
+    asfPrintStatus("Temp dir is: %s\n", tmpDir);
+ 
+    // Calculate ratio image
+    char tmpRatio[512], tmpRed[512], tmpGreen[512], tmpBlue[512], tmpIn[512];
+    char *inFiles[2]; 
+    inFiles[0] = (char *) MALLOC(sizeof(char)*255);
+    inFiles[1] = (char *) MALLOC(sizeof(char)*255);
+    strcpy(inFiles[0], infile1);
+    strcpy(inFiles[1], infile2);
+    sprintf(tmpRatio, "%s%cdiv.img", tmpDir, DIR_SEPARATOR);
+    raster_calc(tmpRatio, "a/b", 2, inFiles);
+   
+    if (scale<0) asfPrintError("Invalid scale value: %f\n", scale);
+ 
+    // Resample all three bands and scale to byte
+    meta_parameters *metaIn = meta_read(tmpRatio);
+    double scaleFactor = 1.0/(scale/metaIn->general->x_pixel_size);
+    meta_free(metaIn);
+    sprintf(tmpIn, "%s%cred.img", tmpDir, DIR_SEPARATOR);
+    resample(infile1, tmpIn, scaleFactor, scaleFactor);
+    sprintf(tmpRed, "%s%cred_byte.img", tmpDir, DIR_SEPARATOR);
+    floats_to_bytes_from_file(tmpIn, tmpRed, NULL, 0.0, SIGMA);
+    sprintf(tmpIn, "%s%cgreen.img", tmpDir, DIR_SEPARATOR);
+    resample(infile2, tmpIn, scaleFactor, scaleFactor);
+    sprintf(tmpGreen, "%s%cgreen_byte.img", tmpDir, DIR_SEPARATOR);
+    floats_to_bytes_from_file(tmpIn, tmpGreen, NULL, 0.0, SIGMA);
+    sprintf(tmpIn, "%s%cblue.img", tmpDir, DIR_SEPARATOR);
+    resample(tmpRatio, tmpIn, scaleFactor, scaleFactor);    
+    sprintf(tmpBlue, "%s%cblue_byte.img", tmpDir, DIR_SEPARATOR);
+    floats_to_bytes_from_file(tmpIn, tmpBlue, NULL, 0.0, SIGMA);
+
+    // Layer stack the bands
+    char tmpBrowse[512];
+    sprintf(tmpBrowse, "%s%cbrowse.img", tmpDir, DIR_SEPARATOR);
+    FILE *fpOut = FOPEN(tmpBrowse, "w");    
+    meta_parameters *metaOut = meta_read(tmpRed);
+    metaOut->general->band_count = 3;
+    metaIn = meta_read(tmpRed);
+    int line_count = metaIn->general->line_count;
+    int sample_count = metaIn->general->sample_count;
+    
+    float *buf = (float *) MALLOC(sizeof(float)*line_count*sample_count);
+    FILE *fpIn = FOPEN(tmpBlue, "r");
+    get_float_lines(fpIn, metaIn, 0, line_count, buf);
+    put_band_float_lines(fpOut, metaOut, 0, 0, line_count, buf);
+    FCLOSE(fpIn);
+    fpIn = FOPEN(tmpGreen, "r");
+    get_float_lines(fpIn, metaIn, 0, line_count, buf);
+    put_band_float_lines(fpOut, metaOut, 1, 0, line_count, buf);
+    FCLOSE(fpIn);
+    fpIn = FOPEN(tmpRed, "r");
+    get_float_lines(fpIn, metaIn, 0, line_count, buf);
+    put_band_float_lines(fpOut, metaOut, 2, 0, line_count, buf);
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+    FREE(buf);
+
+    strcpy(metaOut->general->bands, "red,green,blue");
+    meta_write(metaOut, tmpBrowse);
+    
+    // Export to GeoTIFF
+    char *band_names[3] = { "blue", "green", "red" };
+    asf_export_bands(GEOTIFF, TRUNCATE , TRUE, FALSE, FALSE, FALSE, FALSE, 
+      tmpBrowse, outfile, band_names, NULL, NULL);
+
+    // Clean up
+    asfPrintStatus("Removing temporary directory: %s\n", tmpDir);
+    remove_dir(tmpDir);
+    meta_free(metaIn);
+    meta_free(metaOut);
+  }
+  else
+    asfPrintError("Mode is not defined!\n");
 
   asfPrintStatus("Done.\n");
   exit(EXIT_SUCCESS);
 }
 
 unsigned char *my_floats_to_bytes (float *data, long long pixel_count, float mask,
-				scale_t3 scaling,float inmin, float inmax)
+				scale_t scaling,float inmin, float inmax)
 {
   long long ii;
   double imin=99999, imax=-99999, imean=0, isdev=0;

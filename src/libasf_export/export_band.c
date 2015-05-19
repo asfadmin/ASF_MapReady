@@ -439,7 +439,7 @@ void initialize_pgm_file(const char *output_file_name,
            max_color_value);
   int len = strlen(c_out);
 
-  FWRITE(out, sizeof(unsigned char), len, *opgm);
+  ASF_FWRITE(out, sizeof(unsigned char), len, *opgm);
 
   return;
 }

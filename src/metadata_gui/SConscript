@@ -7,13 +7,14 @@ localenv.AppendUnique(CPPPATH = [
     "#src/libasf_metadata/",
 ])
 
-localenv.ParseConfig("pkg-config --cflags --libs libglade-2.0")
-localenv.ParseConfig("pkg-config --cflags --libs gtk+-2.0")
-localenv.ParseConfig("pkg-config --cflags --libs gmodule-export-2.0")
 
 localenv.AppendUnique(LIBS = [
     "asf",
     "asf_metadata",
+    "gtk-x11-2.0",
+    "gobject-2.0",
+    "glade-2.0",
+    "glib-2.0",
 ])
 
 bins = localenv.Program("mdv", Glob("*.c"))

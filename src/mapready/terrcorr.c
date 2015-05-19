@@ -383,7 +383,7 @@ on_dem_browse_button_clicked(GtkWidget *widget)
 
     /* the returned "fname" has the following form:            */
     /*   <directory>\0<first file>\0<second file>\0<third ...  */
-    char * dir = strdup(fname);
+    char * dir = STRDUP(fname);
     char * p = fname + strlen(dir) + 1;
 
     if (*p) {
@@ -596,7 +596,7 @@ on_mask_browse_button_clicked(GtkWidget *widget)
 
     /* the returned "fname" has the following form:            */
     /*   <directory>\0<first file>\0<second file>\0<third ...  */
-    char * dir = strdup(fname);
+    char * dir = STRDUP(fname);
     char * p = fname + strlen(dir) + 1;
 
     if (*p) {

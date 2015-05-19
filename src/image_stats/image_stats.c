@@ -327,7 +327,7 @@ int main(int argc, char *argv[])
 	  else
 	    bufMask[kk] = 0;
 	}      
-	FWRITE(bufMask, sizeof(char), samples, fpMask);
+	ASF_FWRITE(bufMask, sizeof(char), samples, fpMask);
       }
       FCLOSE(fpMask);
       FREE(bufMask);

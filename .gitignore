@@ -26,4 +26,3 @@ include/config.h
 make_support/system_rules
 config.log
 config.status
-Makefile

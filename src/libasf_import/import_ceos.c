@@ -545,7 +545,7 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
   s->nLines = 0;
   for (ii=0; ii<nl; ii++) {
     readNextPulse(s, iqBuf, inDataName, outDataName);
-    FWRITE(iqBuf, s->nSamp*2, 1, fpOut);
+    ASF_FWRITE(iqBuf, s->nSamp*2, 1, fpOut);
     asfLineMeter(ii,nl);
     s->nLines++;
   }

@@ -218,7 +218,8 @@ void ceos_read_stVecs(const char *fName, ceos_description *ceos, meta_parameters
     if (ceos->facility==ASF && ceos->processor!=LZP)
     {/* ASF's state vectors start at the
         same time as the images themselves.*/
-        timeStart = 0.0;
+        /* TAL timeStart = 0.0; */
+        timeStart=get_timeDelta(ceos,&ppdr,meta);
         s->year   = (int) ppdr.year;
         s->julDay = (int) ppdr.gmt_day;
         s->second = ppdr.gmt_sec;

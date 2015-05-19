@@ -19,6 +19,7 @@ typedef enum {
   MINMAX,
   MINMAX_MEDIAN,
   SIGMA,
+  SIGMA3,
   HISTOGRAM_EQUALIZE,
   NONE
 } scale_t;

@@ -69,13 +69,13 @@ else
    sprintf(len,"%-d",*dlen);
 
 sprintf (header,"%-*s%-*s%-*s",LENL,len,TYPL,dtype,KEYL-1,key);
-FWRITE(header,sizeof(char),HDRL,fp);
+ASF_FWRITE(header,sizeof(char),HDRL,fp);
 
 if (*clen > 0)
-    FWRITE(cbuf,sizeof(char), *clen,fp);
+    ASF_FWRITE(cbuf,sizeof(char), *clen,fp);
 
 if (*dlen > 0)
-    FWRITE(dbuf,sizeof(char), *dlen,fp);
+    ASF_FWRITE(dbuf,sizeof(char), *dlen,fp);
 
 return(E_SUCC);
 }

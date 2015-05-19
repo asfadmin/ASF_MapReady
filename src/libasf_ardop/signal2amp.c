@@ -40,7 +40,7 @@ main(int argc,char **argv)
 		for (x=0; x<mlSamples; x++) {
 			ieee_big32(outBuf[x]);
 		}
-		FWRITE(outBuf,sizeof(float),mlSamples,outF);
+		ASF_FWRITE(outBuf,sizeof(float),mlSamples,outF);
 	}
         FREE(inBuf);
         FREE(outBuf);

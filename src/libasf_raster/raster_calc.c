@@ -236,27 +236,32 @@ int raster_calc(char *outFile, char *expression, int input_count,
 		char **inFiles)
 {
   int ii, xx, yy;
-  meta_parameters *inMeta, *outMeta, *tmpMeta;
+  meta_parameters *inMeta, *outMeta;
+  meta_parameters *metas[MAXIMGS];
   char *cookie;
   float *inBuf[MAXIMGS], *outBuf;
   FILE *fpIn[MAXIMGS], *fpOut;
 
   inMeta = meta_read(inFiles[0]);
+  int ns = inMeta->general->sample_count;
+  int nl = inMeta->general->line_count;
   for (ii=0; ii<input_count; ii++) {
-    tmpMeta = meta_read(inFiles[ii]);
+    meta_parameters *tmpMeta = meta_read(inFiles[ii]);
     fpIn[ii] = fopenImage(inFiles[ii], "rb");
     // Make sure each image is at least as big as the first image.
     if (ii != 0) {
-      if ((tmpMeta->general->line_count < inMeta->general->line_count) ||
-          (tmpMeta->general->sample_count < inMeta->general->sample_count))
-        asfPrintError("The images must all be as least as big as the first "
-		      "input image.\n");
+      if (tmpMeta->general->line_count < inMeta->general->line_count)
+        nl = tmpMeta->general->line_count;
+      if (tmpMeta->general->sample_count < inMeta->general->sample_count)
+        ns = tmpMeta->general->sample_count;
     }
     inBuf[ii] = (float*) MALLOC( sizeof(float)*tmpMeta->general->sample_count);
-    meta_free(tmpMeta);
+    metas[ii] = tmpMeta;
   }
   fpOut = fopenImage(outFile, "wb");
   outMeta = meta_copy(inMeta);
+  outMeta->general->line_count = nl;
+  outMeta->general->sample_count = ns;
   meta_write(outMeta, outFile);
 
   outBuf = (float *) MALLOC(sizeof(float)*outMeta->general->sample_count);
@@ -269,7 +274,7 @@ int raster_calc(char *outFile, char *expression, int input_count,
     variables['y'-'a'] = yy;
 
     for (ii=0; ii<input_count; ii++)
-      get_float_line(fpIn[ii], inMeta, yy, inBuf[ii]);
+      get_float_line(fpIn[ii], metas[ii], yy, inBuf[ii]);
 
     for (xx=0; xx<outMeta->general->sample_count; xx++) {
       variables['x'-'a'] = xx;
@@ -280,6 +285,15 @@ int raster_calc(char *outFile, char *expression, int input_count,
     put_float_line(fpOut, outMeta, yy, outBuf);
     asfLineMeter(yy, outMeta->general->line_count);
   }
-  
+
+  for (ii=0; ii<input_count; ++ii) { 
+    FREE(inBuf[ii]);
+    meta_free(metas[ii]); 
+    FCLOSE(fpIn[ii]);
+  }
+
+  FREE(outBuf);
+  meta_free(outMeta);
+  FCLOSE(fpOut);
   return (0);
 }

@@ -10,14 +10,13 @@ localenv.AppendUnique(CPPPATH = [
         "#src/libasf_proj",
         ])
 
-localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
 localenv.ParseConfig("pkg-config --cflags --libs gsl")
-localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 
-localenv.AppendUnique(LIBS = ["asf",
-                         "asf_meta",
-                         "asf_proj",
-                         ])
+localenv.AppendUnique(LIBS = [
+    "asf",
+    "asf_meta",
+    "asf_proj",
+])
 
 head_build_dir, tail_build_dir = os.path.split(Dir(".").path)
 

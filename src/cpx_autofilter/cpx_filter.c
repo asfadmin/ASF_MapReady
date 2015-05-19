@@ -40,7 +40,7 @@ PROGRAM HISTORY:
     1.5    5/03   P. Denny       Standardize usage()
                                   Use meta struct instead of DDR
                                   Use get_*_lines instead of ASF_FREAD
-                                  Use put_*_lines instead of FWRITE
+                                  Use put_*_lines instead of ASF_FWRITE
                                   Replace FCMPLX struct with complexFloat
 
 HARDWARE/SOFTWARE LIMITATIONS:
