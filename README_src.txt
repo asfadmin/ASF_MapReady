@@ -37,19 +37,12 @@ should automatically pull in.
 These are names on Ubuntu systems.  On CentOS, a few of the names are
 different.  On other systems, the packages may have different names.
 
-  * bulid-essential
-  * gcc
-  * gcc-c++
-  * pkgconfig
-  * bison
-  * flex
-  * libgtk2.0-dev (gtk2-devel on CentOS)
-  * libglade2-dev (libglade2-devel on CentOS)
-  * gettext
-  * zlib1g-dev
-  * libgsl0-dev
-  * libgsl0ldb
-
+	* bison
+	* flex
+	* g++
+	* gcc
+	* libgdal-dev
+	* libgtk2.0-dev
 
 #########################################################################
 INTRODUCTION:
@@ -89,7 +82,7 @@ asf_tools+---*bin/               These are the actual executables
          +---*lib/               This is where the libraries used to
          |                       build the binaries (executables) will go
          |
-         +----LICENSE.txt        The user license we ship with our tools
+         +----COPYING            The user license we ship with our tools
          |
          +----Makefile.in        File used by the configure script to
          |                       produce the makefile that will build the

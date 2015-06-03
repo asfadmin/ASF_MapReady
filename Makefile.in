@@ -94,7 +94,7 @@ MAPREADY_SOURCE = \
 	doc/arcgis_mask.pdf \
 	doc/dem_manual.pdf \
 	external \
-	LICENSE.txt \
+	COPYING \
 	make_support \
 	configure \
 	README_src.txt \
@@ -295,7 +295,7 @@ mapready: mkdirs_for_build external_libs
 	cp doc/mapready-version_history.txt $(S_DOCDIR)
 	cp doc/arcgis_mask.pdf $(S_DOCDIR)
 	cp doc/dem_manual.pdf $(S_DOCDIR)
-	cp LICENSE.txt $(MAPREADY_SHAREDIR)
+	cp COPYING $(MAPREADY_SHAREDIR)
 	echo $(VERSION_MAPREADY) > $(MAPREADY_SHAREDIR)/mapready_version.txt
 	$(foreach MODULE, $(MAPREADY_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -313,7 +313,7 @@ asps: mkdirs_for_build external_libs
 	cp doc/mapready-version_history.txt $(S_DOCDIR)
 	cp doc/arcgis_mask.pdf $(S_DOCDIR)
 	cp doc/dem_manual.pdf $(S_DOCDIR)
-	cp LICENSE.txt $(MAPREADY_SHAREDIR)
+	cp COPYING $(MAPREADY_SHAREDIR)
 	echo $(VERSION_ASPS) > $(MAPREADY_SHAREDIR)/mapready_version.txt
 	$(foreach MODULE, $(MAPREADY_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -336,7 +336,7 @@ stp: mkdirs_for_build external_libs
 	echo SHAREDIR = ../../$(STP_SHAREDIR) >> make_support/build_pkg.mk
 	cp doc/SAR_training_processor.pdf $(S_DOCDIR)
 	cp doc/stp-version_history.txt $(S_DOCDIR)
-	cp LICENSE.txt $(STP_SHAREDIR)
+	cp COPYING $(STP_SHAREDIR)
 	echo $(VERSION_STP) > $(STP_SHAREDIR)/stp_version.txt
 	$(foreach MODULE, $(STP_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -350,7 +350,7 @@ ap: mkdirs_for_build external_libs
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_AP > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(AP_SHAREDIR) >> make_support/build_pkg.mk
-	cp LICENSE.txt $(AP_SHAREDIR)
+	cp COPYING $(AP_SHAREDIR)
 	echo $(VERSION_AP) > $(AP_SHAREDIR)/acquisitionplanner_version.txt
 	$(foreach MODULE, $(AP_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -364,7 +364,7 @@ req: mkdirs_for_build external_libs
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_REQ > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(REQ_SHAREDIR) >> make_support/build_pkg.mk
-	cp LICENSE.txt $(REQ_SHAREDIR)
+	cp COPYING $(REQ_SHAREDIR)
 	echo $(VERSION_REQ) > $(REQ_SHAREDIR)/req_version.txt
 	$(foreach MODULE, $(REQ_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -380,7 +380,7 @@ c2v: mkdirs_for_build external_libs
 	echo SHAREDIR = ../../$(C2V_SHAREDIR) >> make_support/build_pkg.mk
 	cp doc/ConvertToVector.pdf $(S_DOCDIR)
 	cp doc/ConvertToVector-version_history.txt $(S_DOCDIR)
-	cp LICENSE.txt $(C2V_SHAREDIR)
+	cp COPYING $(C2V_SHAREDIR)
 	echo $(VERSION_C2V) > $(C2V_SHAREDIR)/c2v_version.txt
 	$(foreach MODULE, $(C2V_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -394,7 +394,7 @@ jpl: mkdirs_for_build external_libs
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_JPL> make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(JPL_SHAREDIR) >> make_support/build_pkg.mk
-	cp LICENSE.txt $(JPL_SHAREDIR)
+	cp COPYING $(JPL_SHAREDIR)
 	echo $(VERSION_JPL) > $(JPL_SHAREDIR)/jplmosaicsuite_version.txt
 	$(foreach MODULE, $(JPL_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -409,7 +409,7 @@ create_thumbs: mkdirs_for_build external_libs
 	echo BUILD_PKG = -D_PKG_CREATE_THUMBS > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(CREATE_THUMBS_SHAREDIR) >> make_support/build_pkg.mk
 	cp doc/create_thumbs-version_history.txt $(S_DOCDIR)
-	cp LICENSE.txt $(CREATE_THUMBS_SHAREDIR)
+	cp COPYING $(CREATE_THUMBS_SHAREDIR)
 	echo $(VERSION_CREATE_THUMBS) > $(CREATE_THUMBS_SHAREDIR)/create_thumbs_version.txt
 	$(foreach MODULE, $(CREATE_THUMBS_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -423,7 +423,7 @@ data_qc: mkdirs_for_build external_libs
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_DATA_QC > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(DATA_QC_SHAREDIR) >> make_support/build_pkg.mk
-	cp LICENSE.txt $(DATA_QC_SHAREDIR)
+	cp COPYING $(DATA_QC_SHAREDIR)
 	echo $(VERSION_DATA_QC) > $(DATA_QC_SHAREDIR)/data_qc_version.txt
 	$(foreach MODULE, $(DATA_QC_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -438,7 +438,7 @@ faraday: mkdirs_for_build external_libs
 	echo BUILD_PKG = -D_PKG_FARADAY > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(FARADAY_SHAREDIR) >> make_support/build_pkg.mk
 	cp doc/faraday_prediction-version_history.txt $(S_DOCDIR)
-	cp LICENSE.txt $(FARADAY_SHAREDIR)
+	cp COPYING $(FARADAY_SHAREDIR)
 	echo $(VERSION_FARADAY) > $(FARADAY_SHAREDIR)/faraday_version.txt
 	$(foreach MODULE, $(FARADAY_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
