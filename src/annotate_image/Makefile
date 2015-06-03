@@ -26,7 +26,7 @@ CFLAGS += \
 all: $(TARGET) clean
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS) $(LDFLAGS) 
 	mv $(TARGET)$(BIN_POSTFIX) $(BINDIR)
 
 clean:
