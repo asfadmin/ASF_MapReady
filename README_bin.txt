@@ -16,7 +16,7 @@ sub-directories (depending on what you've downloaded, not all of these may be
 present):
 
 
-asf_tools+----LICENSE.txt      Description of the license that goes with the
+asf_tools+----COPYING          Description of the license that goes with the
          |                     software.
          |
          +----README_bin.txt   How to install the binary executables and
