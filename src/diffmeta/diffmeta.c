@@ -202,8 +202,8 @@ int main(int argc, char **argv)
   }
 
   // Look for metadata files ..be forgiving of name goofs
-  metafile1 = appendExt(basename1, ".meta");
-  metafile2 = appendExt(basename2, ".meta");
+  metafile1 = appendExt(inFile1, ".meta");
+  metafile2 = appendExt(inFile2, ".meta");
   if (strcmp(metafile1, metafile2) == 0) {
     if (outputFile) FREE(outputFile);
     FREE(outputFile);
