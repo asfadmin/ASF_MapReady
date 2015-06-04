@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+
+# This is a script to test ASF MapReady against reference data that is known to
+# be correct. It is run on a directory containing subdirectories which contain
+# tests on which MapReady will be run. The results of MapReady are then compared
+# against reference data containing '.ref' just before the extension.
+
 import os
 import argparse
 import subprocess
@@ -16,7 +22,7 @@ def main():
 	verbose.add_argument("--quiet", help = "Print only errors",
 			action = "store_true")
 	parser.add_argument("--clean", help = "Delete all files in work directory when done, regardless of success/fail.", action = "store_true")
-	parser.add_argument("--output", help = "Where to direct output. Use - for stdout (defaults to system log)", default = "/dev/log")
+	parser.add_argument("--output", help = "Where to direct output. Use - for stdout (defaults to system log)")
 	parser.add_argument("dir", help = "Directory containing test data",
 			default = os.getcwd(), nargs = "?")
 	args = parser.parse_args()
@@ -36,8 +42,10 @@ def main():
 		logger.setLevel(logging.INFO)
 	if args.output == "-":
 		logger.addHandler(logging.StreamHandler(sys.stdout))
-	elif args.output != "":
+	elif args.output != None:
 		logger.addHandler(logging.FileHandler(args.output))
+	else:
+		logger.addHandler(logging.handlers.SysLogHandler("/dev/log"))
 	clean = args.clean
 	workdir = os.path.abspath(args.dir)
 	logger.debug("tmpdir = %s" % tmpdir)
@@ -111,11 +119,12 @@ def examine(content, verbosity):
 		subprocess.call(["asf_mapready", content], stdout = dev_null,
 				cwd = os.path.dirname(content))
 		dev_null.close()
-	elif ("script" in subprocess.check_output(["file", content]) and
-			os.access(content, os.X_OK)):
+	elif ("script" in subprocess.check_output(["file", os.path.realpath(
+			content)]) and os.access(content, os.X_OK)):
 		logger.debug("Executing %s" % content)
 		dev_null = open(os.devnull, "w")
-		subprocess.call([content], stdout = dev_null)
+		subprocess.call([content], stdout = dev_null, cwd =
+				os.path.dirname(content))
 		dev_null.close()
 
 # Test gen_file using diffimage or diffmeta with the corresponding reference
@@ -124,31 +133,35 @@ def test(gen_file):
 	logger = logging.getLogger(__name__)
 	name, extension = os.path.splitext(gen_file)
 	program = ""
-	if extension == ".tif":
+	if "image" in subprocess.check_output(["file", gen_file]):
 		program = "diffimage"
 	elif extension == ".meta":
 		program = "diffmeta"
 	else:
 		return None
 	dev_null = open(os.devnull, "w")
+	logger.debug("Calling %s on %s" % (program, gen_file))
 	subprocess.call([program, "-output", gen_file + ".diff", gen_file,
 			name + ".ref" + extension], stdout = dev_null)
 	dev_null.close()
-	diff = open(gen_file + ".diff")
-	if len(diff.read()) == 0:
-		logger.info("'%s %s %s' in directory '%s' succeeded" % (program,
-				gen_file, name + ".ref" + extension,
-				os.path.dirname(os.path.realpath(name + ".ref" +
-				extension))))
-		diff.close()
-		return True
-	else:
-		logger.info("'%s %s %s' in directory '%s' failed" % (program,
-				gen_file, name + ".ref" + extension,
-				os.path.dirname(os.path.realpath(name + ".ref" +
-				extension))))
-		diff.close()
-	return False
+	if os.path.isfile(gen_file + ".diff"):
+		diff = open(gen_file + ".diff")
+		if len(diff.read()) == 0:
+			logger.info("'%s %s %s' in directory '%s' succeeded" %
+					(program, gen_file, name + ".ref" +
+					extension, os.path.dirname(
+					os.path.realpath(name + ".ref" +
+					extension))))
+			diff.close()
+			return True
+		else:
+			logger.info("'%s %s %s' in directory '%s' failed" %
+					(program, gen_file, name + ".ref" +
+					extension, os.path.dirname(
+					os.path.realpath(name + ".ref" +
+					extension))))
+			diff.close()
+		return False
 
 if __name__ == "__main__":
 	main()
