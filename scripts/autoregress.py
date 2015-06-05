@@ -13,11 +13,16 @@ import logging.handlers
 import shutil
 import sys
 import ConfigParser
+import psycopg2
+
+# Change to True to generate known good files from a reference version of
+# MapReady.
+gen_refs = False
 
 def main():
 	(args, dirs) = get_arguments()
-	(clean, tmpdir, mapready, diffimage, diffmeta, log) = get_config(
-			args.config)
+	(clean, tmpdir, mapready, diffimage, diffmeta, log) =\
+			get_config_options(args.config)
 	tmpdir = os.path.abspath(os.path.expandvars(tmpdir))
 	mapready = os.path.expandvars(mapready)
 	diffimage = os.path.expandvars(diffimage)
@@ -53,9 +58,17 @@ def main():
 		shutil.rmtree(tmpdir)
 	logger.debug("creating directory {0}".format(tmpdir))
 	os.mkdir(tmpdir)
+	conn = get_db(args.config)
+	if conn:
+		cur = conn.cursor()
 	failures = display_results(autoregress(workdir, tmpdir,
-			clean, (mapready, diffimage, diffmeta)))
+			clean, (mapready, diffimage, diffmeta), cur))
+	if conn:
+		conn.commit()
+		cur.close()
+		conn.close()
 	if clean:
+		logger.debug("cleaning up")
 		os.rmdir(tmpdir)
 	sys.exit(failures)
 
@@ -82,21 +95,12 @@ def get_arguments():
 	return (args, dirs)
 
 def get_config(config_file):
-	"""Return configuration file options.
+	"""Return the configuration file.
 
 	Search through $HOME/.config/autoregress.conf and /etc/autoregress.conf
-	to find the configuration file, and return a tuple containing the values
-	of clean, tmpdir, mapready, diffimage, diffmeta, and log. If the
-	configuration file does not exist or the values are not set in the
-	configuration file, return default values for these variables.
+	to find the configuration file, and return the name of the file.
 	"""
 	logger = logging.getLogger(__name__)
-	clean = False
-	tmpdir = os.path.join(os.getcwd(), "autoregress")
-	mapready = "asf_mapready"
-	diffimage = "diffimage"
-	diffmeta = "diffmeta"
-	log = "/dev/log"
 	if not config_file:
 		if os.path.isfile(os.path.expandvars(
 				"$HOME/.config/autoregress.conf")):
@@ -106,6 +110,23 @@ def get_config(config_file):
 			config_file = "/etc/autoregress.conf"
 	if config_file == None or not os.path.isfile(config_file):
 		logger.warn("Configuration file not found.")
+		return None
+	return config_file
+
+def get_config_options(config_file):
+	"""Return configuration file options
+
+	If the configuration file does not exist or the values are not set in
+	the configuration file, return default values for these variables.
+	"""
+	clean = False
+	tmpdir = os.path.join(os.getcwd(), "autoregress")
+	mapready = "asf_mapready"
+	diffimage = "diffimage"
+	diffmeta = "diffmeta"
+	log = "/dev/log"
+	config_file = get_config(config_file)
+	if not config_file:
 		return (clean, tmpdir, mapready, diffimage, diffmeta, log)	
 	parser = ConfigParser.SafeConfigParser()
 	parser.read(config_file)
@@ -129,7 +150,28 @@ def get_config(config_file):
 			tmpdir = parser.get("options", "tmpdir")
 		if parser.has_option("options", "log"):
 			log = parser.get("options", "log")
-	return (clean, tmpdir, mapready, diffimage, diffmeta, log)	
+	return (clean, tmpdir, mapready, diffimage, diffmeta, log)
+
+def get_db(config):
+	"""Return the connection to the database.
+
+	Given the name of the configuration file which specifies how to connect
+	to the database, connect and return the connection.
+	"""
+	logger = logging.getLogger(__name__)
+	config = get_config(config)
+	if not config:
+		return None
+	parser = ConfigParser.SafeConfigParser()
+	parser.read(config)
+	if not parser.has_section("postgres"):
+		return None
+	connect = "host='{0}' dbname='{1}' user='{2}' password='{3}'".format(
+			parser.get("postgres", "host"),
+			parser.get("postgres", "db"),
+			parser.get("postgres", "user"),
+			parser.get("postgres", "password"))
+	return psycopg2.connect(connect)
 
 def display_results(results):
 	"""Log the results of the tests.
@@ -150,13 +192,13 @@ def display_results(results):
 			failures))
 	return failures
 
-def autoregress(workdir, tmpdir, clean, tools):
-	"""Regress into workdir and perform tests there.
+def autoregress(workdir, tmpdir, clean, tools, db):
+	"""Recurse into workdir and perform tests there.
 
 	In workdir, link all files into tmpdir, and then perform tests on them,
 	then enter all subdirectories and do the same. Finally return the
-	results of the tests in a list. The final argument is a tuple containing
-	the paths to mapready, diffimage, and diffmeta.
+	results of the tests in a list. tools is a tuple containing the paths to
+	mapready, diffimage, and diffmeta, and db is the database cursor.
 	"""
 	logger = logging.getLogger(__name__)
 	dirname = os.path.basename(workdir)
@@ -174,7 +216,32 @@ def autoregress(workdir, tmpdir, clean, tools):
 	diff_files = list(set(post_files) - set(pre_files))
 	results = []
 	for diff_file in diff_files:
-		results.append(test(os.path.join(tmpdir, diff_file), tools))
+		full_path = os.path.join(tmpdir, diff_file)
+		if not gen_refs:
+			results.append(test(full_path, tools))
+		elif not os.path.isdir(full_path):
+			(name, ext) = os.path.splitext(full_path)
+			name = os.path.basename(name)
+			new_path = os.path.join(workdir, name + ".ref" + ext)
+			logger.debug("moving {0} to {1}".format(
+					full_path, new_path))
+			os.rename(full_path, new_path)
+	if results != []:
+		results = [all(results)]
+		# This assumes that the directory we are in ends with
+		# testsuite_[NUM]/testcase[NUM].
+		logger.debug("testsuite is {1} and testcase is {2}".format(
+				workdir,
+				os.path.basename(os.path.dirname(workdir))[10:],
+				os.path.basename(workdir)[8:]))
+		if db and not gen_refs:
+			suite = os.path.basename(os.path.dirname(workdir))[10:]
+			case = os.path.basename(workdir)[8:]
+			db.execute("INSERT INTO autoregress_results VALUES (\
+					LOCALTIMESTAMP, {0}, {1}, {2})".format(
+					suite,
+					case,
+					results[0]))
 	if clean:
 		for thing in os.listdir(tmpdir):
 			if os.path.isdir(os.path.join(tmpdir, thing)):
@@ -186,7 +253,7 @@ def autoregress(workdir, tmpdir, clean, tools):
 		if os.path.isdir(content_full_path) and not os.path.samefile(
 				tmpdir, content_full_path):
 			results.extend(autoregress(content_full_path, tmpdir,
-					clean, tools))
+					clean, tools, db))
 	return results
 
 def examine(content, tools):
