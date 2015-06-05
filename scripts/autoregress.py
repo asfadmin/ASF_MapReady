@@ -53,7 +53,7 @@ def main():
 		shutil.rmtree(tmpdir)
 	logger.debug("creating directory {0}".format(tmpdir))
 	os.mkdir(tmpdir)
-	failures = display_results(autoregress(workdir, tmpdir, verbosity,
+	failures = display_results(autoregress(workdir, tmpdir,
 			clean, (mapready, diffimage, diffmeta)))
 	if clean:
 		os.rmdir(tmpdir)
@@ -150,7 +150,7 @@ def display_results(results):
 			failures))
 	return failures
 
-def autoregress(workdir, tmpdir, verbosity, clean, tools):
+def autoregress(workdir, tmpdir, clean, tools):
 	"""Regress into workdir and perform tests there.
 
 	In workdir, link all files into tmpdir, and then perform tests on them,
@@ -169,7 +169,7 @@ def autoregress(workdir, tmpdir, verbosity, clean, tools):
 					content))
 	pre_files = os.listdir(tmpdir)
 	for content in os.listdir(tmpdir):
-		examine(os.path.join(tmpdir, content), verbosity, tools)
+		examine(os.path.join(tmpdir, content), tools)
 	post_files = os.listdir(tmpdir)
 	diff_files = list(set(post_files) - set(pre_files))
 	results = []
@@ -186,10 +186,10 @@ def autoregress(workdir, tmpdir, verbosity, clean, tools):
 		if os.path.isdir(content_full_path) and not os.path.samefile(
 				tmpdir, content_full_path):
 			results.extend(autoregress(content_full_path, tmpdir,
-					verbosity, clean))
+					clean, tools))
 	return results
 
-def examine(content, verbosity, tools):
+def examine(content, tools):
 	"""Decide what to do to content and then do it.
 
 	Either call asf_mapready on a configuration file, or execute a script.
