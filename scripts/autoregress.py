@@ -6,28 +6,23 @@
 # against reference data containing '.ref' just before the extension.
 
 import os
-import argparse
+import optparse
 import subprocess
 import logging
 import logging.handlers
 import shutil
 import sys
+import ConfigParser
 
 def main():
-	parser = argparse.ArgumentParser(description = "Test the functionality of ASF MapReady against reference data.")
-	parser.add_argument("--tmpdir", help = "specify the working directory (defaults to autoregress)", default = os.getcwd() + "/autoregress")
-	verbose = parser.add_mutually_exclusive_group()
-	verbose.add_argument("--debug", help = "Print all the information",
-			action = "store_true")
-	verbose.add_argument("--quiet", help = "Print only errors",
-			action = "store_true")
-	parser.add_argument("--clean", help = "Delete all files in work directory when done, regardless of success/fail.", action = "store_true")
-	parser.add_argument("--output", help = "Where to direct output. Use - for stdout (defaults to system log)")
-	parser.add_argument("dir", help = "Directory containing test data",
-			default = os.getcwd(), nargs = "?")
-	args = parser.parse_args()
-
-	tmpdir = os.path.abspath(args.tmpdir)
+	(args, dirs) = get_arguments()
+	(clean, tmpdir, mapready, diffimage, diffmeta, log) = get_config(
+			args.config)
+	tmpdir = os.path.abspath(os.path.expandvars(tmpdir))
+	mapready = os.path.expandvars(mapready)
+	diffimage = os.path.expandvars(diffimage)
+	diffmeta = os.path.expandvars(diffmeta)
+	log = os.path.abspath(os.path.expandvars(log))
 	logger = logging.getLogger(__name__)
 	verbosity = 1
 	if args.quiet:
@@ -45,24 +40,104 @@ def main():
 	elif args.output != None:
 		logger.addHandler(logging.FileHandler(args.output))
 	else:
-		logger.addHandler(logging.handlers.SysLogHandler("/dev/log"))
-	clean = args.clean
-	workdir = os.path.abspath(args.dir)
-	logger.debug("tmpdir = %s" % tmpdir)
-	logger.debug("workdir = %s" % workdir)
+		logger.addHandler(logging.handlers.SysLogHandler(log))
+	if len(dirs) == 1:
+		workdir = os.path.abspath(dirs[0])
+	elif len(dirs) == 0:
+		workdir = os.getcwd()
+	logger.debug("tmpdir = {0}".format(tmpdir))
+	logger.debug("workdir = {0}".format(workdir))
 	if os.path.exists(tmpdir):
-		logger.warn("directory %s exists, deleting contents" % tmpdir)
+		logger.warn("directory {0} exists, deleting contents".format(
+				tmpdir))
 		shutil.rmtree(tmpdir)
-	logger.debug("creating directory %s" % tmpdir)
+	logger.debug("creating directory {0}".format(tmpdir))
 	os.mkdir(tmpdir)
 	failures = display_results(autoregress(workdir, tmpdir, verbosity,
-			clean))
+			clean, (mapready, diffimage, diffmeta)))
 	if clean:
 		os.rmdir(tmpdir)
 	sys.exit(failures)
 
-# Log how many tests succeeded and failed and return the number of failures.
+def get_arguments():
+	"""Get and return the command-line arguments."""
+	# This string really is terrible, but I can't think of a better
+	# solution.
+	epilog = u"  DIR                   The directory in which to operate (defaults to the    \u2063                        current directory)"
+	usage = "Usage: autoregress.py [OPTION]... [DIR]"
+	description = "Test the functionality of ASF MapReady against reference data."
+	parser = optparse.OptionParser(usage, description = description,
+			epilog = epilog)
+	parser.add_option("-v", "--debug", help = "Print all the information",
+			action = "store_true")
+	parser.add_option("-q", "--quiet", help = "Print only errors",
+			action = "store_true")
+	parser.add_option("-o", "--output", help = "File to which to direct output. Use - for stdout (defaults to system log)")
+	parser.add_option("-c", "--config", help = "Configuration file (defaults to $HOME/.config/autoregress.conf)")
+	(args, dirs) = parser.parse_args()
+	if args.debug and args.quiet:
+		parser.error("argument --debug not allowed with argument --quiet")
+	if len(dirs) > 1:
+		parser.error("Option not allowed: {0}".format(dirs[1]))
+	return (args, dirs)
+
+def get_config(config_file):
+	"""Return configuration file options.
+
+	Search through $HOME/.config/autoregress.conf and /etc/autoregress.conf
+	to find the configuration file, and return a tuple containing the values
+	of clean, tmpdir, mapready, diffimage, diffmeta, and log. If the
+	configuration file does not exist or the values are not set in the
+	configuration file, return default values for these variables.
+	"""
+	logger = logging.getLogger(__name__)
+	clean = False
+	tmpdir = os.path.join(os.getcwd(), "autoregress")
+	mapready = "asf_mapready"
+	diffimage = "diffimage"
+	diffmeta = "diffmeta"
+	log = "/dev/log"
+	if not config_file:
+		if os.path.isfile(os.path.expandvars(
+				"$HOME/.config/autoregress.conf")):
+			config_file = os.path.expandvars(
+					"$HOME/.config/autoregress.conf")
+		elif os.path.isfile("/etc/autoregress.conf"):
+			config_file = "/etc/autoregress.conf"
+	if config_file == None or not os.path.isfile(config_file):
+		logger.warn("Configuration file not found.")
+		return (clean, tmpdir, mapready, diffimage, diffmeta, log)	
+	parser = ConfigParser.SafeConfigParser()
+	parser.read(config_file)
+	if parser.has_section("asf_tools"):
+		if parser.has_option("asf_tools", "asf_tools_directory"):
+			tools_directory = parser.get("asf_tools",
+					"asf_tools_directory")
+			mapready = os.path.join(tools_directory, "mapready")
+			diffimage = os.path.join(tools_directory, "diffimage")
+			diffmeta = os.path.join(tools_direcotry, "diffmeta")
+		if parser.has_option("asf_tools", "asf_mapready"):
+			mapready = parser.get("asf_tools", "asf_mapready")
+		if parser.has_option("asf_tools", "diffimage"):
+			diffimage = parser.get("asf_tools", "diffimage")
+		if parser.has_option("asf_tools", "diffmeta"):
+			diffmeta = parser.get("asf_tools", "diffmeta")
+	if parser.has_section("options"):
+		if parser.has_option("options", "clean"):
+			clean = parser.getboolean("options", "clean")
+		if parser.has_option("options", "tmpdir"):
+			tmpdir = parser.get("options", "tmpdir")
+		if parser.has_option("options", "log"):
+			log = parser.get("options", "log")
+	return (clean, tmpdir, mapready, diffimage, diffmeta, log)	
+
 def display_results(results):
+	"""Log the results of the tests.
+
+	Given a list of booleans corresponding to whether a specific test
+	succeeded or failed, log the results in a human-readable format and then
+	return the number of failures
+	"""
 	logger = logging.getLogger(__name__)
 	successes = 0
 	failures = 0
@@ -71,29 +146,35 @@ def display_results(results):
 			successes += 1
 		if result == False:
 			failures += 1
-	logger.info("%i tests succeeded and %i tests failed" % (successes,
+	logger.info("{0} tests succeeded and {1} tests failed".format(successes,
 			failures))
 	return failures
 
-# Regress into workdir and perform tests there, returning the test results.
-def autoregress(workdir, tmpdir, verbosity, clean):
+def autoregress(workdir, tmpdir, verbosity, clean, tools):
+	"""Regress into workdir and perform tests there.
+
+	In workdir, link all files into tmpdir, and then perform tests on them,
+	then enter all subdirectories and do the same. Finally return the
+	results of the tests in a list. The final argument is a tuple containing
+	the paths to mapready, diffimage, and diffmeta.
+	"""
 	logger = logging.getLogger(__name__)
 	dirname = os.path.basename(workdir)
-	logger.debug("In '%s'." % workdir)
+	logger.debug("In '{0}'.".format(workdir))
 	for content in os.listdir(workdir):
 		content_full_path = os.path.join(workdir, content)
-		logger.debug("examining %s" % content_full_path)
+		logger.debug("examining {0}".format(content_full_path))
 		if not os.path.isdir(content_full_path):
 			os.symlink(content_full_path, os.path.join(tmpdir,
 					content))
 	pre_files = os.listdir(tmpdir)
 	for content in os.listdir(tmpdir):
-		examine(os.path.join(tmpdir, content), verbosity)
+		examine(os.path.join(tmpdir, content), verbosity, tools)
 	post_files = os.listdir(tmpdir)
 	diff_files = list(set(post_files) - set(pre_files))
 	results = []
 	for diff_file in diff_files:
-		results.append(test(os.path.join(tmpdir, diff_file)))
+		results.append(test(os.path.join(tmpdir, diff_file), tools))
 	if clean:
 		for thing in os.listdir(tmpdir):
 			if os.path.isdir(os.path.join(tmpdir, thing)):
@@ -108,60 +189,59 @@ def autoregress(workdir, tmpdir, verbosity, clean):
 					verbosity, clean))
 	return results
 
-# Decide what to do to content and then do it.
-def examine(content, verbosity):
+def examine(content, verbosity, tools):
+	"""Decide what to do to content and then do it.
+
+	Either call asf_mapready on a configuration file, or execute a script.
+	The location of asf_mapready is specified by tools[0].
+	"""
 	logger = logging.getLogger(__name__)
-	logger.debug("Calling examine() on %s" % content)
+	logger.debug("Calling examine() on {0}".format(content))
 	extension = os.path.splitext(content)[1]
 	if extension == ".cfg" or extension == ".config":
-		logger.debug("Calling asf_mapready on %s" % content)
-		dev_null = open(os.devnull, "w")
-		subprocess.call(["asf_mapready", content], stdout = dev_null,
-				cwd = os.path.dirname(content))
-		dev_null.close()
+		logger.debug("Calling {0} on {1}".format(tools[0], content))
+		with open(os.devnull, "w") as dev_null:
+			subprocess.call([tools[0], content], stdout = dev_null,
+					cwd = os.path.dirname(content))
 	elif ("script" in subprocess.check_output(["file", os.path.realpath(
 			content)]) and os.access(content, os.X_OK)):
-		logger.debug("Executing %s" % content)
-		dev_null = open(os.devnull, "w")
-		subprocess.call([content], stdout = dev_null, cwd =
-				os.path.dirname(content))
-		dev_null.close()
+		logger.debug("Executing {0}".format(content))
+		with open(os.devnull, "w") as dev_null:
+			subprocess.call([content], stdout = dev_null, cwd =
+					os.path.dirname(content))
 
-# Test gen_file using diffimage or diffmeta with the corresponding reference
-# files, and return whether the test succeeded or None if no test was performed.
-def test(gen_file):
+def test(gen_file, tools):
+	"""Test the new files using diffimage or diffmeta.
+
+	Given a single file, determine whether a reference file exists, and if
+	it does, then call either diffimage or diffmeta, and return whether the
+	test succeeded, or None if there was no reference file. The locations of
+	diffimage and diffmeta are specified by tools[1] and tools[2]
+	respectively.
+	"""
 	logger = logging.getLogger(__name__)
-	name, extension = os.path.splitext(gen_file)
+	(name, extension) = os.path.splitext(gen_file)
 	program = ""
 	if "image" in subprocess.check_output(["file", gen_file]):
-		program = "diffimage"
+		program = tools[1]
 	elif extension == ".meta":
-		program = "diffmeta"
+		program = tools[2]
 	else:
 		return None
-	dev_null = open(os.devnull, "w")
-	logger.debug("Calling %s on %s" % (program, gen_file))
-	subprocess.call([program, "-output", gen_file + ".diff", gen_file,
-			name + ".ref" + extension], stdout = dev_null)
-	dev_null.close()
+	logger.debug("Calling {0} on {1}".format(program, gen_file))
+	with open(os.devnull, "w") as dev_null:
+		subprocess.call([program, "-output", gen_file + ".diff",
+				gen_file, name + ".ref" + extension], stdout =
+				dev_null)
 	if os.path.isfile(gen_file + ".diff"):
-		diff = open(gen_file + ".diff")
-		if len(diff.read()) == 0:
-			logger.info("'%s %s %s' in directory '%s' succeeded" %
-					(program, gen_file, name + ".ref" +
-					extension, os.path.dirname(
-					os.path.realpath(name + ".ref" +
-					extension))))
-			diff.close()
-			return True
-		else:
-			logger.info("'%s %s %s' in directory '%s' failed" %
-					(program, gen_file, name + ".ref" +
-					extension, os.path.dirname(
-					os.path.realpath(name + ".ref" +
-					extension))))
-			diff.close()
-		return False
+		with open(gen_file + ".diff") as diff:
+			if len(diff.read()) == 0:
+				logger.info("'{0} {1} {2}' in directory '{3}' succeeded".format(program, gen_file, name + ".ref" + extension, os.path.dirname(os.path.realpath(name + ".ref" + extension))))
+				return True
+			else:
+				logger.info("'{0} {1} {2}' in directory '{3}' failed!".format(program, gen_file, name + ".ref" + extension, os.path.dirname(os.path.realpath(name + ".ref" + extension))))
+				return False
+	return None
 
 if __name__ == "__main__":
 	main()
