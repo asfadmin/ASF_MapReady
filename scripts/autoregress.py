@@ -15,9 +15,6 @@ import sys
 import ConfigParser
 import psycopg2
 
-# Change to True to generate known good files from a reference version of
-# MapReady.
-gen_refs = False
 
 def main():
 	(args, dirs) = get_arguments()
@@ -50,6 +47,8 @@ def main():
 		workdir = os.path.abspath(dirs[0])
 	elif len(dirs) == 0:
 		workdir = os.getcwd()
+	logger.debug("generate_references is {0}".format(
+			args.generate_references))
 	logger.debug("tmpdir = {0}".format(tmpdir))
 	logger.debug("workdir = {0}".format(workdir))
 	if os.path.exists(tmpdir):
@@ -61,8 +60,9 @@ def main():
 	conn = get_db(args.config)
 	if conn:
 		cur = conn.cursor()
-	failures = display_results(autoregress(workdir, tmpdir,
-			clean, (mapready, diffimage, diffmeta), cur))
+	failures = display_results(autoregress(workdir, tmpdir, clean,
+			args.generate_references,
+			(mapready, diffimage, diffmeta), cur))
 	if conn:
 		conn.commit()
 		cur.close()
@@ -87,6 +87,8 @@ def get_arguments():
 			action = "store_true")
 	parser.add_option("-o", "--output", help = "File to which to direct output. Use - for stdout (defaults to system log)")
 	parser.add_option("-c", "--config", help = "Configuration file (defaults to $HOME/.config/autoregress.conf)")
+	parser.add_option("--generate-references", help = "Generate reference files for autoregress using a version of MapReady known to be working",
+			action="store_true", default = False)
 	(args, dirs) = parser.parse_args()
 	if args.debug and args.quiet:
 		parser.error("argument --debug not allowed with argument --quiet")
@@ -192,7 +194,7 @@ def display_results(results):
 			failures))
 	return failures
 
-def autoregress(workdir, tmpdir, clean, tools, db):
+def autoregress(workdir, tmpdir, clean, gen_refs, tools, db):
 	"""Recurse into workdir and perform tests there.
 
 	In workdir, link all files into tmpdir, and then perform tests on them,
@@ -237,10 +239,16 @@ def autoregress(workdir, tmpdir, clean, tools, db):
 		if db and not gen_refs:
 			suite = os.path.basename(os.path.dirname(workdir))[10:]
 			case = os.path.basename(workdir)[8:]
-			db.execute("INSERT INTO autoregress_results VALUES (\
-					LOCALTIMESTAMP, {0}, {1}, {2})".format(
-					suite,
-					case,
+			vraw = subprocess.check_output([tools[0], "--version"])
+			vindex = vraw.index("part of MapReady") + 17
+			endindex = vraw.index("\n", vindex)
+			version = vraw[vindex:endindex]
+			db.execute("INSERT INTO autoregress_results ( \
+					time, version, testsuite, testcase, \
+					result) \
+					VALUES ( \
+					LOCALTIMESTAMP, '{0}', {1}, {2}, \
+					{3});".format(version, suite, case,
 					results[0]))
 	if clean:
 		for thing in os.listdir(tmpdir):
@@ -253,7 +261,7 @@ def autoregress(workdir, tmpdir, clean, tools, db):
 		if os.path.isdir(content_full_path) and not os.path.samefile(
 				tmpdir, content_full_path):
 			results.extend(autoregress(content_full_path, tmpdir,
-					clean, tools, db))
+					clean, gen_refs, tools, db))
 	return results
 
 def examine(content, tools):
@@ -303,10 +311,15 @@ def test(gen_file, tools):
 	if os.path.isfile(gen_file + ".diff"):
 		with open(gen_file + ".diff") as diff:
 			if len(diff.read()) == 0:
-				logger.info("'{0} {1} {2}' in directory '{3}' succeeded".format(program, gen_file, name + ".ref" + extension, os.path.dirname(os.path.realpath(name + ".ref" + extension))))
+				logger.info("'{0} {1} {2}' in directory '{3}' succeeded".format(program, gen_file, name + ".ref" + extension,
+						os.path.dirname(
+						os.path.realpath(name + ".ref" +
+						extension))))
 				return True
 			else:
-				logger.info("'{0} {1} {2}' in directory '{3}' failed!".format(program, gen_file, name + ".ref" + extension, os.path.dirname(os.path.realpath(name + ".ref" + extension))))
+				logger.info("'{0} {1} {2}' in directory '{3}' failed!".format(program, gen_file, name + ".ref" + extension, os.path.dirname(
+						os.path.realpath(name + ".ref" +
+						extension))))
 				return False
 	return None
 
