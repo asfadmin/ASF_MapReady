@@ -18,7 +18,7 @@ import psycopg2
 
 def main():
         (args, dirs) = get_arguments()
-        (clean, tmpdir, mapready, diffimage, diffmeta, log) =\
+        (tmpdir, mapready, diffimage, diffmeta, log) =\
                         get_config_options(args.config)
         tmpdir = os.path.abspath(os.path.expandvars(tmpdir))
         mapready = os.path.expandvars(mapready)
@@ -39,7 +39,7 @@ def main():
                 logger.setLevel(logging.INFO)
         if args.output == "-":
                 logger.addHandler(logging.StreamHandler(sys.stdout))
-        elif args.output != None:
+        elif args.output is not None:
                 logger.addHandler(logging.FileHandler(args.output))
         else:
                 logger.addHandler(logging.handlers.SysLogHandler(log))
@@ -60,14 +60,14 @@ def main():
         conn = get_db(args.config)
         if conn:
                 cur = conn.cursor()
-        failures = display_results(autoregress(workdir, tmpdir, clean,
-                        args.generate_references,
+        failures = display_results(autoregress(workdir, tmpdir,
+                        not args.noclean, args.generate_references,
                         (mapready, diffimage, diffmeta), cur))
         if conn:
                 conn.commit()
                 cur.close()
                 conn.close()
-        if clean:
+        if not args.noclean:
                 logger.debug("cleaning up")
                 os.rmdir(tmpdir)
         sys.exit(failures)
@@ -89,6 +89,8 @@ def get_arguments():
         parser.add_option("-c", "--config", help = "Configuration file (defaults to $HOME/.config/autoregress.conf)")
         parser.add_option("--generate-references", help = "Generate reference files for autoregress using a version of MapReady known to be working",
                         action="store_true", default = False)
+        parser.add_option("--noclean", help = "Do not remove the working directory. Only use this option if performing a single test.", default = False,
+                        action = "store_true")
         (args, dirs) = parser.parse_args()
         if args.debug and args.quiet:
                 parser.error("argument --debug not allowed with argument --quiet")
@@ -110,7 +112,7 @@ def get_config(config_file):
                                         "$HOME/.config/autoregress.conf")
                 elif os.path.isfile("/etc/autoregress.conf"):
                         config_file = "/etc/autoregress.conf"
-        if config_file == None or not os.path.isfile(config_file):
+        if config_file is None or not os.path.isfile(config_file):
                 logger.warn("Configuration file not found.")
                 return None
         return config_file
@@ -121,7 +123,6 @@ def get_config_options(config_file):
         If the configuration file does not exist or the values are not set in
         the configuration file, return default values for these variables.
         """
-        clean = False
         tmpdir = os.path.join(os.getcwd(), "autoregress")
         mapready = "asf_mapready"
         diffimage = "diffimage"
@@ -129,7 +130,7 @@ def get_config_options(config_file):
         log = "/dev/log"
         config_file = get_config(config_file)
         if not config_file:
-                return (clean, tmpdir, mapready, diffimage, diffmeta, log)      
+                return (tmpdir, mapready, diffimage, diffmeta, log)      
         parser = ConfigParser.SafeConfigParser()
         parser.read(config_file)
         if parser.has_section("asf_tools"):
@@ -146,13 +147,11 @@ def get_config_options(config_file):
                 if parser.has_option("asf_tools", "diffmeta"):
                         diffmeta = parser.get("asf_tools", "diffmeta")
         if parser.has_section("options"):
-                if parser.has_option("options", "clean"):
-                        clean = parser.getboolean("options", "clean")
                 if parser.has_option("options", "tmpdir"):
                         tmpdir = parser.get("options", "tmpdir")
                 if parser.has_option("options", "log"):
                         log = parser.get("options", "log")
-        return (clean, tmpdir, mapready, diffimage, diffmeta, log)
+        return (tmpdir, mapready, diffimage, diffmeta, log)
 
 def get_db(config):
         """Return the connection to the database.
@@ -216,6 +215,7 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db):
                 examine(os.path.join(tmpdir, content), tools)
         post_files = os.listdir(tmpdir)
         diff_files = list(set(post_files) - set(pre_files))
+        logger.debug("Differing files:\n{0}".format(diff_files))
         results = []
         for diff_file in diff_files:
                 full_path = os.path.join(tmpdir, diff_file)
@@ -229,7 +229,7 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db):
                                         full_path, new_path))
                         os.rename(full_path, new_path)
         if results != []:
-                results = [all(results)]
+                results = [all(v != False for v in results)]
                 # This assumes that the directory we are in ends with
                 # testsuite_[NUM]/testcase[NUM].
                 logger.debug("testsuite is {1} and testcase is {2}".format(
@@ -306,18 +306,18 @@ def test(gen_file, tools):
         logger.debug("Calling {0} on {1}".format(program, gen_file))
         with open(os.devnull, "w") as dev_null:
                 subprocess.call([program, "-output", gen_file + ".diff",
-                                gen_file, name + ".ref" + extension], stdout =
-                                dev_null)
+                                name + ".ref" + extension, gen_file], stdout =
+                                dev_null, cwd = os.path.dirname(gen_file))
         if os.path.isfile(gen_file + ".diff"):
                 with open(gen_file + ".diff") as diff:
                         if len(diff.read()) == 0:
-                                logger.info("'{0} {1} {2}' in directory '{3}' succeeded".format(program, gen_file, name + ".ref" + extension,
+                                logger.info("'{0} {1} {2}' in directory '{3}' succeeded".format(program, name + ".ref" + extension, gen_file, 
                                                 os.path.dirname(
                                                 os.path.realpath(name + ".ref" +
                                                 extension))))
                                 return True
                         else:
-                                logger.info("'{0} {1} {2}' in directory '{3}' failed!".format(program, gen_file, name + ".ref" + extension, os.path.dirname(
+                                logger.info("'{0} {1} {2}' in directory '{3}' failed!".format(program, name + ".ref" + extension, gen_file, os.path.dirname(
                                                 os.path.realpath(name + ".ref" +
                                                 extension))))
                                 return False
