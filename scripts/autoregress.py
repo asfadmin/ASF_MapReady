@@ -24,6 +24,11 @@ def main():
         mapready = os.path.expandvars(mapready)
         diffimage = os.path.expandvars(diffimage)
         diffmeta = os.path.expandvars(diffmeta)
+        if args.asf_tools:
+                tool_path = os.path.abspath(os.path.expandvars(args.asf_tools))
+                mapready = os.path.join(tool_path, "asf_mapready")
+                diffimage = os.path.join(tool_path, "diffimage")
+                diffmeta = os.path.join(tool_path, "diffmeta")
         log = os.path.abspath(os.path.expandvars(log))
         logger = logging.getLogger(__name__)
         verbosity = 1
@@ -62,7 +67,7 @@ def main():
                 cur = conn.cursor()
         failures = display_results(autoregress(workdir, tmpdir,
                         not args.noclean, args.generate_references,
-                        (mapready, diffimage, diffmeta), cur))
+                        (mapready, diffimage, diffmeta), cur, args.asf_tools))
         if conn:
                 conn.commit()
                 cur.close()
@@ -88,9 +93,9 @@ def get_arguments():
         parser.add_option("-o", "--output", help = "File to which to direct output. Use - for stdout (defaults to system log)")
         parser.add_option("-c", "--config", help = "Configuration file (defaults to $HOME/.config/autoregress.conf)")
         parser.add_option("--generate-references", help = "Generate reference files for autoregress using a version of MapReady known to be working",
-                        action="store_true", default = False)
-        parser.add_option("--noclean", help = "Do not remove the working directory. Only use this option if performing a single test.", default = False,
-                        action = "store_true")
+                        action="store_true")
+        parser.add_option("--noclean", help = "Do not remove the working directory. Only use this option if performing a single test.", action = "store_true")
+        parser.add_option("--asf-tools", help = "Directory containing asf_mapready, diffimage, and diffmeta")
         (args, dirs) = parser.parse_args()
         if args.debug and args.quiet:
                 parser.error("argument --debug not allowed with argument --quiet")
@@ -193,7 +198,7 @@ def display_results(results):
                         failures))
         return failures
 
-def autoregress(workdir, tmpdir, clean, gen_refs, tools, db):
+def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir):
         """Recurse into workdir and perform tests there.
 
         In workdir, link all files into tmpdir, and then perform tests on them,
@@ -212,7 +217,7 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db):
                                         content))
         pre_files = os.listdir(tmpdir)
         for content in os.listdir(tmpdir):
-                examine(os.path.join(tmpdir, content), tools)
+                examine(os.path.join(tmpdir, content), tools, tools_dir)
         post_files = os.listdir(tmpdir)
         diff_files = list(set(post_files) - set(pre_files))
         logger.debug("Differing files:\n{0}".format(diff_files))
@@ -261,10 +266,10 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db):
                 if os.path.isdir(content_full_path) and not os.path.samefile(
                                 tmpdir, content_full_path):
                         results.extend(autoregress(content_full_path, tmpdir,
-                                        clean, gen_refs, tools, db))
+                                        clean, gen_refs, tools, db, tools_dir))
         return results
 
-def examine(content, tools):
+def examine(content, tools, tools_dir):
         """Decide what to do to content and then do it.
 
         Either call asf_mapready on a configuration file, or execute a script.
@@ -282,8 +287,14 @@ def examine(content, tools):
                         content)]) and os.access(content, os.X_OK)):
                 logger.debug("Executing {0}".format(content))
                 with open(os.devnull, "w") as dev_null:
-                        subprocess.call([content], stdout = dev_null, cwd =
-                                        os.path.dirname(content))
+                        path = os.path.expandvars("$PATH")
+                        new_path = path
+                        if tools_dir:
+                                new_path = tools_dir + ":" + path
+                        subprocess.call(["/usr/bin/env", "PATH=" + new_path,
+                                        content],
+                                        stdout = dev_null,
+                                        cwd = os.path.dirname(content))
 
 def test(gen_file, tools):
         """Test the new files using diffimage or diffmeta.
