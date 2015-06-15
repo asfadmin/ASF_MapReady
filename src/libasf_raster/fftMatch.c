@@ -620,6 +620,25 @@ int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
   return (0);
 }
 
+/*
+ * Call fftMatch_proj on projected data, and fftMatch on data that is not
+ * projected.
+ */
+int fftMatch_either(char *inFile1, char *inFile2, float *offsetX,
+                    float *offsetY, float *certainty)
+{
+        meta_parameters *refMeta = meta_read(inFile1);
+        meta_parameters *testMeta = meta_read(inFile2);
+        if (!refMeta->projection || !testMeta->projection) {
+                asfPrintStatus("Data are not map projected.");
+                return fftMatch(inFile1, inFile2, NULL, offsetX, offsetY,
+                                certainty);
+        } else {
+                asfPrintStatus("Data are map projected.");
+                return fftMatch_proj(inFile1, inFile2, offsetX, offsetY);
+        }
+}
+
 int fftMatch_opt(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
 { 
   // Generate temporary directory
