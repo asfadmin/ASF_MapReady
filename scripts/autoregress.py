@@ -63,14 +63,10 @@ def main():
         logger.debug("creating directory {0}".format(tmpdir))
         os.mkdir(tmpdir)
         conn = get_db(args.config)
-        if conn:
-                cur = conn.cursor()
         failures = display_results(autoregress(workdir, tmpdir,
                         not args.noclean, args.generate_references,
-                        (mapready, diffimage, diffmeta), cur, args.asf_tools))
+                        (mapready, diffimage, diffmeta), conn, args.asf_tools))
         if conn:
-                conn.commit()
-                cur.close()
                 conn.close()
         if not args.noclean:
                 logger.debug("cleaning up")
@@ -187,8 +183,8 @@ def display_results(results):
         return the number of failures
         """
         logger = logging.getLogger(__name__)
-        successes = results.count(True);
-        failures = results.count(False);
+        successes = results.count(True)
+        failures = results.count(False)
         logger.info("{0} tests succeeded and {1} tests failed".format(successes,
                         failures))
         return failures
@@ -236,20 +232,22 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir):
                                 workdir,
                                 os.path.basename(os.path.dirname(workdir))[10:],
                                 os.path.basename(workdir)[8:]))
-                if db and not gen_refs:
-                        suite = os.path.basename(os.path.dirname(workdir))[10:]
-                        case = os.path.basename(workdir)[8:]
-                        vraw = subprocess.check_output([tools[0], "--version"])
-                        vindex = vraw.index("part of MapReady") + 17
-                        endindex = vraw.index("\n", vindex)
-                        version = vraw[vindex:endindex]
-                        db.execute("INSERT INTO autoregress_results ( \
+        if db and not gen_refs and results != []:
+                suite = os.path.basename(os.path.dirname(workdir))[10:]
+                case = os.path.basename(workdir)[8:]
+                vraw = subprocess.check_output([tools[0], "--version"])
+                vindex = vraw.index("part of MapReady") + 17
+                endindex = vraw.index("\n", vindex)
+                version = vraw[vindex:endindex]
+                with db.cursor() as cur:
+                        cur.execute("INSERT INTO autoregress_results ( \
                                         time, version, testsuite, testcase, \
                                         result) \
                                         VALUES ( \
                                         LOCALTIMESTAMP, '{0}', {1}, {2}, \
                                         {3});".format(version, suite, case,
                                         results[0]))
+                        db.commit()
         if clean:
                 for thing in os.listdir(tmpdir):
                         if os.path.isdir(os.path.join(tmpdir, thing)):
