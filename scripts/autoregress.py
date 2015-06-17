@@ -17,6 +17,7 @@ import psycopg2
 
 
 def main():
+        sys.excepthook = log_uncaught_exceptions
         (args, dirs) = get_arguments()
         (tmpdir, mapready, diffimage, diffmeta, log) =\
                         get_config_options(args.config)
@@ -326,6 +327,11 @@ def test(gen_file, tools):
                                                 extension))))
                                 return False
         return None
+
+def log_exceptions(ex_cls, ex, tb):
+        logger = logging.getLogger(__name__)
+        logging.critical(''.join(traceback.format_tb(tb)))
+        logging.critical('{0}: {1}'.format(ex_cls, ex))
 
 if __name__ == "__main__":
         main()
