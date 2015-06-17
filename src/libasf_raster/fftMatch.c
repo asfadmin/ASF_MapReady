@@ -630,11 +630,11 @@ int fftMatch_either(char *inFile1, char *inFile2, float *offsetX,
         meta_parameters *refMeta = meta_read(inFile1);
         meta_parameters *testMeta = meta_read(inFile2);
         if (!refMeta->projection || !testMeta->projection) {
-                asfPrintStatus("Data are not map projected.");
+                asfPrintStatus("Data are not map projected.\n");
                 return fftMatch(inFile1, inFile2, NULL, offsetX, offsetY,
                                 certainty);
         } else {
-                asfPrintStatus("Data are map projected.");
+                asfPrintStatus("Data are map projected.\n");
                 return fftMatch_proj(inFile1, inFile2, offsetX, offsetY);
         }
 }
