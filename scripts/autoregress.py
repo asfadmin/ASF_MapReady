@@ -14,7 +14,7 @@ import shutil
 import sys
 import ConfigParser
 import psycopg2
-
+import traceback
 
 def main():
         sys.excepthook = log_exceptions
@@ -330,8 +330,8 @@ def test(gen_file, tools):
 
 def log_exceptions(ex_cls, ex, tb):
         logger = logging.getLogger(__name__)
-        logging.critical(''.join(traceback.format_tb(tb)))
-        logging.critical('{0}: {1}'.format(ex_cls, ex))
+        logger.critical("".join(traceback.format_tb(tb)))
+        logger.critical("{0}: {1}".format(ex_cls, ex))
 
 if __name__ == "__main__":
         main()
