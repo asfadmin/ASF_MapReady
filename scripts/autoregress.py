@@ -187,13 +187,8 @@ def display_results(results):
         return the number of failures
         """
         logger = logging.getLogger(__name__)
-        successes = 0
-        failures = 0
-        for result in results:
-                if result == True:
-                        successes += 1
-                if result == False:
-                        failures += 1
+        successes = results.count(True);
+        failures = results.count(False);
         logger.info("{0} tests succeeded and {1} tests failed".format(successes,
                         failures))
         return failures
