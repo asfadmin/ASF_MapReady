@@ -15,6 +15,7 @@ import sys
 import ConfigParser
 import psycopg2
 import traceback
+import glob
 
 def main():
         sys.excepthook = log_exceptions
@@ -132,7 +133,7 @@ def get_config_options(config_file):
         log = "/dev/log"
         config_file = get_config(config_file)
         if not config_file:
-                return (tmpdir, mapready, diffimage, diffmeta, log)      
+                return (tmpdir, mapready, diffimage, diffmeta, log)
         parser = ConfigParser.SafeConfigParser()
         parser.read(config_file)
         if parser.has_section("asf_tools"):
@@ -201,12 +202,7 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir):
         logger = logging.getLogger(__name__)
         dirname = os.path.basename(workdir)
         logger.debug("In '{0}'.".format(workdir))
-        for content in os.listdir(workdir):
-                content_full_path = os.path.join(workdir, content)
-                logger.debug("examining {0}".format(content_full_path))
-                if not os.path.isdir(content_full_path):
-                        os.symlink(content_full_path, os.path.join(tmpdir,
-                                        content))
+        link_data(workdir, tmpdir)
         pre_files = os.listdir(tmpdir)
         for content in os.listdir(tmpdir):
                 examine(os.path.join(tmpdir, content), tools, tools_dir)
@@ -262,6 +258,28 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir):
                         results.extend(autoregress(content_full_path, tmpdir,
                                         clean, gen_refs, tools, db, tools_dir))
         return results
+
+# The smart way to write this would be to parse the configuration file and
+# decide which data are needed, however it works just fine to link all the data,
+# and presumably there is very little performance decrease because symbolic
+# links are cheap.
+def link_data(workdir, tmpdir):
+        """Link all necessary files into tmpdir.
+
+        We will link every single file from workdir into tmpdir, but then also
+        link all the files from workdir/../dataset and workdir/../projections,
+        because that's the way the old system had the data organized.
+        """
+        updir = os.path.dirname(workdir)
+        dataset = os.path.join(updir, "dataset")
+        projections = os.path.join(updir, "projections")
+        for content in os.listdir(workdir) + os.listdir(dataset) +
+                        os.listdir(projections):
+                content_full_path = os.path.join(workdir, content)
+                logger.debug("examining {0}".format(content_full_path))
+                if not os.path.isdir(content_full_path):
+                        os.symlink(content_full_path, os.path.join(tmpdir,
+                                        content))
 
 def examine(content, tools, tools_dir):
         """Decide what to do to content and then do it.
