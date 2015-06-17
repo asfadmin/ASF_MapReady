@@ -17,7 +17,7 @@ import psycopg2
 
 
 def main():
-        sys.excepthook = log_uncaught_exceptions
+        sys.excepthook = log_exceptions
         (args, dirs) = get_arguments()
         (tmpdir, mapready, diffimage, diffmeta, log) =\
                         get_config_options(args.config)
