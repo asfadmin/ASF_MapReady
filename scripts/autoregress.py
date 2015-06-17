@@ -273,8 +273,12 @@ def link_data(workdir, tmpdir):
         updir = os.path.dirname(workdir)
         dataset = os.path.join(updir, "dataset")
         projections = os.path.join(updir, "projections")
-        for content in os.listdir(workdir) + os.listdir(dataset) +
-                        os.listdir(projections):
+        files = os.listdir(workdir)
+        if os.path.isdir(dataset):
+                files.extend(os.listdir(dataset))
+        if os.path.isdir(projections):
+                files.extend(os.listdir(projections))
+        for content in files:
                 content_full_path = os.path.join(workdir, content)
                 logger.debug("examining {0}".format(content_full_path))
                 if not os.path.isdir(content_full_path):
