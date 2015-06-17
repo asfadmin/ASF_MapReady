@@ -280,7 +280,7 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
 {
         extern FILE *fLog; /* output file descriptor, stdout or log file */
         int bandflag=0, strictflag=0;
-        int num_names_extracted1 = 0, num_names_extracted2 = 0, band = 0;
+        int band = 0;
         if (!bandflag)
                 band = 0;
         char msg[1024];
@@ -459,8 +459,6 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
                 sprintf(msg, "Unrecognized image file type found.\n");
                 diffErrOut(outputFile, msg);
                 FREE(outputFile);
-                free_band_names(&band_names1, num_names_extracted1);
-                free_band_names(&band_names2, num_names_extracted2);
                 asfPrintError(msg);
                 break;
         }
@@ -468,15 +466,7 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
         meta_parameters *md2 = NULL;
 
         // Read metadata and check for multi-bandedness
-        get_band_names(inFile1, NULL, &band_names1,
-                        &num_names_extracted1);
-        get_band_names(inFile2, NULL, &band_names2,
-                        &num_names_extracted2);
-	*bands1 = band_names1;
-	*bands2 = band_names2;
-	*num_bands1 = num_names_extracted1;
-	*num_bands2 = num_names_extracted2;
-
+        
         if (fileExists(file1_fftMetaFile))
                 md1 = meta_read(file1_fftMetaFile);
         if (fileExists(file2_fftMetaFile))
@@ -490,12 +480,19 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
                 sprintf(msg, "Cannot find metadata file %s\n", missing_file);
                 diffErrOut(outputFile, msg);
                 FREE(outputFile);
-                free_band_names(&band_names1, num_names_extracted1);
-                free_band_names(&band_names2, num_names_extracted2);
                 asfPrintError(msg);
         }
         int band_count1 = md1->general->band_count;
         int band_count2 = md2->general->band_count;
+        band_names1 = extract_band_names(md1->general->bands,
+                        md1->general->band_count);
+        band_names2 = extract_band_names(md2->general->bands,
+                        md2->general->band_count);
+	*bands1 = band_names1;
+	*bands2 = band_names2;
+	*num_bands1 = band_count1;
+	*num_bands2 = band_count2;
+
         if (bandflag && !(band < band_count1 && band < band_count2 &&
                         band >= 0))
                 sprintf(msg, "Invalid band number. Band number must be 0 (first band) or greater, and less\nthan the number of available bands in the file.\nExample: If the files have 3 bands, then band numbers 0, 1, or 2 are the valid\nband number choices.\n\nFile1 has %d bands. File2 has %d bands\n",
@@ -520,8 +517,8 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
                 meta_free(md1);
                 meta_free(md2);
                 FREE(outputFile);
-                free_band_names(&band_names1, num_names_extracted1);
-                free_band_names(&band_names2, num_names_extracted2);
+                free_band_names(&band_names1, band_count1);
+                free_band_names(&band_names2, band_count2);
                 asfPrintError(msg);
         }
         int is_complex = md2->general->data_type == COMPLEX_BYTE ||
@@ -534,17 +531,17 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
         *complex = is_complex;
 	if (is_complex) {
 	        *complex_stats1 = (complex_stats_t*) MALLOC(
-                                sizeof(complex_stats_t) * num_names_extracted1);
+                                sizeof(complex_stats_t) * band_count1);
 	        *complex_stats2 = (complex_stats_t*) MALLOC(
-                                sizeof(complex_stats_t) * num_names_extracted2);
+                                sizeof(complex_stats_t) * band_count2);
 	        *complex_psnr = (complex_psnr_t*) MALLOC(
                                 sizeof(complex_psnr_t));
 	}
 	else {
 	        *stats1 = (stats_t*) MALLOC(
-                                sizeof(stats_t) * num_names_extracted1);
+                                sizeof(stats_t) * band_count1);
 	        *stats2 = (stats_t*) MALLOC(
-                                sizeof(stats_t) * num_names_extracted2);
+                                sizeof(stats_t) * band_count2);
 	        *psnrs = (psnr_t*) MALLOC(sizeof(psnr_t));
 	}
 	*data_shift = (shift_data_t*) MALLOC(sizeof(shift_data_t));
@@ -558,8 +555,8 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
                 meta_free(md1);
                 meta_free(md2);
                 FREE(outputFile);
-                free_band_names(&band_names1, num_names_extracted1);
-                free_band_names(&band_names2, num_names_extracted2);
+                free_band_names(&band_names1, band_count1);
+                free_band_names(&band_names2, band_count2);
                 asfPrintError(msg);
         }
 
@@ -5101,6 +5098,7 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
   get_band_names(inFile, NULL, &bands, &num_bands);
   make_generic_meta(fft_meta_file, jpg.height, jpg.width, jpg.data_type, bands,
                 num_bands);
+  free_band_names(&bands, num_bands);
   md = meta_read(fft_meta_file);
 
   buf = (float*)MALLOC(jpg.width * sizeof(float));
@@ -5225,6 +5223,7 @@ void export_ppm_pgm_to_asf_img(char *inFile, char *outfile,
   int num_bands;
   get_band_names(inFile, NULL, &bands, &num_bands);
   make_generic_meta(fft_meta_file, height, width, data_type, bands, num_bands);
+  free_band_names(&bands, num_bands);
   md = meta_read(fft_meta_file);
 
   get_ppm_pgm_info_hdr_from_file(inFile, &pgm, outfile);
@@ -5310,6 +5309,7 @@ void export_tiff_to_asf_img(char *inFile, char *outfile,
   int num_bands;
   get_band_names(inFile, NULL, &bands, &num_bands);
   make_generic_meta(fft_meta_file, height, width, data_type, bands, num_bands);
+  free_band_names(&bands, num_bands);
   md = meta_read(fft_meta_file);
 
   tiff_data_t t;
@@ -5415,6 +5415,7 @@ void export_png_to_asf_img(char *inFile, char *outfile,
   get_band_names(inFile, NULL, &bands, &num_bands);
   make_generic_meta(fft_meta_file, img_height, img_width, img_data_type, bands,
                 num_bands);
+  free_band_names(&bands, num_bands);
   md = meta_read(fft_meta_file);
 
   png_structp png_ptr;
