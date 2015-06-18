@@ -274,6 +274,7 @@ def link_data(workdir, tmpdir):
         link all the files from workdir/../dataset and workdir/../projections,
         because that's the way the old system had the data organized.
         """
+        logger = logging.getLogger(__name__)
         updir = os.path.dirname(workdir)
         dataset = os.path.join(updir, "dataset")
         projections = os.path.join(updir, "projections")
