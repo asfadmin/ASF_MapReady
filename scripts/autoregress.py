@@ -224,14 +224,18 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir):
         if results != []:
                 results = [all(v != False for v in results)]
                 # This assumes that the directory we are in ends with
-                # testsuite_[NUM]/testcase[NUM].
+                # autoregress_testsuite_[NUM]/testcase[NUM].
+                testsuitelen = len("autoregress_testsuite_")
+                testcaselen = len("testcase")
                 logger.debug("testsuite is {1} and testcase is {2}".format(
                                 workdir,
-                                os.path.basename(os.path.dirname(workdir))[10:],
-                                os.path.basename(workdir)[8:]))
+                                os.path.basename(
+                                os.path.dirname(workdir))[testsuitelen:],
+                                os.path.basename(workdir)[testcaselen:]))
         if db and not gen_refs and results != []:
-                suite = os.path.basename(os.path.dirname(workdir))[10:]
-                case = os.path.basename(workdir)[8:]
+                suite = os.path.basename(
+                os.path.dirname(workdir))[testsuitelen:]
+                case = os.path.basename(workdir)[testcaselen:]
                 vraw = subprocess.check_output([tools[0], "--version"])
                 vindex = vraw.index("part of MapReady") + 17
                 endindex = vraw.index("\n", vindex)
