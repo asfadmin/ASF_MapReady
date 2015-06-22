@@ -249,7 +249,8 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table):
                 suite = os.path.basename(
                 os.path.dirname(workdir))[testsuitelen:]
                 case = os.path.basename(workdir)[testcaselen:]
-                vraw = subprocess.check_output([tools[0], "--version"])
+                vraw = subprocess.Popen([tools[0], "--version"],
+                                stdout=subprocess.PIPE).communicate()[0] 
                 vindex = vraw.index("part of MapReady") + 17
                 endindex = vraw.index("\n", vindex)
                 version = vraw[vindex:endindex]
@@ -324,8 +325,9 @@ def examine(content, tools, tools_dir):
                 with open(os.devnull, "w") as dev_null:
                         subprocess.call([tools[0], content], stdout = dev_null,
                                         cwd = os.path.dirname(content))
-        elif ("script" in subprocess.check_output(["file", os.path.realpath(
-                        content)]) and os.access(content, os.X_OK)):
+        elif ("script" in subprocess.Popen(["file", os.path.realpath(content)],
+                        stdout=subprocess.PIPE).communicate()[0] and
+                        os.access(content, os.X_OK)):
                 logger.debug("Executing {0}".format(content))
                 with open(os.devnull, "w") as dev_null:
                         path = os.path.expandvars("$PATH")
@@ -349,7 +351,8 @@ def test(gen_file, tools):
         logger = logging.getLogger(__name__)
         (name, extension) = os.path.splitext(gen_file)
         program = ""
-        if "image" in subprocess.check_output(["file", gen_file]):
+        if "image" in subprocess.Popen(["file", gen_file],
+                        stdout=subprocess.PIPE).communicate()[0]:
                 program = tools[1]
         elif extension == ".meta":
                 program = tools[2]
