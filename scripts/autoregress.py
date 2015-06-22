@@ -33,6 +33,12 @@ def main():
                 diffmeta = os.path.join(tool_path, "diffmeta")
         log = os.path.abspath(os.path.expandvars(log))
         logger = logging.getLogger(__name__)
+        if args.output == "-":
+                logger.addHandler(logging.StreamHandler(sys.stdout))
+        elif args.output is not None:
+                logger.addHandler(logging.FileHandler(args.output))
+        else:
+                logger.addHandler(logging.handlers.SysLogHandler(log))
         verbosity = 1
         if args.quiet:
                 verbosity = 0
@@ -44,12 +50,9 @@ def main():
                 logger.setLevel(logging.ERROR)
         elif verbosity == 1:
                 logger.setLevel(logging.INFO)
-        if args.output == "-":
-                logger.addHandler(logging.StreamHandler(sys.stdout))
-        elif args.output is not None:
-                logger.addHandler(logging.FileHandler(args.output))
-        else:
-                logger.addHandler(logging.handlers.SysLogHandler(log))
+        # We couldn't log before now.
+        if not get_config(args.config):
+                logger.warn("Configuration file not found.")
         if len(dirs) == 1:
                 workdir = os.path.abspath(dirs[0])
         elif len(dirs) == 0:
@@ -112,7 +115,6 @@ def get_config(config_file):
         Search through $HOME/.config/autoregress.conf and /etc/autoregress.conf
         to find the configuration file, and return the name of the file.
         """
-        logger = logging.getLogger(__name__)
         if not config_file:
                 if os.path.isfile(os.path.join(
                                 os.getcwd(), "autoregress.conf")):
@@ -125,7 +127,6 @@ def get_config(config_file):
                 elif os.path.isfile("/etc/autoregress.conf"):
                         config_file = "/etc/autoregress.conf"
         if config_file is None or not os.path.isfile(config_file):
-                logger.warn("Configuration file not found.")
                 return None
         return config_file
 
@@ -217,8 +218,8 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table):
         logger.debug("In '{0}'.".format(workdir))
         link_data(workdir, tmpdir)
         pre_files = os.listdir(tmpdir)
-        if os.path.basename(workdir).startswith("autoregress_testsuite_") or
-                        os.path.basename(workdir).startswith("testcase"):
+        if (os.path.basename(workdir).startswith("autoregress_testsuite_") or
+                        os.path.basename(workdir).startswith("testcase")):
                 for content in os.listdir(tmpdir):
                         examine(os.path.join(tmpdir, content), tools, tools_dir)
         post_files = os.listdir(tmpdir)
