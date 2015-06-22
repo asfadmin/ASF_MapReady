@@ -120,6 +120,12 @@ def get_config(config_file):
                                 os.getcwd(), "autoregress.conf")):
                         config_file = os.path.join(
                                         os.getcwd(), "autoregress.conf")
+                if os.path.isfile(os.path.join(
+                                os.path.dirname(os.path.realpath(__file__)),
+                                "autoregress.conf")):
+                        config_file = os.path.join(os.path.dirname(
+                                        os.path.realpath(__file__)),
+                                        "autoregress.conf")
                 if os.path.isfile(os.path.expandvars(
                                 "$HOME/.config/autoregress.conf")):
                         config_file = os.path.expandvars(
