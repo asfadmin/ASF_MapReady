@@ -18,7 +18,6 @@ import traceback
 import glob
 
 def main():
-        sys.excepthook = log_exceptions
         (args, dirs) = get_arguments()
         (tmpdir, mapready, diffimage, diffmeta, log) =\
                         get_config_options(args.config)
@@ -51,6 +50,7 @@ def main():
         elif verbosity == 1:
                 logger.setLevel(logging.INFO)
         # We couldn't log before now.
+        sys.excepthook = log_exceptions
         if not get_config(args.config):
                 logger.warn("Configuration file not found.")
         if len(dirs) == 1:
@@ -156,9 +156,9 @@ def get_config_options(config_file):
                 if parser.has_option("asf_tools", "asf_tools_directory"):
                         tools_directory = parser.get("asf_tools",
                                         "asf_tools_directory")
-                        mapready = os.path.join(tools_directory, "mapready")
+                        mapready = os.path.join(tools_directory, "asf_mapready")
                         diffimage = os.path.join(tools_directory, "diffimage")
-                        diffmeta = os.path.join(tools_direcotry, "diffmeta")
+                        diffmeta = os.path.join(tools_directory, "diffmeta")
                 if parser.has_option("asf_tools", "asf_mapready"):
                         mapready = parser.get("asf_tools", "asf_mapready")
                 if parser.has_option("asf_tools", "diffimage"):
@@ -263,15 +263,16 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table):
                 vindex = vraw.index("part of MapReady") + 17
                 endindex = vraw.index("\n", vindex)
                 version = vraw[vindex:endindex]
-                with db.cursor() as cur:
-                        cur.execute("INSERT INTO {0} ( \
-                                        time, version, testsuite, testcase, \
-                                        result) \
-                                        VALUES ( \
-                                        LOCALTIMESTAMP, '{1}', {2}, {3}, \
-                                        {4});".format(table, version, suite,
-                                        case, results[0]))
-                        db.commit()
+                cur = db.cursor()
+                cur.execute("INSERT INTO {0} ( \
+                                time, version, testsuite, testcase, \
+                                result) \
+                                VALUES ( \
+                                LOCALTIMESTAMP, '{1}', {2}, {3}, \
+                                {4});".format(table, version, suite,
+                                case, results[0]))
+                db.commit()
+                cur.close()
         if clean:
                 for thing in os.listdir(tmpdir):
                         if os.path.isdir(os.path.join(tmpdir, thing)):
