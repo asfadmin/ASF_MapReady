@@ -64,10 +64,15 @@ def main():
                 shutil.rmtree(tmpdir)
         logger.debug("creating directory {0}".format(tmpdir))
         os.mkdir(tmpdir)
-        conn = get_db(args.config)
+        db_results = get_db(args.config)
+        conn = None
+        table = None
+        if db_results:
+                (conn, table) = db_results
         failures = display_results(autoregress(workdir, tmpdir,
                         not args.noclean, args.generate_references,
-                        (mapready, diffimage, diffmeta), conn, args.asf_tools))
+                        (mapready, diffimage, diffmeta), conn, args.asf_tools,
+                        table))
         if conn:
                 conn.close()
         if not args.noclean:
@@ -109,6 +114,10 @@ def get_config(config_file):
         """
         logger = logging.getLogger(__name__)
         if not config_file:
+                if os.path.isfile(os.path.join(
+                                os.getcwd(), "autoregress.conf")):
+                        config_file = os.path.join(
+                                        os.getcwd(), "autoregress.conf")
                 if os.path.isfile(os.path.expandvars(
                                 "$HOME/.config/autoregress.conf")):
                         config_file = os.path.expandvars(
@@ -175,7 +184,11 @@ def get_db(config):
                         parser.get("postgres", "db"),
                         parser.get("postgres", "user"),
                         parser.get("postgres", "password"))
-        return psycopg2.connect(connect)
+        if not parser.has_option("postgres", "table"):
+                table = "autoregress_results"
+        else:
+                table = parser.get("postgres", "table")
+        return (psycopg2.connect(connect), table)
 
 def display_results(results):
         """Log the results of the tests.
@@ -191,7 +204,7 @@ def display_results(results):
                         failures))
         return failures
 
-def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir):
+def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table):
         """Recurse into workdir and perform tests there.
 
         In workdir, link all files into tmpdir, and then perform tests on them,
@@ -241,13 +254,13 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir):
                 endindex = vraw.index("\n", vindex)
                 version = vraw[vindex:endindex]
                 with db.cursor() as cur:
-                        cur.execute("INSERT INTO autoregress_results ( \
+                        cur.execute("INSERT INTO {0} ( \
                                         time, version, testsuite, testcase, \
                                         result) \
                                         VALUES ( \
-                                        LOCALTIMESTAMP, '{0}', {1}, {2}, \
-                                        {3});".format(version, suite, case,
-                                        results[0]))
+                                        LOCALTIMESTAMP, '{1}', {2}, {3}, \
+                                        {4});".format(table, version, suite,
+                                        case, results[0]))
                         db.commit()
         if clean:
                 for thing in os.listdir(tmpdir):
@@ -256,11 +269,13 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir):
                         else:
                                 os.remove(os.path.join(tmpdir, thing))
         for content in os.listdir(workdir):
-                content_full_path = os.path.join(workdir, content)
-                if os.path.isdir(content_full_path) and not os.path.samefile(
-                                tmpdir, content_full_path):
-                        results.extend(autoregress(content_full_path, tmpdir,
-                                        clean, gen_refs, tools, db, tools_dir))
+                c = os.path.join(workdir, content)
+                if (os.path.isdir(c) and
+                                not os.path.samefile(tmpdir, c) and
+                                (content.startswith("testcase") or
+                                content.startswith("autoregress_testsuite_"))):
+                        results.extend(autoregress(c, tmpdir, clean, gen_refs,
+                                        tools, db, tools_dir, table))
         return results
 
 # The smart way to write this would be to parse the configuration file and
@@ -278,17 +293,22 @@ def link_data(workdir, tmpdir):
         updir = os.path.dirname(workdir)
         dataset = os.path.join(updir, "dataset")
         projections = os.path.join(updir, "projections")
-        files = os.listdir(workdir)
+        files = [os.path.join(workdir, c) for c in os.listdir(workdir)]
         if os.path.isdir(dataset):
-                files.extend(os.listdir(dataset))
+                files.extend([os.path.join(dataset, c)
+                                for c in os.listdir(dataset)])
         if os.path.isdir(projections):
-                files.extend(os.listdir(projections))
+                files.extend([os.path.join(projections, c)
+                                for c in os.listdir(projections)])
         for content in files:
-                content_full_path = os.path.join(workdir, content)
-                logger.debug("examining {0}".format(content_full_path))
-                if not os.path.isdir(content_full_path):
-                        os.symlink(content_full_path, os.path.join(tmpdir,
-                                        content))
+                logger.debug("examining {0}".format(content))
+                if not os.path.isdir(content):
+                        basename = os.path.basename(content)
+                        newpath = os.path.join(tmpdir, basename)
+                        try:
+                                os.symlink(content, newpath)
+                        except OSError:
+                                logger.warn("Could not symlink " + content)
 
 def examine(content, tools, tools_dir):
         """Decide what to do to content and then do it.
