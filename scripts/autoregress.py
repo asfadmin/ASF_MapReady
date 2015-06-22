@@ -217,8 +217,10 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table):
         logger.debug("In '{0}'.".format(workdir))
         link_data(workdir, tmpdir)
         pre_files = os.listdir(tmpdir)
-        for content in os.listdir(tmpdir):
-                examine(os.path.join(tmpdir, content), tools, tools_dir)
+        if os.path.basename(workdir).startswith("autoregress_testsuite_") or
+                        os.path.basename(workdir).startswith("testcase"):
+                for content in os.listdir(tmpdir):
+                        examine(os.path.join(tmpdir, content), tools, tools_dir)
         post_files = os.listdir(tmpdir)
         diff_files = list(set(post_files) - set(pre_files))
         logger.debug("Differing files:\n{0}".format(diff_files))
