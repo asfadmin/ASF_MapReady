@@ -16,15 +16,17 @@ import ConfigParser
 import psycopg2
 import traceback
 import glob
+import datetime
 
 def main():
         (args, dirs) = get_arguments()
-        (tmpdir, mapready, diffimage, diffmeta, log) =\
+        (tmpdir, mapready, diffimage, diffmeta, log, results) =\
                         get_config_options(args.config)
         tmpdir = os.path.abspath(os.path.expandvars(tmpdir))
         mapready = os.path.expandvars(mapready)
         diffimage = os.path.expandvars(diffimage)
         diffmeta = os.path.expandvars(diffmeta)
+        results = os.path.abspath(os.path.expandvars(results))
         if args.asf_tools:
                 tool_path = os.path.abspath(os.path.expandvars(args.asf_tools))
                 mapready = os.path.join(tool_path, "asf_mapready")
@@ -75,7 +77,7 @@ def main():
         failures = display_results(autoregress(workdir, tmpdir,
                         not args.noclean, args.generate_references,
                         (mapready, diffimage, diffmeta), conn, args.asf_tools,
-                        table))
+                        table, results))
         if conn:
                 conn.close()
         if not args.noclean:
@@ -147,6 +149,7 @@ def get_config_options(config_file):
         diffimage = "diffimage"
         diffmeta = "diffmeta"
         log = "/dev/log"
+        results = None
         config_file = get_config(config_file)
         if not config_file:
                 return (tmpdir, mapready, diffimage, diffmeta, log)
@@ -170,7 +173,9 @@ def get_config_options(config_file):
                         tmpdir = parser.get("options", "tmpdir")
                 if parser.has_option("options", "log"):
                         log = parser.get("options", "log")
-        return (tmpdir, mapready, diffimage, diffmeta, log)
+                if parser.has_option("options", "results"):
+                        results = parser.get("options", "results")
+        return (tmpdir, mapready, diffimage, diffmeta, log, results)
 
 def get_db(config):
         """Return the connection to the database.
@@ -211,7 +216,8 @@ def display_results(results):
                         failures))
         return failures
 
-def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table):
+def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
+                logdir):
         """Recurse into workdir and perform tests there.
 
         In workdir, link all files into tmpdir, and then perform tests on them,
@@ -236,28 +242,28 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table):
                 full_path = os.path.join(tmpdir, diff_file)
                 if not gen_refs:
                         results.append(test(full_path, tools))
-                elif not os.path.isdir(full_path):
+                elif (not os.path.isdir(full_path) and
+                                not ".log" in diff_file):
                         (name, ext) = os.path.splitext(full_path)
                         name = os.path.basename(name)
                         new_path = os.path.join(workdir, name + ".ref" + ext)
                         logger.debug("moving {0} to {1}".format(
                                         full_path, new_path))
                         os.rename(full_path, new_path)
+        testsuitelen = len("autoregress_testsuite_")
+        testcaselen = len("testcase")
+        suite = os.path.basename(os.path.dirname(workdir))[testsuitelen:]
+        case = os.path.basename(workdir)[testcaselen:]
         if results != []:
-                results = [all(v != False for v in results)]
+                if all(v is None for v in results):
+                        results = []
+                else:
+                        results = [all(v != False for v in results)]
                 # This assumes that the directory we are in ends with
                 # autoregress_testsuite_[NUM]/testcase[NUM].
-                testsuitelen = len("autoregress_testsuite_")
-                testcaselen = len("testcase")
-                logger.debug("testsuite is {1} and testcase is {2}".format(
-                                workdir,
-                                os.path.basename(
-                                os.path.dirname(workdir))[testsuitelen:],
-                                os.path.basename(workdir)[testcaselen:]))
+                logger.debug("testsuite is {0} and testcase is {1}".format(
+                                suite, case))
         if db and not gen_refs and results != []:
-                suite = os.path.basename(
-                os.path.dirname(workdir))[testsuitelen:]
-                case = os.path.basename(workdir)[testcaselen:]
                 vraw = subprocess.Popen([tools[0], "--version"],
                                 stdout=subprocess.PIPE).communicate()[0] 
                 vindex = vraw.index("part of MapReady") + 17
@@ -273,6 +279,8 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table):
                                 case, results[0]))
                 db.commit()
                 cur.close()
+        if len(results) > 0 and not results[0] and logdir:
+                copy_logs(suite, case, tmpdir, logdir)
         if clean:
                 for thing in os.listdir(tmpdir):
                         if os.path.isdir(os.path.join(tmpdir, thing)):
@@ -286,8 +294,33 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table):
                                 (content.startswith("testcase") or
                                 content.startswith("autoregress_testsuite_"))):
                         results.extend(autoregress(c, tmpdir, clean, gen_refs,
-                                        tools, db, tools_dir, table))
+                                        tools, db, tools_dir, table, logdir))
         return results
+
+def copy_logs(suite, case, tmpdir, logdir):
+        """Copy logs from tmpdir into logdir.
+
+        This function is called when the test fails and the logs need to be
+        dumped for debugging purposes. They should be copied from the tmpdir
+        into logdir with an appropriate label consisting of a timestamp, the
+        testsuite and testcase numbers, and the previous name of the file.
+        """
+        mapreadylog = os.path.join(tmpdir, "mapready.log")
+        newmapreadylog = os.path.join(logdir,
+                        datetime.datetime.now().isoformat() + "." + suite +
+                        "." + case + "." + "mapready.log")
+        if os.path.isfile(mapreadylog):
+                os.rename(mapreadylog, newmapreadylog)
+        for diff in glob.glob(os.path.join(tmpdir, "*.diff")):
+                newname = os.path.join(logdir,
+                                datetime.datetime.now().isoformat() + "." +
+                                suite + "." + case + "." + diff)
+                os.rename(diff, newname)
+        for log in glob.glob(os.path.join(tmpdir, "*.log")):
+                newname = os.path.join(
+                                logdir, datetime.datetime.now().isoformat() +
+                                "." + suite + "." + case + "." + log)
+                os.rename(log, newname)
 
 # The smart way to write this would be to parse the configuration file and
 # decide which data are needed, however it works just fine to link all the data,
@@ -333,7 +366,10 @@ def examine(content, tools, tools_dir):
         if extension == ".cfg" or extension == ".config":
                 logger.debug("Calling {0} on {1}".format(tools[0], content))
                 with open(os.devnull, "w") as dev_null:
-                        subprocess.call([tools[0], content], stdout = dev_null,
+                        tmpdir = os.path.dirname(content)
+                        mapreadylog = os.path.join(tmpdir, "mapready.log")
+                        subprocess.call([tools[0], "-log", mapreadylog,
+                                        content], stdout = dev_null,
                                         cwd = os.path.dirname(content))
         elif ("script" in subprocess.Popen(["file", os.path.realpath(content)],
                         stdout=subprocess.PIPE).communicate()[0] and
