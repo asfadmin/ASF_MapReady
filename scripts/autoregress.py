@@ -231,7 +231,7 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
         logger.debug("In '{0}'.".format(workdir))
         link_data(workdir, tmpdir)
         pre_files = os.listdir(tmpdir)
-        if (os.path.basename(workdir).startswith("autoregress_testsuite_") or
+        if (os.path.basename(workdir).startswith("autoregress_") or
                         os.path.basename(workdir).startswith("testcase")):
                 for content in os.listdir(tmpdir):
                         examine(os.path.join(tmpdir, content), tools, tools_dir)
@@ -293,7 +293,7 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
                 if (os.path.isdir(c) and
                                 not os.path.samefile(tmpdir, c) and
                                 (content.startswith("testcase") or
-                                content.startswith("autoregress_testsuite_"))):
+                                content.startswith("autoregress_"))):
                         results.extend(autoregress(c, tmpdir, clean, gen_refs,
                                         tools, db, tools_dir, table, logdir))
         return results
