@@ -24,6 +24,7 @@ CFLAGS += $(W_ERROR) \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
 	$(XML_CFLAGS) \
+        $(GDAL_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-D_REENTRANT \

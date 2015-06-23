@@ -43,6 +43,7 @@ different.  On other systems, the packages may have different names.
 	* gcc
 	* libgdal-dev
 	* libgtk2.0-dev
+        * libglade2-dev
 
 #########################################################################
 INTRODUCTION:
