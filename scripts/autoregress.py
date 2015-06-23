@@ -26,7 +26,8 @@ def main():
         mapready = os.path.expandvars(mapready)
         diffimage = os.path.expandvars(diffimage)
         diffmeta = os.path.expandvars(diffmeta)
-        results = os.path.abspath(os.path.expandvars(results))
+        if results:
+                results = os.path.abspath(os.path.expandvars(results))
         if args.asf_tools:
                 tool_path = os.path.abspath(os.path.expandvars(args.asf_tools))
                 mapready = os.path.join(tool_path, "asf_mapready")
@@ -305,22 +306,31 @@ def copy_logs(suite, case, tmpdir, logdir):
         into logdir with an appropriate label consisting of a timestamp, the
         testsuite and testcase numbers, and the previous name of the file.
         """
-        mapreadylog = os.path.join(tmpdir, "mapready.log")
-        newmapreadylog = os.path.join(logdir,
-                        datetime.datetime.now().isoformat() + "." + suite +
-                        "." + case + "." + "mapready.log")
-        if os.path.isfile(mapreadylog):
-                os.rename(mapreadylog, newmapreadylog)
-        for diff in glob.glob(os.path.join(tmpdir, "*.diff")):
-                newname = os.path.join(logdir,
-                                datetime.datetime.now().isoformat() + "." +
-                                suite + "." + case + "." + diff)
-                os.rename(diff, newname)
-        for log in glob.glob(os.path.join(tmpdir, "*.log")):
-                newname = os.path.join(
-                                logdir, datetime.datetime.now().isoformat() +
-                                "." + suite + "." + case + "." + log)
-                os.rename(log, newname)
+        if logdir:
+                logger = logging.getLogger(__name__)
+                mapreadylog = os.path.join(tmpdir, "mapready.log")
+                newmapreadylog = os.path.join(logdir,
+                                datetime.datetime.now().isoformat() +
+                                ".testsuite" + suite + ".testcase" + case +
+                                "." + "mapready.log")
+                if os.path.isfile(mapreadylog):
+                        logger.debug("Moving {0} to {1}".format(mapreadylog,
+                                        newmapreadylog))
+                        os.rename(mapreadylog, newmapreadylog)
+                for diff in glob.glob(os.path.join(tmpdir, "*.diff")):
+                        newname = os.path.join(logdir,
+                                        datetime.datetime.now().isoformat() +
+                                        ".testsuite" + suite + ".testcase" +
+                                        case + "." + os.path.basename(diff))
+                        logger.debug("Moving {0} to {1}".format(diff, newname))
+                        os.rename(diff, newname)
+                for log in glob.glob(os.path.join(tmpdir, "*.log")):
+                        newname = os.path.join(logdir,
+                                        datetime.datetime.now().isoformat() +
+                                        ".testsuite" + suite + ".testcase" +
+                                        case + "." + os.path.basename(log))
+                        logger.debug("Moving {0} to {1}".format(log, newname))
+                        os.rename(log, newname)
 
 # The smart way to write this would be to parse the configuration file and
 # decide which data are needed, however it works just fine to link all the data,
