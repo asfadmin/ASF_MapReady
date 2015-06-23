@@ -572,7 +572,7 @@ int fftMatch_gridded(char *inFile1, char *inFile2, char *gridFile,
   return (0);
 }
 
-int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
+int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY, float *certainty)
 {
   // Determine the offsets based on metadata
   meta_parameters *refMeta = meta_read(inFile1);
@@ -612,12 +612,33 @@ int fftMatch_proj(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
   asfPrintStatus("Determing offsets by FFT matching\n\n");
   fftMatch_gridded(inFile1, inFile2, NULL, &offX, &offY, &cert, size, tol, 
     overlap);
+  *certainty = cert;
 
   // Compare both offsets
   *offsetX = diffX - offX;
   *offsetY = diffY - offY;
 
   return (0);
+}
+
+/*
+ * Call fftMatch_proj on projected data, and fftMatch on data that is not
+ * projected.
+ */
+int fftMatch_either(char *inFile1, char *inFile2, float *offsetX,
+                    float *offsetY, float *certainty)
+{
+        meta_parameters *refMeta = meta_read(inFile1);
+        meta_parameters *testMeta = meta_read(inFile2);
+        if (!refMeta->projection || !testMeta->projection) {
+                asfPrintStatus("Data are not map projected.\n");
+                return fftMatch(inFile1, inFile2, NULL, offsetX, offsetY,
+                                certainty);
+        } else {
+                asfPrintStatus("Data are map projected.\n");
+                return fftMatch_proj(inFile1, inFile2, offsetX, offsetY,
+                                certainty);
+        }
 }
 
 int fftMatch_opt(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
@@ -678,7 +699,8 @@ int fftMatch_opt(char *inFile1, char *inFile2, float *offsetX, float *offsetY)
 
   // FFT matching on a grid
   asfPrintStatus("\nFFT matching on a grid ...\n");
-  fftMatch_proj(sarFile, opticalFile, offsetX, offsetY);
+  float certainty;
+  fftMatch_proj(sarFile, opticalFile, offsetX, offsetY, &certainty);
 
   // Clean up
   remove_dir(tmpDir);
@@ -719,7 +741,8 @@ int fftMatch_projList(char *inFile, char *descFile)
       strcpy(master, line);
     }
     else {
-      fftMatch_proj(master, line, &x_offs[n-1], &y_offs[n-1]);
+      float certainty;
+      fftMatch_proj(master, line, &x_offs[n-1], &y_offs[n-1], &certainty);
     }
 
     ++n;
