@@ -78,22 +78,10 @@ def main():
         table = None
         if db_results:
                 (conn, table) = db_results
-        run = None
-        if conn is not None:
-                cur = conn.cursor()
-                cur.execute("SELECT run FROM {0} \
-                                ORDER BY run DESC LIMIT 1".format(table))
-                run = cur.fetchone()
-                if run is None:
-                        run = 0
-                else:
-                        run = run[0] + 1
-                conn.rollback()
-                cur.close()
         failures = display_results(autoregress(workdir, tmpdir,
                         not args.noclean, args.generate_references,
                         (mapready, diffimage, diffmeta), conn, args.asf_tools,
-                        table, results, run), conn, table, emails)
+                        table, results), conn, table, emails)
         if not args.noclean:
                 logger.debug("cleaning up")
                 os.rmdir(tmpdir)
@@ -247,29 +235,21 @@ def email_results(conn, table, emails):
         database, then format them so that changed results are easy to see, and
         send the email to all people listed in emails.
         """
+        logger = logging.getLogger(__name__)
         hostname = socket.gethostname()
         cur = conn.cursor()
-        cur.execute("SELECT date(time) FROM {0} ORDER BY run DESC, \
-                        time LIMIT 1".format(table))
-        date = cur.fetchone()[0]
-        sender = "autoregress@{0}".format(hostname)
-        cur.execute("SELECT run FROM {0} ORDER BY run DESC \
-                        LIMIT 1".format(table))
-        latest = cur.fetchone()[0]
-        runs = range(latest, -1, -1)
-        if len(runs) > 6:
-                runs = runs[:6]
+        cur.execute("SELECT date(time) FROM {0} \
+                        ORDER BY time DESC LIMIT 1".format(table))
+        today = cur.fetchone()[0]
         dates = []
-        for run in runs:
-                cur.execute("SELECT date(time) FROM {0} WHERE run={1} \
-                                ORDER BY time ".format(table, run))
-                dates.append(cur.fetchone()[0])
+        for i in range(7):
+                dates.append(today - datetime.timedelta(days=i))
         cur.execute("SELECT testsuite FROM {0} \
-                        ORDER BY testsuite DESC LIMIT 1".format(table, latest))
+                        ORDER BY testsuite DESC LIMIT 1".format(table))
         maxtestsuite = cur.fetchone()[0]
-        allruns = []
-        for run in runs:
-                thisrun = [None]
+        alldays = []
+        for date in dates:
+                thisday = [None]
                 for testsuite in range(1, maxtestsuite + 1):
                         cur.execute("SELECT testcase FROM {0} \
                                         WHERE testsuite={1} \
@@ -277,53 +257,76 @@ def email_results(conn, table, emails):
                                         LIMIT 1".format(table, testsuite))
                         maxtestcase = cur.fetchone()[0]
                         suiteresults = [None for _ in range(maxtestcase + 1)]
-                        cur.execute("SELECT testcase, result \
-                                        FROM {0} WHERE \
-                                        run={1} AND testsuite={2}".format(
-                                        table, run, testsuite))
+                        cur.execute("SELECT testcase, result FROM {0} \
+                                        WHERE date(time)=DATE '{1}' AND \
+                                        testsuite={2}".format(table,
+                                        date.strftime("%Y-%m-%d"), testsuite))
                         data = cur.fetchall()
                         for datum in data:
                                 suiteresults[datum[0]] = datum[1]
-                        thisrun.append(suiteresults)
-                allruns.append(thisrun)
+                        thisday.append(suiteresults)
+                alldays.append(thisday)
         message = "<html><head></head><body><samp>"
         for testsuite in range(1, maxtestsuite + 1):
-                message += "<b><u>TESTSUITE{0}</u></b><br/>".format(testsuite)
-                message += "TESTCASE&nbsp;&nbsp;&nbsp;LATEST&nbsp;"
+                message += "<b>TESTSUITE {0}</b><br/>\n".format(testsuite)
+                message += "&nbsp;TESTCASE&nbsp;&nbsp;LATEST&nbsp;"
                 message += "&nbsp;&nbsp;".join([date.isoformat()[5:]
                                 for date in dates[1:]])
-                message += "<br/>"
-                message += "--------&nbsp;&nbsp;" + "&nbsp;------" * 6 + "<br/>"
-                for testcase in range(len(allruns[0][testsuite])):
+                message += "<br/>\n"
+                message += "----------"
+                message += "&nbsp;------" * len(dates) + "<br/>\n"
+                for testcase in range(len(alldays[0][testsuite])):
                         message += "testcase"
-                        if testcase < 10:
+                        if testcase < 10 and testcase >= 0:
                                 message += "0" + str(testcase)
+                        elif len(str(testcase)) > 2:
+                                message += str(testcase)[:2]
                         else:
                                 message += str(testcase)
-                        for run in range(len(runs)):
+                        for day in range(len(dates)):
                                 message += "&nbsp;"
-                                if allruns[run][testsuite][testcase] == True:
-                                        message += "&nbsp;<font style='color:blue'>PASS</font>&nbsp;"
-                                elif allruns[run][testsuite][testcase] == False:
-                                        message += "&nbsp;<font style='color:red'>FAIL</font>&nbsp;"
+                                changed = True
+                                prevday = day + 1
+                                while prevday < len(dates):
+                                        if (alldays[prevday][testsuite]
+                                                        [testcase] == alldays
+                                                        [day][testsuite]
+                                                        [testcase]):
+                                                changed = False
+                                        prevday += 1
+                                message += "&nbsp;"
+                                if (alldays[day][testsuite][testcase] == True
+                                                and changed):
+                                        message += "<span style='color:\
+                                                        blue'>PASS</span>"
+                                elif (alldays[day][testsuite][testcase] == False
+                                                and changed):
+                                        message += "<span style='color:\
+                                                        red'>FAIL</span>"
+                                elif alldays[day][testsuite][testcase] == True:
+                                        message += "PASS"
+                                elif alldays[day][testsuite][testcase] == False:
+                                        message += "FAIL"
                                 else:
-                                        message += "&nbsp;" * 6
-                        message += "<br/>"
-                print(message)
-                message += "<br/>"
+                                        message += "&nbsp;" * 4
+                                message += "&nbsp;"
+                        message += "<br/>\n"
+                message += "<br/>\n"
         message += "</samp></body></html>"
-        message = MIMEText(message, "html").pack("m")
-        message["Subject"] = "Autoregress results{0}".format(date)
-        message["From"] = sender
+        message = MIMEText(message, "html")
+        sender = "autoregress@{0}".format(hostname)
+        message["Subject"] = "Autoregress Results {0}".format(today)
+        message["From"] = "autoregress.py <{0}>".format(sender)
         message["To"] = ", ".join(emails)
         conn.rollback()
         cur.close()
         mailer = smtplib.SMTP("localhost")
+        logger.debug("Sending email to {0}".format(emails))
         mailer.sendmail(sender, emails, message.as_string())
         mailer.quit()
 
 def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
-                logdir, run):
+                logdir):
         """Recurse into workdir and perform tests there.
 
         In workdir, link all files into tmpdir, and then perform tests on them,
@@ -356,6 +359,8 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
                         logger.debug("moving {0} to {1}".format(
                                         full_path, new_path))
                         os.rename(full_path, new_path)
+        # This assumes that the directory we are in ends with
+        # autoregress_testsuite_[NUM]/testcase[NUM].
         testsuitelen = len("autoregress_testsuite_")
         testcaselen = len("testcase")
         suite = os.path.basename(os.path.dirname(workdir))[testsuitelen:]
@@ -365,8 +370,6 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
                         results = []
                 else:
                         results = [all(v != False for v in results)]
-                # This assumes that the directory we are in ends with
-                # autoregress_testsuite_[NUM]/testcase[NUM].
                 logger.debug("testsuite is {0} and testcase is {1}".format(
                                 suite, case))
         if db and not gen_refs and results != []:
@@ -377,13 +380,14 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
                 version = vraw[vindex:endindex]
                 cur = db.cursor()
                 cur.execute("INSERT INTO {0} ( \
-                                run, time, version, testsuite, testcase, \
+                                time, version, testsuite, testcase, \
                                 result) \
                                 VALUES ( \
-                                {1}, LOCALTIMESTAMP, '{2}', {3}, {4}, \
-                                {5});".format(table, run, version, suite,
+                                LOCALTIMESTAMP, '{1}', {2}, {3}, \
+                                {4});".format(table, version, suite,
                                 case, results[0]))
-                db.commit()
+                # db.commit()
+                db.rollback()
                 cur.close()
         if len(results) > 0 and not results[0] and logdir:
                 copy_logs(suite, case, tmpdir, logdir)
@@ -400,8 +404,7 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
                                 (content.startswith("testcase") or
                                 content.startswith("autoregress_"))):
                         results.extend(autoregress(c, tmpdir, clean, gen_refs,
-                                        tools, db, tools_dir, table, logdir,
-                                        run))
+                                        tools, db, tools_dir, table, logdir))
         return results
 
 def copy_logs(suite, case, tmpdir, logdir):
