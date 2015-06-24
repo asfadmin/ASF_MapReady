@@ -24,12 +24,12 @@ have_fftw="no"
 have_png="no"
 have_exif="no"
 have_xml2="no"
-have_gdal="no"
+have_gdal="yes"
 have_hdfeos5="no"
 have_hdf5="no"
 have_netcdf="no"
 have_cunit="no"
-w_error="-Werror"
+w_error=""
 
 if test "${config_flags#*no-werror}" != "${config_flags}" ; then
    w_error=""
@@ -279,12 +279,12 @@ AC_SUBST(ASF_LIB_XML2)
 #### libgdal check ####
 ##### --> always use our own libgdal version
 #####     not point in trying to sort out external dependencies
-have_gdal="no"
 if test "$have_gdal" = "no" ; then
    ASF_LIB_GDAL="${ext_lib_src_dir}/libgdal"
    GDAL_LIBS="\$(LIBDIR)/libgdal.a"
 else
    GDAL_LIBS="-lgdal"
+   GDAL_CFLAGS="-I/usr/include/gdal"
 fi
 AC_SUBST(ASF_LIB_GDAL)
 
