@@ -386,8 +386,7 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
                                 LOCALTIMESTAMP, '{1}', {2}, {3}, \
                                 {4});".format(table, version, suite,
                                 case, results[0]))
-                # db.commit()
-                db.rollback()
+                db.commit()
                 cur.close()
         if len(results) > 0 and not results[0] and logdir:
                 copy_logs(suite, case, tmpdir, logdir)
