@@ -300,12 +300,7 @@ def format_test_case(suite, case, results):
         """
         days = len(results)
         message = "testcase"
-        if case < 10 and case >= 0:
-                message += "0" + str(case)
-        elif len(str(case)) > 2:
-                message += str(case)[:2]
-        else:
-                message += str(case)
+        message += ("0" + str(case))[-2:]
         for day in range(days):
                 message += "&nbsp;&nbsp;"
                 prevrun = day + 1
