@@ -17,10 +17,13 @@ import psycopg2
 import traceback
 import glob
 import datetime
+import smtplib
+import socket
+from email.mime.text import MIMEText
 
 def main():
         (args, dirs) = get_arguments()
-        (tmpdir, mapready, diffimage, diffmeta, log, results) =\
+        (tmpdir, mapready, diffimage, diffmeta, log, results, emails) =\
                         get_config_options(args.config)
         tmpdir = os.path.abspath(os.path.expandvars(tmpdir))
         mapready = os.path.expandvars(mapready)
@@ -75,15 +78,27 @@ def main():
         table = None
         if db_results:
                 (conn, table) = db_results
+        run = None
+        if conn is not None:
+                cur = conn.cursor()
+                cur.execute("SELECT run FROM {0} \
+                                ORDER BY run DESC LIMIT 1".format(table))
+                run = cur.fetchone()
+                if run is None:
+                        run = 0
+                else:
+                        run = run[0] + 1
+                conn.rollback()
+                cur.close()
         failures = display_results(autoregress(workdir, tmpdir,
                         not args.noclean, args.generate_references,
                         (mapready, diffimage, diffmeta), conn, args.asf_tools,
-                        table, results))
-        if conn:
-                conn.close()
+                        table, results, run), conn, table, emails)
         if not args.noclean:
                 logger.debug("cleaning up")
                 os.rmdir(tmpdir)
+        if conn:
+                conn.close()
         sys.exit(failures)
 
 def get_arguments():
@@ -151,9 +166,11 @@ def get_config_options(config_file):
         diffmeta = "diffmeta"
         log = "/dev/log"
         results = None
+        emails = []
         config_file = get_config(config_file)
         if not config_file:
-                return (tmpdir, mapready, diffimage, diffmeta, log)
+                return (tmpdir, mapready, diffimage, diffmeta, log, results,
+                                emails)
         parser = ConfigParser.SafeConfigParser()
         parser.read(config_file)
         if parser.has_section("asf_tools"):
@@ -176,7 +193,11 @@ def get_config_options(config_file):
                         log = parser.get("options", "log")
                 if parser.has_option("options", "results"):
                         results = parser.get("options", "results")
-        return (tmpdir, mapready, diffimage, diffmeta, log, results)
+                if parser.has_option("options", "emails"):
+                        rawemails = parser.get("options", "emails")
+                        emails = [email.strip()
+                                        for email in rawemails.split(",")]
+        return (tmpdir, mapready, diffimage, diffmeta, log, results, emails)
 
 def get_db(config):
         """Return the connection to the database.
@@ -203,7 +224,7 @@ def get_db(config):
                 table = parser.get("postgres", "table")
         return (psycopg2.connect(connect), table)
 
-def display_results(results):
+def display_results(results, conn, table, emails):
         """Log the results of the tests.
 
         Given a list of booleans corresponding to whether a specific test
@@ -215,10 +236,94 @@ def display_results(results):
         failures = results.count(False)
         logger.info("{0} tests succeeded and {1} tests failed".format(successes,
                         failures))
+        if conn is not None:
+                email_results(conn, table, emails)
         return failures
 
+def email_results(conn, table, emails):
+        """Send a nicely formatted email about the results of the tests.
+
+        This email should get the results of this and previous tests from the
+        database, then format them so that changed results are easy to see, and
+        send the email to all people listed in emails.
+        """
+        hostname = socket.gethostname()
+        cur = conn.cursor()
+        cur.execute("SELECT date(time) FROM {0} ORDER BY run DESC, \
+                        time LIMIT 1".format(table))
+        date = cur.fetchone()[0]
+        sender = "autoregress@{0}".format(hostname)
+        cur.execute("SELECT run FROM {0} ORDER BY run DESC \
+                        LIMIT 1".format(table))
+        latest = cur.fetchone()[0]
+        runs = range(latest, -1, -1)
+        if len(runs) > 6:
+                runs = runs[:6]
+        dates = []
+        for run in runs:
+                cur.execute("SELECT date(time) FROM {0} WHERE run={1} \
+                                ORDER BY time ".format(table, run))
+                dates.append(cur.fetchone()[0])
+        cur.execute("SELECT testsuite FROM {0} \
+                        ORDER BY testsuite DESC LIMIT 1".format(table, latest))
+        maxtestsuite = cur.fetchone()[0]
+        allruns = []
+        for run in runs:
+                thisrun = [None]
+                for testsuite in range(1, maxtestsuite + 1):
+                        cur.execute("SELECT testcase FROM {0} \
+                                        WHERE testsuite={1} \
+                                        ORDER BY testcase DESC \
+                                        LIMIT 1".format(table, testsuite))
+                        maxtestcase = cur.fetchone()[0]
+                        suiteresults = [None for _ in range(maxtestcase + 1)]
+                        cur.execute("SELECT testcase, result \
+                                        FROM {0} WHERE \
+                                        run={1} AND testsuite={2}".format(
+                                        table, run, testsuite))
+                        data = cur.fetchall()
+                        for datum in data:
+                                suiteresults[datum[0]] = datum[1]
+                        thisrun.append(suiteresults)
+                allruns.append(thisrun)
+        message = "<html><head></head><body><samp>"
+        for testsuite in range(1, maxtestsuite + 1):
+                message += "<b><u>TESTSUITE{0}</u></b><br/>".format(testsuite)
+                message += "TESTCASE&nbsp;&nbsp;&nbsp;LATEST&nbsp;"
+                message += "&nbsp;&nbsp;".join([date.isoformat()[5:]
+                                for date in dates[1:]])
+                message += "<br/>"
+                message += "--------&nbsp;&nbsp;" + "&nbsp;------" * 6 + "<br/>"
+                for testcase in range(len(allruns[0][testsuite])):
+                        message += "testcase"
+                        if testcase < 10:
+                                message += "0" + str(testcase)
+                        else:
+                                message += str(testcase)
+                        for run in range(len(runs)):
+                                message += "&nbsp;"
+                                if allruns[run][testsuite][testcase] == True:
+                                        message += "&nbsp;<font style='color:blue'>PASS</font>&nbsp;"
+                                elif allruns[run][testsuite][testcase] == False:
+                                        message += "&nbsp;<font style='color:red'>FAIL</font>&nbsp;"
+                                else:
+                                        message += "&nbsp;" * 6
+                        message += "<br/>"
+                print(message)
+                message += "<br/>"
+        message += "</samp></body></html>"
+        message = MIMEText(message, "html").pack("m")
+        message["Subject"] = "Autoregress results{0}".format(date)
+        message["From"] = sender
+        message["To"] = ", ".join(emails)
+        conn.rollback()
+        cur.close()
+        mailer = smtplib.SMTP("localhost")
+        mailer.sendmail(sender, emails, message.as_string())
+        mailer.quit()
+
 def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
-                logdir):
+                logdir, run):
         """Recurse into workdir and perform tests there.
 
         In workdir, link all files into tmpdir, and then perform tests on them,
@@ -272,11 +377,11 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
                 version = vraw[vindex:endindex]
                 cur = db.cursor()
                 cur.execute("INSERT INTO {0} ( \
-                                time, version, testsuite, testcase, \
+                                run, time, version, testsuite, testcase, \
                                 result) \
                                 VALUES ( \
-                                LOCALTIMESTAMP, '{1}', {2}, {3}, \
-                                {4});".format(table, version, suite,
+                                {1}, LOCALTIMESTAMP, '{2}', {3}, {4}, \
+                                {5});".format(table, run, version, suite,
                                 case, results[0]))
                 db.commit()
                 cur.close()
@@ -295,7 +400,8 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
                                 (content.startswith("testcase") or
                                 content.startswith("autoregress_"))):
                         results.extend(autoregress(c, tmpdir, clean, gen_refs,
-                                        tools, db, tools_dir, table, logdir))
+                                        tools, db, tools_dir, table, logdir,
+                                        run))
         return results
 
 def copy_logs(suite, case, tmpdir, logdir):
