@@ -242,7 +242,7 @@ def email_results(conn, table, emails):
                         ORDER BY time DESC LIMIT 1".format(table))
         today = cur.fetchone()[0]
         dates = []
-        for i in range(7):
+        for i in range(8):
                 dates.append(today - datetime.timedelta(days=i))
         cur.execute("SELECT testsuite FROM {0} \
                         ORDER BY testsuite DESC LIMIT 1".format(table))
@@ -275,42 +275,9 @@ def email_results(conn, table, emails):
                 message += "<br/>\n"
                 message += "----------"
                 message += "&nbsp;------" * len(dates) + "<br/>\n"
-                for testcase in range(len(alldays[0][testsuite])):
-                        message += "testcase"
-                        if testcase < 10 and testcase >= 0:
-                                message += "0" + str(testcase)
-                        elif len(str(testcase)) > 2:
-                                message += str(testcase)[:2]
-                        else:
-                                message += str(testcase)
-                        for day in range(len(dates)):
-                                message += "&nbsp;"
-                                changed = True
-                                prevday = day + 1
-                                while prevday < len(dates):
-                                        if (alldays[prevday][testsuite]
-                                                        [testcase] == alldays
-                                                        [day][testsuite]
-                                                        [testcase]):
-                                                changed = False
-                                        prevday += 1
-                                message += "&nbsp;"
-                                if (alldays[day][testsuite][testcase] == True
-                                                and changed):
-                                        message += "<span style='color:\
-                                                        blue'>PASS</span>"
-                                elif (alldays[day][testsuite][testcase] == False
-                                                and changed):
-                                        message += "<span style='color:\
-                                                        red'>FAIL</span>"
-                                elif alldays[day][testsuite][testcase] == True:
-                                        message += "PASS"
-                                elif alldays[day][testsuite][testcase] == False:
-                                        message += "FAIL"
-                                else:
-                                        message += "&nbsp;" * 4
-                                message += "&nbsp;"
-                        message += "<br/>\n"
+                for testcase in range(1, len(alldays[0][testsuite])):
+                        message += format_test_case(testsuite, testcase,
+                                        len(dates), alldays)
                 message += "<br/>\n"
         message += "</samp></body></html>"
         message = MIMEText(message, "html")
@@ -324,6 +291,42 @@ def email_results(conn, table, emails):
         logger.debug("Sending email to {0}".format(emails))
         mailer.sendmail(sender, emails, message.as_string())
         mailer.quit()
+
+def format_test_case(suite, case, days, results):
+        """Return a formatted line describing the test case.
+
+        The code was getting a bit too cluttered in the email_results function,
+        and it looks much nicer in its own function. The numdays variable should
+        be equal to the number of previous days that are in the results list.
+        """
+        message = "testcase"
+        if case < 10 and case >= 0:
+                message += "0" + str(case)
+        elif len(str(case)) > 2:
+                message += str(case)[:2]
+        else:
+                message += str(case)
+        for day in range(days):
+                message += "&nbsp;&nbsp;"
+                prevrun = day + 1
+                while prevrun < days and results[prevrun][suite][case] == None:
+                        prevrun += 1
+                color = (day == 0 and prevrun != days and
+                                results[prevrun][suite][case] !=
+                                results[day][suite][case])
+                if results[day][suite][case] == True and color:
+                        message += "<b><span style='color:blue'>PASS</span></b>"
+                elif results[day][suite][case] == False and color:
+                        message += "<b><span style='color:red'>FAIL</span></b>"
+                elif results[day][suite][case] == True:
+                        message += "PASS"
+                elif results[day][suite][case] == False:
+                        message += "FAIL"
+                else:
+                        message += "&nbsp;" * 4
+                message += "&nbsp;"
+        message += "<br/>\n"
+        return message
 
 def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
                 logdir):
