@@ -17,10 +17,13 @@ import psycopg2
 import traceback
 import glob
 import datetime
+import smtplib
+import socket
+from email.mime.text import MIMEText
 
 def main():
         (args, dirs) = get_arguments()
-        (tmpdir, mapready, diffimage, diffmeta, log, results) =\
+        (tmpdir, mapready, diffimage, diffmeta, log, results, emails) =\
                         get_config_options(args.config)
         tmpdir = os.path.abspath(os.path.expandvars(tmpdir))
         mapready = os.path.expandvars(mapready)
@@ -78,12 +81,12 @@ def main():
         failures = display_results(autoregress(workdir, tmpdir,
                         not args.noclean, args.generate_references,
                         (mapready, diffimage, diffmeta), conn, args.asf_tools,
-                        table, results))
-        if conn:
-                conn.close()
+                        table, results), conn, table, emails)
         if not args.noclean:
                 logger.debug("cleaning up")
                 os.rmdir(tmpdir)
+        if conn:
+                conn.close()
         sys.exit(failures)
 
 def get_arguments():
@@ -151,9 +154,11 @@ def get_config_options(config_file):
         diffmeta = "diffmeta"
         log = "/dev/log"
         results = None
+        emails = []
         config_file = get_config(config_file)
         if not config_file:
-                return (tmpdir, mapready, diffimage, diffmeta, log)
+                return (tmpdir, mapready, diffimage, diffmeta, log, results,
+                                emails)
         parser = ConfigParser.SafeConfigParser()
         parser.read(config_file)
         if parser.has_section("asf_tools"):
@@ -176,7 +181,11 @@ def get_config_options(config_file):
                         log = parser.get("options", "log")
                 if parser.has_option("options", "results"):
                         results = parser.get("options", "results")
-        return (tmpdir, mapready, diffimage, diffmeta, log, results)
+                if parser.has_option("options", "emails"):
+                        rawemails = parser.get("options", "emails")
+                        emails = [email.strip()
+                                        for email in rawemails.split(",")]
+        return (tmpdir, mapready, diffimage, diffmeta, log, results, emails)
 
 def get_db(config):
         """Return the connection to the database.
@@ -203,7 +212,7 @@ def get_db(config):
                 table = parser.get("postgres", "table")
         return (psycopg2.connect(connect), table)
 
-def display_results(results):
+def display_results(results, conn, table, emails):
         """Log the results of the tests.
 
         Given a list of booleans corresponding to whether a specific test
@@ -215,7 +224,109 @@ def display_results(results):
         failures = results.count(False)
         logger.info("{0} tests succeeded and {1} tests failed".format(successes,
                         failures))
+        if conn is not None:
+                email_results(conn, table, emails)
         return failures
+
+def email_results(conn, table, emails):
+        """Send a nicely formatted email about the results of the tests.
+
+        This email should get the results of this and previous tests from the
+        database, then format them so that changed results are easy to see, and
+        send the email to all people listed in emails.
+        """
+        logger = logging.getLogger(__name__)
+        hostname = socket.gethostname()
+        cur = conn.cursor()
+        cur.execute("SELECT date(time) FROM {0} \
+                        ORDER BY time DESC LIMIT 1".format(table))
+        today = cur.fetchone()[0]
+        dates = []
+        for i in range(8):
+                dates.append(today - datetime.timedelta(days=i))
+        cur.execute("SELECT testsuite FROM {0} \
+                        ORDER BY testsuite DESC LIMIT 1".format(table))
+        maxtestsuite = cur.fetchone()[0]
+        alldays = []
+        for date in dates:
+                thisday = [None]
+                for testsuite in range(1, maxtestsuite + 1):
+                        cur.execute("SELECT testcase FROM {0} \
+                                        WHERE testsuite={1} \
+                                        ORDER BY testcase DESC \
+                                        LIMIT 1".format(table, testsuite))
+                        maxtestcase = cur.fetchone()[0]
+                        suiteresults = [None for _ in range(maxtestcase + 1)]
+                        cur.execute("SELECT testcase, result FROM {0} \
+                                        WHERE date(time)=DATE '{1}' AND \
+                                        testsuite={2}".format(table,
+                                        date.strftime("%Y-%m-%d"), testsuite))
+                        data = cur.fetchall()
+                        for datum in data:
+                                suiteresults[datum[0]] = datum[1]
+                        thisday.append(suiteresults)
+                alldays.append(thisday)
+        message = "<html><head></head><body><samp>"
+        for testsuite in range(1, maxtestsuite + 1):
+                message += "<b>TESTSUITE {0}</b><br/>\n".format(testsuite)
+                message += "&nbsp;TESTCASE&nbsp;&nbsp;LATEST&nbsp;"
+                message += "&nbsp;&nbsp;".join([date.isoformat()[5:]
+                                for date in dates[1:]])
+                message += "<br/>\n"
+                message += "----------"
+                message += "&nbsp;------" * len(dates) + "<br/>\n"
+                for testcase in range(1, len(alldays[0][testsuite])):
+                        message += format_test_case(testsuite, testcase,
+                                        alldays)
+                message += "<br/>\n"
+        message += "</samp></body></html>"
+        message = MIMEText(message, "html")
+        sender = "autoregress@{0}".format(hostname)
+        message["Subject"] = "Autoregress Results {0}".format(today)
+        message["From"] = "autoregress.py <{0}>".format(sender)
+        message["To"] = ", ".join(emails)
+        conn.rollback()
+        cur.close()
+        mailer = smtplib.SMTP("localhost")
+        logger.debug("Sending email to {0}".format(emails))
+        mailer.sendmail(sender, emails, message.as_string())
+        mailer.quit()
+
+def format_test_case(suite, case, results):
+        """Return a formatted line describing the test case.
+
+        The code was getting a bit too cluttered in the email_results function,
+        and it looks much nicer in its own function.
+        """
+        days = len(results)
+        message = "testcase"
+        if case < 10 and case >= 0:
+                message += "0" + str(case)
+        elif len(str(case)) > 2:
+                message += str(case)[:2]
+        else:
+                message += str(case)
+        for day in range(days):
+                message += "&nbsp;&nbsp;"
+                prevrun = day + 1
+                while prevrun < days and results[prevrun][suite][case] == None:
+                        prevrun += 1
+                color = (day == 0 and prevrun != days and
+                                results[prevrun][suite][case] !=
+                                results[day][suite][case])
+                if results[day][suite][case] == True and color:
+                        message += "<b><span style='color:blue'>PASS</span></b>"
+                elif results[day][suite][case] == False and color:
+                        message += "<b><span style='color:red'>FAIL</span></b>"
+                elif results[day][suite][case] == True:
+                        message += "PASS"
+                elif results[day][suite][case] == False:
+                        message += "FAIL"
+                else:
+                        message += "&nbsp;" * 4
+                message += "&nbsp;"
+        message += "<br/>\n"
+        return message
 
 def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
                 logdir):
@@ -251,6 +362,8 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
                         logger.debug("moving {0} to {1}".format(
                                         full_path, new_path))
                         os.rename(full_path, new_path)
+        # This assumes that the directory we are in ends with
+        # autoregress_testsuite_[NUM]/testcase[NUM].
         testsuitelen = len("autoregress_testsuite_")
         testcaselen = len("testcase")
         suite = os.path.basename(os.path.dirname(workdir))[testsuitelen:]
@@ -260,8 +373,6 @@ def autoregress(workdir, tmpdir, clean, gen_refs, tools, db, tools_dir, table,
                         results = []
                 else:
                         results = [all(v != False for v in results)]
-                # This assumes that the directory we are in ends with
-                # autoregress_testsuite_[NUM]/testcase[NUM].
                 logger.debug("testsuite is {0} and testcase is {1}".format(
                                 suite, case))
         if db and not gen_refs and results != []:
