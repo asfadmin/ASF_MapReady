@@ -277,7 +277,7 @@ def email_results(conn, table, emails):
                 message += "&nbsp;------" * len(dates) + "<br/>\n"
                 for testcase in range(1, len(alldays[0][testsuite])):
                         message += format_test_case(testsuite, testcase,
-                                        len(dates), alldays)
+                                        alldays)
                 message += "<br/>\n"
         message += "</samp></body></html>"
         message = MIMEText(message, "html")
@@ -292,13 +292,13 @@ def email_results(conn, table, emails):
         mailer.sendmail(sender, emails, message.as_string())
         mailer.quit()
 
-def format_test_case(suite, case, days, results):
+def format_test_case(suite, case, results):
         """Return a formatted line describing the test case.
 
         The code was getting a bit too cluttered in the email_results function,
-        and it looks much nicer in its own function. The numdays variable should
-        be equal to the number of previous days that are in the results list.
+        and it looks much nicer in its own function.
         """
+        days = len(results)
         message = "testcase"
         if case < 10 and case >= 0:
                 message += "0" + str(case)
