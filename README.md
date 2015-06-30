@@ -40,7 +40,7 @@ different.  On other systems, the packages may have different names.
 	* gcc
 	* libgdal-dev
 	* libgtk2.0-dev
-  * libglade2-dev
+	* libglade2-dev
   
 #########################################################################  
 The following commands on the most recent Ubuntu should get you up
