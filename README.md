@@ -55,5 +55,5 @@ and running:
 Optional:
 * sudo make install
 
-As noted above, if you skip the last step, add the "<PATH>/ASF_MapReady/bin" to your
+As noted above, if you skip the last step, add "/path/to/ASF_MapReady/bin" to your
 PATH in ~/.bashrc.
