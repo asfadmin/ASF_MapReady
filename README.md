@@ -46,14 +46,14 @@ different.  On other systems, the packages may have different names.
 The following commands on the most recent Ubuntu should get you up
 and running:
 
-sudo apt-get install git bison flex g++ gcc libgdal-dev libgtk2.0-dev libglade2-dev
-git clone git@github.com:asfadmin/ASF_MapReady.git ASF_MapReady
-cd ASF_MapReady
-./configure
-make
+* sudo apt-get install git bison flex g++ gcc libgdal-dev libgtk2.0-dev libglade2-dev
+* git clone git@github.com:asfadmin/ASF_MapReady.git ASF_MapReady
+* cd ASF_MapReady
+* ./configure
+* make
 
 Optional:
-sudo make install
+* sudo make install
 
 As noted above, if you skip the last step, add the "<PATH>/ASF_MapReady/bin" to your
 PATH in ~/.bashrc.
