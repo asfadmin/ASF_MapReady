@@ -450,6 +450,26 @@ oldtools: mkdirs_for_build
 	cd make_support; $(MAKE); ./makemake @sys@; cd ..
 	$(MAKE) --makefile=Makefile.old
 
+# Get a nice version number for our package.
+DEBIAN_VERSION = $(VERSION_MAPREADY)
+ifeq ($(DEBIAN_VERSION),MAKE-DEV)
+	DEBIAN_VERSION = 0~$$(date +%Y%m%d)
+endif
+
+# Generate a debian package.
+deb: default
+	if [ -d asf-mapready ]; then \
+		rm -r asf-mapready; \
+	fi
+	mkdir -p asf-mapready/DEBIAN
+	$(MAKE) DESTDIR=asf-mapready install
+	sed "/Version:/s/$$/ $DEBIAN_VERSION/" <debian-control \
+			>asf-mapready/DEBIAN/control
+	dpkg-deb --build asf-mapready
+	@ echo ""
+	@ echo "  XXXXXXXXXXXX Debian Package Created! XXXXXXXXXXX"
+	@ echo ""
+
 # make everything!
 all: mapready oldtools req ap stp c2v jpl create_thumbs data_qc
 
