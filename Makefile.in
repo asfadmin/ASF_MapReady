@@ -465,7 +465,7 @@ deb: default
 	$(MAKE) DESTDIR=asf-mapready install
 	sed "/Version:/s/$$/ $DEBIAN_VERSION/" <debian-control \
 			>asf-mapready/DEBIAN/control
-	dpkg-deb --build asf-mapready
+	fakeroot dpkg-deb --build asf-mapready
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX Debian Package Created! XXXXXXXXXXX"
 	@ echo ""
