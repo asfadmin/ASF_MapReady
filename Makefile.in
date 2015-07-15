@@ -473,27 +473,34 @@ deb: default
 # make everything!
 all: mapready oldtools req ap stp c2v jpl create_thumbs data_qc
 
+ifneq ($(DESTDIR),"")
+	DESTDIR += "/"
+endif
+BINDIR = $(DESTDIR)@BINDIR@
+LIBDIR = $(DESTDIR)@prefix@/lib
+SHAREDIR = $(DESTDIR)@SHAREDIR@
+
 # This should install any & all package(s) that have been built
 install: 
-	mkdir -p "@BINDIR@" "@prefix@/lib" "@SHAREDIR@"
-	-cp -R $(S_BINDIR)/* "@BINDIR@"
-	-cp -R $(S_LIBDIR)/* "@prefix@"/lib
-	-cp -R $(S_SHAREDIR)/* "@SHAREDIR@"
-	chmod 755 "@BINDIR@"/*
-	if [ -d @SHAREDIR@/projections ]; then \
-		chmod a+x "@SHAREDIR@"/projections ; \
-		chmod a+x "@SHAREDIR@"/projections/* ; \
+	mkdir -p "$(BINDIR)" "$(LIBDIR)" "$(SHAREDIR)"
+	-cp -R $(S_BINDIR)/* "$(BINDIR)"
+	-cp -R $(S_LIBDIR)/* "$(LIBDIR)"
+	-cp -R $(S_SHAREDIR)/* "$(SHAREDIR)"
+	chmod 755 "$(BINDIR)"/*
+	if [ -d "$(SHAREDIR)/projections" ]; then \
+		chmod a+x "$(SHAREDIR)"/projections ; \
+		chmod a+x "$(SHAREDIR)"/projections/* ; \
 	fi
-	if [ -d @SHAREDIR@/asf_mapready ]; then \
-		chmod a+x "@SHAREDIR@"/asf_mapready ; \
+	if [ -d "$(SHAREDIR)/asf_mapready" ]; then \
+		chmod a+x "$(SHAREDIR)"/asf_mapready ; \
 	fi
-	if [ -d @SHAREDIR@/asf_mapready ]; then \
-		chmod a+x "@SHAREDIR@"/proj ; \
+	if [ -d "$(SHAREDIR)/proj" ]; then \
+		chmod a+x "$(SHAREDIR)"/proj ; \
 	fi
-	-cp -R $(S_DOCDIR)/*.pdf "@SHAREDIR@/doc"
-	-cp -R $(S_DOCDIR)/*.txt "@SHAREDIR@/doc"
-	chmod -R a+r "@SHAREDIR@"
-	chmod -R ug+w "@SHAREDIR@"
+	-cp -R $(S_DOCDIR)/*.pdf "$(SHAREDIR)/doc"
+	-cp -R $(S_DOCDIR)/*.txt "$(SHAREDIR)/doc"
+	chmod -R a+r "$(SHAREDIR)"
+	chmod -R ug+w "$(SHAREDIR)"
 
 # Prep the directory tree for the build
 mkdirs_for_build:
