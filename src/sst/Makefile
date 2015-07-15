@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for libasf_simulation
 
 include ../../make_support/system_rules
@@ -22,7 +25,7 @@ LIBS =  \
 	$(LIBDIR)/libasf_sgpsdp.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf_fft.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(SHAPELIB_LIBS) \

@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for deskew
 
 include ../../make_support/system_rules

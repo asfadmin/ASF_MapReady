@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for program image_stats
 # by Rudi Gens, ASF, 2004
 # Based on image_layers

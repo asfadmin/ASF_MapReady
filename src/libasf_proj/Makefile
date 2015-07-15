@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for libasf_proj library
 
 include ../../make_support/system_rules

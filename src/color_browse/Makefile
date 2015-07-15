@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for fill_holes
 
 TARGET = color_browse
@@ -13,7 +16,7 @@ LIBS = \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
   $(LIBDIR)/asf.a \
   $(GEOTIFF_LIBS) \

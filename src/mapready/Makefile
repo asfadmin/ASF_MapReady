@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 include ../../make_support/system_rules
 
 TARGET = mapready
@@ -118,7 +121,7 @@ LDLIBS = \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_vector.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/libasf_proj.a \

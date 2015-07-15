@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for asf_calibrate
 
 include ../../make_support/system_rules
@@ -6,6 +8,8 @@ CFLAGS += \
 	$(GSL_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
+	$(GEOTIFF_CFLAGS) \
+	$(HDF5_CFLAGS)
 
 LIBS =  \
 	$(LIBDIR)/libasf_sar.a \

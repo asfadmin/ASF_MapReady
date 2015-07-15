@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for: brs2jpg
 # Wrapper for converting ALOS Palsar browse image to JPEG format
 
@@ -18,7 +21,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(GEOTIFF_LIBS) \

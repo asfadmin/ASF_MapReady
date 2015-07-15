@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for meta2envi
 # Author Rudi Gens
 
@@ -31,5 +34,4 @@ envi2meta: $(OBJS_E2M)
 
 clean:
 	rm -f $(OBJS_M2E) $(OBJS_E2M)
-
 

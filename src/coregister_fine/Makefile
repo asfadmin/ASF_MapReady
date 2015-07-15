@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for fine_coregister
 # Module Authors: Rob Fatland, Mike Shindle, Tom Logan, Orion Lawlor,
 #                 Mark Ayers, Patrick Denny

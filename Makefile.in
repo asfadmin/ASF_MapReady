@@ -93,7 +93,6 @@ MAPREADY_SOURCE = \
 	doc/mapready-version_history.txt \
 	doc/arcgis_mask.pdf \
 	doc/dem_manual.pdf \
-	external \
 	COPYING \
 	make_support \
 	configure \
@@ -285,9 +284,8 @@ VERSION_FARADAY = $(shell awk -F '"' '$$1 ~ /define FARADAY_STRING/ {print $$2}'
 default: mapready
 
 # MapReady Package
-mapready: mkdirs_for_build external_libs
+mapready: mkdirs_for_build
 	mkdir -p $(MAPREADY_SHAREDIR)
-	-cp -R external/share/* $(MAPREADY_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_MAPREADY > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(MAPREADY_SHAREDIR) >> make_support/build_pkg.mk
@@ -303,9 +301,8 @@ mapready: mkdirs_for_build external_libs
 	@ echo ""
 
 # MapReady Package for SEASAT processor
-asps: mkdirs_for_build external_libs
+asps: mkdirs_for_build
 	mkdir -p $(MAPREADY_SHAREDIR)
-	-cp -R external/share/* $(MAPREADY_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_ASPS > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(MAPREADY_SHAREDIR) >> make_support/build_pkg.mk
@@ -328,9 +325,8 @@ mapready_source:
 	rm -fr asf_tools
 
 # SAR Training Processor Package
-stp: mkdirs_for_build external_libs
+stp: mkdirs_for_build
 	mkdir -p $(STP_SHAREDIR)
-	-cp -R external/share/* $(STP_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_STP > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(STP_SHAREDIR) >> make_support/build_pkg.mk
@@ -344,9 +340,8 @@ stp: mkdirs_for_build external_libs
 	@ echo ""
 
 # Acquisition Request Planner Package
-ap: mkdirs_for_build external_libs
+ap: mkdirs_for_build
 	mkdir -p $(AP_SHAREDIR)
-	-cp -R external/share/* $(AP_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_AP > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(AP_SHAREDIR) >> make_support/build_pkg.mk
@@ -358,9 +353,8 @@ ap: mkdirs_for_build external_libs
 	@ echo ""
 
 # Request Generator Package
-req: mkdirs_for_build external_libs
+req: mkdirs_for_build
 	mkdir -p $(REQ_SHAREDIR)
-	-cp -R external/share/* $(REQ_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_REQ > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(REQ_SHAREDIR) >> make_support/build_pkg.mk
@@ -372,9 +366,8 @@ req: mkdirs_for_build external_libs
 	@ echo ""
 
 # Convert To Vector Package
-c2v: mkdirs_for_build external_libs
+c2v: mkdirs_for_build
 	mkdir -p $(C2V_SHAREDIR)
-	-cp -R external/share/* $(C2V_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_C2V > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(C2V_SHAREDIR) >> make_support/build_pkg.mk
@@ -388,9 +381,8 @@ c2v: mkdirs_for_build external_libs
 	@ echo ""
 
 # JPL Mosaic Suite
-jpl: mkdirs_for_build external_libs
+jpl: mkdirs_for_build
 	mkdir -p $(JPL_SHAREDIR)
-	-cp -R external/share/* $(JPL_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_JPL> make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(JPL_SHAREDIR) >> make_support/build_pkg.mk
@@ -402,9 +394,8 @@ jpl: mkdirs_for_build external_libs
 	@ echo ""
 
 # Create thumbs
-create_thumbs: mkdirs_for_build external_libs
+create_thumbs: mkdirs_for_build
 	mkdir -p $(CREATE_THUMBS_SHAREDIR)
-	-cp -R external/share/* $(CREATE_THUMBS_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_CREATE_THUMBS > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(CREATE_THUMBS_SHAREDIR) >> make_support/build_pkg.mk
@@ -417,9 +408,8 @@ create_thumbs: mkdirs_for_build external_libs
 	@ echo ""
 
 # Data QC
-data_qc: mkdirs_for_build external_libs
+data_qc: mkdirs_for_build
 	mkdir -p $(DATA_QC_SHAREDIR)
-	-cp -R external/share/* $(DATA_QC_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_DATA_QC > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(DATA_QC_SHAREDIR) >> make_support/build_pkg.mk
@@ -431,9 +421,8 @@ data_qc: mkdirs_for_build external_libs
 	@ echo ""
 
 # Faraday prediction
-faraday: mkdirs_for_build external_libs
+faraday: mkdirs_for_build
 	mkdir -p $(FARADAY_SHAREDIR)
-	-cp -R external/share/* $(FARADAY_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_FARADAY > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(FARADAY_SHAREDIR) >> make_support/build_pkg.mk
@@ -474,14 +463,6 @@ install:
 	-cp -R $(S_DOCDIR)/*.txt "@SHAREDIR@/doc"
 	chmod -R a+r "@SHAREDIR@"
 	chmod -R ug+w "@SHAREDIR@"
-
-# Libraries written by non-ASF parties
-external_libs: mkdirs_for_build
-	$(MAKE) -C external
-	-cp -R external/lib/* $(S_LIBDIR)
-	-chmod -R ug+w $(S_LIBDIR)
-	-cp -R external/include/* include
-	-chmod -R ug+w include
 
 # Prep the directory tree for the build
 mkdirs_for_build:

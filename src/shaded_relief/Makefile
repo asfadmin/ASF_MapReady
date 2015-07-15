@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for          :  shaded_relief
 # Module Author         :  Rudi Gens
 
@@ -28,6 +30,4 @@ shaded_relief: $(OBJS)
 
 clean:
 	-rm -f core *.o
-
-
 

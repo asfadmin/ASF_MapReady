@@ -1,8 +1,12 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for          :  accum_offset
 # Module Author         :  Mike Shindle
 # Module Version        :  2.0
 
 include ../../make_support/system_rules
+
+CFLAGS += $(HDF5_CFLAGS)
 
 LIBS  = \
 	$(LIBDIR)/asf_meta.a \
@@ -13,7 +17,6 @@ LIBS  = \
 	$(XML_LIBS) \
 	-lm
 OBJS  = accum_offset.o      
-
 
 accum_offset: $(OBJS) $(OLIBS)
 	$(CC) $(CFLAGS)  -o accum_offset $(OBJS) $(LIBS) $(LDFLAGS)

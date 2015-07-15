@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for          :  sr2gr
 # Module Author         :  Tom Logan 
 # Module Version        :  2.0

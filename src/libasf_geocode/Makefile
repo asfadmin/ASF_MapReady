@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 
 include ../../make_support/system_rules
 
@@ -37,7 +39,7 @@ INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR)
 
 CPPFLAGS := $(INCLUDE_FLAGS)
 
-CFLAGS += $(GSL_CFLAGS) $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
+CFLAGS += $(GSL_CFLAGS) $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) $(GEOTIFF_CFLAGS) $(HDF5_CFLAGS)
 
 # I'd like to use -Wconversion as advised by the GSL, but it seems to
 # make it impossible to pass arguments of type float to functions that

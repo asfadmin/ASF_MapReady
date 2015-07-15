@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # asf_import
 
 include ../../make_support/system_rules
@@ -26,7 +28,8 @@ CFLAGS += $(W_ERROR) \
 	$(XML_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(GSL_CFLAGS)
+	$(GSL_CFLAGS) \
+	$(HDF5_CFLAGS)
 
 # These defines enable various debugging behavior and output.  Leaving
 # debugging code in and available is all the rage these days, and is
