@@ -93,7 +93,6 @@ MAPREADY_SOURCE = \
 	doc/mapready-version_history.txt \
 	doc/arcgis_mask.pdf \
 	doc/dem_manual.pdf \
-	external \
 	COPYING \
 	make_support \
 	configure \
@@ -287,7 +286,6 @@ default: mapready
 # MapReady Package
 mapready: mkdirs_for_build
 	mkdir -p $(MAPREADY_SHAREDIR)
-	-cp -R external/share/* $(MAPREADY_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_MAPREADY > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(MAPREADY_SHAREDIR) >> make_support/build_pkg.mk
@@ -305,7 +303,6 @@ mapready: mkdirs_for_build
 # MapReady Package for SEASAT processor
 asps: mkdirs_for_build
 	mkdir -p $(MAPREADY_SHAREDIR)
-	-cp -R external/share/* $(MAPREADY_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_ASPS > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(MAPREADY_SHAREDIR) >> make_support/build_pkg.mk
@@ -330,7 +327,6 @@ mapready_source:
 # SAR Training Processor Package
 stp: mkdirs_for_build
 	mkdir -p $(STP_SHAREDIR)
-	-cp -R external/share/* $(STP_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_STP > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(STP_SHAREDIR) >> make_support/build_pkg.mk
@@ -346,7 +342,6 @@ stp: mkdirs_for_build
 # Acquisition Request Planner Package
 ap: mkdirs_for_build
 	mkdir -p $(AP_SHAREDIR)
-	-cp -R external/share/* $(AP_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_AP > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(AP_SHAREDIR) >> make_support/build_pkg.mk
@@ -360,7 +355,6 @@ ap: mkdirs_for_build
 # Request Generator Package
 req: mkdirs_for_build
 	mkdir -p $(REQ_SHAREDIR)
-	-cp -R external/share/* $(REQ_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_REQ > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(REQ_SHAREDIR) >> make_support/build_pkg.mk
@@ -374,7 +368,6 @@ req: mkdirs_for_build
 # Convert To Vector Package
 c2v: mkdirs_for_build
 	mkdir -p $(C2V_SHAREDIR)
-	-cp -R external/share/* $(C2V_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_C2V > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(C2V_SHAREDIR) >> make_support/build_pkg.mk
@@ -390,7 +383,6 @@ c2v: mkdirs_for_build
 # JPL Mosaic Suite
 jpl: mkdirs_for_build
 	mkdir -p $(JPL_SHAREDIR)
-	-cp -R external/share/* $(JPL_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_JPL> make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(JPL_SHAREDIR) >> make_support/build_pkg.mk
@@ -404,7 +396,6 @@ jpl: mkdirs_for_build
 # Create thumbs
 create_thumbs: mkdirs_for_build
 	mkdir -p $(CREATE_THUMBS_SHAREDIR)
-	-cp -R external/share/* $(CREATE_THUMBS_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_CREATE_THUMBS > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(CREATE_THUMBS_SHAREDIR) >> make_support/build_pkg.mk
@@ -419,7 +410,6 @@ create_thumbs: mkdirs_for_build
 # Data QC
 data_qc: mkdirs_for_build
 	mkdir -p $(DATA_QC_SHAREDIR)
-	-cp -R external/share/* $(DATA_QC_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_DATA_QC > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(DATA_QC_SHAREDIR) >> make_support/build_pkg.mk
@@ -433,7 +423,6 @@ data_qc: mkdirs_for_build
 # Faraday prediction
 faraday: mkdirs_for_build
 	mkdir -p $(FARADAY_SHAREDIR)
-	-cp -R external/share/* $(FARADAY_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_FARADAY > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(FARADAY_SHAREDIR) >> make_support/build_pkg.mk
