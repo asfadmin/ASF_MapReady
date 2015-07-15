@@ -44,6 +44,14 @@ different.  On other systems, the packages may have different names.
 	* libgdal-dev
 	* libgtk2.0-dev
         * libglade2-dev
+	* libtiff5-dev
+	* libgeotiff-dev
+	* libcunit1-dev
+	* libproj-dev
+	* libhdf5-dev
+	* libgsl0-dev
+	* libshp-dev
+	* libfftw3-dev
 
 #########################################################################
 INTRODUCTION:

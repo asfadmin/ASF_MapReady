@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for meta2xml
 # Author Rudi Gens
 
@@ -26,5 +29,4 @@ meta2xml: $(OBJS_M2X)
 
 clean:
 	rm -f $(OBJS_M2X)
-
 

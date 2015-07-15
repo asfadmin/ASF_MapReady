@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 include ../../make_support/system_rules
 
 TARGET = ait
@@ -33,8 +35,8 @@ CFLAGS += \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
 	$(PROJ_CFLAGS) \
-	$(GLIB_CFLAGS)
-
+	$(GLIB_CFLAGS) \
+	$(HDF5_CFLAGS)
 
 # different procedures for win/unix
 ifeq ($(SYS),win32)
@@ -133,5 +135,4 @@ clean:
 endif
 
 %.c: %.h
-
 

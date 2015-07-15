@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for multimatch2vector
 
 include ../../make_support/system_rules
@@ -7,7 +10,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_export.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_vector.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \

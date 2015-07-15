@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for program multilook
 # Module Author Mike Shindle,  6/1997
 #               Patrick Denny, 2/2004

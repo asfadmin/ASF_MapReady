@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for libasf_vector library
 
 include ../../make_support/system_rules
@@ -11,6 +13,7 @@ CFLAGS += $(W_ERROR) \
 	$(GLIB_CFLAGS) \
 	-D_REENTRANT \
 	$(GSL_CFLAGS) \
+	$(HDF5_CFLAGS) \
 	$(CFLAGS)
 
 OBJS = \
@@ -25,7 +28,7 @@ LIBS = \
 	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_import.a \
@@ -53,7 +56,6 @@ build_only: $(OBJS)
 	rm -f libasf_vector.a
 	ar r libasf_vector.a $(OBJS)
 	$(RANLIB) libasf_vector.a
-
 
 # Rebuild everything if makefile or any local of ASF header or library
 # has changed.

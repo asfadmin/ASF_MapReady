@@ -22,7 +22,6 @@ idtable: $(TOBJS) $(LIBS)
 	mv idtable$(BIN_POSTFIX) $(BINDIR)
 	cp idtable.1 ../../man/cat1/idtable.1
 
-
 idimage: $(IOBJS) $(LIBS)
 	$(CC) $(CFLAGS) -o idimage $(IOBJS) $(LIBS) $(LDFLAGS) -lm
 	rm *.o
