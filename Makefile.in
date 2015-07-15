@@ -463,9 +463,23 @@ deb: default
 	fi
 	mkdir -p asf-mapready/DEBIAN
 	$(MAKE) DESTDIR=asf-mapready install
-	sed "/Version:/s/$$/ $DEBIAN_VERSION/" <debian-control \
+	sed "/Version:/s/$$/ $(DEBIAN_VERSION)/" <debian-control \
 			>asf-mapready/DEBIAN/control
 	fakeroot dpkg-deb --build asf-mapready
+ifneq (@prefix@,/usr)
+	@ echo ""
+	@ echo -n "          "
+	@ echo "============================================================"
+	@ echo -n "          "
+	@ echo "Be advised that debian packages should always reside in"
+	@ echo -n "          "
+	@ echo "/usr/bin, so it is recommended to run ./configure"
+	@ echo -n "          "
+	@ echo "--prefix=/usr before again running make deb."
+	@ echo -n "          "
+	@ echo "============================================================"
+	@ echo ""
+endif
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX Debian Package Created! XXXXXXXXXXX"
 	@ echo ""
