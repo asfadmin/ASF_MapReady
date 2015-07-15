@@ -534,6 +534,8 @@ clean:
 	rm -f Makefile.old
 	-rm mapready*.tar.gz
 	-rm -rf $(IGNORED_INCLUDES)
+	-rm -rf asf-mapready
+	-rm asf-mapready.deb
 	$(foreach MODULE, $(ALL_MODULES), \
 		$(MAKE) clean -C $(MODULE) &&) true
 
