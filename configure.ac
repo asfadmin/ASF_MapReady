@@ -93,8 +93,6 @@ AC_CHECK_LIB(c,fopen)
 AC_CHECK_LIB(m,main)
 AC_CHECK_HEADERS(unistd.h)
 
-ext_lib_src_dir=${asfDir}/external/work_dir
-
 #### GSL check ####
 AC_CHECK_LIB(gslcblas,main)
 AC_CHECK_HEADER(gsl/gsl_errno.h,
@@ -375,8 +373,8 @@ fi
 AC_SUBST(ASF_GUI)
 
 if test "$winsys" = "mingw" ; then
-  JPEG_LIBS="-L../../external/gtkwin32/lib -ljpeg"
-  ZLIB_LIBS="../../lib/libz.a"
+  JPEG_LIBS="-ljpeg"
+  ZLIB_LIBS="-lz"
 else
   ZLIB_LIBS=-lz
 fi
@@ -460,8 +458,6 @@ LIBDIR  = ../../lib
 BINDIR  = ../../bin
 DOCDIR = ../../share/asf_tools/doc
 
-GTKWIN32_DIR = ../../external/gtkwin32
-GTKWIN32_ZIP = ../../external/gtkwin32zip
 EOF
 
 
@@ -570,17 +566,6 @@ AC_OUTPUT([
 Makefile
 include/config.h
 ])
-
-if test -d external ; then
-	AC_OUTPUT([
-		external/Makefile
-		external/work_dir/libgeotiff/Makefile
-	])
-else
-	echo "WARNING: asf_tools/external directory was not found!"
-	echo "         Be aware that the build may not complete without"
-	echo "         this resource."
-fi
 
 echo "########### Automatic configuration complete ###########"
 directory=${asfDir}/bin/
