@@ -10,25 +10,25 @@ AC_LANG(C)
 echo "Configuring ASF Tools"
 
 build_gui="yes"
-have_gsl="no"
+have_gsl="yes"
 have_pkg_config="yes"
-have_glib="no"
-have_proj="no"
-have_jpeg="no"
-have_tiff="no"
-have_geotiff="no"
-have_shp="no"
+have_glib="yes"
+have_proj="yes"
+have_jpeg="yes"
+have_tiff="yes"
+have_geotiff="yes"
+have_shp="yes"
 try_gtk="yes"
-have_gtk="no"
-have_fftw="no"
-have_png="no"
-have_exif="no"
-have_xml2="no"
+have_gtk="yes"
+have_fftw="yes"
+have_png="yes"
+have_exif="yes"
+have_xml2="yes"
 have_gdal="yes"
-have_hdfeos5="no"
-have_hdf5="no"
-have_netcdf="no"
-have_cunit="no"
+have_hdfeos5="yes"
+have_hdf5="yes"
+have_netcdf="yes"
+have_cunit="yes"
 w_error=""
 
 if test "${config_flags#*no-werror}" != "${config_flags}" ; then
@@ -108,10 +108,7 @@ fi
 AC_SUBST(ASF_LIB_GSL)
 
 #### libproj check ####
-##### --> always use our own libproj because we have the NAD27
-#####     grid shift files, a user's install probably does not
 #AC_CHECK_LIB(proj,pj_transform,have_proj="yes",have_proj="no")
-have_proj="no"
 if test "$have_proj" = "no" ; then
    ASF_LIB_PROJ="${ext_lib_src_dir}/libproj"
    PROJ_LIBS="\$(LIBDIR)/libproj.a"
@@ -211,12 +208,11 @@ if test "$have_geotiff" = "no" ; then
    GEOTIFF_LIBS="\$(LIBDIR)/libgeotiff.a"
 else
    GEOTIFF_LIBS="-lgeotiff"
+   GEOTIFF_CFLAGS="-I/usr/include/geotiff"
 fi
 AC_SUBST(ASF_LIB_GEOTIFF)
 
 #### libshp check ####
-##### --> always use our own shapelib because different versions
-#####     the user may have installed are not necessarily compatible
 #AC_CHECK_LIB(shp,main,have_shp="yes",have_shp="no")
 if test "$have_shp" = "no" ; then
    ASF_LIB_SHAPELIB="${ext_lib_src_dir}/shapelib"
@@ -277,8 +273,6 @@ fi
 AC_SUBST(ASF_LIB_XML2)
 
 #### libgdal check ####
-##### --> always use our own libgdal version
-#####     not point in trying to sort out external dependencies
 if test "$have_gdal" = "no" ; then
    ASF_LIB_GDAL="${ext_lib_src_dir}/libgdal"
    GDAL_LIBS="\$(LIBDIR)/libgdal.a"
@@ -289,9 +283,6 @@ fi
 AC_SUBST(ASF_LIB_GDAL)
 
 #### libcurl check ####
-##### --> always use our own libcurl version
-#####     no point in trying to sort out external dependencies
-have_curl="no"
 if test "$have_curl" = "no" ; then
    ASF_LIB_CURL="${ext_lib_src_dir}/libcurl"
    CURL_LIBS="\$(LIBDIR)/libcurl.a"
@@ -301,21 +292,16 @@ fi
 AC_SUBST(ASF_LIB_CURL)
 
 #### libhdf5 check ####
-##### --> always use our own libhdf5 version
-#####     no point in trying to sort out external dependencies
-have_hdf5="no"
 if test "$have_hdf5" = "no" ; then
    ASF_LIB_HDF5="${ext_lib_src_dir}/libhdf5"
    HDF5_LIBS="\$(LIBDIR)/libhdf5_hl.a \$(LIBDIR)/libhdf5.a"
 else
-   HDF5_LIBS="-lhdf5_hl -lhdf5"
+   HDF5_LIBS="-lhdf5_serial_hl -lhdf5_serial"
+   HDF5_CFLAGS="-I/usr/include/hdf5/serial"
 fi
 AC_SUBST(ASF_LIB_HDF5)
 
 #### libhdfeos check ####
-##### --> always use our own libhdfeos version
-#####     no point in trying to sort out external dependencies
-have_hdfeos5="no"
 if test "$have_hdfeos5" = "no" ; then
    ASF_LIB_HDFEOS5="${ext_lib_src_dir}/libhdfeos5"
    HDFEOS5_LIBS="\$(LIBDIR)/libhe5_hdfeos.a \$(LIBDIR)/libGctp.a"
@@ -325,9 +311,6 @@ fi
 AC_SUBST(ASF_LIB_HDFEOS5)
 
 #### libnetcdf check ####
-##### --> always use our own libnetcdf version
-#####     no point in trying to sort out external dependencies
-have_netcdf="no"
 if test "$have_netcdf" = "no" ; then
    ASF_LIB_NETCDF="${ext_lib_src_dir}/libnetcdf"
    NETCDF_LIBS="\$(LIBDIR)/libnetcdf.a"
@@ -337,14 +320,12 @@ fi
 AC_SUBST(ASF_LIB_NETCDF)
 
 #### libcunit check ####
-##### --> always use our own libcunit version
-#####     no point in trying to sort out external dependencies
-have_cunit="no"
 if test "$have_cunit" = "no" ; then
    ASF_LIB_CUNIT="${ext_lib_src_dir}/libcunit"
    CUNIT_LIBS="\$(LIBDIR)/libcunit.a"
 else
    CUNIT_LIBS="-lcunit"
+   CUNIT_CFLAGS="-I/usr/include/CUnit"
 fi
 AC_SUBST(ASF_LIB_CUNIT)
 
@@ -534,6 +515,9 @@ HDFEOS5_CFLAGS = $HDFEOS5_CFLAGS
 
 NETCDF_LIBS = $NETCDF_LIBS
 NETCDF_CFLAGS = $NETCDF_CFLAGS
+
+CUNIT_LIBS = $CUNIT_LIBS
+CUNIT_CFLAGS = $CUNIT_CFLAGS
 
 GDAL_LIBS = $GDAL_LIBS
 GDAL_CFLAGS = $GDAL_CFLAGS

@@ -1,3 +1,4 @@
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for: asf.a, our standard included library.
 # Contains:
 # caplib, our error-protected standard library routines.
@@ -33,6 +34,8 @@ OBJS  = asf_tiff.o \
 	socket.o \
 	httpUtil.o
 
+CFLAGS += $(GEOTIFF_CFLAGS)
+
 CFLAGS += $(W_ERROR) $(shell \
 	if [ "$(SYS)x" != "solarisx" ]; \
 	then echo "-D_XOPEN_SOURCE=600"; \
@@ -53,8 +56,7 @@ build_only: $(OBJS)
 
 # Rebuild everything if makefile or any local of ASF header or library
 # has changed.
-$(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h) \
-	 $(addprefix $(LIBDIR)/, $(LIBS))
+$(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h)
 
 check: unit_tests.c build_only
 	$(CC) $(CFLAGS) $< asf.a -lcheck -lm $(LDFLAGS) -o asf_tester
@@ -67,5 +69,5 @@ distclean:
 	rm -f core *~ TAGS gdb_init.com
 
 test: *.t.c
-	$(CC) $(CFLAGS) *.t.c $(LIBDIR)/libcunit.a asf.a -lm -o test
+	$(CC) $(CFLAGS) *.t.c asf.a -lm -o test $(CUNIT_LIBS)
 	./test

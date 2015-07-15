@@ -1,8 +1,10 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 include ../../make_support/system_rules
 
 TARGET = add_aux_band
 
-CFLAGS += $(GLIBS_CFLAGS)
+CFLAGS += $(GLIBS_CFLAGS) $(HDF5_CFLAGS)
 
 LIBS  = \
 	$(LIBDIR)/libasf_raster.a \

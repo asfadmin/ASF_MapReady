@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 include ../../make_support/system_rules
 
 TARGET = refine_geolocation
@@ -15,7 +18,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_ardop.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sar.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_proj.a \

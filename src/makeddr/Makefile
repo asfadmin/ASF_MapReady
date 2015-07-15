@@ -16,4 +16,3 @@ makeddr: makeddr.c
 	mv makeddr$(BIN_POSTFIX) $(BINDIR)
 	cp makeddr.1 ../../man/cat1
 
-

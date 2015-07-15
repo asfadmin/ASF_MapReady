@@ -1,7 +1,9 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for offset_test
 # Module Author: Rudi Gens (sliced and diced from coregister_fine, 
 #	                    coregister_coarse and fftMatch)
-
 
 include ../../make_support/system_rules
 
@@ -12,7 +14,7 @@ LIBS  = \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(LIBDIR)/libasf_vector.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LIBDIR)/libifm.a \
 	$(LIBDIR)/asf_fft.a \
 	$(XML_LIBS) \

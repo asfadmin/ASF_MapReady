@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for:   leader2pdf
 # Module Author:  Rudi Gens
 
@@ -10,7 +13,6 @@ LIBS  = \
 	-lm
 
 CFLAGS += $(GSL_CFLAGS)
-
 
 OBJS  = prn_facdr.o \
 	prn_raddr.o \

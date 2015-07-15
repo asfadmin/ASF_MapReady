@@ -22,7 +22,3 @@ fit_quadratic: $(OBJS)
 clean:
 	-rm -f core *.o
 
-
-
-
-

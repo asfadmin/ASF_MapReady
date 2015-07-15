@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for corner_coords
 # Author Rudi Gens
 
@@ -46,5 +49,4 @@ proj2proj: $(OBJS4)
 
 clean:
 	rm -f $(OBJS) $(OBJS2) $(OBJS3) $(OBJS4) core *~
-
 

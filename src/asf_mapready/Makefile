@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for asf_mapready - now just a wrapper to call library
 # function in libasf_convert
 
@@ -15,7 +18,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_vector.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_proj.a \

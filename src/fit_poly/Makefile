@@ -19,7 +19,3 @@ fit_poly: $(OBJS) $(LIBDIR)/asf.a
 clean:
 	-rm -f core *.o
 
-
-
-
-

@@ -1,7 +1,8 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 PROGRAM := asf_export
 
 include ../../make_support/system_rules
-
 
 ###############################################################################
 #
@@ -34,8 +35,8 @@ CFLAGS += $(W_ERROR) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GSL_CFLAGS) \
-	$(XML_CFLAGS)
-
+	$(XML_CFLAGS) \
+	$(HDF5_CFLAGS)
 
 LIBS  = \
 	$(LIBDIR)/libasf_export.a \
@@ -43,7 +44,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(GEOTIFF_LIBS) \
