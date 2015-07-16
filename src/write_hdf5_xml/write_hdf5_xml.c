@@ -2496,7 +2496,7 @@ int main(int argc, char **argv)
           dem_meta->general->line_count * dem_meta->general->sample_count;
         float *data = (float *) MALLOC(sizeof(float)*pixel_count);
         FILE *fpDEM = FOPEN(params->dem_file, "rb");
-        FREAD(data, sizeof(float), pixel_count, fpDEM);
+        ASF_FREAD(data, sizeof(float), pixel_count, fpDEM);
         FCLOSE(fpDEM);
         long long ii;
         for (ii=0; ii<pixel_count; ii++)

@@ -1,8 +1,6 @@
 #include "asf.h"
 #include <errno.h>
 
-char * strdup(const char *);
-
 /* static var for holding the temporary directory        */
 /* use the get/set methods instead of accessing directly */
 static char * s_tmp_dir = 0;
@@ -11,7 +9,7 @@ static char * s_tmp_dir = 0;
 void
 set_asf_tmp_dir(const char *tmp_dir)
 {
-    s_tmp_dir = strdup(tmp_dir);
+    s_tmp_dir = STRDUP(tmp_dir);
 
     /* remove trailing path separator, if one is present */
     if (s_tmp_dir[strlen(s_tmp_dir) - 1] == DIR_SEPARATOR) {
@@ -28,7 +26,7 @@ get_asf_tmp_dir()
   if (!s_tmp_dir) {
 
     // default to current directory
-    s_tmp_dir = strdup(".");
+    s_tmp_dir = STRDUP(".");
 
   }
 

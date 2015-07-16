@@ -11,7 +11,6 @@ localenv.AppendUnique(CPPPATH = [
         ])
 
 localenv.ParseConfig("pkg-config --cflags --libs gsl")
-localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
 
 localenv.AppendUnique(LIBS = ["asf",
                          "asf_meta",

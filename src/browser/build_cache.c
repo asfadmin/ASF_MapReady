@@ -628,7 +628,7 @@ int generate_ceos_thumbnail(const char *input_data, int size)
         FSEEK64(fpIn, offset, SEEK_SET);
         if (imd->general->data_type == INTEGER16)
         {
-            FREAD(line, sizeof(unsigned short), imd->general->sample_count,
+            ASF_FREAD(line, sizeof(unsigned short), imd->general->sample_count,
                   fpIn);
 
             for (jj = 0; jj < imd->general->sample_count; ++jj)
@@ -636,7 +636,7 @@ int generate_ceos_thumbnail(const char *input_data, int size)
         }
         else if (imd->general->data_type == ASF_BYTE)
         {
-            FREAD(bytes, sizeof(unsigned char), imd->general->sample_count,
+            ASF_FREAD(bytes, sizeof(unsigned char), imd->general->sample_count,
                   fpIn);
 
             for (jj = 0; jj < imd->general->sample_count; ++jj)

@@ -42,7 +42,7 @@ void readAirSARLine(FILE *fp,int *dest,int hb,int lb,int y,meta_parameters *meta
     }
 
     FSEEK(fp, headerBytes+y*lineBytes, 0);
-    FREAD(buf, 1, linelen, fp);
+    ASF_FREAD(buf, 1, linelen, fp);
     if (meta->general->data_type == ASF_BYTE)
 	for( i = 0; i < ns; i++ )
 		dest[i]=buf[i];
@@ -75,7 +75,7 @@ char* get_airsar(char* fname, char* Header, char* Record)
 	if(strncmp(Header,"FIRST",5)==0) HDR=1;
 
         while(!feof(fp) && !REC){
-	  FREAD(airsar_rec, 1, 50, fp);
+	  ASF_FREAD(airsar_rec, 1, 50, fp);
 	  if(airsar_rec[0]==0){ 
 		while(( c = getc(fp) ) == 0){};
 	  	ungetc(c,fp);
