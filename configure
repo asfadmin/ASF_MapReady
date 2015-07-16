@@ -3857,6 +3857,8 @@ $as_echo "no" >&6; }
 	fi
 fi
 
+
+
 #### GSL check ####
 
 pkg_failed=no
@@ -4867,14 +4869,26 @@ else
   as_fn_error $? "library geotiff was not found" "$LINENO" 5
 fi
 
-		 ac_fn_c_check_header_mongrel "$LINENO" "/usr/include/geotiff/xtiffio.h" "ac_cv_header__usr_include_geotiff_xtiffio_h" "$ac_includes_default"
-if test "x$ac_cv_header__usr_include_geotiff_xtiffio_h" = xyes; then :
-  GEOTIFF_CFLAGS=-I/usr/include/geotiff
+		 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xtiffio.h in /usr/include" >&5
+$as_echo_n "checking for xtiffio.h in /usr/include... " >&6; }
+	 header=$(find /usr/include -name xtiffio.h|head -1)
+	 if test -n $header; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $header" >&5
+$as_echo "$header" >&6; }
+	       as_ac_Header=`$as_echo "ac_cv_header_$header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  GEOTIFF_CFLAGS=-I$(dirname $header)
 else
-  as_fn_error $? "geotiff headers were not found" "$LINENO" 5
+  as_fn_error $? "GEOTIFF headers were not found" "$LINENO" 5
 fi
 
 
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	       as_fn_error $? "GEOTIFF headers were not found" "$LINENO" 5
+fi
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -4914,14 +4928,26 @@ else
   as_fn_error $? "library geotiff was not found" "$LINENO" 5
 fi
 
-		 ac_fn_c_check_header_mongrel "$LINENO" "/usr/include/geotiff/xtiffio.h" "ac_cv_header__usr_include_geotiff_xtiffio_h" "$ac_includes_default"
-if test "x$ac_cv_header__usr_include_geotiff_xtiffio_h" = xyes; then :
-  GEOTIFF_CFLAGS=-I/usr/include/geotiff
+		 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xtiffio.h in /usr/include" >&5
+$as_echo_n "checking for xtiffio.h in /usr/include... " >&6; }
+	 header=$(find /usr/include -name xtiffio.h|head -1)
+	 if test -n $header; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $header" >&5
+$as_echo "$header" >&6; }
+	       as_ac_Header=`$as_echo "ac_cv_header_$header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  GEOTIFF_CFLAGS=-I$(dirname $header)
 else
-  as_fn_error $? "geotiff headers were not found" "$LINENO" 5
+  as_fn_error $? "GEOTIFF headers were not found" "$LINENO" 5
 fi
 
 
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	       as_fn_error $? "GEOTIFF headers were not found" "$LINENO" 5
+fi
 else
 	GEOTIFF_CFLAGS=$pkg_cv_GEOTIFF_CFLAGS
 	GEOTIFF_LIBS=$pkg_cv_GEOTIFF_LIBS
@@ -5538,14 +5564,26 @@ else
   as_fn_error $? "library xml2 was not found" "$LINENO" 5
 fi
 
-		  ac_fn_c_check_header_mongrel "$LINENO" "/usr/include/libxml2/libxml/xmlIO.h" "ac_cv_header__usr_include_libxml2_libxml_xmlIO_h" "$ac_includes_default"
-if test "x$ac_cv_header__usr_include_libxml2_libxml_xmlIO_h" = xyes; then :
-  XML2_CFLAGS=-I/usr/include/libxml2
+		  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xmlIO.h in /usr/include" >&5
+$as_echo_n "checking for xmlIO.h in /usr/include... " >&6; }
+	 header=$(find /usr/include -name xmlIO.h|head -1)
+	 if test -n $header; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $header" >&5
+$as_echo "$header" >&6; }
+	       as_ac_Header=`$as_echo "ac_cv_header_$header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  XML2_CFLAGS=-I$(dirname $header)
 else
-  as_fn_error $? "xml2 headers were not found" "$LINENO" 5
+  as_fn_error $? "XML2 headers were not found" "$LINENO" 5
 fi
 
 
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	       as_fn_error $? "XML2 headers were not found" "$LINENO" 5
+fi
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5591,14 +5629,26 @@ else
   as_fn_error $? "library xml2 was not found" "$LINENO" 5
 fi
 
-		  ac_fn_c_check_header_mongrel "$LINENO" "/usr/include/libxml2/libxml/xmlIO.h" "ac_cv_header__usr_include_libxml2_libxml_xmlIO_h" "$ac_includes_default"
-if test "x$ac_cv_header__usr_include_libxml2_libxml_xmlIO_h" = xyes; then :
-  XML2_CFLAGS=-I/usr/include/libxml2
+		  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xmlIO.h in /usr/include" >&5
+$as_echo_n "checking for xmlIO.h in /usr/include... " >&6; }
+	 header=$(find /usr/include -name xmlIO.h|head -1)
+	 if test -n $header; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $header" >&5
+$as_echo "$header" >&6; }
+	       as_ac_Header=`$as_echo "ac_cv_header_$header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  XML2_CFLAGS=-I$(dirname $header)
 else
-  as_fn_error $? "xml2 headers were not found" "$LINENO" 5
+  as_fn_error $? "XML2 headers were not found" "$LINENO" 5
 fi
 
 
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	       as_fn_error $? "XML2 headers were not found" "$LINENO" 5
+fi
 else
 	XML2_CFLAGS=$pkg_cv_XML2_CFLAGS
 	XML2_LIBS=$pkg_cv_XML2_LIBS
@@ -5703,14 +5753,26 @@ else
   as_fn_error $? "library gdal was not found" "$LINENO" 5
 fi
 
-		  ac_fn_c_check_header_mongrel "$LINENO" "/usr/include/gdal/gdal.h" "ac_cv_header__usr_include_gdal_gdal_h" "$ac_includes_default"
-if test "x$ac_cv_header__usr_include_gdal_gdal_h" = xyes; then :
-  GDAL_CFLAGS=-I/usr/include/gdal
+		  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gdal.h in /usr/include" >&5
+$as_echo_n "checking for gdal.h in /usr/include... " >&6; }
+	 header=$(find /usr/include -name gdal.h|head -1)
+	 if test -n $header; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $header" >&5
+$as_echo "$header" >&6; }
+	       as_ac_Header=`$as_echo "ac_cv_header_$header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  GDAL_CFLAGS=-I$(dirname $header)
 else
-  as_fn_error $? "gdal headers were not found" "$LINENO" 5
+  as_fn_error $? "GDAL headers were not found" "$LINENO" 5
 fi
 
 
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	       as_fn_error $? "GDAL headers were not found" "$LINENO" 5
+fi
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5750,14 +5812,26 @@ else
   as_fn_error $? "library gdal was not found" "$LINENO" 5
 fi
 
-		  ac_fn_c_check_header_mongrel "$LINENO" "/usr/include/gdal/gdal.h" "ac_cv_header__usr_include_gdal_gdal_h" "$ac_includes_default"
-if test "x$ac_cv_header__usr_include_gdal_gdal_h" = xyes; then :
-  GDAL_CFLAGS=-I/usr/include/gdal
+		  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gdal.h in /usr/include" >&5
+$as_echo_n "checking for gdal.h in /usr/include... " >&6; }
+	 header=$(find /usr/include -name gdal.h|head -1)
+	 if test -n $header; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $header" >&5
+$as_echo "$header" >&6; }
+	       as_ac_Header=`$as_echo "ac_cv_header_$header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  GDAL_CFLAGS=-I$(dirname $header)
 else
-  as_fn_error $? "gdal headers were not found" "$LINENO" 5
+  as_fn_error $? "GDAL headers were not found" "$LINENO" 5
 fi
 
 
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	       as_fn_error $? "GDAL headers were not found" "$LINENO" 5
+fi
 else
 	GDAL_CFLAGS=$pkg_cv_GDAL_CFLAGS
 	GDAL_LIBS=$pkg_cv_GDAL_LIBS
@@ -6434,14 +6508,26 @@ else
   as_fn_error $? "library cunit was not found" "$LINENO" 5
 fi
 
-		  ac_fn_c_check_header_mongrel "$LINENO" "/usr/include/CUnit/CUnit.h" "ac_cv_header__usr_include_CUnit_CUnit_h" "$ac_includes_default"
-if test "x$ac_cv_header__usr_include_CUnit_CUnit_h" = xyes; then :
-  CUNIT_CFLAGS=-I/usr/include/CUnit
+		  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CUnit.h in /usr/include" >&5
+$as_echo_n "checking for CUnit.h in /usr/include... " >&6; }
+	 header=$(find /usr/include -name CUnit.h|head -1)
+	 if test -n $header; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $header" >&5
+$as_echo "$header" >&6; }
+	       as_ac_Header=`$as_echo "ac_cv_header_$header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  CUNIT_CFLAGS=-I$(dirname $header)
 else
-  as_fn_error $? "CUnit headers were not found" "$LINENO" 5
+  as_fn_error $? "CUNIT headers were not found" "$LINENO" 5
 fi
 
 
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	       as_fn_error $? "CUNIT headers were not found" "$LINENO" 5
+fi
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -6481,14 +6567,26 @@ else
   as_fn_error $? "library cunit was not found" "$LINENO" 5
 fi
 
-		  ac_fn_c_check_header_mongrel "$LINENO" "/usr/include/CUnit/CUnit.h" "ac_cv_header__usr_include_CUnit_CUnit_h" "$ac_includes_default"
-if test "x$ac_cv_header__usr_include_CUnit_CUnit_h" = xyes; then :
-  CUNIT_CFLAGS=-I/usr/include/CUnit
+		  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CUnit.h in /usr/include" >&5
+$as_echo_n "checking for CUnit.h in /usr/include... " >&6; }
+	 header=$(find /usr/include -name CUnit.h|head -1)
+	 if test -n $header; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $header" >&5
+$as_echo "$header" >&6; }
+	       as_ac_Header=`$as_echo "ac_cv_header_$header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  CUNIT_CFLAGS=-I$(dirname $header)
 else
-  as_fn_error $? "CUnit headers were not found" "$LINENO" 5
+  as_fn_error $? "CUNIT headers were not found" "$LINENO" 5
 fi
 
 
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	       as_fn_error $? "CUNIT headers were not found" "$LINENO" 5
+fi
 else
 	CUNIT_CFLAGS=$pkg_cv_CUNIT_CFLAGS
 	CUNIT_LIBS=$pkg_cv_CUNIT_LIBS

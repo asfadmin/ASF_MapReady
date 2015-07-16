@@ -95,6 +95,17 @@ AC_CHECK_HEADERS(unistd.h)
 
 PKG_PROG_PKG_CONFIG
 
+AC_DEFUN([ASF_FIND_INCLUDE],
+	 AC_MSG_CHECKING(for $2 in /usr/include)
+	 [header=$(find /usr/include -name $2|head -1)]
+	 AS_IF([test -n $header],
+	       AC_MSG_RESULT([$header])
+	       AC_CHECK_HEADER($header,
+			       $1_CFLAGS=-I$(dirname $header),
+			       AC_MSG_ERROR($1 headers were not found)),
+	       AC_MSG_RESULT(no)
+	       AC_MSG_ERROR($1 headers were not found)))
+
 #### GSL check ####
 PKG_CHECK_MODULES(GSL, gsl,,
 		  AC_CHECK_LIB(gsl, main,
@@ -154,11 +165,9 @@ PKG_CHECK_MODULES(PNG, libpng,,
 #  have_geotiff="no")
 PKG_CHECK_MODULES(GEOTIFF, geotiff,,
 		 AC_CHECK_LIB(geotiff, main,
-		  	      [GEOTIFF_LIBS=-lgeotiff],
+		  	      GEOTIFF_LIBS=-lgeotiff,
 			      AC_MSG_ERROR(library geotiff was not found))
-		 AC_CHECK_HEADER(/usr/include/geotiff/xtiffio.h,
-				 [GEOTIFF_CFLAGS=-I/usr/include/geotiff],
-				 AC_MSG_ERROR(geotiff headers were not found)))
+		 ASF_FIND_INCLUDE(GEOTIFF, xtiffio.h))
 
 #### libshp check ####
 #AC_CHECK_LIB(shp,main,have_shp="yes",have_shp="no")
@@ -190,18 +199,14 @@ PKG_CHECK_MODULES(XML2, libxml-2.0,,
 		  AC_CHECK_LIB(xml2, xmlParseFile,
 			       [XML2_LIBS=-lxml2],
 			       AC_MSG_ERROR(library xml2 was not found))
-		  AC_CHECK_HEADER(/usr/include/libxml2/libxml/xmlIO.h,
-				  [XML2_CFLAGS=-I/usr/include/libxml2],
-				  AC_MSG_ERROR(xml2 headers were not found)))
+		  ASF_FIND_INCLUDE(XML2, xmlIO.h))
 
 #### libgdal check ####
 PKG_CHECK_MODULES(GDAL, gdal,,
 		  AC_CHECK_LIB(gdal, main,
 			       [GDAL_LIBS=-lgdal],
 			       AC_MSG_ERROR(library gdal was not found))
-		  AC_CHECK_HEADER(/usr/include/gdal/gdal.h,
-				  [GDAL_CFLAGS=-I/usr/include/gdal],
-				  AC_MSG_ERROR(gdal headers were not found)))
+		  ASF_FIND_INCLUDE(GDAL, gdal.h))
 
 #### libcurl check ####
 PKG_CHECK_MODULES(CURL, libcurl,,
@@ -232,9 +237,7 @@ PKG_CHECK_MODULES(CUNIT, cunit,,
 		  AC_CHECK_LIB(cunit, main,
 			       [CUNIT_LIBS=-lcunit],
 			       AC_MSG_ERROR(library cunit was not found))
-		  AC_CHECK_HEADER(/usr/include/CUnit/CUnit.h,
-				  [CUNIT_CFLAGS=-I/usr/include/CUnit],
-				  AC_MSG_ERROR(CUnit headers were not found)))
+		  ASF_FIND_INCLUDE(CUNIT, CUnit.h))
 
 #### libglade check ####
 if test "$have_gtk" = "yes" ; then
