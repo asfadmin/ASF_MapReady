@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 include ../../make_support/system_rules
 
 CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) -I/home/bkerin/local/include \

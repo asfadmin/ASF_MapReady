@@ -12,7 +12,7 @@ void print_copyright()
     t = time(NULL);
     ts = localtime(&t);
     int year = ts->tm_year+1900;
-    printf(ASF_COPYRIGHT_STRING"\n", year);
+    printf(ASF_COPYRIGHT_STRING"\n");
 }
 
 // Print our copyright and license notice & exit

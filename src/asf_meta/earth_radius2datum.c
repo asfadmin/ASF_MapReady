@@ -44,7 +44,7 @@ int earth_radius2datum(double re_major, double re_minor)
 		if ( FLOAT_COMPARE(major[major_index],re_major) ) {
 			for (minor_index=0; minor_index<20; minor_index++) {
 				if ( FLOAT_COMPARE(minor[minor_index],re_minor) ) {
-					if ( FLOAT_COMPARE(major_index,minor_index) ) {
+					if (major_index == minor_index) {
 					 	return major_index;
 					}
 				}

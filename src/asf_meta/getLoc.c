@@ -208,7 +208,7 @@ int getLook(GEOLOCATE_REC *g,double range,double yaw,double *plook)
     double sininc,taninc;
     delta_range = range - calcRange(g,look,yaw);
     /* Require decimeter convergence.  */
-    if (abs(delta_range) < 0.1) {
+    if (fabs(delta_range) < 0.1) {
       *plook = look;
       return 0;
     } else { /* Havn't converged yet, so update look angle.  */

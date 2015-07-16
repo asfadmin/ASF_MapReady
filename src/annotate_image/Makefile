@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for fill_holes
 
 TARGET = annotate_image
@@ -26,7 +29,7 @@ CFLAGS += \
 all: $(TARGET) clean
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS) $(LDFLAGS) 
 	mv $(TARGET)$(BIN_POSTFIX) $(BINDIR)
 
 clean:

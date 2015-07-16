@@ -1,7 +1,11 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for          :  airsarin 
 # Module Author         :  Joshua Badgley 
 
 include ../../make_support/system_rules
+
+CFLAGS += $(HDF5_CFLAGS)
 
 LIBS =  $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \

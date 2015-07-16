@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for create_man_page
 # Author Rudi Gens
 
@@ -17,5 +20,4 @@ create_man_page: $(OBJS)
 
 clean:
 	rm -f $(OBJS)
-
 

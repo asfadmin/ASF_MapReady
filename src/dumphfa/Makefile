@@ -1,3 +1,4 @@
+CFLAGS += $(GEOTIFF_CFLAGS)
 # asf_import
 
 include ../../make_support/system_rules

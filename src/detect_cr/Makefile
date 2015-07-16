@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for detect_cr
 # Module Author: Rudi Gens (sliced and diced from coregister_fine,
 #	                    coregister_coarse and fftMatch) 

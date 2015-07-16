@@ -1,9 +1,11 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 PROGRAM := diffmeta
 
 DEBUG_BUILD = 1
 
 include ../../make_support/system_rules
-
 
 ###############################################################################
 #
@@ -32,7 +34,6 @@ HEADERS := diffmeta_tolerances.h diffmeta.h
 CFLAGS += $(W_ERROR) \
 	$(PROJ_CFLAGS) \
 	$(GSL_CFLAGS)
-
 
 LIBS  = \
 	$(LIBDIR)/asf_meta.a \

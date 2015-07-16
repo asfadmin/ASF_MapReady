@@ -19,7 +19,6 @@ OBJS  = open_dem.o \
 	projection.o \
 	concat_dem.o
 
-
 all: concat_dem
 	rm *.o
 

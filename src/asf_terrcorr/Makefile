@@ -11,7 +11,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_ardop.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sar.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_proj.a \
@@ -30,6 +30,8 @@ LIBS  = \
 
 CFLAGS += \
 	$(TIFF_CFLAGS) \
+	$(GEOTIFF_CFLAGS) \
+	$(HDF5_CFLAGS) \
 	$(GSL_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS)
