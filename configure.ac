@@ -174,7 +174,8 @@ PKG_CHECK_MODULES(GEOTIFF, geotiff,,
 PKG_CHECK_MODULES(SHAPELIB, shapelib,,
 		  AC_CHECK_LIB(shp, main,
 			       [SHAPELIB_LIBS=-lshp],
-			       AC_MSG_ERROR(library shapelib was not found)))
+			       AC_MSG_ERROR(library shapelib was not found))
+		  ASF_FIND_INCLUDE(SHAPELIB, shapefil.h))
 
 #### libfftw check ####
 #AC_CHECK_LIB(fftw,main,have_fftw="yes",have_fftw="no")
@@ -187,12 +188,6 @@ PKG_CHECK_MODULES(FFTW, fftw3,,
 PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.4.0, [have_gtk=yes]
 		  			  AC_DEFINE(USE_GTK),
 		  [have_gtk=no])
-
-#### libexif check ####
-PKG_CHECK_MODULES(EXIF, libexif,,
-		  AC_CHECK_LIB(exif, main,
-			       [EXIF_LIBS=-lexif],
-			       AC_MSG_ERROR(library exif was not found)))
 
 #### libxml2 check ####
 PKG_CHECK_MODULES(XML2, libxml-2.0,,
@@ -219,12 +214,6 @@ PKG_CHECK_MODULES(HDF5, hdf5,,
 		  AC_CHECK_LIB(hdf5, main,
 			       [HDF5_LIBS=-lhdf5],
 			       AC_MSG_ERROR(library hdf5 was not found)))
-
-#### libhdfeos check ####
-PKG_CHECK_MODULES(HDFEOS5, hdf-eos5,,
-		  AC_CHECK_LIB(he5_hdfeos, main,
-			       [HDFEOS5_LIBS="-lhe5_hdfeos -lGctp"],
-			       AC_MSG_ERROR(library hdf-eos5 was not found)))
 
 #### libnetcdf check ####
 PKG_CHECK_MODULES(NETCDF, netcdf,,

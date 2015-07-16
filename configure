@@ -630,8 +630,6 @@ CUNIT_LIBS
 CUNIT_CFLAGS
 NETCDF_LIBS
 NETCDF_CFLAGS
-HDFEOS5_LIBS
-HDFEOS5_CFLAGS
 HDF5_LIBS
 HDF5_CFLAGS
 CURL_LIBS
@@ -640,8 +638,6 @@ GDAL_LIBS
 GDAL_CFLAGS
 XML2_LIBS
 XML2_CFLAGS
-EXIF_LIBS
-EXIF_CFLAGS
 GTK_LIBS
 GTK_CFLAGS
 FFTW_LIBS
@@ -757,8 +753,6 @@ FFTW_CFLAGS
 FFTW_LIBS
 GTK_CFLAGS
 GTK_LIBS
-EXIF_CFLAGS
-EXIF_LIBS
 XML2_CFLAGS
 XML2_LIBS
 GDAL_CFLAGS
@@ -767,8 +761,6 @@ CURL_CFLAGS
 CURL_LIBS
 HDF5_CFLAGS
 HDF5_LIBS
-HDFEOS5_CFLAGS
-HDFEOS5_LIBS
 NETCDF_CFLAGS
 NETCDF_LIBS
 CUNIT_CFLAGS
@@ -1422,8 +1414,6 @@ Some influential environment variables:
   FFTW_LIBS   linker flags for FFTW, overriding pkg-config
   GTK_CFLAGS  C compiler flags for GTK, overriding pkg-config
   GTK_LIBS    linker flags for GTK, overriding pkg-config
-  EXIF_CFLAGS C compiler flags for EXIF, overriding pkg-config
-  EXIF_LIBS   linker flags for EXIF, overriding pkg-config
   XML2_CFLAGS C compiler flags for XML2, overriding pkg-config
   XML2_LIBS   linker flags for XML2, overriding pkg-config
   GDAL_CFLAGS C compiler flags for GDAL, overriding pkg-config
@@ -1432,10 +1422,6 @@ Some influential environment variables:
   CURL_LIBS   linker flags for CURL, overriding pkg-config
   HDF5_CFLAGS C compiler flags for HDF5, overriding pkg-config
   HDF5_LIBS   linker flags for HDF5, overriding pkg-config
-  HDFEOS5_CFLAGS
-              C compiler flags for HDFEOS5, overriding pkg-config
-  HDFEOS5_LIBS
-              linker flags for HDFEOS5, overriding pkg-config
   NETCDF_CFLAGS
               C compiler flags for NETCDF, overriding pkg-config
   NETCDF_LIBS linker flags for NETCDF, overriding pkg-config
@@ -5053,6 +5039,26 @@ else
   as_fn_error $? "library shapelib was not found" "$LINENO" 5
 fi
 
+		  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for shapefil.h in /usr/include" >&5
+$as_echo_n "checking for shapefil.h in /usr/include... " >&6; }
+	 header=$(find /usr/include -name shapefil.h|head -1)
+	 if test -n $header; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $header" >&5
+$as_echo "$header" >&6; }
+	       as_ac_Header=`$as_echo "ac_cv_header_$header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  SHAPELIB_CFLAGS=-I$(dirname $header)
+else
+  as_fn_error $? "SHAPELIB headers were not found" "$LINENO" 5
+fi
+
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	       as_fn_error $? "SHAPELIB headers were not found" "$LINENO" 5
+fi
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5092,6 +5098,26 @@ else
   as_fn_error $? "library shapelib was not found" "$LINENO" 5
 fi
 
+		  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for shapefil.h in /usr/include" >&5
+$as_echo_n "checking for shapefil.h in /usr/include... " >&6; }
+	 header=$(find /usr/include -name shapefil.h|head -1)
+	 if test -n $header; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $header" >&5
+$as_echo "$header" >&6; }
+	       as_ac_Header=`$as_echo "ac_cv_header_$header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  SHAPELIB_CFLAGS=-I$(dirname $header)
+else
+  as_fn_error $? "SHAPELIB headers were not found" "$LINENO" 5
+fi
+
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	       as_fn_error $? "SHAPELIB headers were not found" "$LINENO" 5
+fi
 else
 	SHAPELIB_CFLAGS=$pkg_cv_SHAPELIB_CFLAGS
 	SHAPELIB_LIBS=$pkg_cv_SHAPELIB_LIBS
@@ -5316,149 +5342,6 @@ else
 $as_echo "yes" >&6; }
 	have_gtk=yes
 		  			  $as_echo "#define USE_GTK 1" >>confdefs.h
-
-fi
-
-#### libexif check ####
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for EXIF" >&5
-$as_echo_n "checking for EXIF... " >&6; }
-
-if test -n "$EXIF_CFLAGS"; then
-    pkg_cv_EXIF_CFLAGS="$EXIF_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libexif\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libexif") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_EXIF_CFLAGS=`$PKG_CONFIG --cflags "libexif" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$EXIF_LIBS"; then
-    pkg_cv_EXIF_LIBS="$EXIF_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libexif\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libexif") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_EXIF_LIBS=`$PKG_CONFIG --libs "libexif" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        EXIF_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libexif" 2>&1`
-        else
-	        EXIF_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libexif" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$EXIF_PKG_ERRORS" >&5
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lexif" >&5
-$as_echo_n "checking for main in -lexif... " >&6; }
-if ${ac_cv_lib_exif_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lexif  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_exif_main=yes
-else
-  ac_cv_lib_exif_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_exif_main" >&5
-$as_echo "$ac_cv_lib_exif_main" >&6; }
-if test "x$ac_cv_lib_exif_main" = xyes; then :
-  EXIF_LIBS=-lexif
-else
-  as_fn_error $? "library exif was not found" "$LINENO" 5
-fi
-
-elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lexif" >&5
-$as_echo_n "checking for main in -lexif... " >&6; }
-if ${ac_cv_lib_exif_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lexif  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_exif_main=yes
-else
-  ac_cv_lib_exif_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_exif_main" >&5
-$as_echo "$ac_cv_lib_exif_main" >&6; }
-if test "x$ac_cv_lib_exif_main" = xyes; then :
-  EXIF_LIBS=-lexif
-else
-  as_fn_error $? "library exif was not found" "$LINENO" 5
-fi
-
-else
-	EXIF_CFLAGS=$pkg_cv_EXIF_CFLAGS
-	EXIF_LIBS=$pkg_cv_EXIF_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
 
 fi
 
@@ -6121,149 +6004,6 @@ fi
 else
 	HDF5_CFLAGS=$pkg_cv_HDF5_CFLAGS
 	HDF5_LIBS=$pkg_cv_HDF5_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-fi
-
-#### libhdfeos check ####
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for HDFEOS5" >&5
-$as_echo_n "checking for HDFEOS5... " >&6; }
-
-if test -n "$HDFEOS5_CFLAGS"; then
-    pkg_cv_HDFEOS5_CFLAGS="$HDFEOS5_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"hdf-eos5\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "hdf-eos5") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_HDFEOS5_CFLAGS=`$PKG_CONFIG --cflags "hdf-eos5" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$HDFEOS5_LIBS"; then
-    pkg_cv_HDFEOS5_LIBS="$HDFEOS5_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"hdf-eos5\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "hdf-eos5") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_HDFEOS5_LIBS=`$PKG_CONFIG --libs "hdf-eos5" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        HDFEOS5_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "hdf-eos5" 2>&1`
-        else
-	        HDFEOS5_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "hdf-eos5" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$HDFEOS5_PKG_ERRORS" >&5
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lhe5_hdfeos" >&5
-$as_echo_n "checking for main in -lhe5_hdfeos... " >&6; }
-if ${ac_cv_lib_he5_hdfeos_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lhe5_hdfeos  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_he5_hdfeos_main=yes
-else
-  ac_cv_lib_he5_hdfeos_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_he5_hdfeos_main" >&5
-$as_echo "$ac_cv_lib_he5_hdfeos_main" >&6; }
-if test "x$ac_cv_lib_he5_hdfeos_main" = xyes; then :
-  HDFEOS5_LIBS="-lhe5_hdfeos -lGctp"
-else
-  as_fn_error $? "library hdf-eos5 was not found" "$LINENO" 5
-fi
-
-elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lhe5_hdfeos" >&5
-$as_echo_n "checking for main in -lhe5_hdfeos... " >&6; }
-if ${ac_cv_lib_he5_hdfeos_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lhe5_hdfeos  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_he5_hdfeos_main=yes
-else
-  ac_cv_lib_he5_hdfeos_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_he5_hdfeos_main" >&5
-$as_echo "$ac_cv_lib_he5_hdfeos_main" >&6; }
-if test "x$ac_cv_lib_he5_hdfeos_main" = xyes; then :
-  HDFEOS5_LIBS="-lhe5_hdfeos -lGctp"
-else
-  as_fn_error $? "library hdf-eos5 was not found" "$LINENO" 5
-fi
-
-else
-	HDFEOS5_CFLAGS=$pkg_cv_HDFEOS5_CFLAGS
-	HDFEOS5_LIBS=$pkg_cv_HDFEOS5_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
