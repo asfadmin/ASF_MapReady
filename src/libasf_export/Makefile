@@ -46,6 +46,7 @@ CFLAGS += \
 	$(GLIB_CFLAGS) \
 	$(XML_CFLAGS) \
 	$(HDF5_CFLAGS) \
+	$(SHAPELIB_CFLAGS) \
 	$(GSL_CFLAGS) -Wall
 
 LIBS  = \

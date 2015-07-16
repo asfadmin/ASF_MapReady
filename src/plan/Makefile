@@ -5,6 +5,10 @@ include ../../make_support/system_rules
 
 TARGET = plan
 LIBNAME = libasf_$(TARGET).a
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(SHAPELIB_CFLAGS)
 
 LIBS  = \
 	$(LIBDIR)/libasf_sar.a \

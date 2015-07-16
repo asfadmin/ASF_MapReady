@@ -4,7 +4,7 @@ CFLAGS += $(GEOTIFF_CFLAGS)
 
 include ../../make_support/system_rules
 
-CFLAGS := -Wall $(W_ERROR) $(CFLAGS)
+CFLAGS := -Wall $(W_ERROR) $(CFLAGS) 
 
 OBJS =  seedsquares.o asf_terrcorr.o build_dem.o rtc.o make_gr_dem.o uavsar_rtc.o
 
@@ -24,6 +24,7 @@ CFLAGS += $(GSL_CFLAGS) \
 	  $(GLIB_CFLAGS) \
 	  $(GEOTIFF_CFLAGS) \
 	  $(HDF5_CFLAGS) \
+	  $(SHAPELIB_CFLAGS) \
 	  -D_XOPEN_SOURCE=600
 
 all: build_only

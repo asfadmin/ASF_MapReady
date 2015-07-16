@@ -40,6 +40,10 @@ SRCS = asf_view.c \
 	csv.c \
 	excel.c
 
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(SHAPELIB_CFLAGS)
+
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)
 

@@ -4,7 +4,7 @@ CFLAGS += $(GEOTIFF_CFLAGS)
 
 include ../../make_support/system_rules
 
-CFLAGS := -Wall $(W_ERROR) $(CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS) $(GEOTIFF_CFLAGS) $(HDF5_CFLAGS)
+CFLAGS := -Wall $(W_ERROR) $(CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS) $(GEOTIFF_CFLAGS) $(HDF5_CFLAGS) $(SHAPELIB_CFLAGS)
 
 OBJS = \
 	gr2sr.o \

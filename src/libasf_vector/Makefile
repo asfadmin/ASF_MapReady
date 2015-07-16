@@ -14,6 +14,7 @@ CFLAGS += $(W_ERROR) \
 	-D_REENTRANT \
 	$(GSL_CFLAGS) \
 	$(HDF5_CFLAGS) \
+	$(SHAPELIB_CFLAGS) \
 	$(CFLAGS)
 
 OBJS = \

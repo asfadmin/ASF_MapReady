@@ -27,6 +27,7 @@ LIBS  = \
 
 CFLAGS += \
 	$(GEOTIFF_CFLAGS) \
+	$(SHAPELIB_CFLAGS) \
 	$(TIFF_CFLAGS)
 
 OBJS  = convert2vector.o
