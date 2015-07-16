@@ -439,30 +439,88 @@ oldtools: mkdirs_for_build
 	cd make_support; $(MAKE); ./makemake @sys@; cd ..
 	$(MAKE) --makefile=Makefile.old
 
+# Get a nice version number for our package.
+DEBIAN_VERSION = $(VERSION_MAPREADY)
+ifeq ($(DEBIAN_VERSION),MAKE-DEV)
+	DEBIAN_VERSION = 0~$$(date +%Y%m%d)
+endif
+DATEFORMAT = "%a, %d %b %Y %T %z"
+
+# Generate a debian package.
+deb: default
+	if [ -d asf-mapready ]; then \
+		rm -r asf-mapready; \
+	fi
+	mkdir -p asf-mapready/DEBIAN
+	$(MAKE) DESTDIR=asf-mapready install
+	mkdir -p "asf-mapready/usr/share/doc/asf-mapready"
+	# Generate the changelog. I'm not looking forward to this.
+	echo "asf-mapready ($(DEBIAN_VERSION)) unstable; urgency=low" \
+		> asf-mapready/usr/share/doc/asf-mapready/changelog
+	git log -n 10 | \
+		sed -e "s/^/    /" \
+		    -e "/^    commit/s/^    /  * /" \
+		>> asf-mapready/usr/share/doc/asf-mapready/changelog
+	echo " -- Jenkins <uso@uaf.alaska.edu>  $$(date +'%a, %d %b %Y %T %z')" \
+		>> asf-mapready/usr/share/doc/asf-mapready/changelog
+	gzip -9 asf-mapready/usr/share/doc/asf-mapready/changelog
+	# I'm glad we got that over with.
+	cp debian/copyright asf-mapready/usr/share/doc/asf-mapready/copyright
+	strip asf-mapready/@prefix@/bin/*
+	sed -e "/Version:/s/$$/ $(DEBIAN_VERSION)/" \
+	    -e "/Installed-Size:/s|$$| $$(expr $$(expr $$(du -bs asf-mapready@prefix@|cut -f1) + 512) / 1024)|" \
+		<debian/control \
+		>asf-mapready/DEBIAN/control
+	fakeroot dpkg-deb --build asf-mapready
+ifneq (@prefix@,/usr)
+	@ echo ""
+	@ echo -n "          "
+	@ echo "============================================================"
+	@ echo -n "          "
+	@ echo "Be advised that debian packages should always reside in"
+	@ echo -n "          "
+	@ echo "/usr/bin, so it is recommended to run ./configure"
+	@ echo -n "          "
+	@ echo "--prefix=/usr before again running make deb."
+	@ echo -n "          "
+	@ echo "============================================================"
+	@ echo ""
+endif
+	@ echo ""
+	@ echo "  XXXXXXXXXXXX Debian Package Created! XXXXXXXXXXX"
+	@ echo ""
+
 # make everything!
 all: mapready oldtools req ap stp c2v jpl create_thumbs data_qc
 
+ifneq ($(DESTDIR),"")
+	DESTDIR += "/"
+endif
+BINDIR = $(DESTDIR)@BINDIR@
+LIBDIR = $(DESTDIR)@prefix@/lib
+SHAREDIR = $(DESTDIR)@SHAREDIR@
+
 # This should install any & all package(s) that have been built
 install: 
-	mkdir -p "@BINDIR@" "@prefix@/lib" "@SHAREDIR@"
-	-cp -R $(S_BINDIR)/* "@BINDIR@"
-	-cp -R $(S_LIBDIR)/* "@prefix@"/lib
-	-cp -R $(S_SHAREDIR)/* "@SHAREDIR@"
-	chmod 755 "@BINDIR@"/*
-	if [ -d @SHAREDIR@/projections ]; then \
-		chmod a+x "@SHAREDIR@"/projections ; \
-		chmod a+x "@SHAREDIR@"/projections/* ; \
+	mkdir -p "$(BINDIR)" "$(LIBDIR)" "$(SHAREDIR)"
+	-cp -R $(S_BINDIR)/* "$(BINDIR)"
+	-cp -R $(S_LIBDIR)/* "$(LIBDIR)"
+	-cp -R $(S_SHAREDIR)/* "$(SHAREDIR)"
+	chmod 755 "$(BINDIR)"/*
+	if [ -d "$(SHAREDIR)/projections" ]; then \
+		chmod a+x "$(SHAREDIR)"/projections ; \
+		chmod a+x "$(SHAREDIR)"/projections/* ; \
 	fi
-	if [ -d @SHAREDIR@/asf_mapready ]; then \
-		chmod a+x "@SHAREDIR@"/asf_mapready ; \
+	if [ -d "$(SHAREDIR)/asf_mapready" ]; then \
+		chmod a+x "$(SHAREDIR)"/asf_mapready ; \
 	fi
-	if [ -d @SHAREDIR@/asf_mapready ]; then \
-		chmod a+x "@SHAREDIR@"/proj ; \
+	if [ -d "$(SHAREDIR)/proj" ]; then \
+		chmod a+x "$(SHAREDIR)"/proj ; \
 	fi
-	-cp -R $(S_DOCDIR)/*.pdf "@SHAREDIR@/doc"
-	-cp -R $(S_DOCDIR)/*.txt "@SHAREDIR@/doc"
-	chmod -R a+r "@SHAREDIR@"
-	chmod -R ug+w "@SHAREDIR@"
+	-cp -R $(S_DOCDIR)/*.pdf "$(SHAREDIR)/doc"
+	-cp -R $(S_DOCDIR)/*.txt "$(SHAREDIR)/doc"
+	chmod -R a+r "$(SHAREDIR)"
+	chmod -R ug+w "$(SHAREDIR)"
 
 # Prep the directory tree for the build
 mkdirs_for_build:
@@ -482,6 +540,8 @@ clean:
 	rm -f Makefile.old
 	-rm mapready*.tar.gz
 	-rm -rf $(IGNORED_INCLUDES)
+	-rm -rf asf-mapready
+	-rm asf-mapready.deb
 	$(foreach MODULE, $(ALL_MODULES), \
 		$(MAKE) clean -C $(MODULE) &&) true
 
