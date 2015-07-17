@@ -418,9 +418,16 @@ int main(int argc,char *argv[])
   
     asfPrintStatus("Creating colorized browse image from Sentinel dual-pol "
       "data\n");
-    create_name(infile1,argv[3],".img");
-    create_name(infile2,argv[4],".img");
-    create_name(outfile,argv[5],".tif");
+    if (strlen(tmpPath) > 0) {
+      create_name(infile1,argv[5],".img");
+      create_name(infile2,argv[6],".img");
+      create_name(outfile,argv[7],".tif");
+    }
+    else {
+      create_name(infile1,argv[3],".img");
+      create_name(infile2,argv[4],".img");
+      create_name(outfile,argv[5],".tif");
+    }
 
     // Create temporary directory
     char tmpDir[1024];
