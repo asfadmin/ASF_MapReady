@@ -46,8 +46,8 @@ void usage(char *name)
 {
   printf("\n"
    "USAGE:\n"
-   "   color_browse [-sentinel <scale>] <inFile1> <inFile2> [<inFile3>] "
-   "<outFile\n");
+   "   color_browse [-sentinel <scale>] [-tmpDir <directory] <inFile1> "
+   "<inFile2> [<inFile3>] <outFile\n");
   printf("\n"
    "REQUIRED ARGUMENTS:\n"
    "   inFile1   Name of an ASF internal file (HH or VV)\n"
@@ -138,11 +138,13 @@ int main(int argc,char *argv[])
 {
   char  infile1[256], infile2[256], infile3[256];  // Input file name                         
   char  outfile[256];         			   // Output file name
+  char tmpPath[1024];
   browse_type_t mode = NOTYPE;
   int   i,j;
   int   sample_count;
-  double scale=-1;
+  double scale;
   extern int currArg;
+  strcpy(tmpPath, "");
 
   // Parse command line
   if ((argc-currArg)<1) {
@@ -156,6 +158,10 @@ int main(int argc,char *argv[])
       CHECK_ARG(1);
       scale = atof(GET_ARG(1));
       mode = SENTINEL_DUAL;
+    }
+    else if (strmatches(key, "-tmpDir", "--tmpDir", NULL)) {
+      CHECK_ARG(1);
+      strcpy(tmpPath, GET_ARG(1));
     }
     else if (strmatches(key, "-log", "--log", NULL)) {
       CHECK_ARG(1);
@@ -197,7 +203,7 @@ int main(int argc,char *argv[])
       {
         asfPrintError("Images must be the same size!!!\n");
         exit(1);
-      }
+      }    
     strcpy(meta1->general->bands,"HH");
     strcpy(meta2->general->bands,"HV");
 
@@ -410,26 +416,6 @@ int main(int argc,char *argv[])
   }
   else if (mode == SENTINEL_DUAL) {
   
-    // Read temporary directory from MapReady settings file
-    char settingsFile[1024], line[1024], params[25], tmpPath[512]="", *test;
-    
-    sprintf(settingsFile, "%s%cmapready_settings.cfg", 
-      get_asf_share_dir(), DIR_SEPARATOR);
-    FILE *fp = FOPEN(settingsFile, "r");
-    if (fp) {
-      while (fgets(line, 1024, fp) != NULL) {
-        if (strncmp(line, "[General]", 9) == 0)
-          strcpy(params, "general");
-        if (strncmp(params, "general", 7) == 0) {
-          test = read_param(line);
-          if (strncmp(test, "temporary directory", 19) == 0)
-            strcpy(tmpPath, read_str(line, "temporary directory"));
-          FREE(test);
-        }
-      }
-    }
-    FCLOSE(fp);
-  
     asfPrintStatus("Creating colorized browse image from Sentinel dual-pol "
       "data\n");
     create_name(infile1,argv[3],".img");
@@ -444,8 +430,7 @@ int main(int argc,char *argv[])
       strcpy(tmpDir, "browse-");
     strcat(tmpDir, time_stamp_dir());
     create_clean_dir(tmpDir);
-    asfPrintStatus("Temp dir is: %s\n", tmpDir);
- 
+  
     // Calculate ratio image
     char tmpRatio[512], tmpRed[512], tmpGreen[512], tmpBlue[512], tmpIn[512];
     char *inFiles[2]; 
@@ -455,9 +440,7 @@ int main(int argc,char *argv[])
     strcpy(inFiles[1], infile2);
     sprintf(tmpRatio, "%s%cdiv.img", tmpDir, DIR_SEPARATOR);
     raster_calc(tmpRatio, "a/b", 2, inFiles);
-   
-    if (scale<0) asfPrintError("Invalid scale value: %f\n", scale);
- 
+    
     // Resample all three bands and scale to byte
     meta_parameters *metaIn = meta_read(tmpRatio);
     double scaleFactor = 1.0/(scale/metaIn->general->x_pixel_size);
@@ -465,15 +448,15 @@ int main(int argc,char *argv[])
     sprintf(tmpIn, "%s%cred.img", tmpDir, DIR_SEPARATOR);
     resample(infile1, tmpIn, scaleFactor, scaleFactor);
     sprintf(tmpRed, "%s%cred_byte.img", tmpDir, DIR_SEPARATOR);
-    floats_to_bytes_from_file(tmpIn, tmpRed, NULL, 0.0, SIGMA);
+    floats_to_bytes_from_file(tmpIn, tmpRed, NULL, -40.0, SIGMA);
     sprintf(tmpIn, "%s%cgreen.img", tmpDir, DIR_SEPARATOR);
     resample(infile2, tmpIn, scaleFactor, scaleFactor);
     sprintf(tmpGreen, "%s%cgreen_byte.img", tmpDir, DIR_SEPARATOR);
-    floats_to_bytes_from_file(tmpIn, tmpGreen, NULL, 0.0, SIGMA);
+    floats_to_bytes_from_file(tmpIn, tmpGreen, NULL, -40.0, SIGMA);
     sprintf(tmpIn, "%s%cblue.img", tmpDir, DIR_SEPARATOR);
     resample(tmpRatio, tmpIn, scaleFactor, scaleFactor);    
     sprintf(tmpBlue, "%s%cblue_byte.img", tmpDir, DIR_SEPARATOR);
-    floats_to_bytes_from_file(tmpIn, tmpBlue, NULL, 0.0, SIGMA);
+    floats_to_bytes_from_file(tmpIn, tmpBlue, NULL, -40.0, SIGMA);
 
     // Layer stack the bands
     char tmpBrowse[512];
@@ -510,7 +493,6 @@ int main(int argc,char *argv[])
       tmpBrowse, outfile, band_names, NULL, NULL);
 
     // Clean up
-    asfPrintStatus("Removing temporary directory: %s\n", tmpDir);
     remove_dir(tmpDir);
     meta_free(metaIn);
     meta_free(metaOut);
