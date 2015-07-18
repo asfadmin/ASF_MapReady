@@ -437,6 +437,7 @@ int main(int argc,char *argv[])
       strcpy(tmpDir, "browse-");
     strcat(tmpDir, time_stamp_dir());
     create_clean_dir(tmpDir);
+    asfPrintStatus("Temp dir is: %s\n", tmpDir);
   
     // Calculate ratio image
     char tmpRatio[512], tmpRed[512], tmpGreen[512], tmpBlue[512], tmpIn[512];
@@ -500,6 +501,7 @@ int main(int argc,char *argv[])
       tmpBrowse, outfile, band_names, NULL, NULL);
 
     // Clean up
+    asfPrintStatus("Removing temporary directory: %s\n", tmpDir);
     remove_dir(tmpDir);
     meta_free(metaIn);
     meta_free(metaOut);
