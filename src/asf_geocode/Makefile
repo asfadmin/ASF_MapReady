@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 PROGRAM := asf_geocode
 
 include ../../make_support/system_rules
@@ -37,7 +39,7 @@ CPPFLAGS := $(INCLUDE_FLAGS)
 # as float due to prototype rather than double.
 #          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
 CFLAGS += $(GSL_CFLAGS) $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) \
-	$(TIFF_CFLAGS) \
+	$(TIFF_CFLAGS) $(GEOTIFF_CFLAGS) $(HDF5_CFLAGS) \
 	-Wall -W -Wmissing-prototypes -Wstrict-prototypes \
 	-Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
 	-Wwrite-strings -Wnested-externs -fno-common $(W_ERROR)

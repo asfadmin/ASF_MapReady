@@ -10,26 +10,26 @@ AC_LANG(C)
 echo "Configuring ASF Tools"
 
 build_gui="yes"
-have_gsl="no"
+have_gsl="yes"
 have_pkg_config="yes"
-have_glib="no"
-have_proj="no"
-have_jpeg="no"
-have_tiff="no"
-have_geotiff="no"
-have_shp="no"
+have_glib="yes"
+have_proj="yes"
+have_jpeg="yes"
+have_tiff="yes"
+have_geotiff="yes"
+have_shp="yes"
 try_gtk="yes"
-have_gtk="no"
-have_fftw="no"
-have_png="no"
-have_exif="no"
-have_xml2="no"
-have_gdal="no"
-have_hdfeos5="no"
-have_hdf5="no"
-have_netcdf="no"
-have_cunit="no"
-w_error="-Werror"
+have_gtk="yes"
+have_fftw="yes"
+have_png="yes"
+have_exif="yes"
+have_xml2="yes"
+have_gdal="yes"
+have_hdfeos5="yes"
+have_hdf5="yes"
+have_netcdf="yes"
+have_cunit="yes"
+w_error=""
 
 if test "${config_flags#*no-werror}" != "${config_flags}" ; then
    w_error=""
@@ -93,33 +93,30 @@ AC_CHECK_LIB(c,fopen)
 AC_CHECK_LIB(m,main)
 AC_CHECK_HEADERS(unistd.h)
 
-ext_lib_src_dir=${asfDir}/external/work_dir
+PKG_PROG_PKG_CONFIG
+
+AC_DEFUN([ASF_FIND_INCLUDE],
+	 AC_MSG_CHECKING(for $2 in /usr/include)
+	 [header=$(find /usr/include -name $2|head -1)]
+	 AS_IF([test -n $header],
+	       AC_MSG_RESULT([$header])
+	       AC_CHECK_HEADER($header,
+			       $1_CFLAGS=-I$(dirname $header),
+			       AC_MSG_ERROR($1 headers were not found)),
+	       AC_MSG_RESULT(no)
+	       AC_MSG_ERROR($1 headers were not found)))
 
 #### GSL check ####
-AC_CHECK_LIB(gslcblas,main)
-AC_CHECK_HEADER(gsl/gsl_errno.h,
-  AC_CHECK_LIB(gsl,main,have_gsl="yes",have_gsl="no"), have_gsl="no")
-if test "$have_gsl" = "no" ; then
-   ASF_LIB_GSL="${ext_lib_src_dir}/libgsl"
-   GSL_LIBS="\$(LIBDIR)/libgsl.a \$(LIBDIR)/libgslcblas.a"
-else
-   GSL_LIBS="-lgsl -lgslcblas"
-fi
-AC_SUBST(ASF_LIB_GSL)
-
+PKG_CHECK_MODULES(GSL, gsl,,
+		  AC_CHECK_LIB(gsl, main,
+		   	       [GSL_LIBS="-lgsl -lm -lgslcblas"],
+			       AC_MSG_ERROR(library gsl was not found)))
 #### libproj check ####
-##### --> always use our own libproj because we have the NAD27
-#####     grid shift files, a user's install probably does not
 #AC_CHECK_LIB(proj,pj_transform,have_proj="yes",have_proj="no")
-have_proj="no"
-if test "$have_proj" = "no" ; then
-   ASF_LIB_PROJ="${ext_lib_src_dir}/libproj"
-   PROJ_LIBS="\$(LIBDIR)/libproj.a"
-else
-   PROJ_LIBS="-lproj"
-fi
-AC_SUBST(ASF_LIB_PROJ)
-
+PKG_CHECK_MODULES(PROJ, proj,,
+		  AC_CHECK_LIB(proj, pj_transform,
+		   	       [PROJ_LIBS=-lproj],
+			       AC_MSG_ERROR(library proj was not found)))
 #### pkg-config check ####
 #if test -z "$PKG_CONFIG"; then
 #   AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
@@ -135,218 +132,101 @@ AC_SUBST(ASF_LIB_PROJ)
 #AC_SUBST(ASF_PKG_CONFIG)
 
 #### glib check ####
-if test "$have_pkg_config" = "yes" ; then
-   PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.4.0],
-      have_glib="yes", have_glib="no")
-fi
-
-if test "$have_glib" = "no" ; then
-   ASF_GLIB="${ext_lib_src_dir}/libglib"
-   GLIB_LIBS="\$(LIBDIR)/libglib-2.0.a \$(LIBDIR)/libiconv.a"
-   GLIB_CFLAGS="-I../../include/glib-2.0 -I../../lib/glib-2.0/include"
-else
-  if test "$GLIB_LIBS" = "" ; then
-    GLIB_LIBS="-lglib-2.0"
-  fi
-fi
-AC_SUBST(ASF_GLIB)
+PKG_CHECK_MODULES(GLIB, glib-2.0,,
+		 AC_CHECK_LIB(glib-2.0, main,
+		  	      [GLIB_LIBS=-lglib-2.0],
+			      AC_MSG_ERROR(library glib-2.0 was not found)))
 
 #### libjpeg check ####
 #AC_CHECK_LIB(jpeg,jpeg_read_header,have_jpeg="yes",have_jpeg="no")
-if test "$sys" = "win32" ; then
-  if test "$winsys" = "mingw" ; then
-    have_jpeg="yes"
-  else
-    have_jpeg="no"
-  fi
-fi
-if test "$have_jpeg" = "no" ; then
-  ASF_LIB_JPEG="${ext_lib_src_dir}/libjpeg"
-  JPEG_LIBS="\$(LIBDIR)/libjpeg.a"
-else
-  JPEG_LIBS="-ljpeg"
-fi
-AC_SUBST(ASF_LIB_JPEG)
+PKG_CHECK_MODULES(JPEG, jpeg,,
+		 AC_CHECK_LIB(jpeg, jpeg_read_header,
+		  	      [JPEG_LIBS=-ljpeg],
+			      AC_MSG_ERROR(library jpeg was not found)))
 
 #### libtiff check ####
 #AC_CHECK_HEADER(tiff.h,
 #  AC_CHECK_LIB(tiff,TIFFGetTagListCount,have_tiff="yes",have_tiff="no"),
 #  have_tiff="no")
-if test "$sys" = "win32" ; then
-  have_tiff="no"
-fi
-if test "$have_tiff" = "no" ; then
-   ASF_LIB_TIFF="${ext_lib_src_dir}/libtiff"
-   TIFF_LIBS="\$(LIBDIR)/libtiff.a"
-   LIBTIFF_LOCATION="-with-libtiff=../../.."
-else
-   TIFF_LIBS="-ltiff"
-   LIBTIFF_LOCATION=""
-fi
-AC_SUBST(ASF_LIB_TIFF)
-AC_SUBST(LIBTIFF_LOCATION)
+PKG_CHECK_MODULES(TIFF, libtiff-4,,
+		 AC_CHECK_LIB(tiff, TIFFGetTagListCount,
+		  	      [TIFF_LIBS=-ltiff],
+			      AC_MSG_ERROR(library tiff was not found)))
 
 #### libpng check ####
-AC_CHECK_LIB(png,png_write_image,have_png="yes",have_png="no")
-if test "$sys" = "win32" ; then
-   have_png="no"
-fi
-if test "$have_png" = "no" ; then
-   ASF_LIB_PNG="${ext_lib_src_dir}/libpng"
-   PNG_LIBS="\$(LIBDIR)/libpng.a"
-else
-   PNG_LIBS="-lpng"
-fi
-AC_SUBST(ASF_LIB_PNG)
+PKG_CHECK_MODULES(PNG, libpng,,
+		 AC_CHECK_LIB(png, main,
+		  	      [PNG_LIBS=-lpng],
+			      AC_MSG_ERROR(library png was not found)))
 
 #### libgeotiff check ####
 #AC_CHECK_HEADER(geotiff.h,
 #  AC_CHECK_LIB(geotiff,main,have_geotiff="yes",have_geotiff="no"),
 #  have_geotiff="no")
-if test "$sys" = "win32" ; then
-  have_geotiff="no"
-fi
-if test "$have_geotiff" = "no" ; then
-   ASF_LIB_GEOTIFF="${ext_lib_src_dir}/libgeotiff"
-   GEOTIFF_LIBS="\$(LIBDIR)/libgeotiff.a"
-else
-   GEOTIFF_LIBS="-lgeotiff"
-fi
-AC_SUBST(ASF_LIB_GEOTIFF)
+PKG_CHECK_MODULES(GEOTIFF, geotiff,,
+		 AC_CHECK_LIB(geotiff, main,
+		  	      GEOTIFF_LIBS=-lgeotiff,
+			      AC_MSG_ERROR(library geotiff was not found))
+		 ASF_FIND_INCLUDE(GEOTIFF, xtiffio.h))
 
 #### libshp check ####
-##### --> always use our own shapelib because different versions
-#####     the user may have installed are not necessarily compatible
 #AC_CHECK_LIB(shp,main,have_shp="yes",have_shp="no")
-if test "$have_shp" = "no" ; then
-   ASF_LIB_SHAPELIB="${ext_lib_src_dir}/shapelib"
-   SHAPELIB_LIBS="\$(LIBDIR)/libshp.a"
-else
-   SHAPELIB_LIBS="-lshp"
-fi
-AC_SUBST(ASF_LIB_SHAPELIB)
+PKG_CHECK_MODULES(SHAPELIB, shapelib,,
+		  AC_CHECK_LIB(shp, main,
+			       [SHAPELIB_LIBS=-lshp],
+			       AC_MSG_ERROR(library shapelib was not found))
+		  ASF_FIND_INCLUDE(SHAPELIB, shapefil.h))
 
 #### libfftw check ####
 #AC_CHECK_LIB(fftw,main,have_fftw="yes",have_fftw="no")
-if test "$have_fftw" = "no" ; then
-   ASF_LIB_FFTW="${ext_lib_src_dir}/libfftw"
-   FFTW_LIBS="\$(LIBDIR)/libfftw3f.a"
-else
-   FFTW_LIBS="-lfftw"
-fi
-AC_SUBST(ASF_LIB_FFTW)
+PKG_CHECK_MODULES(FFTW, fftw3,,
+		  AC_CHECK_LIB(fftw, main,
+			       [FFTW_LIBS=-lfftw],
+			       AC_MSG_ERROR(library fftw was not found)))
 
 #### gtk 2.4 check ####
-if test "$try_gtk" = "yes" ; then
-    PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.4.0,
-      have_gtk="yes"
-      AC_DEFINE(USE_GTK),
-      have_gtk="no"
-    )
-fi
-
-#### libexif check ####
-AC_CHECK_LIB(exif,main,have_exif="yes",have_exif="no")
-if test "$sys" = "win32" ; then
-  have_exif="no"
-fi
-if test "$have_exif" = "no" ; then
-   ASF_LIB_EXIF="${ext_lib_src_dir}/libexif"
-   EXIF_LIBS="\$(LIBDIR)/libexif.a"
-else
-   EXIF_LIBS="-lexif"
-fi
-AC_SUBST(ASF_LIB_EXIF)
+PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.4.0, [have_gtk=yes]
+		  			  AC_DEFINE(USE_GTK),
+		  [have_gtk=no])
 
 #### libxml2 check ####
-AC_CHECK_LIB([xml2],[xmlParseFile],have_xml2="yes",have_xml2="no")
-if test "$sys" = "win32" ; then
-  have_xml2="yes"
-  XML2_LIBS="-L$(GTKWIN32_DIR)/lib -lxml2"
-  XML2_CFLAGS="-I/include/libxml2"
-else
-  if test "$have_xml2" = "no" ; then
-   ASF_LIB_XML2="${ext_lib_src_dir}/libxml2"
-   XML2_LIBS="\$(LIBDIR)/libxml2.a"
-   XML2_CFLAGS="-I../../include/libxml2"
-  else
-   XML2_LIBS="-lxml2"
-   XML2_CFLAGS="-I/usr/include/libxml2"
-  fi
-fi
-AC_SUBST(ASF_LIB_XML2)
+PKG_CHECK_MODULES(XML2, libxml-2.0,,
+		  AC_CHECK_LIB(xml2, xmlParseFile,
+			       [XML2_LIBS=-lxml2],
+			       AC_MSG_ERROR(library xml2 was not found))
+		  ASF_FIND_INCLUDE(XML2, xmlIO.h))
 
 #### libgdal check ####
-##### --> always use our own libgdal version
-#####     not point in trying to sort out external dependencies
-have_gdal="no"
-if test "$have_gdal" = "no" ; then
-   ASF_LIB_GDAL="${ext_lib_src_dir}/libgdal"
-   GDAL_LIBS="\$(LIBDIR)/libgdal.a"
-else
-   GDAL_LIBS="-lgdal"
-fi
-AC_SUBST(ASF_LIB_GDAL)
+PKG_CHECK_MODULES(GDAL, gdal,,
+		  AC_CHECK_LIB(gdal, main,
+			       [GDAL_LIBS=-lgdal],
+			       AC_MSG_ERROR(library gdal was not found))
+		  ASF_FIND_INCLUDE(GDAL, gdal.h))
 
 #### libcurl check ####
-##### --> always use our own libcurl version
-#####     no point in trying to sort out external dependencies
-have_curl="no"
-if test "$have_curl" = "no" ; then
-   ASF_LIB_CURL="${ext_lib_src_dir}/libcurl"
-   CURL_LIBS="\$(LIBDIR)/libcurl.a"
-else
-   CURL_LIBS="-lcurl"
-fi
-AC_SUBST(ASF_LIB_CURL)
+PKG_CHECK_MODULES(CURL, libcurl,,
+		  AC_CHECK_LIB(curl, main,
+			       [CURL_LIBS=-lcurl],
+			       AC_MSG_ERROR(library curl was not found)))
 
 #### libhdf5 check ####
-##### --> always use our own libhdf5 version
-#####     no point in trying to sort out external dependencies
-have_hdf5="no"
-if test "$have_hdf5" = "no" ; then
-   ASF_LIB_HDF5="${ext_lib_src_dir}/libhdf5"
-   HDF5_LIBS="\$(LIBDIR)/libhdf5_hl.a \$(LIBDIR)/libhdf5.a"
-else
-   HDF5_LIBS="-lhdf5_hl -lhdf5"
-fi
-AC_SUBST(ASF_LIB_HDF5)
-
-#### libhdfeos check ####
-##### --> always use our own libhdfeos version
-#####     no point in trying to sort out external dependencies
-have_hdfeos5="no"
-if test "$have_hdfeos5" = "no" ; then
-   ASF_LIB_HDFEOS5="${ext_lib_src_dir}/libhdfeos5"
-   HDFEOS5_LIBS="\$(LIBDIR)/libhe5_hdfeos.a \$(LIBDIR)/libGctp.a"
-else
-   HDFEOS5_LIBS="-lhe5_hdfeos -lGctp"
-fi
-AC_SUBST(ASF_LIB_HDFEOS5)
+PKG_CHECK_MODULES(HDF5, hdf5,,
+		  AC_CHECK_LIB(hdf5, main,
+			       [HDF5_LIBS=-lhdf5],
+			       AC_MSG_ERROR(library hdf5 was not found)))
 
 #### libnetcdf check ####
-##### --> always use our own libnetcdf version
-#####     no point in trying to sort out external dependencies
-have_netcdf="no"
-if test "$have_netcdf" = "no" ; then
-   ASF_LIB_NETCDF="${ext_lib_src_dir}/libnetcdf"
-   NETCDF_LIBS="\$(LIBDIR)/libnetcdf.a"
-else
-   NETCDF_LIBS="-lnetcdf"
-fi
-AC_SUBST(ASF_LIB_NETCDF)
+PKG_CHECK_MODULES(NETCDF, netcdf,,
+		  AC_CHECK_LIB(netcdf, main,
+			       [NETCDF_LIBS=-lnetcdf],
+			       AC_MSG_ERROR(library netcdf was not found)))
 
 #### libcunit check ####
-##### --> always use our own libcunit version
-#####     no point in trying to sort out external dependencies
-have_cunit="no"
-if test "$have_cunit" = "no" ; then
-   ASF_LIB_CUNIT="${ext_lib_src_dir}/libcunit"
-   CUNIT_LIBS="\$(LIBDIR)/libcunit.a"
-else
-   CUNIT_LIBS="-lcunit"
-fi
-AC_SUBST(ASF_LIB_CUNIT)
+PKG_CHECK_MODULES(CUNIT, cunit,,
+		  AC_CHECK_LIB(cunit, main,
+			       [CUNIT_LIBS=-lcunit],
+			       AC_MSG_ERROR(library cunit was not found))
+		  ASF_FIND_INCLUDE(CUNIT, CUnit.h))
 
 #### libglade check ####
 if test "$have_gtk" = "yes" ; then
@@ -394,8 +274,8 @@ fi
 AC_SUBST(ASF_GUI)
 
 if test "$winsys" = "mingw" ; then
-  JPEG_LIBS="-L../../external/gtkwin32/lib -ljpeg"
-  ZLIB_LIBS="../../lib/libz.a"
+  JPEG_LIBS="-ljpeg"
+  ZLIB_LIBS="-lz"
 else
   ZLIB_LIBS=-lz
 fi
@@ -479,8 +359,6 @@ LIBDIR  = ../../lib
 BINDIR  = ../../bin
 DOCDIR = ../../share/asf_tools/doc
 
-GTKWIN32_DIR = ../../external/gtkwin32
-GTKWIN32_ZIP = ../../external/gtkwin32zip
 EOF
 
 
@@ -535,6 +413,9 @@ HDFEOS5_CFLAGS = $HDFEOS5_CFLAGS
 NETCDF_LIBS = $NETCDF_LIBS
 NETCDF_CFLAGS = $NETCDF_CFLAGS
 
+CUNIT_LIBS = $CUNIT_LIBS
+CUNIT_CFLAGS = $CUNIT_CFLAGS
+
 GDAL_LIBS = $GDAL_LIBS
 GDAL_CFLAGS = $GDAL_CFLAGS
 
@@ -586,17 +467,6 @@ AC_OUTPUT([
 Makefile
 include/config.h
 ])
-
-if test -d external ; then
-	AC_OUTPUT([
-		external/Makefile
-		external/work_dir/libgeotiff/Makefile
-	])
-else
-	echo "WARNING: asf_tools/external directory was not found!"
-	echo "         Be aware that the build may not complete without"
-	echo "         this resource."
-fi
 
 echo "########### Automatic configuration complete ###########"
 directory=${asfDir}/bin/

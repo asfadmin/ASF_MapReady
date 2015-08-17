@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile
 # Author Rudi Gens
 
@@ -43,7 +46,6 @@ DDR_OBJS = \
 	c_up2low.o \
 	convInt.o \
 	squeeze.o
-
 
 H2D_OBJS = \
 	$(DDR_OBJS) \

@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 #	reskew_dem
 #	by Orion Lawlor, ASF, 1997
 #	Reskew will remap a ground range DEM into a slant-range
@@ -11,7 +14,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_vector.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(XML_LIBS) \

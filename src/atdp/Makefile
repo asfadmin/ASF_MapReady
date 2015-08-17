@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 ######################################################################
 # Makefile for 		:  atdp.c 
 # Module Author 	:  Rudi Gens

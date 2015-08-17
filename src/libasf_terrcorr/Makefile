@@ -1,8 +1,10 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for libasf_terrcorr library
 
 include ../../make_support/system_rules
 
-CFLAGS := -Wall $(W_ERROR) $(CFLAGS)
+CFLAGS := -Wall $(W_ERROR) $(CFLAGS) 
 
 OBJS =  seedsquares.o asf_terrcorr.o build_dem.o rtc.o make_gr_dem.o uavsar_rtc.o
 
@@ -17,7 +19,13 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	-lm
 
-CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) -D_XOPEN_SOURCE=600
+CFLAGS += $(GSL_CFLAGS) \
+	  $(PROJ_CFLAGS) \
+	  $(GLIB_CFLAGS) \
+	  $(GEOTIFF_CFLAGS) \
+	  $(HDF5_CFLAGS) \
+	  $(SHAPELIB_CFLAGS) \
+	  -D_XOPEN_SOURCE=600
 
 all: build_only
 	mv libasf_terrcorr.a $(LIBDIR)

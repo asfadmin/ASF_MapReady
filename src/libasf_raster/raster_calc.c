@@ -157,7 +157,7 @@ int expressionIndex,expressionLength;
 void setTokenExpression(const char *expr)
 {
   expressionLength = strlen(expr);
-  currExpression = (char *) MALLOC(sizeof(char)*expressionLength);
+  currExpression = (char *) CALLOC(expressionLength+1, sizeof(char));
   strcpy(currExpression,expr);
   expressionIndex = 0;
 }

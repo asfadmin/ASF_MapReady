@@ -1,8 +1,10 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for libasf_insar library
 
 include ../../make_support/system_rules
 
-CFLAGS := -Wall $(CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) $(JPEG_CFLAGS)
+CFLAGS := -Wall $(CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) $(JPEG_CFLAGS) $(GEOTIFF_CFLAGS) $(HDF5_CFLAGS) $(FFTW_CFLAGS)
 
 OBJS = \
 	functions.o \

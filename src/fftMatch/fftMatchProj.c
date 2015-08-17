@@ -110,7 +110,8 @@ int main(int argc,char **argv)
     inFile2=argv[2];
 
     asfSplashScreen(argc, argv);
-    fftMatch_proj(inFile1, inFile2, &bestLocX, &bestLocY);
+    float certainty;
+    fftMatch_proj(inFile1, inFile2, &bestLocX, &bestLocY, &certainty);
     asfPrintStatus("\nPixel offsets (projection corrected)\n");
     asfPrintStatus("x: %.5f, y: %.5f\n", bestLocX, bestLocY);
 

@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for		: remap
 # Module Author		: Orion Lawlor
 
@@ -14,7 +16,7 @@ OBJS = CLA.o \
 	writer.o \
 	remap.o
 
-CFLAGS += -Wall $(W_ERROR)
+CFLAGS += -Wall $(W_ERROR) $(GEOTIFF_CFLAGS) $(HDF5_CFLAGS)
 
 all: lib clean
 

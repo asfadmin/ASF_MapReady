@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 include ../../make_support/system_rules
 
 TARGET = asf_view
@@ -37,6 +39,10 @@ SRCS = asf_view.c \
 	shape.c \
 	csv.c \
 	excel.c
+
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(SHAPELIB_CFLAGS)
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)
@@ -153,7 +159,7 @@ LDLIBS = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(HDF5_LIBS) \
 	$(TIFF_LIBS) \

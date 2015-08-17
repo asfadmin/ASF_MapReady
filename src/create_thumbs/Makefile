@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 include ../../make_support/system_rules
 
 TARGET = create_thumbs
@@ -18,7 +21,7 @@ LIBS = \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(PNG_LIBS) \

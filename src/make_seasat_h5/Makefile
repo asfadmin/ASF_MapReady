@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for make_seasat_h5
 # Author Rudi Gens
 
@@ -9,7 +12,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(GLIB_LIBS) \
@@ -45,5 +48,4 @@ make_seasat_h5: $(OBJS_M2X)
 
 clean:
 	rm -f $(OBJS_M2X)
-
 

@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for libasf_import library
 
 include ../../make_support/system_rules
@@ -27,7 +29,9 @@ CFLAGS += $(W_ERROR) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-D_REENTRANT \
-	$(GSL_CFLAGS)
+	$(GSL_CFLAGS) \
+	$(HDF5_CFLAGS) \
+	$(GDAL_CFLAGS)
 
 # These defines enable various debugging behavior and output.  Leaving
 # debugging code in and available is all the rage these days, and is

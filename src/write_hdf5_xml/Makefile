@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for write_hdf5_xml
 # Author Rudi Gens
 
@@ -36,5 +39,4 @@ write_hdf5_xml: $(OBJS_M2X)
 
 clean:
 	rm -f $(OBJS_M2X)
-
 

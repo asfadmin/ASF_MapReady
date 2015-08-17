@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 ######################################################################
 # Makefile for 		:  fftMatch.c 
 # Module Author 	:  Orion Lawlor

@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 include ../../make_support/system_rules
 
 TARGET = stp
@@ -87,7 +90,6 @@ $(TARGET).exe: $(SRCS)
 clean:
 	-rm -f $(TARGET).exe core.*
 
-
 # UNIX build instructions
 else
 
@@ -123,5 +125,4 @@ doc:
 endif
 
 %.c: %.h
-
 

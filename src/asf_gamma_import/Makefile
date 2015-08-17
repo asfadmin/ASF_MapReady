@@ -1,7 +1,11 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for: asf_gamma_ingest
 # Wrapper for ingesting gamma data
 
 include ../../make_support/system_rules
+
+CFLAGS += $(GEOTIFF_CFLAGS) $(HDF5_CFLAGS)
 
 LIBS  = \
 	$(LIBDIR)/libasf_import.a \

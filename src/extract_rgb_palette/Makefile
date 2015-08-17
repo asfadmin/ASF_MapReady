@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 PROGRAM := extract_rgb_palette
 
 include ../../make_support/system_rules

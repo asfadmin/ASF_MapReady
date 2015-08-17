@@ -93,8 +93,7 @@ MAPREADY_SOURCE = \
 	doc/mapready-version_history.txt \
 	doc/arcgis_mask.pdf \
 	doc/dem_manual.pdf \
-	external \
-	LICENSE.txt \
+	COPYING \
 	make_support \
 	configure \
 	README_src.txt \
@@ -285,9 +284,8 @@ VERSION_FARADAY = $(shell awk -F '"' '$$1 ~ /define FARADAY_STRING/ {print $$2}'
 default: mapready
 
 # MapReady Package
-mapready: mkdirs_for_build external_libs
+mapready: mkdirs_for_build
 	mkdir -p $(MAPREADY_SHAREDIR)
-	-cp -R external/share/* $(MAPREADY_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_MAPREADY > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(MAPREADY_SHAREDIR) >> make_support/build_pkg.mk
@@ -295,7 +293,7 @@ mapready: mkdirs_for_build external_libs
 	cp doc/mapready-version_history.txt $(S_DOCDIR)
 	cp doc/arcgis_mask.pdf $(S_DOCDIR)
 	cp doc/dem_manual.pdf $(S_DOCDIR)
-	cp LICENSE.txt $(MAPREADY_SHAREDIR)
+	cp COPYING $(MAPREADY_SHAREDIR)
 	echo $(VERSION_MAPREADY) > $(MAPREADY_SHAREDIR)/mapready_version.txt
 	$(foreach MODULE, $(MAPREADY_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -303,9 +301,8 @@ mapready: mkdirs_for_build external_libs
 	@ echo ""
 
 # MapReady Package for SEASAT processor
-asps: mkdirs_for_build external_libs
+asps: mkdirs_for_build
 	mkdir -p $(MAPREADY_SHAREDIR)
-	-cp -R external/share/* $(MAPREADY_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_ASPS > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(MAPREADY_SHAREDIR) >> make_support/build_pkg.mk
@@ -313,7 +310,7 @@ asps: mkdirs_for_build external_libs
 	cp doc/mapready-version_history.txt $(S_DOCDIR)
 	cp doc/arcgis_mask.pdf $(S_DOCDIR)
 	cp doc/dem_manual.pdf $(S_DOCDIR)
-	cp LICENSE.txt $(MAPREADY_SHAREDIR)
+	cp COPYING $(MAPREADY_SHAREDIR)
 	echo $(VERSION_ASPS) > $(MAPREADY_SHAREDIR)/mapready_version.txt
 	$(foreach MODULE, $(MAPREADY_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -328,15 +325,14 @@ mapready_source:
 	rm -fr asf_tools
 
 # SAR Training Processor Package
-stp: mkdirs_for_build external_libs
+stp: mkdirs_for_build
 	mkdir -p $(STP_SHAREDIR)
-	-cp -R external/share/* $(STP_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_STP > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(STP_SHAREDIR) >> make_support/build_pkg.mk
 	cp doc/SAR_training_processor.pdf $(S_DOCDIR)
 	cp doc/stp-version_history.txt $(S_DOCDIR)
-	cp LICENSE.txt $(STP_SHAREDIR)
+	cp COPYING $(STP_SHAREDIR)
 	echo $(VERSION_STP) > $(STP_SHAREDIR)/stp_version.txt
 	$(foreach MODULE, $(STP_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -344,13 +340,12 @@ stp: mkdirs_for_build external_libs
 	@ echo ""
 
 # Acquisition Request Planner Package
-ap: mkdirs_for_build external_libs
+ap: mkdirs_for_build
 	mkdir -p $(AP_SHAREDIR)
-	-cp -R external/share/* $(AP_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_AP > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(AP_SHAREDIR) >> make_support/build_pkg.mk
-	cp LICENSE.txt $(AP_SHAREDIR)
+	cp COPYING $(AP_SHAREDIR)
 	echo $(VERSION_AP) > $(AP_SHAREDIR)/acquisitionplanner_version.txt
 	$(foreach MODULE, $(AP_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -358,13 +353,12 @@ ap: mkdirs_for_build external_libs
 	@ echo ""
 
 # Request Generator Package
-req: mkdirs_for_build external_libs
+req: mkdirs_for_build
 	mkdir -p $(REQ_SHAREDIR)
-	-cp -R external/share/* $(REQ_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_REQ > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(REQ_SHAREDIR) >> make_support/build_pkg.mk
-	cp LICENSE.txt $(REQ_SHAREDIR)
+	cp COPYING $(REQ_SHAREDIR)
 	echo $(VERSION_REQ) > $(REQ_SHAREDIR)/req_version.txt
 	$(foreach MODULE, $(REQ_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -372,15 +366,14 @@ req: mkdirs_for_build external_libs
 	@ echo ""
 
 # Convert To Vector Package
-c2v: mkdirs_for_build external_libs
+c2v: mkdirs_for_build
 	mkdir -p $(C2V_SHAREDIR)
-	-cp -R external/share/* $(C2V_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_C2V > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(C2V_SHAREDIR) >> make_support/build_pkg.mk
 	cp doc/ConvertToVector.pdf $(S_DOCDIR)
 	cp doc/ConvertToVector-version_history.txt $(S_DOCDIR)
-	cp LICENSE.txt $(C2V_SHAREDIR)
+	cp COPYING $(C2V_SHAREDIR)
 	echo $(VERSION_C2V) > $(C2V_SHAREDIR)/c2v_version.txt
 	$(foreach MODULE, $(C2V_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -388,13 +381,12 @@ c2v: mkdirs_for_build external_libs
 	@ echo ""
 
 # JPL Mosaic Suite
-jpl: mkdirs_for_build external_libs
+jpl: mkdirs_for_build
 	mkdir -p $(JPL_SHAREDIR)
-	-cp -R external/share/* $(JPL_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_JPL> make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(JPL_SHAREDIR) >> make_support/build_pkg.mk
-	cp LICENSE.txt $(JPL_SHAREDIR)
+	cp COPYING $(JPL_SHAREDIR)
 	echo $(VERSION_JPL) > $(JPL_SHAREDIR)/jplmosaicsuite_version.txt
 	$(foreach MODULE, $(JPL_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -402,14 +394,13 @@ jpl: mkdirs_for_build external_libs
 	@ echo ""
 
 # Create thumbs
-create_thumbs: mkdirs_for_build external_libs
+create_thumbs: mkdirs_for_build
 	mkdir -p $(CREATE_THUMBS_SHAREDIR)
-	-cp -R external/share/* $(CREATE_THUMBS_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_CREATE_THUMBS > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(CREATE_THUMBS_SHAREDIR) >> make_support/build_pkg.mk
 	cp doc/create_thumbs-version_history.txt $(S_DOCDIR)
-	cp LICENSE.txt $(CREATE_THUMBS_SHAREDIR)
+	cp COPYING $(CREATE_THUMBS_SHAREDIR)
 	echo $(VERSION_CREATE_THUMBS) > $(CREATE_THUMBS_SHAREDIR)/create_thumbs_version.txt
 	$(foreach MODULE, $(CREATE_THUMBS_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -417,13 +408,12 @@ create_thumbs: mkdirs_for_build external_libs
 	@ echo ""
 
 # Data QC
-data_qc: mkdirs_for_build external_libs
+data_qc: mkdirs_for_build
 	mkdir -p $(DATA_QC_SHAREDIR)
-	-cp -R external/share/* $(DATA_QC_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_DATA_QC > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(DATA_QC_SHAREDIR) >> make_support/build_pkg.mk
-	cp LICENSE.txt $(DATA_QC_SHAREDIR)
+	cp COPYING $(DATA_QC_SHAREDIR)
 	echo $(VERSION_DATA_QC) > $(DATA_QC_SHAREDIR)/data_qc_version.txt
 	$(foreach MODULE, $(DATA_QC_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -431,14 +421,13 @@ data_qc: mkdirs_for_build external_libs
 	@ echo ""
 
 # Faraday prediction
-faraday: mkdirs_for_build external_libs
+faraday: mkdirs_for_build
 	mkdir -p $(FARADAY_SHAREDIR)
-	-cp -R external/share/* $(FARADAY_SHAREDIR)
 	-chmod -R ug+w share
 	echo BUILD_PKG = -D_PKG_FARADAY > make_support/build_pkg.mk
 	echo SHAREDIR = ../../$(FARADAY_SHAREDIR) >> make_support/build_pkg.mk
 	cp doc/faraday_prediction-version_history.txt $(S_DOCDIR)
-	cp LICENSE.txt $(FARADAY_SHAREDIR)
+	cp COPYING $(FARADAY_SHAREDIR)
 	echo $(VERSION_FARADAY) > $(FARADAY_SHAREDIR)/faraday_version.txt
 	$(foreach MODULE, $(FARADAY_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
@@ -450,38 +439,88 @@ oldtools: mkdirs_for_build
 	cd make_support; $(MAKE); ./makemake @sys@; cd ..
 	$(MAKE) --makefile=Makefile.old
 
+# Get a nice version number for our package.
+DEBIAN_VERSION = $(VERSION_MAPREADY)
+ifeq ($(DEBIAN_VERSION),MAKE-DEV)
+	DEBIAN_VERSION = 0~$$(date +%Y%m%d)
+endif
+DATEFORMAT = "%a, %d %b %Y %T %z"
+
+# Generate a debian package.
+deb: default
+	if [ -d asf-mapready ]; then \
+		rm -r asf-mapready; \
+	fi
+	mkdir -p asf-mapready/DEBIAN
+	$(MAKE) DESTDIR=asf-mapready install
+	mkdir -p "asf-mapready/usr/share/doc/asf-mapready"
+	# Generate the changelog. I'm not looking forward to this.
+	echo "asf-mapready ($(DEBIAN_VERSION)) unstable; urgency=low" \
+		> asf-mapready/usr/share/doc/asf-mapready/changelog
+	git log -n 10 | \
+		sed -e "s/^/    /" \
+		    -e "/^    commit/s/^    /  * /" \
+		>> asf-mapready/usr/share/doc/asf-mapready/changelog
+	echo " -- Jenkins <uso@uaf.alaska.edu>  $$(date +'%a, %d %b %Y %T %z')" \
+		>> asf-mapready/usr/share/doc/asf-mapready/changelog
+	gzip -9 asf-mapready/usr/share/doc/asf-mapready/changelog
+	# I'm glad we got that over with.
+	cp debian/copyright asf-mapready/usr/share/doc/asf-mapready/copyright
+	strip asf-mapready/@prefix@/bin/*
+	sed -e "/Version:/s/$$/ $(DEBIAN_VERSION)/" \
+	    -e "/Installed-Size:/s|$$| $$(expr $$(expr $$(du -bs asf-mapready@prefix@|cut -f1) + 512) / 1024)|" \
+		<debian/control \
+		>asf-mapready/DEBIAN/control
+	fakeroot dpkg-deb --build asf-mapready
+ifneq (@prefix@,/usr)
+	@ echo ""
+	@ echo -n "          "
+	@ echo "============================================================"
+	@ echo -n "          "
+	@ echo "Be advised that debian packages should always reside in"
+	@ echo -n "          "
+	@ echo "/usr/bin, so it is recommended to run ./configure"
+	@ echo -n "          "
+	@ echo "--prefix=/usr before again running make deb."
+	@ echo -n "          "
+	@ echo "============================================================"
+	@ echo ""
+endif
+	@ echo ""
+	@ echo "  XXXXXXXXXXXX Debian Package Created! XXXXXXXXXXX"
+	@ echo ""
+
 # make everything!
 all: mapready oldtools req ap stp c2v jpl create_thumbs data_qc
 
+ifneq ($(DESTDIR),"")
+	DESTDIR += "/"
+endif
+BINDIR = $(DESTDIR)@BINDIR@
+LIBDIR = $(DESTDIR)@prefix@/lib
+SHAREDIR = $(DESTDIR)@SHAREDIR@
+
 # This should install any & all package(s) that have been built
 install: 
-	mkdir -p "@BINDIR@" "@prefix@/lib" "@SHAREDIR@"
-	-cp -R $(S_BINDIR)/* "@BINDIR@"
-	-cp -R $(S_LIBDIR)/* "@prefix@"/lib
-	-cp -R $(S_SHAREDIR)/* "@SHAREDIR@"
-	chmod 755 "@BINDIR@"/*
-	if [ -d @SHAREDIR@/projections ]; then \
-		chmod a+x "@SHAREDIR@"/projections ; \
-		chmod a+x "@SHAREDIR@"/projections/* ; \
+	mkdir -p "$(BINDIR)" "$(LIBDIR)" "$(SHAREDIR)"
+	-cp -R $(S_BINDIR)/* "$(BINDIR)"
+	-cp -R $(S_LIBDIR)/* "$(LIBDIR)"
+	-cp -R $(S_SHAREDIR)/* "$(SHAREDIR)"
+	chmod 755 "$(BINDIR)"/*
+	if [ -d "$(SHAREDIR)/projections" ]; then \
+		chmod a+x "$(SHAREDIR)"/projections ; \
+		chmod a+x "$(SHAREDIR)"/projections/* ; \
 	fi
-	if [ -d @SHAREDIR@/asf_mapready ]; then \
-		chmod a+x "@SHAREDIR@"/asf_mapready ; \
+	if [ -d "$(SHAREDIR)/asf_mapready" ]; then \
+		chmod a+x "$(SHAREDIR)"/asf_mapready ; \
 	fi
-	if [ -d @SHAREDIR@/asf_mapready ]; then \
-		chmod a+x "@SHAREDIR@"/proj ; \
+	if [ -d "$(SHAREDIR)/proj" ]; then \
+		chmod a+x "$(SHAREDIR)"/proj ; \
 	fi
-	-cp -R $(S_DOCDIR)/*.pdf "@SHAREDIR@/doc"
-	-cp -R $(S_DOCDIR)/*.txt "@SHAREDIR@/doc"
-	chmod -R a+r "@SHAREDIR@"
-	chmod -R ug+w "@SHAREDIR@"
-
-# Libraries written by non-ASF parties
-external_libs: mkdirs_for_build
-	$(MAKE) -C external
-	-cp -R external/lib/* $(S_LIBDIR)
-	-chmod -R ug+w $(S_LIBDIR)
-	-cp -R external/include/* include
-	-chmod -R ug+w include
+	-cp -R $(S_DOCDIR)/*.pdf "$(SHAREDIR)/doc"
+	-cp -R $(S_DOCDIR)/*.txt "$(SHAREDIR)/doc"
+	chmod -R a+r "$(SHAREDIR)"
+	chmod -R ug+w "$(SHAREDIR)"
 
 # Prep the directory tree for the build
 mkdirs_for_build:
@@ -501,6 +540,8 @@ clean:
 	rm -f Makefile.old
 	-rm mapready*.tar.gz
 	-rm -rf $(IGNORED_INCLUDES)
+	-rm -rf asf-mapready
+	-rm asf-mapready.deb
 	$(foreach MODULE, $(ALL_MODULES), \
 		$(MAKE) clean -C $(MODULE) &&) true
 

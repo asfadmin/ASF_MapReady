@@ -1,7 +1,8 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 PROGRAM := diffimage
 
 include ../../make_support/system_rules
-
 
 ###############################################################################
 #
@@ -36,7 +37,6 @@ CFLAGS += $(W_ERROR) \
 	$(GLIB_CFLAGS) \
 	$(GSL_CFLAGS) \
 	$(XML_CFLAGS)
-
 
 LIBS  = \
 	$(LIBDIR)/libasf_raster.a \

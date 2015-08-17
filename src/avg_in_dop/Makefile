@@ -2,7 +2,6 @@
 # Author: Patrick Denny
 # Version 1.1
 
-
 include ../../make_support/system_rules
 
 LIBS  = \
