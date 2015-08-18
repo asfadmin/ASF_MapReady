@@ -215,11 +215,10 @@ void ceos_read_stVecs(const char *fName, ceos_description *ceos, meta_parameters
         areInertial=0,areInertialVelocity=1;
 
     /*Fill output record with inital time.*/
-    if (ceos->facility==ASF && ceos->processor!=LZP)
+    if (ceos->facility==ASF && ceos->processor!=LZP && ceos->processor!=FOCUS)
     {/* ASF's state vectors start at the
         same time as the images themselves.*/
-        /* TAL timeStart = 0.0; */
-        timeStart=get_timeDelta(ceos,&ppdr,meta);
+        timeStart = 0.0;
         s->year   = (int) ppdr.year;
         s->julDay = (int) ppdr.gmt_day;
         s->second = ppdr.gmt_sec;
