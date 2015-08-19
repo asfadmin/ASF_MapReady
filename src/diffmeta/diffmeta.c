@@ -2709,9 +2709,11 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
     compare_meta_int(compare_err_msgs, "State Vector", "julDay",
                      mstatev1->julDay, mstatev2->julDay,
                      &failed);
+    /* temporarily disabled until the next release build is official
     compare_meta_double_with_tolerance(compare_err_msgs, "State Vector", "second",
                                        mstatev1->second, mstatev2->second,
                                        DM_SECONDS_TOL, &failed);
+    */
     compare_meta_int(compare_err_msgs, "State Vector", "vector_count",
                      mstatev1->vector_count, mstatev2->vector_count,
                      &failed);
