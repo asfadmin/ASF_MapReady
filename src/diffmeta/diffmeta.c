@@ -2497,11 +2497,11 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                                        mp1->startY, mp2->startY,
                                        DM_STARTY_TOL, &failed);
 
-    compare_meta_double_with_tolerance(compare_err_msgs, "Projection", "startX",
-                                       mp1->startX, mp2->startX,
+    compare_meta_double_with_tolerance(compare_err_msgs, "Projection", "perX",
+                                       mp1->perX, mp2->perX,
                                        DM_PERX_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Projection", "startY",
-                                       mp1->startY, mp2->startY,
+    compare_meta_double_with_tolerance(compare_err_msgs, "Projection", "perY",
+                                       mp1->perY, mp2->perY,
                                        DM_PERY_TOL, &failed);
 
     compare_meta_string(compare_err_msgs, "Projection", "units",
