@@ -161,7 +161,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       export_band_image(in_meta_name, in_data_name, out_name,
                         sample_mapping, band_name, rgb,
                         true_color, false_color,
-                        look_up_table_name, 0, PGM,
+                        look_up_table_name, PGM, 0,
                         &nouts, &outs);
   }
   else if ( format == POLSARPRO_HDR ) {
