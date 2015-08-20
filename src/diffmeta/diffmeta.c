@@ -2614,9 +2614,11 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
           compare_meta_double_with_tolerance(compare_err_msgs, "Projection - LAMCC", "false_northing",
                                              mp1->param.lamcc.false_northing, mp2->param.lamcc.false_northing,
                                              DM_LATITUDE_TOL, &failed);
+          /* A tolerance test on an optional parameter does not make sense to me
           compare_meta_double_with_tolerance(compare_err_msgs, "Projection - LAMCC", "scale_factor",
                                              mp1->param.lamcc.scale_factor, mp2->param.lamcc.scale_factor,
                                              DM_SCALE_FACTOR_TOL, &failed);
+          */
           break;
         case LAMBERT_AZIMUTHAL_EQUAL_AREA:
           compare_meta_double_with_tolerance(compare_err_msgs, "Projection - LAMAZ", "center_lon",
