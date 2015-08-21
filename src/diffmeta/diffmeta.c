@@ -926,6 +926,16 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
       mg2->image_data_type != GEOREFERENCED_IMAGE   &&
       mg2->image_data_type != GEOCODED_IMAGE        &&
       mg2->image_data_type != POLARIMETRIC_IMAGE    &&
+      mg2->image_data_type != POLARIMETRIC_SEGMENTATION &&
+      mg2->image_data_type != POLARIMETRIC_DECOMPOSITION &&
+      mg2->image_data_type != POLARIMETRIC_PARAMETER &&
+      mg2->image_data_type != POLARIMETRIC_C2_MATRIX &&
+      mg2->image_data_type != POLARIMETRIC_C3_MATRIX &&
+      mg2->image_data_type != POLARIMETRIC_C4_MATRIX &&
+      mg2->image_data_type != POLARIMETRIC_T3_MATRIX &&
+      mg2->image_data_type != POLARIMETRIC_T4_MATRIX &&
+      mg2->image_data_type != POLARIMETRIC_S2_MATRIX &&
+      mg2->image_data_type != POLARIMETRIC_STOKES_MATRIX &&
       mg2->image_data_type != LUT_IMAGE             &&
       mg2->image_data_type != ELEVATION             &&
       mg2->image_data_type != DEM                   &&
