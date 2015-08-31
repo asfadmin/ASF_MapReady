@@ -152,8 +152,8 @@
 #define DM_MAX_SECOND             86400.0
 #define DM_MIN_VECTOR_COUNT       1
 #define DM_MAX_VECTOR_COUNT       100
-#define DM_MIN_VEC_TIME           -1000.0
-#define DM_MAX_VEC_TIME           1000.0
+#define DM_MIN_VEC_TIME           -10000.0
+#define DM_MAX_VEC_TIME           10000.0
 #define DM_MIN_ECR_COORD          -10000000.0
 #define DM_MAX_ECR_COORD          10000000.0
 #define DM_MIN_ECR_VEL            -10000.0
