@@ -291,7 +291,7 @@ void split_polygon(double *lat, double *lon, int nCoords,
         project_parameters_t pps;
         projection_type_t proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
         meta_projection *proj = meta_projection_init();
-        if (fabs(maxLat < 83.0)) {
+        if (fabs(maxLat < 66.5)) {
           pps.utm.zone = 60;
           pps.utm.scale_factor = 0.9996;
           pps.utm.lat0 = 0.0;
