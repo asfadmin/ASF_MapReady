@@ -89,7 +89,7 @@ static void extract_file(unzFile *file, char *szFileName, const char *path)
     sprintf(fileName, "%s%c%s", path, DIR_SEPARATOR, szFileName);
     FILE *fp = FOPEN(fileName, "wb");
     while ((bytes = cpl_unzReadCurrentFile(file, buf, 8192)) > 0)
-      FWRITE(buf, bytes, 1, fp);
+      ASF_FWRITE(buf, bytes, 1, fp);
     FCLOSE(fp);
     FREE(buf);
     FREE(fileName);

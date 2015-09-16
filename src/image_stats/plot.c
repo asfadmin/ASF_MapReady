@@ -22,7 +22,7 @@ void calculate_plot(char *axis, char *gridFile, char *dataFile, char *maskFile,
   if (maskFlag) {
     fpMask = fopenImage(maskFile, "rb");
     mask = (unsigned char *) MALLOC(lines * samples * sizeof(char));
-    FREAD(mask, sizeof(char), lines*samples, fpMask);
+    ASF_FREAD(mask, sizeof(char), lines*samples, fpMask);
     FCLOSE(fpMask);
   }
   

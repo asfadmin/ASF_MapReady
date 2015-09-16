@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for : convert2jpeg
 # Module Author: Mike Shindle, mm/yyyy
 #                Patrick Denny, 2/2004

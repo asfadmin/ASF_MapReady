@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for libasf_raster library
 
 include ../../make_support/system_rules
@@ -7,6 +9,7 @@ CFLAGS := $(W_ERROR) \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
 	$(GLIB_CFLAGS) \
+	$(HDF5_CFLAGS) \
 	$(CFLAGS)
 
 OBJS = \

@@ -182,7 +182,7 @@ int main (int argc, char *argv[])
    --------------*/
   /* RGB Color (3 bands) */
   if (flags & zXID) {
-    FREAD(band,sizeof(unsigned char),3*wid*len,fin);
+    ASF_FREAD(band,sizeof(unsigned char),3*wid*len,fin);
     for (cnt=0; cnt<3; cnt++) {
       for (y=0;y<len;y++)
          for (x=0;x<wid;x++)
@@ -191,7 +191,7 @@ int main (int argc, char *argv[])
   }
   /* 1 band (Grayscale or apply a colortable to it) */
   else {
-     FREAD(band,sizeof(unsigned char),len*wid,fin);
+     ASF_FREAD(band,sizeof(unsigned char),len*wid,fin);
      for (x=0; x < len*wid; x++)
      {
 	i=x*3;

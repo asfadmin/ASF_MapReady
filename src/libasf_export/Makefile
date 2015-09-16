@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for libasf_export library
 
 include ../../make_support/system_rules
@@ -43,8 +45,9 @@ CFLAGS += \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(XML_CFLAGS) \
+	$(HDF5_CFLAGS) \
+	$(SHAPELIB_CFLAGS) \
 	$(GSL_CFLAGS) -Wall
-
 
 LIBS  = \
 	$(LIBDIR)/asf_meta.a \
@@ -62,7 +65,6 @@ LIBS  = \
 	$(HDF5_LIBS) \
 	$(ZLIB_LIBS) \
 	-lm
-
 
 ###############################################################################
 #

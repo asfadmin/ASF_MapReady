@@ -891,7 +891,7 @@ int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, int good_frame, FILE
                 dest[n + 1] = (unsigned char)ibuf[0][k]; // Even pixel
                 n += 2;
             }
-            FWRITE(dest, sizeof(unsigned char), 2 * 3550, out); // Write raw interlaced data to .img file
+            ASF_FWRITE(dest, sizeof(unsigned char), 2 * 3550, out); // Write raw interlaced data to .img file
             frame_lines_written++;
         }
 
@@ -911,7 +911,7 @@ int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, int good_frame, FILE
         }
         num_lines = JL0_AVNIR_LINES_PER_FRAME;
         for (i = 0; i < num_lines; i++) {
-            FWRITE(dest, sizeof(unsigned char), 2 * 3550, out);
+            ASF_FWRITE(dest, sizeof(unsigned char), 2 * 3550, out);
         }
         FREE(dest);
     }
@@ -939,7 +939,7 @@ void concat_avnir_band_chunks(int num_chunks, const char **chunks, const char *a
         bytes_read = FREAD_CHECKED(data, sizeof(unsigned char), JL0_AVNIR_TFRAME_LEN, in, 1);
         while (bytes_read == JL0_AVNIR_TFRAME_LEN && !feof(in)) {
             lines_read++;
-            FWRITE(data, sizeof(unsigned char), JL0_AVNIR_TFRAME_LEN, out);
+            ASF_FWRITE(data, sizeof(unsigned char), JL0_AVNIR_TFRAME_LEN, out);
             bytes_read = FREAD_CHECKED(data, sizeof(unsigned char), JL0_AVNIR_TFRAME_LEN, in, 1);
             asfLineMeter(lines_read, JL0_AVNIR_CHUNK_SIZE);
         }
@@ -1281,8 +1281,8 @@ int read_write_avnir_jpeg_frame(FILE *in, unsigned char *hdr_buf, unsigned char 
     //
     // 1) Write the SOI to the file
     i = 0;
-    FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Should be 0xFF
-    FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Should be 0xD8
+    ASF_FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Should be 0xFF
+    ASF_FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Should be 0xD8
     // 2) Write the remainder of the header bytes, skipping the non-standard or meaningless
     //    marker/payload combinations
     while (i < JL0_AVNIR_JPEG_HDR_LEN) {
@@ -1308,8 +1308,8 @@ int read_write_avnir_jpeg_frame(FILE *in, unsigned char *hdr_buf, unsigned char 
             else if (mID == SOS) {
                 // Found start of scan ...just write the marker out and let the loop (below) write all other
                 // bytes (up to end of image, EOI)
-                FWRITE(&hdr_buf[i++], 1, 1, jpeg);
-                FWRITE(&hdr_buf[i++], 1, 1, jpeg);
+                ASF_FWRITE(&hdr_buf[i++], 1, 1, jpeg);
+                ASF_FWRITE(&hdr_buf[i++], 1, 1, jpeg);
             }
             else {
                 // We are still in the block of header info that precedes the scan, so this must
@@ -1318,13 +1318,13 @@ int read_write_avnir_jpeg_frame(FILE *in, unsigned char *hdr_buf, unsigned char 
                     success = 0;
                     break;
                 }
-                FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Should be 0xFF
-                FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Should be the marker ID
+                ASF_FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Should be 0xFF
+                ASF_FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Should be the marker ID
                 payload_length = hdr_buf[i]; // Shift left to give bits proper values
                 payload_length = payload_length << 8;
-                FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Write upper byte of payload size
+                ASF_FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Write upper byte of payload size
                 payload_length += hdr_buf[i];
-                FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Write lower byte of payload size
+                ASF_FWRITE(&hdr_buf[i++], 1, 1, jpeg); // Write lower byte of payload size
                 payload_length -= 2; // Length includes marker and id (already written ..need to skip these)
                 if (i + payload_length > JL0_AVNIR_JPEG_HDR_LEN) {
                     success = 0;
@@ -1333,7 +1333,7 @@ int read_write_avnir_jpeg_frame(FILE *in, unsigned char *hdr_buf, unsigned char 
                 int byte;
                 for (byte = 0; byte < payload_length && i < JL0_AVNIR_JPEG_HDR_LEN; byte++) {
                     // Write the rest of the marker's payload
-                    FWRITE(&hdr_buf[i++], 1, 1, jpeg);
+                    ASF_FWRITE(&hdr_buf[i++], 1, 1, jpeg);
                 }
                 if (i >= JL0_AVNIR_JPEG_HDR_LEN && hdr_buf[i - 1] != SOS) {
                     success = 0;
@@ -1342,7 +1342,7 @@ int read_write_avnir_jpeg_frame(FILE *in, unsigned char *hdr_buf, unsigned char 
             }
         }
         else {
-            FWRITE(&hdr_buf[i++], 1, 1, jpeg);
+            ASF_FWRITE(&hdr_buf[i++], 1, 1, jpeg);
         }
     }
 
@@ -1355,11 +1355,11 @@ int read_write_avnir_jpeg_frame(FILE *in, unsigned char *hdr_buf, unsigned char 
     }
     int EOI_found = 0;
     while (num_read == 1 && !feof(in) && success) {
-        FWRITE(&c, 1, 1, jpeg);
+        ASF_FWRITE(&c, 1, 1, jpeg);
         if (c == MARKER) {
             num_read = fread_avnir_tstream(&mID, in, buf, first_vcdu, idx, band_no, last_vcdu_ctr, valid);
             if (num_read == 1 && !feof(in) && success && *valid) {
-                FWRITE(&mID, 1, 1, jpeg);
+                ASF_FWRITE(&mID, 1, 1, jpeg);
                 if (mID == EOI) {
                     EOI_found = 1;
                     break;

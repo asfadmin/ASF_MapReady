@@ -578,7 +578,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
         FSEEK64(fpIn, offset, SEEK_SET);
         if (imd->general->data_type == INTEGER16)
         {
-	  FREAD(shorts, sizeof(unsigned short), ns, fpIn);
+	  ASF_FREAD(shorts, sizeof(unsigned short), ns, fpIn);
           for (jj = 0; jj < imd->general->sample_count; ++jj) {
 	    big16(shorts[jj]);
 	    line[jj] = (float) shorts[jj];
@@ -586,13 +586,13 @@ int generate_ceos_thumbnail(const char *input_data, int size,
         }
         else if (imd->general->data_type == ASF_BYTE)
         {
-          FREAD(bytes, sizeof(unsigned char), ns, fpIn);
+          ASF_FREAD(bytes, sizeof(unsigned char), ns, fpIn);
           for (jj = 0; jj < imd->general->sample_count; ++jj) {
 	    line[jj] = (float) bytes[jj];
           }
         }
 	else if (imd->general->data_type == COMPLEX_REAL32) {
-	  FREAD(cpx_floats, sizeof(float), 2*ns, fpIn);
+	  ASF_FREAD(cpx_floats, sizeof(float), 2*ns, fpIn);
 	  for (jj = 0; jj < imd->general->sample_count; ++jj) {
 	    big32(cpx_floats[jj*2]);
 	    big32(cpx_floats[jj*2+1]);
@@ -602,7 +602,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 	  }
 	}
 	else if (imd->general->data_type == COMPLEX_INTEGER16) {
-	  FREAD(cpx_shorts, sizeof(short), 2*ns, fpIn);
+	  ASF_FREAD(cpx_shorts, sizeof(short), 2*ns, fpIn);
 	  for (jj = 0; jj < imd->general->sample_count; ++jj) {
 	    big16(cpx_shorts[jj*2]);
 	    big16(cpx_shorts[jj*2+1]);
@@ -612,7 +612,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 	  }
 	}
 	else if (imd->general->data_type == COMPLEX_BYTE) {
-	  FREAD(cpx_bytes, sizeof(unsigned char), 2*ns, fpIn);
+	  ASF_FREAD(cpx_bytes, sizeof(unsigned char), 2*ns, fpIn);
 	  for (jj = 0; jj < imd->general->sample_count; ++jj) {
 	    re = (float) cpx_bytes[jj*2];
 	    im = (float) cpx_bytes[jj*2+1];

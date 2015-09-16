@@ -545,7 +545,7 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
   s->nLines = 0;
   for (ii=0; ii<nl; ii++) {
     readNextPulse(s, iqBuf, inDataName, outDataName);
-    FWRITE(iqBuf, s->nSamp*2, 1, fpOut);
+    ASF_FWRITE(iqBuf, s->nSamp*2, 1, fpOut);
     asfLineMeter(ii,nl);
     s->nLines++;
   }
@@ -739,7 +739,7 @@ void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
   for (ii=0; ii<nl; ii++) {
     offset = (long long)headerBytes + ii*(long long)image_fdr.reclen;
     FSEEK64(fpIn, offset, SEEK_SET);
-    FREAD(short_buf, sizeof(unsigned short), ns, fpIn);
+    ASF_FREAD(short_buf, sizeof(unsigned short), ns, fpIn);
     // Need to check for endianess for the entire line first, in case we
     // need to flip
     for (kk=0; kk<ns; kk++) {
@@ -906,7 +906,7 @@ void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
   for (ii=0; ii<nl; ii++) {
     offset = (long long)headerBytes + ii*(long long)image_fdr.reclen;
     FSEEK64(fpIn, offset, SEEK_SET);
-    FREAD(short_buf, sizeof(unsigned short), ns, fpIn);
+    ASF_FREAD(short_buf, sizeof(unsigned short), ns, fpIn);
     // Need to check for endianess for the entire line first, in case we
     // need to flip
     for (kk=0; kk<ns; kk++) {
@@ -1671,19 +1671,19 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         // Read the data according to their data type
         switch (data_type) {
           case COMPLEX_BYTE:
-            FREAD(cpx_byte_buf+2*ll*ns, sizeof(unsigned char), 2*ns, fpIn);
+            ASF_FREAD(cpx_byte_buf+2*ll*ns, sizeof(unsigned char), 2*ns, fpIn);
             break;
           case COMPLEX_INTEGER16:
-            FREAD(cpx_short_buf+2*ll*ns, sizeof(short), 2*ns, fpIn);
+            ASF_FREAD(cpx_short_buf+2*ll*ns, sizeof(short), 2*ns, fpIn);
             break;
           case COMPLEX_INTEGER32:
-            FREAD(cpx_int_buf+2*ll*ns, sizeof(int), 2*ns, fpIn);
+            ASF_FREAD(cpx_int_buf+2*ll*ns, sizeof(int), 2*ns, fpIn);
             break;
           case COMPLEX_REAL64:
-            FREAD(cpx_double_buf+2*ll*ns, sizeof(double), 2*ns, fpIn);
+            ASF_FREAD(cpx_double_buf+2*ll*ns, sizeof(double), 2*ns, fpIn);
             break;
           case COMPLEX_REAL32:
-            FREAD(cpx_float_buf+2*ll*ns, sizeof(float), 2*ns, fpIn);
+            ASF_FREAD(cpx_float_buf+2*ll*ns, sizeof(float), 2*ns, fpIn);
             break;
           case ASF_BYTE:
           case INTEGER16:
@@ -1966,22 +1966,22 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       // Read the data according to their data type
       switch (data_type) {
         case REAL32:
-            FREAD(float_buf, sizeof(float), ns, fpIn);
+            ASF_FREAD(float_buf, sizeof(float), ns, fpIn);
             break;
         case ASF_BYTE:
-            FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
+            ASF_FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
             break;
         case INTEGER16:
-            FREAD(short_buf, sizeof(short), ns, fpIn);
+            ASF_FREAD(short_buf, sizeof(short), ns, fpIn);
             break;
         case INTEGER32:
-            FREAD(int_buf, sizeof(int), ns, fpIn);
+            ASF_FREAD(int_buf, sizeof(int), ns, fpIn);
             break;
         case REAL64:
-            FREAD(double_buf, sizeof(double), ns, fpIn);
+            ASF_FREAD(double_buf, sizeof(double), ns, fpIn);
             break;
         case COMPLEX_BYTE:
-            FREAD(cpx_byte_buf, sizeof(unsigned char), 2*ns, fpIn);
+            ASF_FREAD(cpx_byte_buf, sizeof(unsigned char), 2*ns, fpIn);
             break;
         case COMPLEX_INTEGER16:
         case COMPLEX_INTEGER32:

@@ -1,5 +1,0 @@
-
-# Added by ASF
-libshp.a: shpopen.o shptree.o dbfopen.o
-	  ar cru libshp.a  shpopen.o shptree.o dbfopen.o
-	  ranlib libshp.a

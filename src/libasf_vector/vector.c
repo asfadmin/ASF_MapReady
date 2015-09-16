@@ -108,6 +108,8 @@ meta_parameters *meta2vector(char *inFile, dbf_header_t **dbf, int *nAttr,
         header[ii].sValue = STRDUP("ascending");
       else if (meta->general->orbit_direction == 'D')
         header[ii].sValue = STRDUP("descending");
+      else
+        header[ii].sValue = STRDUP("n/a");
       values[m++] = header[ii];
     }
     else if (strcmp_case(header[ii].meta, "meta.general.frame") == 0 &&

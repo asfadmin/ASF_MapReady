@@ -1272,49 +1272,67 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         }
         g_assert (current_edge_point == edge_point_count);
 	
-				if (projection_type != LAT_LONG_PSEUDO_PROJECTION) {
-					// Pointers to arrays of projected coordinates to be filled in.
-					// The projection function will allocate this memory itself.
-					double *x = NULL, *y = NULL;
-					x = y = NULL;
-					// Project all the edge pixels.
-					ret = project_arr (pp, lats, lons, NULL, &x, &y, NULL,
-								 edge_point_count, datum);
-					if (!ret) {
-						asfPrintError("Non-forceable projection library error occurred.  Using\n"
-													"the -force or \"Ignore projection errors\" checkbox or \n"
-													"\"force = 1\" in a MapReady configuration file will\n"
-													"not work with the current settings and geographical area.\n");
-					}
-					// Find the extents of the image in projection coordinates.
-					for ( ii = 0 ; ii < edge_point_count ; ii++ ) {
-									if ( x[ii] < min_x ) { min_x = x[ii]; }
-									if ( x[ii] > max_x ) { max_x = x[ii]; }
-									if ( y[ii] < min_y ) { min_y = y[ii]; }
-									if ( y[ii] > max_y ) { max_y = y[ii]; }
-					}
-
-					free (y);
-					free (x);
-				}
-				else {
-					for (ii=0; ii<edge_point_count; ii++) {
-						lats[ii] *= R2D;
-						lons[ii] *= R2D;
-					}
-					for (ii=0; ii<edge_point_count; ii++) {
-									if (meta_is_valid_double(lons[ii]) && lons[ii] < min_x) 
-							min_x = lons[ii];
-									if (meta_is_valid_double(lons[ii]) && lons[ii] > max_x) 
-							max_x = lons[ii];
-									if (meta_is_valid_double(lats[ii]) && lats[ii] < min_y) 
-							min_y = lats[ii];
-									if (meta_is_valid_double(lats[ii]) && lats[ii] > max_y)
-							max_y = lats[ii];
-					}
-				}
-        g_free (lons);
-        g_free (lats);
+	if (projection_type != LAT_LONG_PSEUDO_PROJECTION) {
+	  // Pointers to arrays of projected coordinates to be filled in.
+	  // The projection function will allocate this memory itself.
+	  double *x = NULL, *y = NULL;
+	  x = y = NULL;
+	  // Project all the edge pixels.
+	  ret = project_arr (pp, lats, lons, NULL, &x, &y, NULL,
+	    edge_point_count, datum);
+	  if (!ret) {
+	    asfPrintError("Non-forceable projection library error occurred.  Using\n"
+	      "the -force or \"Ignore projection errors\" checkbox or \n"
+	      "\"force = 1\" in a MapReady configuration file will\n"
+	      "not work with the current settings and geographical area.\n");
+	  }
+	  // Find the extents of the image in projection coordinates.
+	  for ( ii = 0 ; ii < edge_point_count ; ii++ ) {
+	    if ( x[ii] < min_x ) { min_x = x[ii]; }
+	    if ( x[ii] > max_x ) { max_x = x[ii]; }
+	    if ( y[ii] < min_y ) { min_y = y[ii]; }
+	    if ( y[ii] > max_y ) { max_y = y[ii]; }
+	  }
+	  free (y);
+	  free (x);
+        }
+	else {
+	  for (ii=0; ii<edge_point_count; ii++) {
+	    lats[ii] *= R2D;
+	    lons[ii] *= R2D;
+	  }
+	for (ii=0; ii<edge_point_count; ii++) {
+	  if (meta_is_valid_double(lons[ii]) && lons[ii] < min_x) 
+	    min_x = lons[ii];
+	  if (meta_is_valid_double(lons[ii]) && lons[ii] > max_x) 
+	    max_x = lons[ii];
+	  if (meta_is_valid_double(lats[ii]) && lats[ii] < min_y) 
+	    min_y = lats[ii];
+	  if (meta_is_valid_double(lats[ii]) && lats[ii] > max_y)
+	    max_y = lats[ii];
+	}
+	// Recalculate in the dateline case
+	if (fabs(max_x - min_x) > 180.0) {
+          min_x = DBL_MAX;
+          max_x = -DBL_MAX;
+          min_y = DBL_MAX;
+          max_y = -DBL_MAX;
+	  for (ii=0; ii<edge_point_count; ii++) {
+	    if (lons[ii] < 0.0)
+	      lons[ii] += 360.0;
+	    if (meta_is_valid_double(lons[ii]) && lons[ii] < min_x) 
+	      min_x = lons[ii];
+	    if (meta_is_valid_double(lons[ii]) && lons[ii] > max_x) 
+	      max_x = lons[ii];
+	    if (meta_is_valid_double(lats[ii]) && lats[ii] < min_y) 
+	      min_y = lats[ii];
+	    if (meta_is_valid_double(lats[ii]) && lats[ii] > max_y)
+	      max_y = lats[ii];
+	  }
+	}
+      }
+      g_free (lons);
+      g_free (lats);
     }
 
     // Convert any "degrees" pixel sizes to meters

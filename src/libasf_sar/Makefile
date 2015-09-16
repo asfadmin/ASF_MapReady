@@ -1,8 +1,10 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 # Makefile for libasf_sar library
 
 include ../../make_support/system_rules
 
-CFLAGS := -Wall $(W_ERROR) $(CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS)
+CFLAGS := -Wall $(W_ERROR) $(CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS) $(GEOTIFF_CFLAGS) $(HDF5_CFLAGS) $(SHAPELIB_CFLAGS)
 
 OBJS = \
 	gr2sr.o \
@@ -34,7 +36,7 @@ LIBS = \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/libasf_raster.a \
-	$(LIBDIR)/libshp.a \
+	$(SHAPELIB_LIBS) \
 	$(LDFLAGS) \
 	$(GSL_LIBS) \
 	-lm

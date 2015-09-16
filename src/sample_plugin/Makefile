@@ -1,3 +1,5 @@
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 include ../../make_support/system_rules
 
 TARGET = sample_plugin
@@ -36,6 +38,6 @@ clean:
 	-rm -f core $(OBJS) *.o test
 
 test: $(OBJS) *.t.c
-	$(CC) $(CFLAGS) -o test *.t.c $(LIBS) $(LDFLAGS) $(LIBDIR)/libcunit.a
+	$(CC) $(CFLAGS) -o test *.t.c $(LIBS) $(LDFLAGS) $(CUNIT_LIBS)
 	./test
 

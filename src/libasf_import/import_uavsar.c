@@ -1204,7 +1204,7 @@ void import_uavsar_ext(const char *inFileName, int line, int sample, int width,
 
       for (ii=0; ii<metaOut->general->line_count; ii++) {
 	for (kk=0; kk<metaOut->general->sample_count; kk++) {
-	  FREAD(byteBuf, sizeof(char), 10, fpIn);
+	  ASF_FREAD(byteBuf, sizeof(char), 10, fpIn);
           //float m11, m12, m13, m14, m22, m23, m24, m33, m34, m44;
 	  // Scale is always 1.0 according to Bruce Chapman
 	  //m11 = ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);

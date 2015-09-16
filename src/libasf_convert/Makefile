@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for libasf_convert library
 
 include ../../make_support/system_rules
@@ -7,7 +10,7 @@ OBJS  = asf_convert.o \
 	functions.o \
 	kml_overlay.o
 
-CFLAGS += -Wall $(W_ERROR) $(GLIB_CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS) $(JPEG_CFLAGS)
+CFLAGS += -Wall $(W_ERROR) $(GLIB_CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS) $(JPEG_CFLAGS) $(SHAPELIB_CFLAGS)
 
 all: build_only
 	mv libasf_convert.a $(LIBDIR)

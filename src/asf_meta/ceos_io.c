@@ -13,7 +13,7 @@ int firstRecordLen(char *ceosName)
   struct HEADER h;
 
   f=FOPEN(ceosName,"rb");    /*Open file.*/
-  FREAD(&h,1,12,f);          /*Read first CEOS header.*/
+  ASF_FREAD(&h,1,12,f);          /*Read first CEOS header.*/
   FCLOSE(f);                 /*Close file*/
   return bigInt32(h.recsiz); /*put recsiz in proper endian format & return*/
 }
@@ -52,7 +52,7 @@ void readCeosLine(int *dest,int y,CEOS_FILE *c)
   unsigned char *buf=(unsigned char *)MALLOC(lineLen);
   int i;
   FSEEK64(c->f_in,(long long)c->headerBytes+y*c->lineBytes,0);
-  FREAD(buf,1,lineLen,c->f_in);
+  ASF_FREAD(buf,1,lineLen,c->f_in);
   if (c->ddr.dtype==DTYPE_BYTE)
     for (i=0;i<ns;i++)
       dest[i]=buf[i];

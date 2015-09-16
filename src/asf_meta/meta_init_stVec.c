@@ -157,7 +157,8 @@ void ceos_init_stVec(const char *fName, ceos_description *ceos,
       new_st->vecs[ii] = meta->state_vectors->vecs[ii+min-4];
     FREE(meta->state_vectors);
     meta->state_vectors = new_st;
-    meta->sar->time_shift = 0.0;
+    // Time shift should definitely set in the code that is calling this function
+    // meta->sar->time_shift = 0.0;
   }
   // Propagate three state vectors for regular frames
   else if (ceos->processor != PREC && ceos->processor != unknownProcessor) {
@@ -215,7 +216,7 @@ void ceos_read_stVecs(const char *fName, ceos_description *ceos, meta_parameters
         areInertial=0,areInertialVelocity=1;
 
     /*Fill output record with inital time.*/
-    if (ceos->facility==ASF && ceos->processor!=LZP)
+    if (ceos->facility==ASF && ceos->processor!=LZP && ceos->processor!=FOCUS)
     {/* ASF's state vectors start at the
         same time as the images themselves.*/
         timeStart = 0.0;

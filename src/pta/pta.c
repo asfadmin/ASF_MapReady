@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
 	if (debug) { // Store original image for debugging
 	  fp = FOPEN("original.img", "wb");
 	  size = bigSize*bigSize*sizeof(float);
-	  FWRITE(original_amplitude, size, 1, fp);
+	  ASF_FWRITE(original_amplitude, size, 1, fp);
 	  FCLOSE(fp);
 	  meta_debug = meta_init(szImage);
 	  meta_debug->general->line_count = 
@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
 	if (debug) { // Store oversampled image for debugging
 	  fp = FOPEN("oversample.img", "wb");
 	  size = bigSize*bigSize*sizeof(float);
-	  FWRITE(amplitude, size, 1, fp);
+	  ASF_FWRITE(amplitude, size, 1, fp);
 	  FCLOSE(fp);
 	  meta_debug = meta_init("oversample.meta");
 	  meta_debug->general->line_count = 

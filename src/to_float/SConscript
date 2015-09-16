@@ -1,0 +1,23 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#include",
+        "#src/asf",
+        "#src/asf_meta",
+        "#src/libasf_proj",
+        "#src/libasf_raster",
+        ])
+
+localenv.ParseConfig("pkg-config --cflags --libs libgeotiff")
+localenv.ParseConfig("pkg-config --cflags --libs glib-2.0")
+
+localenv.AppendUnique(LIBS = [
+    "asf",
+    "asf_meta",
+    "asf_raster",
+])
+
+bins = localenv.Program("to_float", Glob("*.c"))
+
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)

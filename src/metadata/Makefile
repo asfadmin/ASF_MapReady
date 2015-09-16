@@ -1,3 +1,6 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
+CFLAGS += $(HDF5_CFLAGS)
 # Makefile for:   metadata
 # Module Author:  Tom Logan & Mike Shindle
 #   modified by:  Patrick Denny

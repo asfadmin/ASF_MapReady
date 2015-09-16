@@ -5,10 +5,6 @@
 #include <time.h>
 #include <string.h>
 
-#define ASF_COPYRIGHT_STRING \
-"Copyright (c) %d, University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
-"All rights reserved.\n"
-
 void print_copyright()
 {
     time_t t;
@@ -16,7 +12,7 @@ void print_copyright()
     t = time(NULL);
     ts = localtime(&t);
     int year = ts->tm_year+1900;
-    printf("\n"ASF_COPYRIGHT_STRING"\n", year);
+    printf(ASF_COPYRIGHT_STRING"\n");
 }
 
 // Print our copyright and license notice & exit
@@ -24,8 +20,8 @@ void print_license(int license_id)
 {
   print_copyright();
   switch (license_id) {
-    case ASF_BSD_ID:
-      printf(ASF_BSD_LICENSE_STRING"\n");
+    case ASF_LICENSE_ID:
+      printf(ASF_LICENSE_STRING);
       break;
     default:
       printf("License not found.\n");
@@ -60,7 +56,7 @@ void handle_license_and_version_args(int argc, char *argv[],
     for (i = 0; i < argc; ++i) {
         if (strcmp(argv[i], "-license") == 0 ||
             strcmp(argv[i], "--license") == 0) {
-            print_license(ASF_BSD_ID);
+            print_license(ASF_LICENSE_ID);
         }
         if (strcmp(argv[i], "-version") == 0 ||
             strcmp(argv[i], "--version") == 0) {

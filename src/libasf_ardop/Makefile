@@ -1,3 +1,5 @@
+CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(GEOTIFF_CFLAGS)
 include ../../make_support/system_rules
 
 OBJLIB = ardop_libs.o \
@@ -25,7 +27,7 @@ ASPLIB = patch.o \
 
 # Filter out the ISOC99 FLAGS which causes some problems.
 CFLAGS := $(patsubst -D_ISOC99_SOURCE, , $(CFLAGS))
-CFLAGS += $(GLIB_CFLAGS) $(W_ERROR) $(JPEG_CFLAGS)
+CFLAGS += $(GLIB_CFLAGS) $(W_ERROR) $(JPEG_CFLAGS) $(GEOTIFF_CFLAGS) $(HDF5_CFLAGS)
 
 all: build_only
 	mv libasf_ardop.a $(LIBDIR)

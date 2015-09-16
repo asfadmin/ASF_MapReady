@@ -227,8 +227,9 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2,
 					     char *outfile,
                                              int band1, int band2, 
 					     psnr_t *psnr);
-void make_generic_meta(char *file, uint32 height, uint32 width, 
-		       data_type_t data_type);
+void make_generic_meta(char *file, uint32 height, uint32 width,
+                data_type_t data_type, char **band_names,
+                int num_bands);
 void fftShiftCheck(char *file1, char *file2, char *corr_file,
                    shift_data_t *shifts);
 void export_ppm_pgm_to_asf_img(char *inFile, char *outfile,
@@ -277,1170 +278,388 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
 	      psnr_t **psnrs, complex_psnr_t **complex_psnr,
 	      shift_data_t **data_shift)
 {
-  extern FILE *fLog;            /* output file descriptor, stdout or log file */
-  int bandflag=0, strictflag=0;
-  int num_names_extracted1 = 0, num_names_extracted2 = 0, band = 0;
-  char msg[1024], type_str[255];
-  stats_t inFile1_stats[MAX_BANDS], inFile2_stats[MAX_BANDS];
-  complex_stats_t inFile1_complex_stats[MAX_BANDS];
-  complex_stats_t inFile2_complex_stats[MAX_BANDS];
-  psnr_t psnr[MAX_BANDS]; // peak signal to noise ratio
-  complex_psnr_t cpsnr[MAX_BANDS];
-  shift_data_t shifts[MAX_BANDS];
+        extern FILE *fLog; /* output file descriptor, stdout or log file */
+        int bandflag=0, strictflag=0;
+        int band = 0;
+        if (!bandflag)
+                band = 0;
+        char msg[1024];
+        char type_str[255];
+        msg[0] = '\0';
+        stats_t inFile1_stats[MAX_BANDS], inFile2_stats[MAX_BANDS];
+        complex_stats_t inFile1_complex_stats[MAX_BANDS];
+        complex_stats_t inFile2_complex_stats[MAX_BANDS];
+        psnr_t psnr[MAX_BANDS]; // peak signal to noise ratio
+        complex_psnr_t cpsnr[MAX_BANDS];
+        shift_data_t shifts[MAX_BANDS];
 
-  if (logFile && strlen(logFile) > 0)
-    fLog = FOPEN(logFile, "w");
+        if (logFile && strlen(logFile) > 0)
+                fLog = FOPEN(logFile, "w");
 
-  // Create temporary directory and file names
-  char *baseName, tmpDir[1024];
-  char file1_fftFile[1024], file1_fftMetaFile[1024];
-  char file2_fftFile[1024], file2_fftMetaFile[1024];
-  if (outputFile && strlen(outputFile) > 0)
-    baseName = get_basename(outputFile);
-  else
-    baseName = get_basename(inFile1);
-  strcpy(tmpDir, baseName);
-  strcat(tmpDir, "-");
-  strcat(tmpDir, time_stamp_dir());
-  create_clean_dir(tmpDir);
-  sprintf(file1_fftFile, "%s/tmp_file1.img", tmpDir);
-  sprintf(file2_fftFile, "%s/tmp_file2.img", tmpDir);
-  sprintf(file1_fftMetaFile, "%s/tmp_file1.meta", tmpDir);
-  sprintf(file2_fftMetaFile, "%s/tmp_file2.meta", tmpDir);
+        // Create temporary directory and file names
+        char *baseName, tmpDir[1024];
+        char file1_fftFile[1024], file1_fftMetaFile[1024];
+        char file2_fftFile[1024], file2_fftMetaFile[1024];
+        if (outputFile && strlen(outputFile) > 0)
+                baseName = get_basename(outputFile);
+        else
+                baseName = get_basename(inFile1);
+        strcpy(tmpDir, baseName);
+        strcat(tmpDir, "-");
+        strcat(tmpDir, time_stamp_dir());
+        create_clean_dir(tmpDir);
+        sprintf(file1_fftFile, "%s/tmp_file1.img", tmpDir);
+        sprintf(file2_fftFile, "%s/tmp_file2.img", tmpDir);
+        sprintf(file1_fftMetaFile, "%s/tmp_file1.meta", tmpDir);
+        sprintf(file2_fftMetaFile, "%s/tmp_file2.meta", tmpDir);
 
-  // Empty the output file
-  FILE *fp = NULL;
-  if (outputFile && strlen(outputFile) > 0) 
-    fp = (FILE*) FOPEN(outputFile, "w");
-  if(fp) 
-    FCLOSE(fp);
+        // Empty the output file
+        FILE *fp = NULL;
+        if (outputFile && strlen(outputFile) > 0) 
+                fp = (FILE*) FOPEN(outputFile, "w");
+        if(fp) 
+                FCLOSE(fp);
 
-  // Determine input file graphical format types and check to see if they are
-  // supported and the same type (etc ...error checking)
-  if (strcmp(inFile1, inFile2) == 0) {
-    FREE(outputFile);
-    return (0); // PASS - a file compared to itself is always the same
-  }
-  if (!fileExists(inFile1)) {
-    sprintf(msg, "File not found: %s\n  => Did you forget to use the filename "
-	    "extension?", inFile1);
-    FREE(outputFile);
-    asfPrintError(msg);
-  }
-  if (!fileExists(inFile2)) {
-    sprintf(msg, "File not found: %s\n  => Did you forget to use the filename "
-	    "extension?", inFile2);
-    FREE(outputFile);
-    asfPrintError(msg);
-  }
-  graphics_file_t type1, type2;
-  type1 = getGraphicsFileType(inFile1);
-  type2 = getGraphicsFileType(inFile2);
-  if (type1 != ASF_IMG  &&
-      type1 != JPEG_IMG     &&
-      type1 != PGM_IMG      &&
-      type1 != PPM_IMG      &&
-      type1 != PNG_IMG      &&
-      type1 != STD_TIFF_IMG &&
-      type1 != GEO_TIFF_IMG )
-  {
-    graphicsFileType_toStr(type1, type_str);
-    sprintf(msg, "Graphics file type %s is not currently supported "
-	    "(Image #1: %s)\n", type_str, inFile1);
-    FREE(outputFile);
-    asfPrintError(msg);
-  }
-  if (type2 != ASF_IMG  &&
-      type2 != JPEG_IMG     &&
-      type2 != PGM_IMG      &&
-      type2 != PPM_IMG      &&
-      type1 != PNG_IMG      &&
-      type2 != STD_TIFF_IMG &&
-      type2 != GEO_TIFF_IMG )
-  {
-    graphicsFileType_toStr(type2, type_str);
-    sprintf(msg, "Graphics file type %s is not currently supported "
-	    "(Image #2: %s)\n", type_str, inFile2);
-    FREE(outputFile);
-    asfPrintError(msg);
-  }
-  if (type1 != type2) {
-    char type1_str[255], type2_str[255];
-    graphicsFileType_toStr(type1, type1_str);
-    graphicsFileType_toStr(type2, type2_str);
-    sprintf(msg, "Graphics files must be the same type.\n"
-	    "       %s is type %s, and %s is type %s\n",
-	    inFile1, type1_str, inFile2, type2_str);
-    FREE(outputFile);
-    asfPrintError(msg);
-  }
+        /*
+         * Determine input file graphical format types and check to see if they
+         * are supported and the same type (etc ...error checking)
+         */
+        if (strcmp(inFile1, inFile2) == 0) {
+                FREE(outputFile);
+                return (0); /* A file compared to itself is always the same. */
+        }
+        if (!fileExists(inFile1)) {
+                sprintf(msg, "File not found: %s\n  => Did you forget to use the filename extension?", inFile1);
+                FREE(outputFile);
+                asfPrintError(msg);
+        }
+        if (!fileExists(inFile2)) {
+                sprintf(msg, "File not found: %s\n  => Did you forget to use the filename extension?", inFile2);
+                FREE(outputFile);
+                asfPrintError(msg);
+        }
+        graphics_file_t type1, type2;
+        type1 = getGraphicsFileType(inFile1);
+        type2 = getGraphicsFileType(inFile2);
+        if (type1 != ASF_IMG &&
+                        type1 != JPEG_IMG &&
+                        type1 != PGM_IMG &&
+                        type1 != PPM_IMG &&
+                        type1 != PNG_IMG &&
+                        type1 != STD_TIFF_IMG &&
+                        type1 != GEO_TIFF_IMG) {
+                graphicsFileType_toStr(type1, type_str);
+                sprintf(msg, "Graphics file type %s"
+                                "is not currently supported (Image #1: %s)\n",
+                                type_str, inFile1);
+                FREE(outputFile);
+                asfPrintError(msg);
+        }
+        if (type2 != ASF_IMG &&
+                        type2 != JPEG_IMG &&
+                        type2 != PGM_IMG &&
+                        type2 != PPM_IMG &&
+                        type1 != PNG_IMG &&
+                        type2 != STD_TIFF_IMG &&
+                        type2 != GEO_TIFF_IMG) {
+                graphicsFileType_toStr(type2, type_str);
+                sprintf(msg, "Graphics file type %s"
+                                " is not currently supported (Image #2: %s)\n",
+                                type_str, inFile2);
+                FREE(outputFile);
+                asfPrintError(msg);
+        }
 
-  /***** Calculate stats and PSNR *****/
-  //   Can't be here unless both graphics file types were the same,
-  //   so choose the input process based on just one of them.
-  char **band_names1, **band_names2;
-  char band_str1[255], band_str2[255];
-  switch (type1) {
-    case ASF_IMG:
-      {
-        int band_count1, band_count2;
-        char inFile1_meta[1024], inFile2_meta[1024];
-        char *f1, *f2, *c;
+        /***** Calculate stats and PSNR *****/
+        char **band_names1, **band_names2;
+        char band_str1[255], band_str2[255];
+        char *data_type1 = NULL;
+        char *data_type2 = NULL;
+        switch (type1) {
+        case ASF_IMG:
+                strcpy(file1_fftFile, inFile1);
+                strcpy(file2_fftFile, inFile2);
+                char *ext;
+                char *f1 = STRDUP(inFile1);
+                char *f2 = STRDUP(inFile2);
+                ext = findExt(f1);
+                *ext = '\0';
+                ext = findExt(f2);
+                *ext = '\0';
+                sprintf(file1_fftMetaFile, "%s.meta", f1);
+                sprintf(file2_fftMetaFile, "%s.meta", f2);
+                break;
+        case JPEG_IMG: {
+                jpeg_info_t jpg1, jpg2;
+                get_jpeg_info_hdr_from_file(inFile1, &jpg1, outputFile);
+                get_jpeg_info_hdr_from_file(inFile2, &jpg2, outputFile);
+	        *complex = 0;
+                data_type1 = data_type2str(jpg1.data_type);
+                data_type2 = data_type2str(jpg2.data_type);
+                export_jpeg_to_asf_img(inFile1, outputFile, file1_fftFile,
+                                file1_fftMetaFile, jpg1.height, jpg1.width,
+                                REAL32, band);
+                export_jpeg_to_asf_img(inFile2, outputFile, file2_fftFile,
+                                file2_fftMetaFile, jpg2.height, jpg2.width,
+                                REAL32, band);
+                break;
+        }
+        case PNG_IMG: {
+                png_info_t ihdr1, ihdr2;
+                get_png_info_hdr_from_file(inFile1, &ihdr1, outputFile);
+                get_png_info_hdr_from_file(inFile2, &ihdr2, outputFile);
+                data_type1 = data_type2str(ihdr1.data_type);
+                data_type2 = data_type2str(ihdr2.data_type);
+                export_png_to_asf_img(inFile1, outputFile, file1_fftFile,
+                                file1_fftMetaFile, ihdr1.height, ihdr1.width,
+                                REAL32, band);
+                export_png_to_asf_img(inFile2, outputFile, file2_fftFile,
+                                file2_fftMetaFile, ihdr2.height, ihdr2.width,
+                                REAL32, band);
+                break;
+        }
+        case PPM_IMG:
+        case PGM_IMG: {
+                ppm_pgm_info_t pgm1, pgm2;
+                get_ppm_pgm_info_hdr_from_file(inFile1, &pgm1, outputFile);
+                get_ppm_pgm_info_hdr_from_file(inFile2, &pgm2, outputFile);
+                data_type1 = data_type2str(pgm1.data_type);
+                data_type2 = data_type2str(pgm2.data_type);
+                export_ppm_pgm_to_asf_img(inFile1, outputFile, file1_fftFile,
+                                file1_fftMetaFile, pgm1.height, pgm1.width,
+                                REAL32, band);
+                export_ppm_pgm_to_asf_img(inFile2, outputFile, file2_fftFile,
+                                file2_fftMetaFile, pgm2.height, pgm2.width,
+                                REAL32, band);
+                break;
+        }
+        case STD_TIFF_IMG:
+        case GEO_TIFF_IMG: {
+                int geotiff = (type1 == GEO_TIFF_IMG) ? 1 : 0;
+                geotiff_data_t g1, g2;
+                if (geotiff) {
+                        get_geotiff_keys(inFile1, &g1);
+                        get_geotiff_keys(inFile2, &g2);
+                        diff_check_geotiff(outputFile, &g1, &g2);
+                }
+                tiff_data_t t1, t2;
+
+                get_tiff_info_from_file(inFile1, &t1);
+                get_tiff_info_from_file(inFile2, &t2);
+                export_tiff_to_asf_img(inFile1, outputFile, file1_fftFile,
+                                file1_fftMetaFile, t1.height, t1.width, REAL32,
+                                band);
+                export_tiff_to_asf_img(inFile2, outputFile, file2_fftFile,
+                                file2_fftMetaFile, t2.height, t2.width, REAL32,
+                                band);
+	        *complex = 0;
+                break;
+        }
+        default:
+                sprintf(msg, "Unrecognized image file type found.\n");
+                diffErrOut(outputFile, msg);
+                FREE(outputFile);
+                asfPrintError(msg);
+                break;
+        }
         meta_parameters *md1 = NULL;
         meta_parameters *md2 = NULL;
 
         // Read metadata and check for multi-bandedness
-        get_band_names(inFile1, NULL, &band_names1, &num_names_extracted1);
-        get_band_names(inFile2, NULL, &band_names2, &num_names_extracted2);
+        
+        if (fileExists(file1_fftMetaFile))
+                md1 = meta_read(file1_fftMetaFile);
+        if (fileExists(file2_fftMetaFile))
+                md2 = meta_read(file2_fftMetaFile);
+        if (md1 == NULL || md2 == NULL) {
+                char* missing_file;
+                if (md1 == NULL)
+                        missing_file = file1_fftMetaFile;
+                else
+                        missing_file = file2_fftMetaFile;
+                sprintf(msg, "Cannot find metadata file %s\n", missing_file);
+                diffErrOut(outputFile, msg);
+                FREE(outputFile);
+                asfPrintError(msg);
+        }
+        int band_count1 = md1->general->band_count;
+        int band_count2 = md2->general->band_count;
+        band_names1 = extract_band_names(md1->general->bands,
+                        md1->general->band_count);
+        band_names2 = extract_band_names(md2->general->bands,
+                        md2->general->band_count);
 	*bands1 = band_names1;
 	*bands2 = band_names2;
-	*num_bands1 = num_names_extracted1;
-	*num_bands2 = num_names_extracted2;
+	*num_bands1 = band_count1;
+	*num_bands2 = band_count2;
 
-        if (inFile1 != NULL && strlen(inFile1) > 0) {
-          f1 = STRDUP(inFile1);
-          c = findExt(f1);
-          *c = '\0';
-          sprintf(inFile1_meta, "%s.meta", f1);
-          if (fileExists(inFile1_meta)) {
-            md1 = meta_read(inFile1_meta);
-          }
-          else {
-            // Can't find metadata file
-            sprintf(msg, "Cannot find metadata file %s\n", inFile1_meta);
-            diffErrOut(outputFile, msg);
-            FREE(outputFile);
-            FREE(f1);
-            free_band_names(&band_names1, num_names_extracted1);
-            free_band_names(&band_names2, num_names_extracted2);
-            asfPrintError(msg);
-          }
-          if (md1 == NULL) {
-            // Can't find metadata file
-            sprintf(msg, "Cannot find metadata file %s\n", inFile1_meta);
-            diffErrOut(outputFile, msg);
-            FREE(outputFile);
-            FREE(f1);
-            free_band_names(&band_names1, num_names_extracted1);
-            free_band_names(&band_names2, num_names_extracted2);
-            asfPrintError(msg);
-          }
-        }
-        if (inFile2 != NULL && strlen(inFile2) > 0) {
-          f2 = STRDUP(inFile2);
-          c = findExt(f2);
-          *c = '\0';
-          sprintf(inFile2_meta, "%s.meta", f2);
-          if (fileExists(inFile2_meta)) {
-            md2 = meta_read(inFile2_meta);
-          }
-          else {
-            // Can't find metadata file
-            sprintf(msg, "Cannot find metadata file %s\n", inFile2_meta);
-            diffErrOut(outputFile, msg);
-            FREE(outputFile);
-            FREE(f1);
-            FREE(f2);
-            free_band_names(&band_names1, num_names_extracted1);
-            free_band_names(&band_names2, num_names_extracted2);
-            asfPrintError(msg);
-          }
-          if (md2 == NULL) {
-            // Can't find metadata file
-            sprintf(msg, "Cannot find metadata file %s\n", inFile2_meta);
-            diffErrOut(outputFile, msg);
-            FREE(outputFile);
-            FREE(f1);
-            FREE(f2);
-            free_band_names(&band_names1, num_names_extracted1);
-            free_band_names(&band_names2, num_names_extracted2);
-            asfPrintError(msg);
-          }
-        }
-        band_count1 = md1->general->band_count;
-        band_count2 = md2->general->band_count;
-        if (bandflag && 
-	    !(band < band_count1 && band < band_count2 && band >= 0)) {
-          sprintf(msg, "Invalid band number.  Band number must be 0 "
-		  "(first band)\nor greater, and less than the number of "
-		  "available bands in the file\nExample:  If the files have 3 "
-		  "bands, then band numbers 0, 1, or 2 are\nthe valid band "
-		  "number choices.\n\nFile1 has %d bands.  File2 has %d bands"
-		  "\n", band_count1, band_count2);
-          diffErrOut(outputFile, msg);
-          meta_free(md1);
-          meta_free(md2);
-          FREE(outputFile);
-          FREE(f1);
-          FREE(f2);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
-        if (!bandflag && band_count1 != band_count2) {
-          sprintf(msg, "Files do not have the same number of bands.\n"
-		  "Cannot compare all bands.  Consider using the -band option"
-		  " to\ncompare individual bands within the files.\n"
-		  "\nFile1 has %d bands.  File2 has %d bands\n",
-		  band_count1, band_count2);
-          diffErrOut(outputFile, msg);
-          meta_free(md1);
-          meta_free(md2);
-          FREE(outputFile);
-          FREE(f1);
-          FREE(f2);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
+        if (bandflag && !(band < band_count1 && band < band_count2 &&
+                        band >= 0))
+                sprintf(msg, "Invalid band number. Band number must be 0 (first band) or greater, and less\nthan the number of available bands in the file.\nExample: If the files have 3 bands, then band numbers 0, 1, or 2 are the valid\nband number choices.\n\nFile1 has %d bands. File2 has %d bands\n",
+                                band_count1, band_count2);
+        if (!bandflag && band_count1 != band_count2)
+                sprintf(msg, "Files do not have the same number of bands.\nCannot compare all bands. Consider using the -band option to compare individual\nbands within the files.\n\nFile1 has %d bands. File2 has %d bands\n",
+                                band_count1, band_count2);
         if (md1->general->data_type != md2->general->data_type) {
-          char *s1 = data_type2str(md1->general->data_type);
-          char *s2 = data_type2str(md2->general->data_type);
-          sprintf(msg, "Files do not have the same data type.\n"
-		  "\nFile1 has %s data.  File2 has %s data\n",
-		  s1, s2);
-          FREE(s1);
-          FREE(s2);
-          diffErrOut(outputFile, msg);
-          meta_free(md1);
-          meta_free(md2);
-          FREE(outputFile);
-          FREE(f1);
-          FREE(f2);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
+                char *s1 = data_type2str(md1->general->data_type);
+                char *s2 = data_type2str(md2->general->data_type);
+                sprintf(msg, "Files do not have the same data type.\n\nFile1 has %s data. File2 has %s data\n", s1, s2);
         }
-        int is_complex = md2->general->data_type == COMPLEX_BYTE      ||
-                         md2->general->data_type == COMPLEX_INTEGER16 ||
-                         md2->general->data_type == COMPLEX_INTEGER32 ||
-                         md2->general->data_type == COMPLEX_REAL32    ||
-                         md2->general->data_type == COMPLEX_REAL64;
+        if (data_type1 != NULL && data_type2 != NULL &&
+                        strcmp(data_type1, data_type2) != 0)
+                sprintf(msg, "Files do not have the same data type.\n\nFile1 has %s data. File2 has %s data\n", data_type1, data_type2);
+        if (data_type1 != NULL)
+                FREE(data_type1);
+        if (data_type2 != NULL)
+                FREE(data_type2);
+        if (msg[0] != '\0') {
+                diffErrOut(outputFile, msg);
+                meta_free(md1);
+                meta_free(md2);
+                FREE(outputFile);
+                free_band_names(&band_names1, band_count1);
+                free_band_names(&band_names2, band_count2);
+                asfPrintError(msg);
+        }
+        int is_complex = md2->general->data_type == COMPLEX_BYTE ||
+                        md2->general->data_type == COMPLEX_INTEGER16 ||
+                        md2->general->data_type == COMPLEX_INTEGER32 ||
+                        md2->general->data_type == COMPLEX_REAL32 ||
+                        md2->general->data_type == COMPLEX_REAL64;
 
 	// Allocate space for output
-	*complex = is_complex;
+        *complex = is_complex;
 	if (is_complex) {
-	  *complex_stats1 = (complex_stats_t *) MALLOC(sizeof(complex_stats_t)*
-						      num_names_extracted1);
-	  *complex_stats2 = (complex_stats_t *) MALLOC(sizeof(complex_stats_t)*
-						      num_names_extracted2);
-	  *complex_psnr = (complex_psnr_t *) MALLOC(sizeof(complex_psnr_t));
+	        *complex_stats1 = (complex_stats_t*) MALLOC(
+                                sizeof(complex_stats_t) * band_count1);
+	        *complex_stats2 = (complex_stats_t*) MALLOC(
+                                sizeof(complex_stats_t) * band_count2);
+	        *complex_psnr = (complex_psnr_t*) MALLOC(
+                                sizeof(complex_psnr_t));
 	}
 	else {
-	  *stats1 = (stats_t *) MALLOC(sizeof(stats_t)*num_names_extracted1);
-	  *stats2 = (stats_t *) MALLOC(sizeof(stats_t)*num_names_extracted2);
-	  *psnrs = (psnr_t *) MALLOC(sizeof(psnr_t));
+	        *stats1 = (stats_t*) MALLOC(
+                                sizeof(stats_t) * band_count1);
+	        *stats2 = (stats_t*) MALLOC(
+                                sizeof(stats_t) * band_count2);
+	        *psnrs = (psnr_t*) MALLOC(sizeof(psnr_t));
 	}
-	*data_shift = (shift_data_t *) MALLOC(sizeof(shift_data_t));
+	*data_shift = (shift_data_t*) MALLOC(sizeof(shift_data_t));
 
         if (is_complex && md2->general->data_type != COMPLEX_BYTE) {
-          char *data_type_str = data_type2str(md2->general->data_type);
-          sprintf(msg, "Complex data types other than COMPLEX_BYTE not yet "
-		  "supported (Found %s)\n", data_type_str);
-          if (data_type_str) FREE(data_type_str);
-          diffErrOut(outputFile, msg);
-          meta_free(md1);
-          meta_free(md2);
-          FREE(outputFile);
-          FREE(f1);
-          FREE(f2);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          FREE(data_type_str);
-          asfPrintError(msg);
+                char *data_type_str = data_type2str(md2->general->data_type);
+                sprintf(msg, "Complex data types other than COMPLEX_BYTE not yet supported (Found %s)\n", data_type_str);
+                if (data_type_str)
+                        FREE(data_type_str);
+                diffErrOut(outputFile, msg);
+                meta_free(md1);
+                meta_free(md2);
+                FREE(outputFile);
+                free_band_names(&band_names1, band_count1);
+                free_band_names(&band_names2, band_count2);
+                asfPrintError(msg);
         }
 
-        ////////////////////////////////////////////////////////////////
-        // Calculate statistics, PSNR, measure image-to-image shift in 
-	// geolocation, and then check the results
-        if (!bandflag) {
-          // Process every available band
-          int band_no;
-          int empty_band1, empty_band2;
-          for (band_no=0; band_no < band_count1; band_no++) {
-            strcpy(band_str1, "");
-            strcpy(band_str2, "");
-            if (band_count1 > 0) {
-              sprintf(band_str1, "Band %s in ", band_names1[band_no]);
-              sprintf(band_str2, "Band %s in ", band_names2[band_no]);
-            }
-            asfPrintStatus("\nCalculating statistics for\n  %s%s and\n  %s%s\n",
-                           band_str1, inFile1, band_str2, inFile2);
-            if (is_complex) {
-	      // For complex data, only check stats and psnr ...and don't check
-	      // for shifts in geolocation (doesn't make sense)
-	      calc_asf_complex_image_stats_2files(inFile1, inFile2,
-						  &inFile1_complex_stats[band_no],
-						  &inFile2_complex_stats[band_no],
-						  &cpsnr[band_no], band_no);
-	      (*complex_stats1)[band_no] = inFile1_complex_stats[band_no];
-	      (*complex_stats2)[band_no] = inFile2_complex_stats[band_no];
-	      (*complex_psnr)[band_no] = cpsnr[band_no];
-            }
-            else {
-	      calc_asf_img_stats_2files(inFile1, inFile2,
-                                        &inFile1_stats[band_no], 
-					&inFile2_stats[band_no],
-                                        &psnr[band_no], band_no);
-	      (*stats1)[band_no] = inFile1_stats[band_no];
-	      (*stats2)[band_no] = inFile2_stats[band_no];
-	      (*psnrs)[band_no] = psnr[band_no];
-	      empty_band1 = 
-		(FLOAT_EQUIVALENT2(inFile1_stats[band_no].mean, 0.0) &&
-		 FLOAT_EQUIVALENT2(inFile1_stats[band_no].sdev, 0.0)) ? 1 : 0;
-	      empty_band2 = 
-		(FLOAT_EQUIVALENT2(inFile2_stats[band_no].mean, 0.0) &&
-		 FLOAT_EQUIVALENT2(inFile2_stats[band_no].sdev, 0.0)) ? 1 : 0;
-	      if (!empty_band1 && !empty_band2 &&
-		  inFile1_stats[band_no].stats_good &&
-		  inFile2_stats[band_no].stats_good) {
-		if (band_no == 0) {
-		  fftShiftCheck(inFile1, inFile2,
-				CORR_FILE, &shifts[band_no]);
-		  (*data_shift)[band_no] = shifts[band_no];
-		}
-		else {
-		  shifts[band_no].dx = 0.0;
-		  shifts[band_no].dy = 0.0;
-		  shifts[band_no].cert = 1.0;
-		}
-	      }
-                else {
-		  shifts[band_no].dx = 0.0;
-		  shifts[band_no].dy = 0.0;
-		  shifts[band_no].cert = 1.0;
+        /* Calculate statistics, PSNR, measure image-to-image shift in
+         * geolocation, and then check the results
+         */
+        int band_no;
+        int empty_band1, empty_band2;
+        if (bandflag) {
+                band_count1 = band + 1;
+                band_no = band;
+        } else {
+                band_no = 0;
+        }
+        for (; band_no < band_count1; band_no++) {
+                strcpy(band_str1, "");
+                strcpy(band_str2, "");
+                if (band_count1 > 0) {
+                        sprintf(band_str1, "Band %s in ", band_names1[band_no]);
+                        sprintf(band_str2, "Band %s in ", band_names2[band_no]);
                 }
-            }
-          }
-	  
-          // Assumes both files have the same band count and data types or 
-	  // would not be here
-          if (is_complex) {
-	    // No diff check on geolocation (doesn't make sense for 
-	    // complex data)
-	    diff_check_complex_stats(outputFile,
-				     inFile1, inFile2,
-				     inFile1_complex_stats, 
-				     inFile2_complex_stats,
-				     cpsnr, strictflag,
-				     md2->general->data_type, band_count2);
-          }
-          else {
-            diff_check_stats(outputFile,
-			     inFile1, inFile2, inFile1_stats, inFile2_stats, 
-			     psnr, strictflag, md2->general->data_type, 
-			     band_count2);
-            diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
-				   inFile1_stats, inFile2_stats);
-          }
+                asfPrintStatus("\nCalculating statistics for\n  %s%s and\n"
+                                "  %s%s\n", band_str1, file1_fftFile, band_str2,
+                                file2_fftFile);
+                if (is_complex) {
+                        /*
+                         * For complex data, only check stats and psnr . . . and
+                         * don't check for shifts in geolocation (doesn't make
+                         * sense)
+                         */
+                        calc_asf_complex_image_stats_2files(file1_fftFile,
+                                        file2_fftFile,
+                                        &inFile1_complex_stats[band_no],
+                                        &inFile2_complex_stats[band_no],
+                                        &cpsnr[band_no], band_no);
+                        (*complex_stats1)[band_no] =
+                                        inFile1_complex_stats[band_no];
+                        (*complex_stats2)[band_no] =
+                                        inFile2_complex_stats[band_no];
+                        (*complex_psnr)[band_no] = cpsnr[band_no];
+                } else {
+                        calc_asf_img_stats_2files(file1_fftFile, file2_fftFile,
+                                        &inFile1_stats[band_no],
+                                        &inFile2_stats[band_no], &psnr[band_no],
+                                        band_no);
+                        (*stats1)[band_no] = inFile1_stats[band_no];
+                        (*stats2)[band_no] = inFile2_stats[band_no];
+                        (*psnrs)[band_no] = psnr[band_no];
+                        empty_band1 = (
+                                        FLOAT_EQUIVALENT2(
+                                        inFile1_stats[band_no].mean, 0.0) &&
+                                        FLOAT_EQUIVALENT2(
+                                        inFile1_stats[band_no].sdev, 0.0))
+                                        ? 1 : 0;
+                        empty_band2 = (
+                                        FLOAT_EQUIVALENT2(
+                                        inFile2_stats[band_no].mean, 0.0) &&
+                                        FLOAT_EQUIVALENT2(
+                                        inFile2_stats[band_no].sdev, 0.0))
+                                        ? 1 : 0;
+                        if (!empty_band1 && !empty_band2 &&
+                                        inFile1_stats[band_no].stats_good &&
+                                        inFile2_stats[band_no].stats_good &&
+                                        band_no == 0) {
+                                if (band_no == 0) {
+                                        fftShiftCheck(file1_fftFile,
+                                                        file2_fftFile,
+                                                        CORR_FILE,
+                                                        &shifts[band_no]);
+                                        (*data_shift)[band_no] =
+                                                        shifts[band_no];
+                                }
+                        } else {
+                                shifts[band_no].dx = 0.0;
+                                shifts[band_no].dy = 0.0;
+                                shifts[band_no].cert = 1.0;
+                        }
+                }
         }
-        else {
-          // Process selected band
-          int empty_band1, empty_band2;
-          asfPrintStatus("\nCalculating statistics for\n  %s and\n  %s\n", 
-			 inFile1, inFile2);
-          calc_asf_img_stats_2files(inFile1, inFile2,
-                                    inFile1_stats, inFile2_stats,
-                                    psnr, band);
-          empty_band1 = 
-	    (FLOAT_EQUIVALENT2(inFile1_stats[band].mean, 0.0) &&
-	     FLOAT_EQUIVALENT2(inFile1_stats[band].sdev, 0.0)) ? 1 : 0;
-          empty_band2 = 
-	    (FLOAT_EQUIVALENT2(inFile2_stats[band].mean, 0.0) &&
-	     FLOAT_EQUIVALENT2(inFile2_stats[band].sdev, 0.0)) ? 1 : 0;
-          if (!empty_band1 && !empty_band2 &&
-              inFile1_stats[band].stats_good &&
-              inFile2_stats[band].stats_good) {
-            // FIXME: Consider shift checking each band ...
-	    // shouldn't be necessary tho', so we
-            // only check the first band for now.
-            if (band == 0) {
-              fftShiftCheck(inFile1, inFile2,
-                            CORR_FILE, &shifts[band]);
-	      (*data_shift)[band] = shifts[band];
-            }
-            else {
-              shifts[band].dx = 0.0;
-              shifts[band].dy = 0.0;
-              shifts[band].cert = 1.0;
-            }
-          }
-          else {
-            shifts[band].dx = 0.0;
-            shifts[band].dy = 0.0;
-            shifts[band].cert = 1.0;
-          }
+                  
+        /* 
+         * Assumes both files have the same band count and data types or would
+         * not be here
+         */
+        if (is_complex) {
+                /*
+                 * No diff check on geolocation (doesn't make sense for complex
+                 * data)
+                 */
+                diff_check_complex_stats(outputFile, file1_fftFile,
+                                file2_fftFile, inFile1_complex_stats,
+                                inFile2_complex_stats, cpsnr, strictflag,
+                                md2->general->data_type, band_count2);
+        } else {
+                diff_check_stats(outputFile, file1_fftFile, file2_fftFile,
+                                inFile1_stats, inFile2_stats, psnr, strictflag,
+                                md2->general->data_type, band_count2);
+                diff_check_geolocation(outputFile, file1_fftFile, file2_fftFile,
+                                1, shifts, inFile1_stats, inFile2_stats);
+        }
+        remove_dir(tmpDir);
 
-          // Assumes both files have the same band count and data types or 
-	  // would not be here
-          diff_check_stats(outputFile,
-                           inFile1, inFile2, &inFile1_stats[band], 
-			   &inFile2_stats[band], &psnr[band],
-                           strictflag, md1->general->data_type, 1);
-          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
-                                 &inFile1_stats[band], &inFile2_stats[band]);
-        }
-        //////////////////////////////////////////////
-        free_band_names(&band_names1, num_names_extracted1);
-        free_band_names(&band_names2, num_names_extracted2);
-      }
-      break;
-    case JPEG_IMG:
-      {
-	int ii;
-        jpeg_info_t jpg1, jpg2;
-
-        // Determine number of bands and data type etc.
-        get_jpeg_info_hdr_from_file(inFile1, &jpg1, outputFile);
-        get_jpeg_info_hdr_from_file(inFile2, &jpg2, outputFile);
-        get_band_names(inFile1, NULL, &band_names1, &num_names_extracted1);
-        get_band_names(inFile2, NULL, &band_names2, &num_names_extracted2);
-	*num_bands1 = jpg1.num_bands;
-	*num_bands2 = jpg2.num_bands;
-	*bands1 = (char**) MALLOC(sizeof(char*)*(*num_bands1));
-	for (ii=0; ii<(*num_bands1); ii++) {
-	  (*bands1)[ii] = (char *) MALLOC(sizeof(char)*64);
-	  strcpy((*bands1)[ii], band_names1[ii]);
-	}
-	*bands2 = (char**) MALLOC(sizeof(char*)*(*num_bands2));
-	for (ii=0; ii<(*num_bands2); ii++) {
-	  (*bands2)[ii] = (char *) MALLOC(sizeof(char)*64);
-	  strcpy((*bands2)[ii], band_names2[ii]);
-	}
-	*complex = 0;
-	*stats1 = (stats_t *) MALLOC(sizeof(stats_t)*(*num_bands1));
-	*stats2 = (stats_t *) MALLOC(sizeof(stats_t)*(*num_bands2));
-	*psnrs = (psnr_t *) MALLOC(sizeof(psnr_t)*(*num_bands1));
-	*data_shift = 
-	  (shift_data_t *) MALLOC(sizeof(shift_data_t)*(*num_bands1));
-
-        if (jpg1.data_type != jpg2.data_type) {
-          char *s1 = data_type2str(jpg1.data_type);
-          char *s2 = data_type2str(jpg2.data_type);
-          sprintf(msg, "Files do not have the same data type.\n"
-              "\nFile1 has %s data.  File2 has %s data\n",
-              s1, s2);
-          FREE(s1);
-          FREE(s2);
-          diffErrOut(outputFile, msg);
-          FREE(outputFile);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
-        if (bandflag && 
-	    !(band < jpg1.num_bands && band < jpg2.num_bands && band >= 0)) {
-          sprintf(msg, "Invalid band number.  Band number must be 0 (first "
-		  "band)\nor greater, and less than the number of available "
-		  "bands in the file\nExample:  If the files have 3 bands, "
-		  "then band numbers 0, 1, or 2 are\n"
-                  "the valid band number choices.  \n"
-                  "\nFile1 has %d bands.  File2 has %d bands\n",
-		  jpg1.num_bands, jpg2.num_bands);
-          diffErrOut(outputFile, msg);
-          FREE(outputFile);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
-        if (!bandflag && jpg1.num_bands != jpg2.num_bands) {
-          sprintf(msg, "Files do not have the same number of bands.\n"
-              "Cannot compare all bands.  Consider using the -band option to\n"
-                  "compare individual bands within the files.\n"
-                  "\nFile1 has %d bands.  File2 has %d bands\n",
-              jpg1.num_bands, jpg2.num_bands);
-          diffErrOut(outputFile, msg);
-          FREE(outputFile);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
-
-        /////////////////////////////////////////////////////////////
-        // Calculate statistics, PSNR, measure image-to-image shift in 
-	// geolocation, and then check the results
-        if (!bandflag) {
-          // Process every available band
-          int band_no;
-          for (band_no=0; band_no < jpg1.num_bands; band_no++) {
-            strcpy(band_str1, "");
-            strcpy(band_str2, "");
-            if (jpg1.num_bands > 1) {
-              sprintf(band_str1, "Band %s in ", band_names1[band_no]);
-              sprintf(band_str2, "Band %s in ", band_names2[band_no]);
-            }
-            asfPrintStatus("\nCalculating statistics for\n  %s%s and\n  %s%s\n",
-                           band_str1, inFile1, band_str2, inFile2);
-            calc_jpeg_stats_2files(inFile1, inFile2, outputFile,
-                                   &inFile1_stats[band_no], 
-				   &inFile2_stats[band_no],
-                                   &psnr[band_no], band_no);
-	    (*stats1)[band_no] = inFile1_stats[band_no];
-	    (*stats2)[band_no] = inFile2_stats[band_no];
-	    (*psnrs)[band_no] = psnr[band_no];
-            asfPrintStatus("\nMeasuring image shift from\n  %s%s to\n  %s%s\n",
-                           band_str1, inFile1, band_str2, inFile2);
-
-            int empty_band1, empty_band2;
-            empty_band1 = 
-	      (FLOAT_EQUIVALENT2(inFile1_stats[band_no].mean, 0.0) &&
-	       FLOAT_EQUIVALENT2(inFile1_stats[band_no].sdev, 0.0)) ? 1 : 0;
-            empty_band2 = 
-	      (FLOAT_EQUIVALENT2(inFile2_stats[band_no].mean, 0.0) &&
-	       FLOAT_EQUIVALENT2(inFile2_stats[band_no].sdev, 0.0)) ? 1 : 0;
-            if (!empty_band1 && !empty_band2 &&
-		inFile1_stats[band_no].stats_good &&
-		inFile2_stats[band_no].stats_good) {
-              // Find shift in geolocation (if it exists)
-              // (Export to an ASF internal format file for fftMatch() 
-	      // compatibility)
-              export_jpeg_to_asf_img(inFile1, outputFile,
-                                     file1_fftFile, file1_fftMetaFile,
-                                     jpg1.height, jpg1.width, REAL32, band_no);
-              export_jpeg_to_asf_img(inFile2, outputFile,
-                                     file2_fftFile, file2_fftMetaFile,
-                                     jpg2.height, jpg2.width, REAL32, band_no);
-              // FIXME: Consider shift checking each band ...
-	      // shouldn't be necessary tho', so we
-              // only check the first band for now.
-              if (band_no == 0) {
-                fftShiftCheck(file1_fftFile, file2_fftFile,
-                              CORR_FILE, &shifts[band_no]);
-		(*data_shift)[band_no] = shifts[band_no];
-              }
-              else {
-                shifts[band_no].dx = 0.0;
-                shifts[band_no].dy = 0.0;
-                shifts[band_no].cert = 1.0;
-              }
-            }
-            else {
-              shifts[band_no].dx = 0.0;
-              shifts[band_no].dy = 0.0;
-              shifts[band_no].cert = 1.0;
-            }
-          }
-          diff_check_stats(outputFile,
-                           inFile1, inFile2, inFile1_stats, inFile2_stats, 
-			   psnr, strictflag, jpg1.data_type, jpg1.num_bands);
-          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
-                                 inFile1_stats, inFile2_stats);
-        }
-        else {
-          // Process selected band
-          asfPrintStatus("\nCalculating statistics for\n  %s and\n  %s\n",
-                         inFile1, inFile2);
-          calc_jpeg_stats_2files(inFile1, inFile2, outputFile,
-                                 inFile1_stats, inFile2_stats,
-                                 psnr, band);
-	  (*stats1)[band] = inFile1_stats[band];
-	  (*stats2)[band] = inFile2_stats[band];
-	  (*psnrs)[band] = psnr[band];
-          int empty_band1, empty_band2;
-          empty_band1 = 
-	    (FLOAT_EQUIVALENT2(inFile1_stats[band].mean, 0.0) &&
-	     FLOAT_EQUIVALENT2(inFile1_stats[band].sdev, 0.0)) ? 1 : 0;
-          empty_band2 = 
-	    (FLOAT_EQUIVALENT2(inFile2_stats[band].mean, 0.0) &&
-	     FLOAT_EQUIVALENT2(inFile2_stats[band].sdev, 0.0)) ? 1 : 0;
-          if (!empty_band1 && !empty_band2 &&
-              inFile1_stats[band].stats_good && 
-	      inFile2_stats[band].stats_good) {
-	    // Find shift in geolocation (if it exists)
-	    // (Export to an ASF internal format file for fftMatch() 
-	    // compatibility)
-            export_jpeg_to_asf_img(inFile1, outputFile,
-                                   file1_fftFile, file1_fftMetaFile,
-                                   jpg1.height, jpg1.width, REAL32, band);
-            export_jpeg_to_asf_img(inFile2, outputFile,
-                                   file2_fftFile, file2_fftMetaFile,
-                                   jpg2.height, jpg2.width, REAL32, band);
-            if (band == 0) {
-              fftShiftCheck(file1_fftFile, file2_fftFile,
-                            CORR_FILE, &shifts[band]);
-	      (*data_shift)[band] = shifts[band];
-            }
-            else {
-              shifts[band].dx = 0.0;
-              shifts[band].dy = 0.0;
-              shifts[band].cert = 1.0;
-            }
-          }
-          else {
-            shifts[band].dx = 0.0;
-            shifts[band].dy = 0.0;
-            shifts[band].cert = 1.0;
-          }
-
-          // Check for differences in stats or geolocation
-          diff_check_stats(outputFile,
-                           inFile1, inFile2, &inFile1_stats[band], 
-			   &inFile2_stats[band], &psnr[band],
-                           strictflag, jpg1.data_type, 1);
-          diff_check_geolocation(outputFile, inFile1, inFile2, 1, &shifts[band],
-                                 &inFile1_stats[band], &inFile2_stats[band]);
-        }
-        ///////////////////////////////////////////////////////////////////
-        free_band_names(&band_names1, num_names_extracted1);
-        free_band_names(&band_names2, num_names_extracted2);
-      }
-      break;
-    case PNG_IMG:
-      {
-        png_info_t ihdr1, ihdr2;
-
-        // Determine number of bands and data type etc.
-        get_png_info_hdr_from_file(inFile1, &ihdr1, outputFile);
-        get_png_info_hdr_from_file(inFile2, &ihdr2, outputFile);
-        get_band_names(inFile1, NULL, &band_names1, &num_names_extracted1);
-        get_band_names(inFile2, NULL, &band_names2, &num_names_extracted2);
-        if (ihdr1.data_type != ihdr2.data_type) {
-          char *s1 = data_type2str(ihdr1.data_type);
-          char *s2 = data_type2str(ihdr2.data_type);
-          sprintf(msg, "Files do not have the same data type.\n"
-              "\nFile1 has %s data.  File2 has %s data\n",
-              s1, s2);
-          FREE(s1);
-          FREE(s2);
-          diffErrOut(outputFile, msg);
-          FREE(outputFile);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
-        if (bandflag && 
-	    !(band < ihdr1.num_bands && band < ihdr2.num_bands && band >= 0)) {
-          sprintf(msg, "Invalid band number.  Band number must be 0 (first "
-		  "band)\nor greater, and less than the number of available "
-		  "bands in the file\nExample:  If the files have 3 bands, "
-		  "then band numbers 0, 1, or 2 are\n"
-                  "the valid band number choices.  \n"
-                  "\nFile1 has %d bands.  File2 has %d bands\n",
-              ihdr1.num_bands, ihdr2.num_bands);
-          diffErrOut(outputFile, msg);
-          FREE(outputFile);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
-        if (!bandflag && ihdr1.num_bands != ihdr2.num_bands) {
-          sprintf(msg, "Files do not have the same number of bands.\n"
-              "Cannot compare all bands.  Consider using the -band option to\n"
-                  "compare individual bands within the files.\n"
-                  "\nFile1 has %d bands.  File2 has %d bands\n",
-              ihdr1.num_bands, ihdr2.num_bands);
-          diffErrOut(outputFile, msg);
-          FREE(outputFile);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
-
-        ///////////////////////////////////////////////////////////////
-        // Calculate statistics, PSNR, measure image-to-image shift in 
-	// geolocation, and then check the results
-        if (!bandflag) {
-          // Process every available band
-          int band_no;
-          for (band_no=0; band_no < ihdr1.num_bands; band_no++) {
-            strcpy(band_str1, "");
-            strcpy(band_str2, "");
-            if (ihdr1.num_bands > 1) {
-              sprintf(band_str1, "Band %s in ", band_names1[band_no]);
-              sprintf(band_str2, "Band %s in ", band_names2[band_no]);
-            }
-            asfPrintStatus("\nCalculating statistics for\n  %s%s and\n  %s%s\n",
-                          band_str1, inFile1, band_str2, inFile2);
-            calc_png_stats_2files(inFile1, inFile2, outputFile,
-                                  &inFile1_stats[band_no], 
-				  &inFile2_stats[band_no],
-                                  &psnr[band_no], band_no);
-            int empty_band1, empty_band2;
-            empty_band1 = 
-	      (FLOAT_EQUIVALENT2(inFile1_stats[band_no].mean, 0.0) &&
-	       FLOAT_EQUIVALENT2(inFile1_stats[band_no].sdev, 0.0)) ? 1 : 0;
-            empty_band2 = 
-	      (FLOAT_EQUIVALENT2(inFile2_stats[band_no].mean, 0.0) &&
-	       FLOAT_EQUIVALENT2(inFile2_stats[band_no].sdev, 0.0)) ? 1 : 0;
-            if (!empty_band1 && !empty_band2 &&
-                inFile1_stats[band_no].stats_good && 
-		inFile2_stats[band_no].stats_good) {
-              // Find shift in geolocation (if it exists)
-              // (Export to an ASF internal format file for fftMatch() 
-	      // compatibility)
-              export_png_to_asf_img(inFile1, outputFile,
-                                    file1_fftFile, file1_fftMetaFile,
-                                    ihdr1.height, ihdr1.width, REAL32, band_no);
-              export_png_to_asf_img(inFile2, outputFile,
-                                    file2_fftFile, file2_fftMetaFile,
-                                    ihdr2.height, ihdr2.width, REAL32, band_no);
-              if (band_no == 0) {
-                fftShiftCheck(file1_fftFile, file2_fftFile,
-                              CORR_FILE, &shifts[band_no]);
-              }
-              else {
-                shifts[band_no].dx = 0.0;
-                shifts[band_no].dy = 0.0;
-                shifts[band_no].cert = 1.0;
-              }
-            }
-            else {
-              shifts[band_no].dx = 0.0;
-              shifts[band_no].dy = 0.0;
-              shifts[band_no].cert = 1.0;
-            }
-          }
-          diff_check_stats(outputFile,
-			   inFile1, inFile2, inFile1_stats, inFile2_stats, 
-			   psnr, strictflag,
-			   ihdr1.data_type, ihdr1.num_bands);
-          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
-                                 inFile1_stats, inFile2_stats);
-        }
-        else {
-          // Process selected band
-          asfPrintStatus("\nCalculating statistics for\n  %s and\n  %s\n",
-                        inFile1, inFile2);
-          calc_png_stats_2files(inFile1, inFile2, outputFile,
-                                inFile1_stats, inFile2_stats,
-                                psnr, band);
-          int empty_band1, empty_band2;
-          empty_band1 = 
-	    (FLOAT_EQUIVALENT2(inFile1_stats[band].mean, 0.0) &&
-	     FLOAT_EQUIVALENT2(inFile1_stats[band].sdev, 0.0)) ? 1 : 0;
-          empty_band2 = 
-	    (FLOAT_EQUIVALENT2(inFile2_stats[band].mean, 0.0) &&
-	     FLOAT_EQUIVALENT2(inFile2_stats[band].sdev, 0.0)) ? 1 : 0;
-          if (!empty_band1 && !empty_band2 &&
-              inFile1_stats[band].stats_good && 
-	      inFile2_stats[band].stats_good) {
-	    // Find shift in geolocation (if it exists)
-	    // (Export to an ASF internal format file for fftMatch() 
-	    // compatibility)
-            export_png_to_asf_img(inFile1, outputFile,
-                                  file1_fftFile, file1_fftMetaFile,
-                                  ihdr1.height, ihdr1.width, REAL32, band);
-            export_png_to_asf_img(inFile2, outputFile,
-                                  file2_fftFile, file2_fftMetaFile,
-                                  ihdr2.height, ihdr2.width, REAL32, band);
-            if (band == 0) {
-              fftShiftCheck(file1_fftFile, file2_fftFile,
-                            CORR_FILE, &shifts[band]);
-            }
-            else {
-              shifts[band].dx = 0.0;
-              shifts[band].dy = 0.0;
-              shifts[band].cert = 1.0;
-            }
-          }
-          else {
-            shifts[band].dx = 0.0;
-            shifts[band].dy = 0.0;
-            shifts[band].cert = 1.0;
-          }
-          diff_check_stats(outputFile,
-                           inFile1, inFile2, &inFile1_stats[band], 
-			   &inFile2_stats[band], &psnr[band],
-			   strictflag, ihdr1.data_type, 1);
-          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
-                                 &inFile1_stats[band], &inFile2_stats[band]);
-        }
-        ///////////////////////////////////////////////////////////////
-        free_band_names(&band_names1, num_names_extracted1);
-        free_band_names(&band_names2, num_names_extracted2);
-      }
-      break;
-    case PPM_IMG:
-    case PGM_IMG:
-      {
-        ppm_pgm_info_t pgm1, pgm2;
-
-        // Determine number of bands and data type etc.
-        get_ppm_pgm_info_hdr_from_file(inFile1, &pgm1, outputFile);
-        get_ppm_pgm_info_hdr_from_file(inFile2, &pgm2, outputFile);
-        get_band_names(inFile1, NULL, &band_names1, &num_names_extracted1);
-        get_band_names(inFile2, NULL, &band_names2, &num_names_extracted2);
-
-        if (pgm1.data_type != pgm2.data_type) {
-          char *s1 = data_type2str(pgm1.data_type);
-          char *s2 = data_type2str(pgm2.data_type);
-          sprintf(msg, "Files do not have the same data type.\n"
-		  "\nFile1 has %s data.  File2 has %s data\n",
-		  s1, s2);
-          FREE(s1);
-          FREE(s2);
-          diffErrOut(outputFile, msg);
-          FREE(outputFile);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
-        if (bandflag && 
-	    !(band < pgm1.num_bands && band < pgm2.num_bands && band >= 0)) {
-          sprintf(msg, "Invalid band number.  Band number must be 0 (first "
-		  "band)\nor greater, and less than the number of available "
-		  "bands in the file\nExample:  If the files have 3 bands, "
-		  "then band numbers 0, 1, or 2 are\n"
-                  "the valid band number choices.  \n"
-                  "\nFile1 has %d bands.  File2 has %d bands\n",
-		  pgm1.num_bands, pgm2.num_bands);
-          diffErrOut(outputFile, msg);
-          FREE(outputFile);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
-        if (!bandflag && pgm1.num_bands != pgm2.num_bands) {
-          sprintf(msg, "Files do not have the same number of bands.\n"
-		  "Cannot compare all bands.  Consider using the -band option "
-		  "to\ncompare individual bands within the files.\n"
-                  "\nFile1 has %d bands.  File2 has %d bands\n",
-		  pgm1.num_bands, pgm2.num_bands);
-          diffErrOut(outputFile, msg);
-          FREE(outputFile);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
-
-        /////////////////////////////////////////////////////////////
-        // Calculate statistics, PSNR, measure image-to-image shift in 
-	// geolocation, and then check the results
-        if (!bandflag) {
-          // Process every available band
-          int band_no;
-          for (band_no=0; band_no < pgm1.num_bands; band_no++) {
-            strcpy(band_str1, "");
-            strcpy(band_str2, "");
-            if (pgm1.num_bands > 1) {
-              sprintf(band_str1, "Band %s in ", band_names1[band_no]);
-              sprintf(band_str2, "Band %s in ", band_names2[band_no]);
-            }
-            asfPrintStatus("\nCalculating statistics for\n  %s%s and\n  %s%s\n",
-                          band_str1, inFile1, band_str2, inFile2);
-            calc_ppm_pgm_stats_2files(inFile1, inFile2, outputFile,
-                                      &inFile1_stats[band_no], 
-				      &inFile2_stats[band_no],
-                                      &psnr[band_no], band_no);
-            int empty_band1, empty_band2;
-            empty_band1 = 
-	      (FLOAT_EQUIVALENT2(inFile1_stats[band_no].mean, 0.0) &&
-	       FLOAT_EQUIVALENT2(inFile1_stats[band_no].sdev, 0.0)) ? 1 : 0;
-            empty_band2 = 
-	      (FLOAT_EQUIVALENT2(inFile2_stats[band_no].mean, 0.0) &&
-	       FLOAT_EQUIVALENT2(inFile2_stats[band_no].sdev, 0.0)) ? 1 : 0;
-            if (!empty_band1 && !empty_band2 &&
-                inFile1_stats[band_no].stats_good && 
-		inFile2_stats[band_no].stats_good) {
-              // Find shift in geolocation (if it exists)
-              // (Export to an ASF internal format file for fftMatch() 
-	      // compatibility)
-              export_ppm_pgm_to_asf_img(inFile1, outputFile,
-                                        file1_fftFile, file1_fftMetaFile,
-                                        pgm1.height, pgm1.width, REAL32, 
-					band_no);
-              export_ppm_pgm_to_asf_img(inFile2, outputFile,
-                                        file2_fftFile, file2_fftMetaFile,
-                                        pgm2.height, pgm2.width, REAL32, 
-					band_no);
-              if (band_no == 0) {
-                fftShiftCheck(file1_fftFile, file2_fftFile,
-                              CORR_FILE, &shifts[band_no]);
-              }
-              else {
-                shifts[band_no].dx = 0.0;
-                shifts[band_no].dy = 0.0;
-                shifts[band_no].cert = 1.0;
-              }
-            }
-            else {
-              shifts[band_no].dx = 0.0;
-              shifts[band_no].dy = 0.0;
-              shifts[band_no].cert = 1.0;
-            }
-          }
-          diff_check_stats(outputFile,
-			   inFile1, inFile2, inFile1_stats, inFile2_stats, 
-			   psnr, strictflag,
-			   pgm1.data_type, pgm1.num_bands);
-          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
-                                 inFile1_stats, inFile2_stats);
-        }
-        else {
-          // Process selected band
-          asfPrintStatus("\nCalculating statistics for\n  %s and\n  %s\n",
-			 inFile1, inFile2);
-          calc_ppm_pgm_stats_2files(inFile1, inFile2, outputFile,
-                                    inFile1_stats, inFile2_stats,
-                                    psnr, band);
-          int empty_band1, empty_band2;
-          empty_band1 = 
-	    (FLOAT_EQUIVALENT2(inFile1_stats[band].mean, 0.0) &&
-	     FLOAT_EQUIVALENT2(inFile1_stats[band].sdev, 0.0)) ? 1 : 0;
-          empty_band2 = 
-	    (FLOAT_EQUIVALENT2(inFile2_stats[band].mean, 0.0) &&
-	     FLOAT_EQUIVALENT2(inFile2_stats[band].sdev, 0.0)) ? 1 : 0;
-          if (!empty_band1 && !empty_band2 &&
-              inFile1_stats[band].stats_good && 
-	      inFile2_stats[band].stats_good) {
-	    // Find shift in geolocation (if it exists)
-	    // (Export to an ASF internal format file for fftMatch() 
-	    // compatibility)
-            export_ppm_pgm_to_asf_img(inFile1, outputFile,
-                                      file1_fftFile, file1_fftMetaFile,
-                                      pgm1.height, pgm1.width, REAL32, band);
-            export_ppm_pgm_to_asf_img(inFile2, outputFile,
-                                      file2_fftFile, file2_fftMetaFile,
-                                      pgm2.height, pgm2.width, REAL32, band);
-            if (band == 0) {
-              fftShiftCheck(file1_fftFile, file2_fftFile,
-                            CORR_FILE, &shifts[band]);
-            }
-            else {
-              shifts[band].dx = 0.0;
-              shifts[band].dy = 0.0;
-              shifts[band].cert = 1.0;
-            }
-          }
-          else {
-            shifts[band].dx = 0.0;
-            shifts[band].dy = 0.0;
-            shifts[band].cert = 1.0;
-          }
-
-          // Check for differences
-          diff_check_stats(outputFile,
-                           inFile1, inFile2, &inFile1_stats[band], 
-			   &inFile2_stats[band], &psnr[band],
-			   strictflag, pgm1.data_type, 1);
-          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
-                                 &inFile1_stats[band], &inFile2_stats[band]);
-        }
-        //////////////////////////////////////////////////////////
-        free_band_names(&band_names1, num_names_extracted1);
-        free_band_names(&band_names2, num_names_extracted2);
-      }
-      break;
-    case STD_TIFF_IMG:
-    case GEO_TIFF_IMG:
-      {
-        int ii, geotiff = (type1 == GEO_TIFF_IMG) ? 1 : 0;
-        tiff_data_t t1, t2;
-        geotiff_data_t g1, g2;
-
-        // Determine number of bands and data type
-        get_tiff_info_from_file(inFile1, &t1);
-        get_tiff_info_from_file(inFile2, &t2);
-        get_band_names(inFile1, NULL, &band_names1, &num_names_extracted1);
-        get_band_names(inFile2, NULL, &band_names2, &num_names_extracted2);
-	*num_bands1 = t1.num_bands;
-	*num_bands2 = t2.num_bands;
-	*bands1 = (char**) MALLOC(sizeof(char*)*(*num_bands1));
-	for (ii=0; ii<(*num_bands1); ii++) {
-	  (*bands1)[ii] = (char *) MALLOC(sizeof(char)*64);
-	  strcpy((*bands1)[ii], band_names1[ii]);
-	}
-	*bands2 = (char**) MALLOC(sizeof(char*)*(*num_bands2));
-	for (ii=0; ii<(*num_bands2); ii++) {
-	  (*bands2)[ii] = (char *) MALLOC(sizeof(char)*64);
-	  strcpy((*bands2)[ii], band_names2[ii]);
-	}
-	*complex = 0;
-	*stats1 = (stats_t *) MALLOC(sizeof(stats_t)*(*num_bands1));
-	*stats2 = (stats_t *) MALLOC(sizeof(stats_t)*(*num_bands2));
-	*psnrs = (psnr_t *) MALLOC(sizeof(psnr_t)*(*num_bands1));
-	*data_shift = 
-	  (shift_data_t *) MALLOC(sizeof(shift_data_t)*(*num_bands1));
-
-        if (t1.data_type != t2.data_type) {
-          char *s1 = data_type2str(t1.data_type);
-          char *s2 = data_type2str(t2.data_type);
-          sprintf(msg, "Files do not have the same data type.\n"
-                  "\nFile1 has %s data.  File2 has %s data\n",
-                  s1, s2);
-          FREE(s1);
-          FREE(s2);
-          diffErrOut(outputFile, msg);
-          FREE(outputFile);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
-        if (bandflag && 
-	    !(band < t1.num_bands && band < t2.num_bands && band >= 0)) {
-          sprintf(msg, "Invalid band number.  Band number must be 0 (first "
-		  "band)\nor greater, and less than the number of available "
-		  "bands in the file\nExample:  If the files have 3 bands, "
-		  "then band numbers 0, 1, or 2 are\n"
-                  "the valid band number choices.  \n"
-                  "\nFile1 has %d bands.  File2 has %d bands\n",
-		  t1.num_bands, t2.num_bands);
-          diffErrOut(outputFile, msg);
-          FREE(outputFile);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
-        if (!bandflag && t1.num_bands != t2.num_bands) {
-          sprintf(msg, "Files do not have the same number of bands.\n"
-		  "Cannot compare all bands.  Consider using the -band option "
-		  "to\ncompare individual bands within the files.\n"
-                  "\nFile1 has %d bands.  File2 has %d bands\n",
-		  t1.num_bands, t2.num_bands);
-          diffErrOut(outputFile, msg);
-          FREE(outputFile);
-          free_band_names(&band_names1, num_names_extracted1);
-          free_band_names(&band_names2, num_names_extracted2);
-          asfPrintError(msg);
-        }
-
-        /////////////////////////////////////////////////////////////////////
-        // Calculate statistics, PSNR, measure image-to-image shift in 
-	// geolocation, and then check the results
-        if (!bandflag) {
-          // Process every available band
-          int band_no;
-          for (band_no=0; band_no < t1.num_bands; band_no++) {
-            strcpy(band_str1, "");
-            strcpy(band_str2, "");
-            if (t1.num_bands > 1) {
-              sprintf(band_str1, "Band %s in ", band_names1[band_no]);
-              sprintf(band_str2, "Band %s in ", band_names2[band_no]);
-            }
-            asfPrintStatus("\nCalculating statistics for\n  %s%s and\n  %s%s\n",
-                          band_str1, inFile1, band_str2, inFile2);
-            calc_tiff_stats_2files(inFile1, inFile2,
-				   &inFile1_stats[band_no], 
-				   &inFile2_stats[band_no],
-				   &psnr[band_no], band_no);
-	    (*stats1)[band_no] = inFile1_stats[band_no];
-	    (*stats2)[band_no] = inFile2_stats[band_no];
-	    (*psnrs)[band_no] = psnr[band_no];
-
-            int empty_band1, empty_band2;
-            empty_band1 = 
-	      (FLOAT_EQUIVALENT2(inFile1_stats[band_no].mean, 0.0) &&
-	       FLOAT_EQUIVALENT2(inFile1_stats[band_no].sdev, 0.0)) ? 1 : 0;
-            empty_band2 = 
-	      (FLOAT_EQUIVALENT2(inFile2_stats[band_no].mean, 0.0) &&
-	       FLOAT_EQUIVALENT2(inFile2_stats[band_no].sdev, 0.0)) ? 1 : 0;
-            if (!empty_band1 && !empty_band2 &&
-                inFile1_stats[band_no].stats_good && 
-		inFile2_stats[band_no].stats_good) {
-              // Find shift in geolocation (if it exists)
-              // (Export to an ASF internal format file for fftMatch() 
-	      // compatibility)
-              export_tiff_to_asf_img(inFile1, outputFile,
-                                     file1_fftFile, file1_fftMetaFile,
-                                     t1.height, t1.width, REAL32, band_no);
-              export_tiff_to_asf_img(inFile2, outputFile,
-                                     file2_fftFile, file2_fftMetaFile,
-                                     t2.height, t2.width, REAL32, band_no);
-              // FIXME: Consider shift checking each band ...
-	      // shouldn't be necessary tho', so we
-              // only check the first band for now.
-              if (band_no == 0) {
-                fftShiftCheck(file1_fftFile, file2_fftFile,
-                              CORR_FILE, &shifts[band_no]);
-		(*data_shift)[band_no] = shifts[band_no];
-              }
-              else {
-                shifts[band_no].dx = 0.0;
-                shifts[band_no].dy = 0.0;
-                shifts[band_no].cert = 1.0;
-              }
-            }
-            else {
-              shifts[band_no].dx = 0.0;
-              shifts[band_no].dy = 0.0;
-              shifts[band_no].cert = 1.0;
-            }
-            if (geotiff) {
-              get_geotiff_keys(inFile1, &g1);
-              get_geotiff_keys(inFile2, &g2);
-              diff_check_geotiff(outputFile, &g1, &g2);
-            }
-          }
-          diff_check_stats(outputFile,
-			   inFile1, inFile2, inFile1_stats, inFile2_stats, 
-			   psnr, strictflag, t1.data_type, t1.num_bands);
-          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
-                                 inFile1_stats, inFile2_stats);
-        }
-        else {
-          // Process selected band
-          asfPrintStatus("\nCalculating statistics for\n  %s and\n  %s\n",
-                        inFile1, inFile2);
-          calc_tiff_stats_2files(inFile1, inFile2,
-                                inFile1_stats, inFile2_stats,
-                                psnr, band);
-	  (*stats1)[band] = inFile1_stats[band];
-	  (*stats2)[band] = inFile2_stats[band];
-	  (*psnrs)[band] = psnr[band];
-          int empty_band1, empty_band2;
-          empty_band1 = 
-	    (FLOAT_EQUIVALENT2(inFile1_stats[band].mean, 0.0) &&
-	     FLOAT_EQUIVALENT2(inFile1_stats[band].sdev, 0.0)) ? 1 : 0;
-          empty_band2 = 
-	    (FLOAT_EQUIVALENT2(inFile2_stats[band].mean, 0.0) &&
-	     FLOAT_EQUIVALENT2(inFile2_stats[band].sdev, 0.0)) ? 1 : 0;
-          if (!empty_band1 && !empty_band2 &&
-	      inFile1_stats[band].stats_good && 
-	      inFile2_stats[band].stats_good) {
-            // Find shift in geolocation (if it exists)
-            // (Export to an ASF internal format file for fftMatch() 
-	    // compatibility)
-            export_tiff_to_asf_img(inFile1, outputFile,
-                                   file1_fftFile, file1_fftMetaFile,
-                                   t1.height, t1.width, REAL32, band);
-            export_tiff_to_asf_img(inFile2, outputFile,
-                                   file2_fftFile, file2_fftMetaFile,
-                                   t2.height, t2.width, REAL32, band);
-            if (band == 0) {
-              fftShiftCheck(file1_fftFile, file2_fftFile,
-                            CORR_FILE, &shifts[band]);
-	      (*data_shift)[band] = shifts[band];
-            }
-            else {
-              shifts[band].dx = 0.0;
-              shifts[band].dy = 0.0;
-              shifts[band].cert = 1.0;
-            }
-          }
-          else {
-            shifts[band].dx = 0.0;
-            shifts[band].dy = 0.0;
-            shifts[band].cert = 1.0;
-          }
-          if (geotiff) {
-            get_geotiff_keys(inFile1, &g1);
-            get_geotiff_keys(inFile2, &g2);
-            diff_check_geotiff(outputFile, &g1, &g2);
-          }
-          diff_check_stats(outputFile,
-                          inFile1, inFile2, &inFile1_stats[band], 
-			   &inFile2_stats[band], &psnr[band],
-			   strictflag, t1.data_type, 1);
-          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
-                                 &inFile1_stats[band], &inFile2_stats[band]);
-        }
-        //////////////////////////////////////////////////////////////////
-        free_band_names(&band_names1, num_names_extracted1);
-        free_band_names(&band_names2, num_names_extracted2);
-      }
-      break;
-    default:
-      sprintf(msg, "Unrecognized image file type found.\n");
-      diffErrOut(outputFile, msg);
-      FREE(outputFile);
-      free_band_names(&band_names1, num_names_extracted1);
-      free_band_names(&band_names2, num_names_extracted2);
-      asfPrintError(msg);
-      break;
-  }
-  remove_dir(tmpDir);
-
-  return (0);
+        return (0);
 }
 
 graphics_file_t getGraphicsFileType (char *file)
@@ -1657,8 +876,6 @@ void calc_asf_complex_image_stats_2files(char *inFile1, char *inFile2,
     cs2->i.stats_good = 0;
     cs2->q.stats_good = 0;
   }
-  band_count1 = (md1 != NULL) ? md1->general->band_count : 0;
-  band_count2 = (md2 != NULL) ? md2->general->band_count : 0;
   
   // Calculate the stats from the data.
   cs1->i.hist = NULL;
@@ -1670,8 +887,7 @@ void calc_asf_complex_image_stats_2files(char *inFile1, char *inFile2,
   cs2->q.hist = NULL;
   cs2->q.hist_pdf = NULL;
   if (band_count1 > 0 && md1 != NULL) {
-    band_names1 = 
-      extract_band_names(md1->general->bands, md1->general->band_count);
+    get_band_names(inFile1, NULL, &band_names1, &band_count1);
     if (band_names1 != NULL) {
       asfPrintStatus("\nCalculating statistics for %s band in %s", 
 		     band_names1[band], inFile1);
@@ -1685,8 +901,7 @@ void calc_asf_complex_image_stats_2files(char *inFile1, char *inFile2,
     }
   }
   if (band_count2 > 0 && md2 != NULL) {
-    band_names2 = 
-      extract_band_names(md2->general->bands, md2->general->band_count);
+    get_band_names(inFile2, NULL, &band_names2, &band_count2);
     if (band_names2 != NULL) {
       asfPrintStatus("\nCalculating statistics for %s band in %s", 
 		     band_names2[band], inFile2);
@@ -4576,7 +3791,7 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm,
   pgm->num_bands=0;
 
   //// Read magic number that identifies
-  FREAD(pgm->magic, sizeof(unsigned char), 2, fp);
+  ASF_FREAD(pgm->magic, sizeof(unsigned char), 2, fp);
   if (pgm->magic[0] == 'P' && (pgm->magic[1] == '5' || pgm->magic[1] == '6')) {
     pgm->ascii_data = 0;
     pgm->img_offset = 2; // Just past magic number
@@ -4892,7 +4107,7 @@ void ppm_pgm_get_float_line(FILE *fp, float *buf, int row, ppm_pgm_info_t *pgm,
     asfPrintError("Cannot allocate memory for PPM/PGM scanline buffer\n");
   }
 
-  FREAD(pgm_buf, sizeof(unsigned char), pgm->width * pgm->num_bands, fp);
+  ASF_FREAD(pgm_buf, sizeof(unsigned char), pgm->width * pgm->num_bands, fp);
 
   int col;
   for (col=0; col<pgm->width; col++) {
@@ -5664,12 +4879,17 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2,
   free_band_names(&band_names1, num_names_extracted1);
   free_band_names(&band_names2, num_names_extracted2);
 }
-
-// Creates and writes VERY simple metadata file to coax the fftMatch() functions
-// to work.  The only requirements are that the number of lines and samples, and
-// data type, are required.  The rest of the metadata is ignored.
+/*
+ * Creates and writes VERY simple metadata file to coax the fftMatch() functions
+ * to work. The only requirements are that  the number of lines and samples, and
+ * data type, are required. The rest of the metadata is ignored.
+ *
+ * I've added a  band names option so  that the converted images  can still have
+ * band names that work nicely.
+ */
 void make_generic_meta(char *file, uint32 height, uint32 width, 
-		       data_type_t data_type)
+		       data_type_t data_type, char **band_names,
+                       int num_bands)
 {
   char file_meta[1024];
   char *c;
@@ -5683,6 +4903,14 @@ void make_generic_meta(char *file, uint32 height, uint32 width,
   md->general->line_count = height;
   md->general->sample_count = width;
   md->general->data_type = data_type;
+  char bands[1024];
+  int band_no;
+  int char_no = 0;
+  for (band_no = 0; band_no < num_bands; ++band_no)
+        char_no += sprintf(bands + char_no, "%s%s", band_names[band_no],
+                        band_no == num_bands - 1 ? "" : ",");
+  strcpy(md->general->bands, bands);
+  md->general->band_count = num_bands;
   // This just quiets the fftMatch warnings during meta_read()
   md->general->image_data_type = AMPLITUDE_IMAGE; 
 
@@ -5730,10 +4958,8 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
     radial_shift_diff = sqrt(s[band].dx * s[band].dx + s[band].dy * s[band].dy);
     low_certainty = ISNAN(s[band].cert) ? 1 :
         !ISNAN(s[band].cert) && s[band].cert < MIN_MATCH_CERTAINTY ? 1 : 0;
-    empty_band1 = (FLOAT_EQUIVALENT2(s1[band].mean, 0.0) &&
-		   FLOAT_EQUIVALENT2(s1[band].sdev, 0.0)) ? 1 : 0;
-    empty_band2 = (FLOAT_EQUIVALENT2(s2[band].mean, 0.0) &&
-		   FLOAT_EQUIVALENT2(s2[band].sdev, 0.0)) ? 1 : 0;
+    empty_band1 = s1[band].sdev < 1.0;
+    empty_band2 = s2[band].sdev < 1.0;
     if (!empty_band1 || !empty_band2) {
       // One or more images have a non-empty band for the current band number, 
       // so check it.
@@ -5829,12 +5055,11 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
 }
 
 void fftShiftCheck(char *file1, char *file2, char *corr_file,
-                   shift_data_t *shifts)
+                shift_data_t *shifts)
 {
-  fftMatch(file1, file2, NULL/*corr_file*/, 
-	   &shifts->dx, &shifts->dy, &shifts->cert);
-  //  shifts->dx = shifts->dy = 0.0;
-  //  shifts->cert = 1.0;
+        fftMatch_either(file1, file2, &shifts->dx, &shifts->dy, &shifts->cert);
+        // shifts->dx = shifts->dy = 0.0;
+        // shifts->cert = 1.0;
 }
 
 void export_jpeg_to_asf_img(char *inFile, char *outfile,
@@ -5868,7 +5093,12 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
 
   // Write out the (very very simple) metadata file ...
   // only contains line_count, sample_count, and data_type
-  make_generic_meta(fft_meta_file, jpg.height, jpg.width, jpg.data_type);
+  char **bands;
+  int num_bands;
+  get_band_names(inFile, NULL, &bands, &num_bands);
+  make_generic_meta(fft_meta_file, jpg.height, jpg.width, jpg.data_type, bands,
+                num_bands);
+  free_band_names(&bands, num_bands);
   md = meta_read(fft_meta_file);
 
   buf = (float*)MALLOC(jpg.width * sizeof(float));
@@ -5989,7 +5219,11 @@ void export_ppm_pgm_to_asf_img(char *inFile, char *outfile,
   char msg[1024];
   FILE *outFP=NULL;
 
-  make_generic_meta(fft_meta_file, height, width, data_type);
+  char **bands;
+  int num_bands;
+  get_band_names(inFile, NULL, &bands, &num_bands);
+  make_generic_meta(fft_meta_file, height, width, data_type, bands, num_bands);
+  free_band_names(&bands, num_bands);
   md = meta_read(fft_meta_file);
 
   get_ppm_pgm_info_hdr_from_file(inFile, &pgm, outfile);
@@ -6071,7 +5305,11 @@ void export_tiff_to_asf_img(char *inFile, char *outfile,
   FILE *imgFP=NULL, *outFP=NULL;
   char msg[1024];
 
-  make_generic_meta(fft_meta_file, height, width, data_type);
+  char **bands;
+  int num_bands;
+  get_band_names(inFile, NULL, &bands, &num_bands);
+  make_generic_meta(fft_meta_file, height, width, data_type, bands, num_bands);
+  free_band_names(&bands, num_bands);
   md = meta_read(fft_meta_file);
 
   tiff_data_t t;
@@ -6172,7 +5410,12 @@ void export_png_to_asf_img(char *inFile, char *outfile,
   meta_parameters *md;
   FILE *imgFP=NULL, *outFP=NULL;
 
-  make_generic_meta(fft_meta_file, img_height, img_width, img_data_type);
+  char **bands;
+  int num_bands;
+  get_band_names(inFile, NULL, &bands, &num_bands);
+  make_generic_meta(fft_meta_file, img_height, img_width, img_data_type, bands,
+                num_bands);
+  free_band_names(&bands, num_bands);
   md = meta_read(fft_meta_file);
 
   png_structp png_ptr;
