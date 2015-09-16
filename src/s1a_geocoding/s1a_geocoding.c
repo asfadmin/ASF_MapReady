@@ -6,6 +6,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multiroots.h>
+#include <gsl/gsl_multimin.h>
 
 #define NUM_COEFS 25
 
@@ -33,10 +34,11 @@ double value_at_pixel25(double inval1, double inval2, double *coef)
          coef[18]*inval1*                     inval2 +
          coef[19]*                            inval2 +
          coef[20]*inval1*inval1*inval1*inval1 +
-         coef[21]*inval1*inval1*inval1*       +
-         coef[22]*inval1*inval1*              +
-         coef[23]*inval1*                     +
+         coef[21]*inval1*inval1*inval1       +
+         coef[22]*inval1*inval1              +
+         coef[23]*inval1                     +
          coef[24];
+  //temp = coef[24] + coef[23]*inval1 + coef[19]*inval2;
   return(temp);
 }
 
@@ -77,13 +79,15 @@ static double err_at_pixel(struct find_offset_params *p, double *c, double val, 
 
     myval = value_at_pixel25(xpt,ypt,c);
 
+    //printf("%10.5f,%10.5f %10.2f %10.2f\n", x, y, val, myval);
+
     diff = (myval-val);
     return(diff);
 }
 
 
-static int
-getObjective(const gsl_vector *x, void *params, gsl_vector *f)
+static double
+getObjective(const gsl_vector *x, void *params)
 {
     double c[NUM_COEFS];
     int i;
@@ -98,9 +102,10 @@ getObjective(const gsl_vector *x, void *params, gsl_vector *f)
     double err = 0.0;
 
     for (i=0; i<cnt; i++) {
-      err += err_at_pixel(p,c,out[i],in1[i],in2[i]);
+      err += fabs(err_at_pixel(p,c,out[i],in1[i],in2[i]));
     }
-    for (i=0; i<NUM_COEFS; i++) { gsl_vector_set(f,i,err); }
+    //for (i=0; i<NUM_COEFS; i++) { gsl_vector_set(f,i,err); }
+    return err;
 
     /*
     for (i=0; i<NUM_COEFS; i++) {
@@ -110,9 +115,8 @@ getObjective(const gsl_vector *x, void *params, gsl_vector *f)
     */
 
 
-    return GSL_SUCCESS;
+    //return GSL_SUCCESS;
 }
-
 
 static void print_state(int iter, gsl_multiroot_fsolver *s)
 {
@@ -124,7 +128,18 @@ static void print_state(int iter, gsl_multiroot_fsolver *s)
     printf(" f(x) = %.8f\n", gsl_vector_get(s->f, 0));
 }
 
+static void print_state2(int iter, gsl_multimin_fminimizer *s)
+{
+    int i;
+
+    printf("%3d ",iter);
+    for (i=0; i<NUM_COEFS;i++)
+      printf("%.3f ",gsl_vector_get(s->x,i));
+    printf(" f(x) = %.8f, size = %.3f\n", s->fval, gsl_multimin_fminimizer_size(s));
+}
+
 /*
+
 static void coarse_search(double t_extent_min, double t_extent_max,
                           double x_extent_min, double x_extent_max,
                           double *t_min, double *x_min,
@@ -214,12 +229,13 @@ static void generate_start(struct refine_offset_params *params,
 
 static void generate_start(struct find_offset_params *params, double *c, double vals)
 {
-    int i;
+    //int i;
     //for (i=0;i<NUM_COEFS;i++) c[i] = 0.01;
     c[NUM_COEFS-1] = vals;
 }
 
 
+/*
 void create_mapping(double xs, double ys, double valstart,  double *xin, double *yin, double *vals, int cnt, double *coefs)
 {
     int status;
@@ -242,6 +258,8 @@ void create_mapping(double xs, double ys, double valstart,  double *xin, double 
     gsl_vector *x = gsl_vector_alloc(n);
 
     double c[NUM_COEFS];
+    for (i=0; i<NUM_COEFS; i++) c[i] = 0;
+    
     generate_start(&params, &c, valstart);
     for (i=0; i<NUM_COEFS; i++) gsl_vector_set (x, i, c[i]);
 
@@ -249,11 +267,15 @@ void create_mapping(double xs, double ys, double valstart,  double *xin, double 
     s = gsl_multiroot_fsolver_alloc(T, n);
     gsl_multiroot_fsolver_set(s, &F, x);
 
+    printf("Starting!\n");
+    print_state(iter, s);
+
     prev = gsl_set_error_handler_off();
 
     do {
         ++iter;
         status = gsl_multiroot_fsolver_iterate(s);
+        printf("1: %d %d\n", status, GSL_CONTINUE);
 
         print_state(iter, s);
 
@@ -261,6 +283,7 @@ void create_mapping(double xs, double ys, double valstart,  double *xin, double 
         if (status) break;
 
         status = gsl_multiroot_test_residual (s->f, 1e-6);
+        printf("2: %d %d\n", status, GSL_CONTINUE);
     } while (status == GSL_CONTINUE && iter < max_iter);
 
     for (i=0; i<NUM_COEFS; i++) coefs[i] = gsl_vector_get(s->x,i);
@@ -275,6 +298,168 @@ void create_mapping(double xs, double ys, double valstart,  double *xin, double 
     gsl_vector_free(output);
 
     gsl_multiroot_fsolver_free(s);
+    gsl_vector_free(x);
+    gsl_set_error_handler(prev);
+
+}
+*/
+
+void create_mapping2(double xs, double ys, double valstart,  double *xin, double *yin, double *vals, int cnt, double *coefs, int use_latlon_objective)
+{
+    int status;
+    int iter = 0, max_iter = 1000000;
+    int i;
+    double size, target_size;
+
+    const gsl_multimin_fminimizer_type *T = gsl_multimin_fminimizer_nmsimplex2;
+    gsl_multimin_fminimizer *s = NULL;
+    gsl_error_handler_t *prev;
+    gsl_vector *ss;
+    gsl_multimin_function minex_func;
+    struct find_offset_params params;
+
+    const size_t n = NUM_COEFS;
+
+    params.x_start= xs;
+    params.y_start= ys;
+    params.inval1 = xin;
+    params.inval2 = yin;
+    params.outval = vals;
+    params.cnt = cnt;
+
+    gsl_vector *x = gsl_vector_alloc(n);
+
+    double *c; //[NUM_COEFS];
+    c = MALLOC(sizeof(double)*NUM_COEFS);
+    for (i=0; i<NUM_COEFS; i++) c[i] = 0;
+   
+    printf("valstart = %f\n", valstart); 
+    generate_start(&params, c, valstart);
+    for (i=0; i<NUM_COEFS; i++) gsl_vector_set (x, i, c[i]);
+
+    ss = gsl_vector_alloc(NUM_COEFS);
+    gsl_vector_set_all(ss, 1.0);
+
+    if (use_latlon_objective) {
+        gsl_vector_set(ss, 0, 1e-39);
+
+        gsl_vector_set(ss, 1, 1e-30);
+        gsl_vector_set(ss, 5, 1e-30);
+
+        gsl_vector_set(ss, 2, 1e-25);
+        gsl_vector_set(ss, 6, 1e-25);
+        gsl_vector_set(ss, 10, 1e-25);
+    
+        gsl_vector_set(ss, 3, 1e-22);
+        gsl_vector_set(ss, 7, 1e-22);
+        gsl_vector_set(ss, 11, 1e-22);
+        gsl_vector_set(ss, 15, 1e-22);
+
+        gsl_vector_set(ss, 4, 1e-16);
+        gsl_vector_set(ss, 8, 1e-16);
+        gsl_vector_set(ss, 12, 1e-16);
+        gsl_vector_set(ss, 16, 1e-16);
+        gsl_vector_set(ss, 20, 1e-16);
+
+        gsl_vector_set(ss, 9, 5e-6);
+        gsl_vector_set(ss, 13, 5e-6);
+        gsl_vector_set(ss, 17, 5e-6);
+        gsl_vector_set(ss, 21, 5e-6);
+
+        gsl_vector_set(ss, 14, 1);
+        gsl_vector_set(ss, 18, 1);
+        gsl_vector_set(ss, 22, 1);
+
+        gsl_vector_set(ss, 19, 1);
+        gsl_vector_set(ss, 23, 1);
+
+        gsl_vector_set(ss, 24, 1);
+        target_size = 1e-5;
+    } else {
+        gsl_vector_set(ss, 0, 1e-29);
+
+        gsl_vector_set(ss, 1, 1e-20);
+        gsl_vector_set(ss, 5, 1e-20);
+
+        gsl_vector_set(ss, 2, 1e-15);
+        gsl_vector_set(ss, 6, 1e-15);
+        gsl_vector_set(ss, 10, 1e-15);
+    
+        gsl_vector_set(ss, 3, 1e-12);
+        gsl_vector_set(ss, 7, 1e-12);
+        gsl_vector_set(ss, 11, 1e-12);
+        gsl_vector_set(ss, 15, 1e-12);
+
+        gsl_vector_set(ss, 4, 1e-5);
+        gsl_vector_set(ss, 8, 1e-5);
+        gsl_vector_set(ss, 12,1e-5);
+        gsl_vector_set(ss, 16,1e-5);
+        gsl_vector_set(ss, 20,1e-5);
+
+        gsl_vector_set(ss, 9, .1);
+        gsl_vector_set(ss, 13, .1);
+        gsl_vector_set(ss, 17, .1);
+        gsl_vector_set(ss, 21, .1);
+
+        gsl_vector_set(ss, 14, 1);
+        gsl_vector_set(ss, 18, 1);
+        gsl_vector_set(ss, 22, 1);
+
+        gsl_vector_set(ss, 19, 1);
+        gsl_vector_set(ss, 23, 1);
+
+        gsl_vector_set(ss, 24, 1);
+
+        target_size = 1e-9;
+    }
+
+    minex_func.n = NUM_COEFS;
+    minex_func.f = getObjective;
+    minex_func.params = &params;
+  
+    s = gsl_multimin_fminimizer_alloc(T, NUM_COEFS);
+    gsl_multimin_fminimizer_set(s, &minex_func, x, ss);
+
+    printf("Starting!\n");
+
+    prev = gsl_set_error_handler_off();
+
+    do {
+        ++iter;
+        status = gsl_multimin_fminimizer_iterate(s);
+
+        // abort if stuck
+        if (status || iter >= max_iter) {
+            printf("Stuck: %d\n", status);
+            print_state2(iter, s);
+            break;
+        }
+
+        //print_state2(iter, s);
+
+        size = gsl_multimin_fminimizer_size(s);
+        status = gsl_multimin_test_size(size, target_size);
+
+        if (status == GSL_SUCCESS) {
+            printf("converged to minimum at\n");
+            print_state2(iter, s);
+            break;
+        }
+
+
+    } while (status == GSL_CONTINUE && iter < max_iter);
+
+    for (i=0; i<NUM_COEFS; i++) coefs[i] = gsl_vector_get(s->x,i);
+
+    gsl_vector *retrofit = gsl_vector_alloc(n);
+    for (i=0; i<NUM_COEFS; i++) gsl_vector_set(retrofit,i,coefs[i]);
+    gsl_vector *output = gsl_vector_alloc(n);
+    double val = getObjective(retrofit, (void*)&params);
+    printf("GSL Result: %f \n",val);
+    gsl_vector_free(retrofit);
+    gsl_vector_free(output);
+
+    gsl_multimin_fminimizer_free(s);
     gsl_vector_free(x);
     gsl_set_error_handler(prev);
 

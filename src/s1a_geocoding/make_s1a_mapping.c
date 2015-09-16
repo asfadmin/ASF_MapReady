@@ -135,10 +135,10 @@ int main(int argc, char *argv[])
   printf("Found middle lat %f\n",mid_lat);
   printf("Found middle lon %f\n",mid_lon);
 
-  create_mapping(mid_lat,mid_lon,mid_samp,lats,lons,samps,cnt,ll2samp);
-  create_mapping(mid_lat,mid_lon,mid_line,lats,lons,lines,cnt,ll2line);
-  create_mapping(mid_line,mid_samp,mid_lat,lines,samps,lats,cnt,ls2lat);
-  create_mapping(mid_line,mid_samp,mid_lon,lines,samps,lons,cnt,ls2lon);
+  create_mapping2(mid_lat,mid_lon,mid_samp,lats,lons,samps,cnt,ll2samp,0);
+  create_mapping2(mid_lat,mid_lon,mid_line,lats,lons,lines,cnt,ll2line,0);
+  //create_mapping2(mid_line,mid_samp,mid_lat,lines,samps,lats,cnt,ls2lat,1);
+  //create_mapping2(mid_line,mid_samp,mid_lon,lines,samps,lons,cnt,ls2lon,1);
   
   exit(0);
 }	
