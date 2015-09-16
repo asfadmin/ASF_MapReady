@@ -70,8 +70,11 @@ double meta_get_time(meta_parameters *meta,double yLine, double xSample)
   if (meta->sar->image_type=='S' || meta->sar->image_type=='G') // ||
 //        (meta->sar->image_type=='P' && meta->projection->type==SCANSAR_PROJECTION))
     {
-        return (yLine+meta->general->start_line)*meta->sar->azimuth_time_per_pixel+
-            meta->sar->time_shift;
+        if (meta->sar->azimuth_time_per_pixel < 0.0)
+          return (yLine+meta->general->start_line)*meta->sar->azimuth_time_per_pixel+
+              meta->sar->time_shift;
+	else
+          return (yLine+meta->general->start_line)*meta->sar->azimuth_time_per_pixel;
     }
     /*Map projected -- not as easy.*/
     else if (meta->sar->image_type=='P' || meta->sar->image_type=='R') {

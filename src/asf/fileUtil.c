@@ -142,6 +142,7 @@ char *findExt(const char *name)
         strcmp_case(ext, ".LDR") == 0       ||
         strcmp_case(ext, ".RAW") == 0       ||
         strcmp_case(ext, ".000") == 0       ||
+        strcmp_case(ext, ".001") == 0       ||
         strcmp_case(ext, ".AIRSAR") == 0    ||
         strcmp_case(ext, ".VVI2") == 0      || // an airsar extension
         strcmp_case(ext, ".DEMI2") == 0     || // an airsar extension
