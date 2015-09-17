@@ -472,6 +472,36 @@ void create_mapping2(double xs, double ys, double valstart,  double *xin, double
         gsl_vector_free(ss);
     }
 
+    /* Rearrange the coefficients to match PALSAR order */
+    double tmp[25];
+    for (i=0; i<25; i++) tmp[i] = coefs[i];
+   
+    coefs[24] = tmp[0];
+    coefs[23] = tmp[1];
+    coefs[22] = tmp[3];
+    coefs[21] = tmp[6];
+    coefs[20] = tmp[10];
+    coefs[19] = tmp[2];
+    coefs[18] = tmp[4];
+    coefs[17] = tmp[7];
+    coefs[16] = tmp[11];
+    coefs[15] = tmp[15];
+    coefs[14] = tmp[5];
+    coefs[13] = tmp[8];
+    coefs[12] = tmp[12];
+    coefs[11] = tmp[16];
+    coefs[10] = tmp[19];
+    coefs[9]  = tmp[9];
+    coefs[8]  = tmp[13];
+    coefs[7]  = tmp[17];
+    coefs[6]  = tmp[20];
+    coefs[5]  = tmp[22];
+    coefs[4]  = tmp[14];
+    coefs[3]  = tmp[18];
+    coefs[2]  = tmp[21];
+    coefs[1]  = tmp[23];
+    coefs[0]  = tmp[24];
+
     printf("Done.\n\n\n");
     gsl_set_error_handler(prev);
 
