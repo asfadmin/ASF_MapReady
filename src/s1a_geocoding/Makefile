@@ -16,8 +16,8 @@ LIBS  = \
 
 CFLAGS += $(LIBTIFF_CLFAGS) $(GEOTIFF_CFLAGS)
 
-OBJS = make_s1a_mapping.o \
-	s1a_geocoding.o
+OBJS = driver.o \
+	make_s1a_mapping.o
 
 all: make_s1a_mapping
 
