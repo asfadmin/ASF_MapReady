@@ -1808,6 +1808,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
         verify_double(precheck_err_msgs, mp2->param.mer.false_northing,
           DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
           "Projection - MERCATOR", "false_northing", 1, &failed);
+        break;
       case EQUI_RECTANGULAR:
         verify_double(precheck_err_msgs, mp2->param.eqr.orig_latitude,
           DM_MIN_LATITUDE, DM_MAX_LATITUDE,
@@ -1821,6 +1822,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
         verify_double(precheck_err_msgs, mp2->param.eqr.false_northing,
           DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
           "Projection - EQR", "false_northing", 1, &failed);
+        break;
       case SINUSOIDAL:
         verify_double(precheck_err_msgs, mp2->param.sin.longitude_center,
           DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
@@ -1834,6 +1836,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
         verify_double(precheck_err_msgs, mp2->param.sin.sphere,
           DM_MIN_SPHERE, DM_MAX_SPHERE,
           "Projection - SINUSOIDAL", "sphere", 1, &failed);
+        break;
       case STATE_PLANE:
         verify_int(precheck_err_msgs, mp2->param.state.zone,
                    DM_MIN_STATE_PLANE_ZONE, DM_MAX_STATE_PLANE_ZONE,
