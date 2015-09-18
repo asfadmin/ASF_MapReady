@@ -115,6 +115,8 @@
 #define DM_GEOCENTRIC_MAX_PERY    -DM_GEOCENTRIC_MIN_PERX
 #define DM_MIN_HEIGHT             -2000.0
 #define DM_MAX_HEIGHT             25000.0
+#define DM_MIN_SPHERE             6370000.0
+#define DM_MAX_SPHERE             6378500.0
 //      UTM
 #define DM_MIN_UTM_ZONE           1
 #define DM_MAX_UTM_ZONE           60
