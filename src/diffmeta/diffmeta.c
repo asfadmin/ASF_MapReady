@@ -1444,6 +1444,9 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
         mp2->type != ALBERS_EQUAL_AREA              &&
         mp2->type != LAMBERT_CONFORMAL_CONIC        &&
         mp2->type != LAMBERT_AZIMUTHAL_EQUAL_AREA   &&
+        mp2->type != MERCATOR                       &&
+        mp2->type != EQUI_RECTANGULAR               &&
+        mp2->type != SINUSOIDAL                     &&
         mp2->type != STATE_PLANE                    &&
         mp2->type != SCANSAR_PROJECTION             &&
         mp2->type != LAT_LONG_PSEUDO_PROJECTION     &&
@@ -1451,7 +1454,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
     {
       sprintf(precheck_err_msgs,
               "%s%s%s%s    %s, or\n    %s, or\n    %s, or\n    %s, or\n   %s, or\n    %s, or\n"
-              "    %s, or\n    %s, or\n    %s\n",
+              "    %s, or\n    %s, or\n    %s, or\n    %s, or\n    %s, or\n    %s\n",
               precheck_err_msgs,
               "  [Projection] New version projection type (",
               (mp2->type == UNIVERSAL_TRANSVERSE_MERCATOR) ? "UNIVERSAL_TRANSVERSE_MERCATOR"  :
@@ -1459,6 +1462,9 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
               (mp2->type == ALBERS_EQUAL_AREA)             ? "ALBERS_EQUAL_AREA"              :
               (mp2->type == LAMBERT_CONFORMAL_CONIC)       ? "LAMBERT_CONFORMAL_CONIC"        :
               (mp2->type == LAMBERT_AZIMUTHAL_EQUAL_AREA)  ? "LAMBERT_AZIMUTHAL_EQUAL_AREA"   :
+              (mp2->type == MERCATOR)                      ? "MERCATOR"                       :
+              (mp2->type == EQUI_RECTANGULAR)              ? "EQUI_RECTANGULAR"               :
+              (mp2->type == SINUSOIDAL)                    ? "SINUSOIDAL"                     :
               (mp2->type == STATE_PLANE)                   ? "STATE_PLANE"                    :
               (mp2->type == SCANSAR_PROJECTION)            ? "SCANSAR_PROJECTION"             :
               (mp2->type == LAT_LONG_PSEUDO_PROJECTION)    ? "LAT_LONG_PSEUDO_PROJECTION"     :
@@ -1470,6 +1476,9 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
               "ALBERS_EQUAL_AREA",
               "LAMBERT_CONFORMAL_CONIC",
               "LAMBERT_AZIMUTHAL_EQUAL_AREA",
+              "MERCATOR",
+              "EQUI_RECTANGULAR",
+              "SINUSOIDAL",
               "STATE_PLANE",
               "SCANSAR_PROJECTION",
               "LAT_LONG_PSEUDO_PROJECTION",
