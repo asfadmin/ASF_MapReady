@@ -1792,6 +1792,48 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                       "Projection - LAMAZ", "false_northing",
                       1, &failed);
         break;
+      case MERCATOR:
+        verify_double(precheck_err_msgs, mp2->param.mer.orig_latitude,
+          DM_MIN_LATITUDE, DM_MAX_LATITUDE,
+          "Projection - MERCATOR", "orig_latitude", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.mer.central_meridian,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - MERCATOR", "central_meridian", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.mer.standard_parallel,
+          DM_MIN_LATITUDE, DM_MAX_LATITUDE,
+          "Projection - MERCATOR", "standard_parallel", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.mer.false_easting,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - MERCATOR", "false_easting", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.mer.false_northing,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - MERCATOR", "false_northing", 1, &failed);
+      case EQUI_RECTANGULAR:
+        verify_double(precheck_err_msgs, mp2->param.eqr.orig_latitude,
+          DM_MIN_LATITUDE, DM_MAX_LATITUDE,
+          "Projection - EQR", "orig_latitude", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.eqr.central_meridian,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - EQR", "center_meridian", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.eqr.false_easting,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - EQR", "false_easting", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.eqr.false_northing,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - EQR", "false_northing", 1, &failed);
+      case SINUSOIDAL:
+        verify_double(precheck_err_msgs, mp2->param.sin.longitude_center,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - SINUSOIDAL", "central_meridian", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.sin.false_easting,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - SINUSOIDAL", "false_easting", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.sin.false_northing,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - SINUSOIDAL", "false_northing", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.sin.sphere,
+          DM_MIN_SPHERE, DM_MAX_SPHERE,
+          "Projection - SINUSOIDAL", "sphere", 1, &failed);
       case STATE_PLANE:
         verify_int(precheck_err_msgs, mp2->param.state.zone,
                    DM_MIN_STATE_PLANE_ZONE, DM_MAX_STATE_PLANE_ZONE,
