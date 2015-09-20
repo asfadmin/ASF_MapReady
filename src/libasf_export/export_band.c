@@ -1169,6 +1169,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
 	  citation = MALLOC ((max_citation_length + 1) * sizeof (char));
 	  snprintf (citation, max_citation_length + 1, 
 		    "NSIDC EASE-Grid Global");
+		append_band_names(band_names, rgb, citation, palette_color_tiff);
 	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
 	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
 	  FREE (citation);
@@ -1208,6 +1209,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
 	  citation = MALLOC ((max_citation_length + 1) * sizeof (char));
 	  snprintf (citation, max_citation_length + 1, 
 		    "NSIDC EASE-Grid North");
+		append_band_names(band_names, rgb, citation, palette_color_tiff);
 	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
 	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
 	  FREE (citation);
@@ -1247,13 +1249,22 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
 	  citation = MALLOC ((max_citation_length + 1) * sizeof (char));
 	  snprintf (citation, max_citation_length + 1, 
 		    "NSIDC EASE-Grid South");
+		append_band_names(band_names, rgb, citation, palette_color_tiff);
 	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
 	  GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
 	  FREE (citation);
 	}
 	break;
-      case LAT_LONG_PSEUDO_PROJECTION:
-        {
+  case LAT_LONG_PSEUDO_PROJECTION:
+  {
+	  GTIFKeySet(ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 4326);
+	  citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+	  snprintf (citation, max_citation_length + 1, 
+	    "Geographic Coordinates (WGS84)");
+	  append_band_names(band_names, rgb, citation, palette_color_tiff);
+    GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+    GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
+    FREE (citation);
 	  write_datum_key(ogtif, md->projection->datum);
 	  write_spheroid_key(ogtif, md->projection->spheroid, re_major, re_minor);
 	}

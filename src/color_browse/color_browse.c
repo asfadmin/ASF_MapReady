@@ -497,7 +497,7 @@ int main(int argc,char *argv[])
     
     // Export to GeoTIFF
     char *band_names[3] = { "blue", "green", "red" };
-    asf_export_bands(GEOTIFF, NONE, TRUE, FALSE, FALSE, FALSE, FALSE, 
+    asf_export_bands(GEOTIFF, NONE, TRUE, FALSE, FALSE, NULL, FALSE, 
       tmpBrowse, outfile, band_names, NULL, NULL);
 
     // Clean up
