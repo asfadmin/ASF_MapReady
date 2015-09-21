@@ -107,10 +107,14 @@ AC_DEFUN([ASF_FIND_INCLUDE],
 	       AC_MSG_ERROR($1 headers were not found)))
 
 #### GSL check ####
+AC_CHECK_LIB([m],[cos])
+AC_CHECK_LIB([gslcblas],[cblas_dgemm])
+AC_CHECK_LIB([gsl],[gsl_blas_dgemm])
 PKG_CHECK_MODULES(GSL, gsl,,
-		  AC_CHECK_LIB(gsl, main,
+		  AC_CHECK_LIB(gsl, gsl_blas_dgemm,
 		   	       [GSL_LIBS="-lgsl -lm -lgslcblas"],
 			       AC_MSG_ERROR(library gsl was not found)))
+
 #### libproj check ####
 #AC_CHECK_LIB(proj,pj_transform,have_proj="yes",have_proj="no")
 PKG_CHECK_MODULES(PROJ, proj,,
