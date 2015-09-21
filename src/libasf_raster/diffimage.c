@@ -117,6 +117,7 @@ typedef struct {
   datum_type_t datum;
   char hemisphere;
   unsigned long pro_zone; // UTM zone (UTM only)
+  int geoCoords;
   short proj_coords_trans;
   short pcs;
   short geodetic_datum;
@@ -1773,13 +1774,13 @@ void get_geotiff_keys(char *file, geotiff_data_t *g)
       // Get UTM related info if it exists
       read_count = GTIFKeyGet(gtif, ProjectedCSTypeGeoKey, &g->pcs, 0, 1);
       if (read_count == 1 && 
-	  PCS_2_UTM(g->pcs, &g->hemisphere, &g->datum, &g->pro_zone)) {
+	      PCS_2_UTM(g->pcs, &g->hemisphere, &g->datum, &g->pro_zone)) {
         g->gtif_data_exists = 1;
       }
       else {
         read_count = GTIFKeyGet(gtif, ProjectionGeoKey, &g->pcs, 0, 1);
         if (read_count == 1 && 
-	    PCS_2_UTM(g->pcs, &g->hemisphere, &g->datum, &g->pro_zone)) {
+	        PCS_2_UTM(g->pcs, &g->hemisphere, &g->datum, &g->pro_zone)) {
           g->gtif_data_exists = 1;
         }
         else {
@@ -1791,46 +1792,57 @@ void get_geotiff_keys(char *file, geotiff_data_t *g)
 
       // Get projection type (ProjCoordTransGeoKey) and other projection parameters
       read_count = 
-	GTIFKeyGet(gtif, ProjCoordTransGeoKey, &g->proj_coords_trans, 0, 1);
-      if (read_count >= 1) g->gtif_data_exists = 1;
-      else g->proj_coords_trans = MISSING_GTIF_DATA;
+	      GTIFKeyGet(gtif, ProjCoordTransGeoKey, &g->proj_coords_trans, 0, 1);
+      if (read_count >= 1) {
+        g->gtif_data_exists = 1;
+        g->geoCoords = 0;
+      }
+      else {
+        short geoProjKey;
+        read_count =
+          GTIFKeyGet(gtif, GeographicTypeGeoKey, &geoProjKey, 0, 1);
+        if (geoProjKey == 4326)
+          g->geoCoords = 1;
+        if (read_count >= 1) g->gtif_data_exists = 1;
+        else g->proj_coords_trans = MISSING_GTIF_DATA;
+      }
       read_count = 
-	GTIFKeyGet(gtif, GeographicTypeGeoKey, &g->geographic_datum, 0, 1);
+	      GTIFKeyGet(gtif, GeographicTypeGeoKey, &g->geographic_datum, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->geographic_datum = MISSING_GTIF_DATA;
       read_count = 
-	GTIFKeyGet(gtif, GeogGeodeticDatumGeoKey, &g->geodetic_datum, 0, 1);
+	      GTIFKeyGet(gtif, GeogGeodeticDatumGeoKey, &g->geodetic_datum, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->geodetic_datum = MISSING_GTIF_DATA;
       read_count = 
-	GTIFKeyGet(gtif, ProjScaleAtNatOriginGeoKey, &g->scale_factor, 0, 1);
+	      GTIFKeyGet(gtif, ProjScaleAtNatOriginGeoKey, &g->scale_factor, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->scale_factor = MISSING_GTIF_DATA;
 
       // Get generic projection parameters (Note: projection type is defined by
       // the g->proj_coords_trans value)
       read_count = 
-	GTIFKeyGet (gtif, ProjFalseEastingGeoKey, &g->false_easting, 0, 1);
+	      GTIFKeyGet (gtif, ProjFalseEastingGeoKey, &g->false_easting, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->false_easting = MISSING_GTIF_DATA;
       read_count = 
-	GTIFKeyGet (gtif, ProjFalseNorthingGeoKey, &g->false_northing, 0, 1);
+	      GTIFKeyGet (gtif, ProjFalseNorthingGeoKey, &g->false_northing, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->false_northing = MISSING_GTIF_DATA;
       read_count = 
-	GTIFKeyGet (gtif, ProjNatOriginLongGeoKey, &g->natLonOrigin, 0, 1);
+	      GTIFKeyGet (gtif, ProjNatOriginLongGeoKey, &g->natLonOrigin, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->natLonOrigin = MISSING_GTIF_DATA;
       read_count = 
-	GTIFKeyGet (gtif, ProjNatOriginLatGeoKey, &g->natLatOrigin, 0, 1);
+	      GTIFKeyGet (gtif, ProjNatOriginLatGeoKey, &g->natLatOrigin, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->natLatOrigin = MISSING_GTIF_DATA;
       read_count = 
-	GTIFKeyGet (gtif, ProjStdParallel1GeoKey, &g->stdParallel1, 0, 1);
+	      GTIFKeyGet (gtif, ProjStdParallel1GeoKey, &g->stdParallel1, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->stdParallel1 = MISSING_GTIF_DATA;
       read_count = 
-	GTIFKeyGet (gtif, ProjStdParallel2GeoKey, &g->stdParallel2, 0, 1);
+	      GTIFKeyGet (gtif, ProjStdParallel2GeoKey, &g->stdParallel2, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->stdParallel2 = MISSING_GTIF_DATA;
       read_count = GTIFKeyGet (gtif, ProjCenterLongGeoKey, &g->lonCenter, 0, 1);
@@ -1840,15 +1852,15 @@ void get_geotiff_keys(char *file, geotiff_data_t *g)
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->latCenter = MISSING_GTIF_DATA;
       read_count = 
-	GTIFKeyGet (gtif, ProjFalseOriginLongGeoKey, &g->falseOriginLon, 0, 1);
+	      GTIFKeyGet (gtif, ProjFalseOriginLongGeoKey, &g->falseOriginLon, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->falseOriginLon = MISSING_GTIF_DATA;
       read_count = 
-	GTIFKeyGet (gtif, ProjFalseOriginLatGeoKey, &g->falseOriginLat, 0, 1);
+	      GTIFKeyGet (gtif, ProjFalseOriginLatGeoKey, &g->falseOriginLat, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->falseOriginLat = MISSING_GTIF_DATA;
       read_count = 
-	GTIFKeyGet (gtif, ProjStraightVertPoleLongGeoKey, &g->lonPole, 0, 1);
+	      GTIFKeyGet (gtif, ProjStraightVertPoleLongGeoKey, &g->lonPole, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->lonPole = MISSING_GTIF_DATA;
     }
@@ -1874,6 +1886,8 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
   if (PCS_2_UTM(g1->pcs, &dummy_hem, &dummy_datum, &dummy_zone)) {
     projection_type1 = UNIVERSAL_TRANSVERSE_MERCATOR;
   }
+  else if (g1->geoCoords)
+    projection_type1 = LAT_LONG_PSEUDO_PROJECTION;
   else {
     switch(g1->proj_coords_trans) {
     case CT_TransverseMercator:
@@ -1902,6 +1916,8 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
   if (PCS_2_UTM(g2->pcs, &dummy_hem, &dummy_datum, &dummy_zone)) {
     projection_type2 = UNIVERSAL_TRANSVERSE_MERCATOR;
   }
+  else if (g1->geoCoords)
+    projection_type2 = LAT_LONG_PSEUDO_PROJECTION;
   else {
     switch(g2->proj_coords_trans) {
     case CT_TransverseMercator:
@@ -4059,9 +4075,23 @@ void get_band_names(char *inFile, FILE *outputFP,
 				tmp_citation, 0);
         FREE(tmp_citation);
       }
+      else {
+        short sample_format, bits_per_sample, planar_config;
+        int is_scanline_format, is_palette_color_tiff;
+        data_type_t data_type;
+        TIFF *tiff = XTIFFOpen (inFile, "rb");
+        get_tiff_data_config(tiff, &sample_format, &bits_per_sample,
+          &planar_config, &data_type, num_extracted_bands, &is_scanline_format,
+          &is_palette_color_tiff, REPORT_LEVEL_NONE);
+        XTIFFClose(tiff);
+        if (*num_extracted_bands == 1)
+          strcpy(band_str, "01");
+        else if (*num_extracted_bands == 3)
+          strcpy(band_str, "01,02,03");
+      }
       if (*num_extracted_bands <= 0) {
         // Could not find band strings in the citations, so assign numeric 
-	// band IDs
+	      // band IDs
         int i;
         for (i=0; i<MAX_BANDS; i++) {
           sprintf((*band_names)[i], "%02d", i);
@@ -5388,12 +5418,15 @@ void export_tiff_to_asf_img(char *inFile, char *outfile,
   float *buf = (float*)MALLOC(t.width * sizeof(float));
 
   asfPrintStatus("Converting TIFF file to IMG file..\n");
-  for ( ii = 0; ii < t.height; ii++ ) {
-    asfPercentMeter((double)ii/(double)t.height);
-    tiff_get_float_line(tif, buf, ii, band_no);
-    put_float_line(imgFP, md, ii, buf);
+  int kk;
+  for (kk=0; ii<t.num_bands; kk++) {
+    for ( ii = 0; ii < t.height; ii++ ) {
+      asfPercentMeter((double)ii/(double)t.height);
+      tiff_get_float_line(tif, buf, ii, kk);
+      put_band_float_line(imgFP, md, kk, ii, buf);
+    }
+    asfPercentMeter(1.0);
   }
-  asfPercentMeter(1.0);
 
   if (buf) free(buf);
   if (tif) XTIFFClose(tif);

@@ -1444,6 +1444,9 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
         mp2->type != ALBERS_EQUAL_AREA              &&
         mp2->type != LAMBERT_CONFORMAL_CONIC        &&
         mp2->type != LAMBERT_AZIMUTHAL_EQUAL_AREA   &&
+        mp2->type != MERCATOR                       &&
+        mp2->type != EQUI_RECTANGULAR               &&
+        mp2->type != SINUSOIDAL                     &&
         mp2->type != STATE_PLANE                    &&
         mp2->type != SCANSAR_PROJECTION             &&
         mp2->type != LAT_LONG_PSEUDO_PROJECTION     &&
@@ -1451,7 +1454,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
     {
       sprintf(precheck_err_msgs,
               "%s%s%s%s    %s, or\n    %s, or\n    %s, or\n    %s, or\n   %s, or\n    %s, or\n"
-              "    %s, or\n    %s, or\n    %s\n",
+              "    %s, or\n    %s, or\n    %s, or\n    %s, or\n    %s, or\n    %s\n",
               precheck_err_msgs,
               "  [Projection] New version projection type (",
               (mp2->type == UNIVERSAL_TRANSVERSE_MERCATOR) ? "UNIVERSAL_TRANSVERSE_MERCATOR"  :
@@ -1459,6 +1462,9 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
               (mp2->type == ALBERS_EQUAL_AREA)             ? "ALBERS_EQUAL_AREA"              :
               (mp2->type == LAMBERT_CONFORMAL_CONIC)       ? "LAMBERT_CONFORMAL_CONIC"        :
               (mp2->type == LAMBERT_AZIMUTHAL_EQUAL_AREA)  ? "LAMBERT_AZIMUTHAL_EQUAL_AREA"   :
+              (mp2->type == MERCATOR)                      ? "MERCATOR"                       :
+              (mp2->type == EQUI_RECTANGULAR)              ? "EQUI_RECTANGULAR"               :
+              (mp2->type == SINUSOIDAL)                    ? "SINUSOIDAL"                     :
               (mp2->type == STATE_PLANE)                   ? "STATE_PLANE"                    :
               (mp2->type == SCANSAR_PROJECTION)            ? "SCANSAR_PROJECTION"             :
               (mp2->type == LAT_LONG_PSEUDO_PROJECTION)    ? "LAT_LONG_PSEUDO_PROJECTION"     :
@@ -1470,6 +1476,9 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
               "ALBERS_EQUAL_AREA",
               "LAMBERT_CONFORMAL_CONIC",
               "LAMBERT_AZIMUTHAL_EQUAL_AREA",
+              "MERCATOR",
+              "EQUI_RECTANGULAR",
+              "SINUSOIDAL",
               "STATE_PLANE",
               "SCANSAR_PROJECTION",
               "LAT_LONG_PSEUDO_PROJECTION",
@@ -1782,6 +1791,51 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                       DM_MIN_LATITUDE, DM_MAX_LATITUDE,
                       "Projection - LAMAZ", "false_northing",
                       1, &failed);
+        break;
+      case MERCATOR:
+        verify_double(precheck_err_msgs, mp2->param.mer.orig_latitude,
+          DM_MIN_LATITUDE, DM_MAX_LATITUDE,
+          "Projection - MERCATOR", "orig_latitude", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.mer.central_meridian,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - MERCATOR", "central_meridian", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.mer.standard_parallel,
+          DM_MIN_LATITUDE, DM_MAX_LATITUDE,
+          "Projection - MERCATOR", "standard_parallel", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.mer.false_easting,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - MERCATOR", "false_easting", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.mer.false_northing,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - MERCATOR", "false_northing", 1, &failed);
+        break;
+      case EQUI_RECTANGULAR:
+        verify_double(precheck_err_msgs, mp2->param.eqr.orig_latitude,
+          DM_MIN_LATITUDE, DM_MAX_LATITUDE,
+          "Projection - EQR", "orig_latitude", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.eqr.central_meridian,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - EQR", "center_meridian", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.eqr.false_easting,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - EQR", "false_easting", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.eqr.false_northing,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - EQR", "false_northing", 1, &failed);
+        break;
+      case SINUSOIDAL:
+        verify_double(precheck_err_msgs, mp2->param.sin.longitude_center,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - SINUSOIDAL", "central_meridian", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.sin.false_easting,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - SINUSOIDAL", "false_easting", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.sin.false_northing,
+          DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
+          "Projection - SINUSOIDAL", "false_northing", 1, &failed);
+        verify_double(precheck_err_msgs, mp2->param.sin.sphere,
+          DM_MIN_SPHERE, DM_MAX_SPHERE,
+          "Projection - SINUSOIDAL", "sphere", 1, &failed);
         break;
       case STATE_PLANE:
         verify_int(precheck_err_msgs, mp2->param.state.zone,
