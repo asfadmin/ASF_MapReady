@@ -1648,6 +1648,13 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     flip = TRUE;
   }
 
+  struct dataset_sum_rec dssr;
+  get_dssr(inDataName, &dssr);
+  if (strncmp(dssr.time_dir_pix,"DECREASE",8)==0) {
+    printf("Image needs to be flipped L->R\n");
+    flip = TRUE;
+  }
+
   if (data_type >= COMPLEX_BYTE) {
     float gain_adj = 0.0;
     if (apply_ers2_gain_fix_flag)

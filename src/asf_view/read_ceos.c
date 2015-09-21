@@ -9,6 +9,7 @@ typedef struct {
     int headerBytes;
     int reclen;
     int multilook;
+    int flip_lr;
 } ReadCeosClientInfo;
 
 static const char *data_type_as_str(data_type_t data_type)
@@ -132,6 +133,8 @@ int read_ceos_client(int row_start, int n_rows_to_get,
       row_start *= skip;
     }
 
+    printf ("In read_ceos_client\n");
+
     if (meta->general->data_type == INTEGER16)
     {
         unsigned short *shorts = MALLOC(sizeof(unsigned short)*ns);
@@ -218,6 +221,18 @@ int read_ceos_client(int row_start, int n_rows_to_get,
     else {
         asfPrintError("Unsupported data type in CEOS data: %s\n",
             data_type_as_str(meta->general->data_type));
+    }
+
+    if (info->flip_lr == 1) { 
+      printf("Flipping chunk left to right\n");
+      for (ii=0; ii<n_rows_to_get; ++ii) {
+        for (jj=0; jj<ns/2; ++jj) {
+  	   float tmp;
+           tmp = dest[jj + ii*ns];
+           dest[jj + ii*ns] = dest[ns-jj-1 + ii*ns];
+           dest[ns-jj-1 + ii*ns] = tmp;
+        }
+      }
     }
 
     return TRUE;
@@ -382,6 +397,15 @@ int open_ceos_data(const char *data_name, const char *meta_name,
         asfPrintWarning("Failed to open CEOS file %s: %s\n",
             data_name, strerror(errno));
         return FALSE;
+    }
+
+    struct dataset_sum_rec dssr;
+    get_dssr(meta_name, &dssr);
+
+    printf("Found DSSR.time_dir_pix = %s\n",dssr.time_dir_pix);
+    if (strncmp(dssr.time_dir_pix,"DECREASE",8)==0) {
+      printf("Image needs to be flipped L->R\n");
+      info->flip_lr = 1;
     }
 
     asfPrintStatus("CEOS Data Type: %s\n",
