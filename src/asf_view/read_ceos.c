@@ -133,8 +133,6 @@ int read_ceos_client(int row_start, int n_rows_to_get,
       row_start *= skip;
     }
 
-    printf ("In read_ceos_client\n");
-
     if (meta->general->data_type == INTEGER16)
     {
         unsigned short *shorts = MALLOC(sizeof(unsigned short)*ns);
@@ -224,7 +222,6 @@ int read_ceos_client(int row_start, int n_rows_to_get,
     }
 
     if (info->flip_lr == 1) { 
-      printf("Flipping chunk left to right\n");
       for (ii=0; ii<n_rows_to_get; ++ii) {
         for (jj=0; jj<ns/2; ++jj) {
   	   float tmp;
@@ -402,9 +399,7 @@ int open_ceos_data(const char *data_name, const char *meta_name,
     struct dataset_sum_rec dssr;
     get_dssr(meta_name, &dssr);
 
-    printf("Found DSSR.time_dir_pix = %s\n",dssr.time_dir_pix);
     if (strncmp(dssr.time_dir_pix,"DECREASE",8)==0) {
-      printf("Image needs to be flipped L->R\n");
       info->flip_lr = 1;
     }
 
