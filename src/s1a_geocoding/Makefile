@@ -14,8 +14,10 @@ LIBS  = \
 	$(XML_LIBS) \
 	-lm -lz
 
-OBJS = make_s1a_mapping.o \
-	s1a_geocoding.o
+CFLAGS += $(LIBTIFF_CLFAGS) $(GEOTIFF_CFLAGS)
+
+OBJS = driver.o \
+	make_s1a_mapping.o
 
 all: make_s1a_mapping
 
