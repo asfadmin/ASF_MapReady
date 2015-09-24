@@ -25,7 +25,7 @@
 #define DM_MAX_X_PIXEL_SIZE   DM_MAX_PIXEL_SIZE
 #define DM_MIN_Y_PIXEL_SIZE   DM_MIN_PIXEL_SIZE
 #define DM_MAX_Y_PIXEL_SIZE   DM_MAX_PIXEL_SIZE
-#define DM_MIN_RE_MAJOR       6377500.0
+#define DM_MIN_RE_MAJOR       6377000.0
 #define DM_MAX_RE_MAJOR       6378500.0
 #define DM_MIN_RE_MINOR       6356000.0
 #define DM_MAX_RE_MINOR       6357000.0
@@ -56,7 +56,7 @@
 #define DM_MIN_AZIMUTH_TIME_PER_PIXEL   -0.07
 #define DM_MAX_AZIMUTH_TIME_PER_PIXEL   0.07
 #define DM_MIN_SLANT_SHIFT              -1100.0
-#define DM_MAX_SLANT_SHIFT              400.0
+#define DM_MAX_SLANT_SHIFT              1100.0
 #define DM_MIN_TIME_SHIFT               -10000000.0
 #define DM_MAX_TIME_SHIFT               10000000.0
 #define DM_MIN_SLANT_RANGE_FIRST_PIXEL  650000.0
@@ -115,6 +115,8 @@
 #define DM_GEOCENTRIC_MAX_PERY    -DM_GEOCENTRIC_MIN_PERX
 #define DM_MIN_HEIGHT             -2000.0
 #define DM_MAX_HEIGHT             25000.0
+#define DM_MIN_SPHERE             6370000.0
+#define DM_MAX_SPHERE             6378500.0
 //      UTM
 #define DM_MIN_UTM_ZONE           1
 #define DM_MAX_UTM_ZONE           60
@@ -152,8 +154,8 @@
 #define DM_MAX_SECOND             86400.0
 #define DM_MIN_VECTOR_COUNT       1
 #define DM_MAX_VECTOR_COUNT       100
-#define DM_MIN_VEC_TIME           -1000.0
-#define DM_MAX_VEC_TIME           1000.0
+#define DM_MIN_VEC_TIME           -10000.0
+#define DM_MAX_VEC_TIME           10000.0
 #define DM_MIN_ECR_COORD          -10000000.0
 #define DM_MAX_ECR_COORD          10000000.0
 #define DM_MIN_ECR_VEL            -10000.0

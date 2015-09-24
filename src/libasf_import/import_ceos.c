@@ -655,6 +655,12 @@ void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
        strncmp(meta->general->processor, "KACST", 5) == 0))
     flip = TRUE;
 
+  struct dataset_sum_rec dssr;
+  get_dssr(inDataName, &dssr);
+  if (strncmp(dssr.time_dir_pix,"DECREASE",8)==0) {
+    flip = TRUE;
+  }
+
   // Read data type from metadata
   data_type_t data_type = meta->general->data_type;
 
@@ -814,6 +820,12 @@ void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
        strncmp(meta->general->processor, "CDPF", 4) == 0 ||
        strncmp(meta->general->processor, "KACST", 5) == 0))
     flip = TRUE;
+
+  struct dataset_sum_rec dssr;
+  get_dssr(inDataName, &dssr);
+  if (strncmp(dssr.time_dir_pix,"DECREASE",8)==0) {
+    flip = TRUE;
+  }
 
   // Read data type from metadata
   data_type_t data_type = meta->general->data_type;
@@ -1645,6 +1657,12 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
        strncmp_case(meta->general->processor, "RSI", 3) == 0 ||
        strncmp_case(meta->general->processor, "KACST", 5) == 0))
   {
+    flip = TRUE;
+  }
+
+  struct dataset_sum_rec dssr;
+  get_dssr(inDataName, &dssr);
+  if (strncmp(dssr.time_dir_pix,"DECREASE",8)==0) {
     flip = TRUE;
   }
 
