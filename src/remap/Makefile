@@ -7,6 +7,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_remap.a \
 	$(LIBDIR)/asf_meta.a \
         $(GSL_LIBS) \
+	$(GLIB_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
