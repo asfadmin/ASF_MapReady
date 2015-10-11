@@ -12,6 +12,7 @@ LIBS  = \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(GSL_LIBS) \
+	$(GLIB_LIBS) \
 	$(XML_LIBS) \
 	-lm -lz
 
