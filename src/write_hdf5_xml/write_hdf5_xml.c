@@ -2163,7 +2163,7 @@ int main(int argc, char **argv)
       " sensor\">%s</beam_mode>\n", meta->general->mode);
     fprintf(fp, "      <absolute_orbit type=\"int\" definition=\"absolute orbit"
       " of the image\">%d</absolute_orbit>\n", meta->general->orbit);
-    if (strcmp_case(meta->general->sensor, "ALOS") == 0)
+    if (meta->general->frame > 0)
       fprintf(fp, "      <frame type=\"int\" definition=\"frame number of the "
         "image\">%d</frame>\n",  meta->general->frame);
     if (meta->general->orbit_direction == 'A')
@@ -2276,6 +2276,8 @@ int main(int argc, char **argv)
       meta = meta_read(params->rtc_HH_metadata);
     else if (params->rtc_VV_metadata)
       meta = meta_read(params->rtc_VV_metadata);
+    else
+      asfPrintError("Could not find metadata for terrain corrected product\n");
     fprintf(fp, "      <file type=\"string\" definition=\"file name(s) of the "
       "terrain corrected image\">%s</file>\n", filename);
     fprintf(fp, "      <width type=\"int\" definition=\"width of the image\">"
@@ -2327,6 +2329,8 @@ int main(int argc, char **argv)
       meta = meta_read(params->rtc_HH_metadata);
     else if (params->rtc_VV_metadata)
       meta = meta_read(params->rtc_VV_metadata);
+    else 
+      asfPrintError("Could not find metadata for layover shadow mask\n");
     fprintf(fp, "    <layover_shadow_mask>\n");
     fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
       "layover shadow mask\">%s</file>\n", filename);
@@ -2347,6 +2351,8 @@ int main(int argc, char **argv)
       meta = meta_read(params->rtc_HH_metadata);
     else if (params->rtc_VV_metadata)
       meta = meta_read(params->rtc_VV_metadata);
+    else
+      asfPrintError("Could not find metdata for incidence angle map\n");
     fprintf(fp, "    <incidence_angle_map>\n");
     fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
       "incidence angle map\">%s</file>\n", filename);
@@ -2407,6 +2413,8 @@ int main(int argc, char **argv)
       meta = meta_read(params->rtc_HH_metadata);
     else if (params->rtc_VV_metadata)
       meta = meta_read(params->rtc_VV_metadata);
+    else
+      asfPrintError("Could not find metadata for determining extent\n");
     meta_get_bounding_box(meta, &plat_min, &plat_max, &plon_min, &plon_max);
     fprintf(fp, "    <terrain_corrected_image>\n");
     fprintf(fp, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
@@ -2570,6 +2578,8 @@ int main(int argc, char **argv)
           meta = meta_read(params->rtc_HH_metadata);
         else if (params->rtc_VV_metadata)
           meta = meta_read(params->rtc_VV_metadata);
+        else
+          asfPrintError("Could not find metadata for layover statistics\n");
         float valid_values = (pixel_count - h[0]) / (float)pixel_count;
         pixel_count = meta->general->line_count * meta->general->sample_count;
         pixel_count -= h[0];
@@ -2696,7 +2706,7 @@ int main(int argc, char **argv)
       sprintf(data_source, "ALOS PALSAR");
       sprintf(copyright, "JAXA, METI (%d)", year);
     }
-    if (strncmp_case(meta->general->sensor, "ERS", 3) == 0) {
+    else if (strncmp_case(meta->general->sensor, "ERS", 3) == 0) {
       sprintf(data_source, "%s SAR", meta->general->sensor);
       sprintf(copyright, "ESA (%d)", year);
     }
