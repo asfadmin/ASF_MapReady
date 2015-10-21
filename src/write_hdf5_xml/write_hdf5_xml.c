@@ -2144,6 +2144,8 @@ int main(int argc, char **argv)
         strcpy(original_file, params->input_HH_file);
       else if (params->input_VV_file)
         strcpy(original_file, params->input_VV_file);
+      else
+        asfPrintError("Could not find metadata file\n");
     }
     meta2iso_date(meta, begin, center, end);
     fprintf(fp, "      <file type=\"string\" definition=\"file name(s) of the "
@@ -2710,6 +2712,9 @@ int main(int argc, char **argv)
       sprintf(data_source, "%s SAR", meta->general->sensor);
       sprintf(copyright, "ESA (%d)", year);
     }
+    else
+      asfPrintError("Could not set data source or copyright for %s!\n",
+        meta->general->sensor);
     meta_free(meta);
     sprintf(processing, "Terrain corrected product, processed by GAMMA");
     if (params->gamma_version) {
