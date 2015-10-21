@@ -1989,6 +1989,12 @@ int main(int argc, char **argv)
     if (params->rtc_HH_file && !fileExists(params->rtc_HH_file))
       asfPrintError("Terrain corrected file (%s) is missing!\n", 
         params->rtc_HH_file);
+    if (params->rtc_VV_metadata && !fileExists(params->rtc_VV_metadata))
+      asfPrintError("Metadata for terrain corrected file (%s) is missing!\n",
+        params->rtc_VV_metadata);
+    if (params->rtc_VV_file && !fileExists(params->rtc_VV_file))
+      asfPrintError("Terrain corrected file (%s) is missing!\n", 
+        params->rtc_VV_file);
     if (params->incidence_angle_file && 
       !fileExists(params->incidence_angle_file))
       asfPrintError("Incidence angle map (%s) is missing!\n", 
@@ -2118,17 +2124,26 @@ int main(int argc, char **argv)
     double slant_first = meta->sar->slant_range_first_pixel;
     double slant_center = slant_first + ns*xs/2.0;
     double slant_last = slant_first + ns*xs;
-    strcpy(beam_mode, "FBS");
-    strcpy(original_file, params->input_HH_file);
-    if (params->input_HV_file) {
-      strcpy(beam_mode, "FBD");
-      sprintf(original_file, "%s,%s", params->input_HH_file, 
-        params->input_HV_file);
+    if (strmp_case(meta->general->sensor, "ALOS") == 0) {
+      strcpy(beam_mode, "FBS");
+      strcpy(original_file, params->input_HH_file);
+      if (params->input_HV_file) {
+        strcpy(beam_mode, "FBD");
+        sprintf(original_file, "%s,%s", params->input_HH_file, 
+          params->input_HV_file);
+      }
+      if (params->input_VH_file && params->input_VV_file) {
+        strcpy(beam_mode, "PLR");
+        sprintf(original_file, "%s,%s,%s,%s", params->input_HH_file, 
+          params->input_HV_file, params->input_VH_file, params->input_VV_file);
+      }
     }
-    if (params->input_VH_file && params->input_VV_file) {
-      strcpy(beam_mode, "PLR");
-      sprintf(original_file, "%s,%s,%s,%s", params->input_HH_file, 
-        params->input_HV_file, params->input_VH_file, params->input_VV_file);
+    else {
+      strcpy(beam_mode, "STD");
+      if (params->input_HH_file)
+        strcpy(original_file, params->input_HH_file);
+      else if (params->input_VV_file)
+        strcpy(original_file, params->input_VV_file);
     }
     meta2iso_date(meta, begin, center, end);
     fprintf(fp, "      <file type=\"string\" definition=\"file name(s) of the "
@@ -2148,8 +2163,9 @@ int main(int argc, char **argv)
       " sensor\">%s</beam_mode>\n", meta->general->mode);
     fprintf(fp, "      <absolute_orbit type=\"int\" definition=\"absolute orbit"
       " of the image\">%d</absolute_orbit>\n", meta->general->orbit);
-    fprintf(fp, "      <frame type=\"int\" definition=\"frame number of the "
-      "image\">%d</frame>\n",  meta->general->frame);
+    if (strcmp_case(meta->general->sensor, "ALOS") == 0)
+      fprintf(fp, "      <frame type=\"int\" definition=\"frame number of the "
+        "image\">%d</frame>\n",  meta->general->frame);
     if (meta->general->orbit_direction == 'A')
       fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
       "direction of the sensor\">ascending</flight_direction>\n");
@@ -2256,7 +2272,10 @@ int main(int argc, char **argv)
     }
     sprintf(filename, "%s%s%s%s", hh, hv, vh, vv);
     fprintf(fp, "    <terrain_corrected_image>\n");
-    meta = meta_read(params->rtc_HH_metadata);
+    if (params->rtc_HH_metadata)
+      meta = meta_read(params->rtc_HH_metadata);
+    else if (params->rtc_VV_metadata)
+      meta = meta_read(params->rtc_VV_metadata);
     fprintf(fp, "      <file type=\"string\" definition=\"file name(s) of the "
       "terrain corrected image\">%s</file>\n", filename);
     fprintf(fp, "      <width type=\"int\" definition=\"width of the image\">"
@@ -2304,7 +2323,10 @@ int main(int argc, char **argv)
 
     // Layover shadow mask
     split_dir_and_file(params->layover_shadow_mask, directory, filename);
-    meta = meta_read(params->rtc_HH_metadata);
+    if (params->rtc_HH_metadata)
+      meta = meta_read(params->rtc_HH_metadata);
+    else if (params->rtc_VV_metadata)
+      meta = meta_read(params->rtc_VV_metadata);
     fprintf(fp, "    <layover_shadow_mask>\n");
     fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
       "layover shadow mask\">%s</file>\n", filename);
@@ -2321,7 +2343,10 @@ int main(int argc, char **argv)
 
     // Incidence angle map
     split_dir_and_file(params->incidence_angle_file, directory, filename);
-    meta = meta_read(params->rtc_HH_metadata);
+    if (params->rtc_HH_metadata)
+      meta = meta_read(params->rtc_HH_metadata);
+    else if (params->rtc_VV_metadata)
+      meta = meta_read(params->rtc_VV_metadata);
     fprintf(fp, "    <incidence_angle_map>\n");
     fprintf(fp, "      <file type=\"string\" definition=\"file name of the "
       "incidence angle map\">%s</file>\n", filename);
@@ -2378,7 +2403,10 @@ int main(int argc, char **argv)
     // Data extent
     double plat_min, plat_max, plon_min, plon_max;
     fprintf(fp, "  <extent>\n");
-    meta = meta_read(params->rtc_HH_metadata);
+    if (params->rtc_HH_metadata)
+      meta = meta_read(params->rtc_HH_metadata);
+    else if (params->rtc_VV_metadata)
+      meta = meta_read(params->rtc_VV_metadata);
     meta_get_bounding_box(meta, &plat_min, &plat_max, &plon_min, &plon_max);
     fprintf(fp, "    <terrain_corrected_image>\n");
     fprintf(fp, "      <westBoundLongitude>%.5f</westBoundLongitude>\n",
@@ -2409,6 +2437,12 @@ int main(int argc, char **argv)
     // Statistics
     if (params->rtc_HH_metadata) {
       meta = meta_read(params->rtc_HH_metadata);
+      if (meta->stats)
+        stats = TRUE;
+      meta_free(meta);
+    }
+    else if (params->rtc_VV_metadata) {
+      meta = meta_read(params->rtc_VV_metadata);
       if (meta->stats)
         stats = TRUE;
       meta_free(meta);
@@ -2532,7 +2566,10 @@ int main(int argc, char **argv)
               &h[24], &h[25], &h[26], &h[27], &h[28], &h[29], &h[30], &h[31]);
         }
         FCLOSE(fpStats);
-        meta = meta_read(params->rtc_HH_metadata);
+        if (params->rtc_HH_metadata)
+          meta = meta_read(params->rtc_HH_metadata);
+        else if (params->rtc_VV_metadata)
+          meta = meta_read(params->rtc_VV_metadata);
         float valid_values = (pixel_count - h[0]) / (float)pixel_count;
         pixel_count = meta->general->line_count * meta->general->sample_count;
         pixel_count -= h[0];
@@ -2658,6 +2695,10 @@ int main(int argc, char **argv)
         strcmp_case(meta->general->sensor_name, "SAR") == 0) {
       sprintf(data_source, "ALOS PALSAR");
       sprintf(copyright, "JAXA, METI (%d)", year);
+    }
+    if (strncmp_case(meta->general->sensor, "ERS", 3) == 0) {
+      sprintf(data_source, "%s SAR", meta->general->sensor);
+      sprintf(copyright, "ESA (%d)", year);
     }
     meta_free(meta);
     sprintf(processing, "Terrain corrected product, processed by GAMMA");
