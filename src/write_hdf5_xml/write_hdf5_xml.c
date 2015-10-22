@@ -2124,7 +2124,7 @@ int main(int argc, char **argv)
     double slant_first = meta->sar->slant_range_first_pixel;
     double slant_center = slant_first + ns*xs/2.0;
     double slant_last = slant_first + ns*xs;
-    if (strmp_case(meta->general->sensor, "ALOS") == 0) {
+    if (strcmp_case(meta->general->sensor, "ALOS") == 0) {
       strcpy(beam_mode, "FBS");
       strcpy(original_file, params->input_HH_file);
       if (params->input_HV_file) {
