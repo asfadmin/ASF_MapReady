@@ -151,13 +151,6 @@ void import_smap(const char *inBaseName, const char *outBaseName,
 meta_parameters *meta_read_only(const char *in_fName);
 meta_parameters *meta_read_raw(const char *inFile);
 
-int isGeocoded(const char *dataFile);
-int isPolsarproMatrix(char *dataFile, char **matrixType, char **error);
-int isPolsarproDecomposition(char *dataFile, char **decompositionType, 
-			     char **error);
-int isPolsarproSegmentation(const char *dataFile, char **error);
-int isPolsarproParameter(char *dataFile, char **error);
-
 int init_fgdc_config(char *configFile, char *type);
 
 #endif

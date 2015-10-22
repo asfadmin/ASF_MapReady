@@ -18,6 +18,7 @@ ISSUES:
 *******************************************************************************/
 #include "asf.h"
 #include "asf_nan.h"
+#include "asf_endian.h"
 #include <unistd.h>
 #include <math.h>
 #include <ctype.h>
@@ -25,6 +26,7 @@ ISSUES:
 #include "fft2d.h"
 #include "ddr.h"
 #include "asf_raster.h"
+#include "envi.h"
 #include "typlim.h"
 #include "float_image.h"
 #include "uint8_image.h"
@@ -117,7 +119,6 @@ typedef struct {
   datum_type_t datum;
   char hemisphere;
   unsigned long pro_zone; // UTM zone (UTM only)
-  int geoCoords;
   short proj_coords_trans;
   short pcs;
   short geodetic_datum;
@@ -140,6 +141,8 @@ void usage(char *name);
 void msg_out(FILE *fpLog, int quiet, char *msg);
 void err_out(FILE *fpError, int quiet, char *msg);
 int asf_img_file_found(char *file);
+int envi_img_file_found(char *file);
+void matrix2asf(char *inFile, char **outImg, char **outMeta);
 graphics_file_t getGraphicsFileType (char *file);
 void graphicsFileType_toStr (graphics_file_t type, char *type_str);
 void fftDiff(char *inFile1, char *inFile2, float *bestLocX, float *bestLocY, 
@@ -269,7 +272,6 @@ void diff_check_complex_stats(char *outputFile, char *inFile1, char *inFile2,
                               complex_psnr_t *cpsnr, int strict,
                               data_type_t data_type, int num_bands);
 
-
 int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
 	      char ***bands1, char ***bands2,
 	      int *num_bands1, int *num_bands2, int *complex,
@@ -343,28 +345,34 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
         type1 = getGraphicsFileType(inFile1);
         type2 = getGraphicsFileType(inFile2);
         if (type1 != ASF_IMG &&
+                        type1 != ENVI_IMG &&
+                        type1 != ENVI_MAT &&
                         type1 != JPEG_IMG &&
                         type1 != PGM_IMG &&
                         type1 != PPM_IMG &&
                         type1 != PNG_IMG &&
                         type1 != STD_TIFF_IMG &&
-                        type1 != GEO_TIFF_IMG) {
+                        type1 != GEO_TIFF_IMG &&
+                        type1 != GEO_TIFF_MAT) {
                 graphicsFileType_toStr(type1, type_str);
-                sprintf(msg, "Graphics file type %s"
+                sprintf(msg, "Graphics file type %s "
                                 "is not currently supported (Image #1: %s)\n",
                                 type_str, inFile1);
                 FREE(outputFile);
                 asfPrintError(msg);
         }
         if (type2 != ASF_IMG &&
+                        type2 != ENVI_IMG &&
+                        type2 != ENVI_MAT &&
                         type2 != JPEG_IMG &&
                         type2 != PGM_IMG &&
                         type2 != PPM_IMG &&
                         type1 != PNG_IMG &&
                         type2 != STD_TIFF_IMG &&
-                        type2 != GEO_TIFF_IMG) {
+                        type2 != GEO_TIFF_IMG &&
+                        type2 != GEO_TIFF_MAT) {
                 graphicsFileType_toStr(type2, type_str);
-                sprintf(msg, "Graphics file type %s"
+                sprintf(msg, "Graphics file type %s "
                                 " is not currently supported (Image #2: %s)\n",
                                 type_str, inFile2);
                 FREE(outputFile);
@@ -377,7 +385,7 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
         char *data_type1 = NULL;
         char *data_type2 = NULL;
         switch (type1) {
-        case ASF_IMG:
+        case ASF_IMG: {
                 strcpy(file1_fftFile, inFile1);
                 strcpy(file2_fftFile, inFile2);
                 char *ext;
@@ -390,6 +398,20 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
                 sprintf(file1_fftMetaFile, "%s.meta", f1);
                 sprintf(file2_fftMetaFile, "%s.meta", f2);
                 break;
+        }
+        case ENVI_IMG:
+        case ENVI_MAT:
+        case GEO_TIFF_MAT: {
+                char *outFile = (char *) MALLOC(sizeof(char)*1024);
+                char *outMeta = (char *) MALLOC(sizeof(char)*1024);
+                matrix2asf(inFile1, &outFile, &outMeta);
+                strcpy(file1_fftFile, outFile);
+                strcpy(file1_fftMetaFile, outMeta);
+                matrix2asf(inFile2, &outFile, &outMeta);
+                strcpy(file2_fftFile, outFile);
+                strcpy(file2_fftMetaFile, outMeta);
+                break;
+        }
         case JPEG_IMG: {
                 jpeg_info_t jpg1, jpg2;
                 get_jpeg_info_hdr_from_file(inFile1, &jpg1, outputFile);
@@ -536,14 +558,14 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
 	        *complex_stats2 = (complex_stats_t*) MALLOC(
                                 sizeof(complex_stats_t) * band_count2);
 	        *complex_psnr = (complex_psnr_t*) MALLOC(
-                                sizeof(complex_psnr_t));
+                                sizeof(complex_psnr_t) * band_count1);
 	}
 	else {
 	        *stats1 = (stats_t*) MALLOC(
                                 sizeof(stats_t) * band_count1);
 	        *stats2 = (stats_t*) MALLOC(
                                 sizeof(stats_t) * band_count2);
-	        *psnrs = (psnr_t*) MALLOC(sizeof(psnr_t));
+	        *psnrs = (psnr_t*) MALLOC(sizeof(psnr_t) * band_count1);
 	}
 	*data_shift = (shift_data_t*) MALLOC(sizeof(shift_data_t));
 
@@ -665,6 +687,14 @@ int diffimage(char *inFile1, char *inFile2, char *outputFile, char *logFile,
 
 graphics_file_t getGraphicsFileType (char *file)
 {
+  char *matrixType = (char *) MALLOC(sizeof(char)*5);
+  char *error = (char *) MALLOC(sizeof(char)*255);
+  int matrix = isPolsarproMatrix(file, &matrixType, &error);
+  if (matrix && strstr(error, ".tif"))
+    return ENVI_MAT;
+  else if (matrix && strstr(error, ".bin"))
+    return GEO_TIFF_MAT;
+
   FILE *fp = (FILE *)FOPEN(file, "rb");
   uint8 magic[4];
   graphics_file_t file_type = UNKNOWN_GRAPHICS_TYPE;
@@ -736,6 +766,9 @@ graphics_file_t getGraphicsFileType (char *file)
     else if (magic[1] == 'P' && magic[2] == 'N' && magic[3] == 'G') {
       file_type = PNG_IMG;
     }
+    else if (envi_img_file_found(file)) {
+      file_type = ENVI_IMG;
+    }
     else if (asf_img_file_found(file)) {
       file_type = ASF_IMG;
     }
@@ -763,6 +796,24 @@ int asf_img_file_found(char *file)
   return found;
 }
 
+int envi_img_file_found(char *file)
+{
+  int found = FALSE;
+  char *hdrFile = (char *) MALLOC(sizeof(char)*(strlen(file)+5));
+  sprintf(hdrFile, "%s.hdr", file);
+  if (fileExists(hdrFile)) {
+    char buf[10];
+    FILE *fp = FOPEN(hdrFile, "r");
+    fgets(buf, 10, fp);
+    FCLOSE(fp);
+    if (strncmp_case(buf, "ENVI", 4) == 0)
+      found = TRUE;
+  }
+  FREE(hdrFile);
+
+  return found;
+}
+
 void fftDiff(char *inFile1, char *inFile2, float *bestLocX, float *bestLocY, 
 	     float *certainty)
 {
@@ -774,6 +825,10 @@ void graphicsFileType_toStr (graphics_file_t type, char *type_str)
   switch (type) {
     case ASF_IMG:
       strcpy (type_str, "ASF_IMG");
+      break;
+    case ENVI_IMG:
+    case ENVI_MAT:
+      strcpy (type_str, "ENVI");
       break;
     case JPEG_IMG:
       strcpy (type_str, "JPEG");
@@ -791,6 +846,7 @@ void graphicsFileType_toStr (graphics_file_t type, char *type_str)
       strcpy (type_str, "TIFF");
       break;
     case GEO_TIFF_IMG:
+    case GEO_TIFF_MAT:
       strcpy (type_str, "GEOTIFF");
       break;
     case BMP_IMG:
@@ -1774,13 +1830,13 @@ void get_geotiff_keys(char *file, geotiff_data_t *g)
       // Get UTM related info if it exists
       read_count = GTIFKeyGet(gtif, ProjectedCSTypeGeoKey, &g->pcs, 0, 1);
       if (read_count == 1 && 
-	      PCS_2_UTM(g->pcs, &g->hemisphere, &g->datum, &g->pro_zone)) {
+	  PCS_2_UTM(g->pcs, &g->hemisphere, &g->datum, &g->pro_zone)) {
         g->gtif_data_exists = 1;
       }
       else {
         read_count = GTIFKeyGet(gtif, ProjectionGeoKey, &g->pcs, 0, 1);
         if (read_count == 1 && 
-	        PCS_2_UTM(g->pcs, &g->hemisphere, &g->datum, &g->pro_zone)) {
+	    PCS_2_UTM(g->pcs, &g->hemisphere, &g->datum, &g->pro_zone)) {
           g->gtif_data_exists = 1;
         }
         else {
@@ -1792,57 +1848,46 @@ void get_geotiff_keys(char *file, geotiff_data_t *g)
 
       // Get projection type (ProjCoordTransGeoKey) and other projection parameters
       read_count = 
-	      GTIFKeyGet(gtif, ProjCoordTransGeoKey, &g->proj_coords_trans, 0, 1);
-      if (read_count >= 1) {
-        g->gtif_data_exists = 1;
-        g->geoCoords = 0;
-      }
-      else {
-        short geoProjKey;
-        read_count =
-          GTIFKeyGet(gtif, GeographicTypeGeoKey, &geoProjKey, 0, 1);
-        if (geoProjKey == 4326)
-          g->geoCoords = 1;
-        if (read_count >= 1) g->gtif_data_exists = 1;
-        else g->proj_coords_trans = MISSING_GTIF_DATA;
-      }
+	GTIFKeyGet(gtif, ProjCoordTransGeoKey, &g->proj_coords_trans, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->proj_coords_trans = MISSING_GTIF_DATA;
       read_count = 
-	      GTIFKeyGet(gtif, GeographicTypeGeoKey, &g->geographic_datum, 0, 1);
+	GTIFKeyGet(gtif, GeographicTypeGeoKey, &g->geographic_datum, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->geographic_datum = MISSING_GTIF_DATA;
       read_count = 
-	      GTIFKeyGet(gtif, GeogGeodeticDatumGeoKey, &g->geodetic_datum, 0, 1);
+	GTIFKeyGet(gtif, GeogGeodeticDatumGeoKey, &g->geodetic_datum, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->geodetic_datum = MISSING_GTIF_DATA;
       read_count = 
-	      GTIFKeyGet(gtif, ProjScaleAtNatOriginGeoKey, &g->scale_factor, 0, 1);
+	GTIFKeyGet(gtif, ProjScaleAtNatOriginGeoKey, &g->scale_factor, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->scale_factor = MISSING_GTIF_DATA;
 
       // Get generic projection parameters (Note: projection type is defined by
       // the g->proj_coords_trans value)
       read_count = 
-	      GTIFKeyGet (gtif, ProjFalseEastingGeoKey, &g->false_easting, 0, 1);
+	GTIFKeyGet (gtif, ProjFalseEastingGeoKey, &g->false_easting, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->false_easting = MISSING_GTIF_DATA;
       read_count = 
-	      GTIFKeyGet (gtif, ProjFalseNorthingGeoKey, &g->false_northing, 0, 1);
+	GTIFKeyGet (gtif, ProjFalseNorthingGeoKey, &g->false_northing, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->false_northing = MISSING_GTIF_DATA;
       read_count = 
-	      GTIFKeyGet (gtif, ProjNatOriginLongGeoKey, &g->natLonOrigin, 0, 1);
+	GTIFKeyGet (gtif, ProjNatOriginLongGeoKey, &g->natLonOrigin, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->natLonOrigin = MISSING_GTIF_DATA;
       read_count = 
-	      GTIFKeyGet (gtif, ProjNatOriginLatGeoKey, &g->natLatOrigin, 0, 1);
+	GTIFKeyGet (gtif, ProjNatOriginLatGeoKey, &g->natLatOrigin, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->natLatOrigin = MISSING_GTIF_DATA;
       read_count = 
-	      GTIFKeyGet (gtif, ProjStdParallel1GeoKey, &g->stdParallel1, 0, 1);
+	GTIFKeyGet (gtif, ProjStdParallel1GeoKey, &g->stdParallel1, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->stdParallel1 = MISSING_GTIF_DATA;
       read_count = 
-	      GTIFKeyGet (gtif, ProjStdParallel2GeoKey, &g->stdParallel2, 0, 1);
+	GTIFKeyGet (gtif, ProjStdParallel2GeoKey, &g->stdParallel2, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->stdParallel2 = MISSING_GTIF_DATA;
       read_count = GTIFKeyGet (gtif, ProjCenterLongGeoKey, &g->lonCenter, 0, 1);
@@ -1852,15 +1897,15 @@ void get_geotiff_keys(char *file, geotiff_data_t *g)
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->latCenter = MISSING_GTIF_DATA;
       read_count = 
-	      GTIFKeyGet (gtif, ProjFalseOriginLongGeoKey, &g->falseOriginLon, 0, 1);
+	GTIFKeyGet (gtif, ProjFalseOriginLongGeoKey, &g->falseOriginLon, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->falseOriginLon = MISSING_GTIF_DATA;
       read_count = 
-	      GTIFKeyGet (gtif, ProjFalseOriginLatGeoKey, &g->falseOriginLat, 0, 1);
+	GTIFKeyGet (gtif, ProjFalseOriginLatGeoKey, &g->falseOriginLat, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->falseOriginLat = MISSING_GTIF_DATA;
       read_count = 
-	      GTIFKeyGet (gtif, ProjStraightVertPoleLongGeoKey, &g->lonPole, 0, 1);
+	GTIFKeyGet (gtif, ProjStraightVertPoleLongGeoKey, &g->lonPole, 0, 1);
       if (read_count >= 1) g->gtif_data_exists = 1;
       else g->lonPole = MISSING_GTIF_DATA;
     }
@@ -1886,8 +1931,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
   if (PCS_2_UTM(g1->pcs, &dummy_hem, &dummy_datum, &dummy_zone)) {
     projection_type1 = UNIVERSAL_TRANSVERSE_MERCATOR;
   }
-  else if (g1->geoCoords)
-    projection_type1 = LAT_LONG_PSEUDO_PROJECTION;
   else {
     switch(g1->proj_coords_trans) {
     case CT_TransverseMercator:
@@ -1916,8 +1959,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
   if (PCS_2_UTM(g2->pcs, &dummy_hem, &dummy_datum, &dummy_zone)) {
     projection_type2 = UNIVERSAL_TRANSVERSE_MERCATOR;
   }
-  else if (g1->geoCoords)
-    projection_type2 = LAT_LONG_PSEUDO_PROJECTION;
   else {
     switch(g2->proj_coords_trans) {
     case CT_TransverseMercator:
@@ -3774,13 +3815,15 @@ void png_sequential_get_float_line(png_structp png_ptr, png_infop info_ptr,
 
   int rgb = color_type == PNG_COLOR_TYPE_RGB ? 1 : 0;
   png_bytep png_buf = (png_bytep)MALLOC(width*sizeof(png_byte)*(rgb ? 3 : 1));
-  int col;
+  int col, ii;
 
   // Read current row
   png_read_row(png_ptr, png_buf, NULL);
   for (col=0; col<width; col++) {
-    if (rgb)
-      buf[col] = (float)png_buf[col*3+band];
+    if (rgb) {
+      for (ii=0; ii<num_bands; ii++)
+        buf[col+ii*width] = (float)png_buf[col*3+ii];
+    }
     else
       buf[col] = (float)png_buf[col];
   }
@@ -4025,6 +4068,7 @@ void get_band_names(char *inFile, FILE *outputFP,
         }
       }
     }
+    meta_free(md);
   }
   else {
     // Other file types...
@@ -4047,13 +4091,25 @@ void get_band_names(char *inFile, FILE *outputFP,
       if (outputFP != NULL) fprintf(outputFP, "%s", msg);
       asfPrintError(msg);
     }
+ 
+    if (type == PNG_IMG) {
+      png_info_t ihdr;
+      get_png_info_hdr_from_file(inFile, &ihdr, NULL);
+      *num_extracted_bands = ihdr.num_bands;
+    }
     
-    if (type == GEO_TIFF_IMG) {
+    if (type == JPEG_IMG) {
+      jpeg_info_t jpg;
+      get_jpeg_info_hdr_from_file(inFile, &jpg, NULL);
+      *num_extracted_bands = jpg.num_bands;
+    }
+    
+    if (type == GEO_TIFF_IMG || type == GEO_TIFF_MAT) {
       // If band names are embedded in the GeoTIFF, then grab them.  Otherwise
       // assign numeric band names
       geotiff_data_t g;
       int *empty = (int*)CALLOC(MAX_BANDS, sizeof(int));
-      char *band_str = (char*)CALLOC(25, sizeof(char));
+      char *band_str = (char*)CALLOC(255, sizeof(char));
       if (band_str == NULL) {
         sprintf(msg, "Cannot allocate memory for band name string.\n");
         if (outputFP != NULL) fprintf(outputFP, "%s", msg);
@@ -4075,23 +4131,9 @@ void get_band_names(char *inFile, FILE *outputFP,
 				tmp_citation, 0);
         FREE(tmp_citation);
       }
-      else {
-        short sample_format, bits_per_sample, planar_config;
-        int is_scanline_format, is_palette_color_tiff;
-        data_type_t data_type;
-        TIFF *tiff = XTIFFOpen (inFile, "rb");
-        get_tiff_data_config(tiff, &sample_format, &bits_per_sample,
-          &planar_config, &data_type, num_extracted_bands, &is_scanline_format,
-          &is_palette_color_tiff, REPORT_LEVEL_NONE);
-        XTIFFClose(tiff);
-        if (*num_extracted_bands == 1)
-          strcpy(band_str, "01");
-        else if (*num_extracted_bands == 3)
-          strcpy(band_str, "01,02,03");
-      }
       if (*num_extracted_bands <= 0) {
         // Could not find band strings in the citations, so assign numeric 
-	      // band IDs
+	// band IDs
         int i;
         for (i=0; i<MAX_BANDS; i++) {
           sprintf((*band_names)[i], "%02d", i);
@@ -4943,7 +4985,7 @@ void make_generic_meta(char *file, uint32 height, uint32 width,
   md->general->band_count = num_bands;
   // This just quiets the fftMatch warnings during meta_read()
   md->general->image_data_type = AMPLITUDE_IMAGE; 
-
+  
   meta_write(md, file_meta);
   meta_free(md);
 }
@@ -4990,7 +5032,8 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
         !ISNAN(s[band].cert) && s[band].cert < MIN_MATCH_CERTAINTY ? 1 : 0;
     empty_band1 = s1[band].sdev < 1.0;
     empty_band2 = s2[band].sdev < 1.0;
-    if (!empty_band1 || !empty_band2) {
+    // We are not checking for empty bands anymore - RG
+    // if (!empty_band1 || !empty_band2) {
       // One or more images have a non-empty band for the current band number, 
       // so check it.
       if (low_certainty)
@@ -5066,8 +5109,8 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
 	s[band].cert_good = TRUE;
 	s[band].dxdy_good = TRUE;
       }
-    }
-    else {
+    //}
+    /* else {
       if (empty_band1) {
         asfPrintStatus("Band %s (%02d) in %s is empty ...not checking "
 		       "geolocation\n\n", band_names1[band], band, inFile1);
@@ -5076,7 +5119,7 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
         asfPrintStatus("Band %s (%02d) in %s is empty ...not checking "
 		       "geolocation\n\n", band_names2[band], band, inFile2);
       }
-    }
+    }*/
   } // For each band
 
   if (have_out_file && outputFP) FCLOSE(outputFP);
@@ -5143,7 +5186,7 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
     asfPrintError(msg);
   }
 
-  uint32 jj;
+  uint32 jj, kk;
   FILE *fp = FOPEN(inFile, "rb");
   if (fp == NULL) {
     sprintf(msg,"Cannot open JPEG file for read...Aborting\n");
@@ -5202,26 +5245,28 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
   {
     asfPercentMeter((double)cinfo.output_scanline/(double)jpg.height);
     jpeg_read_scanlines(&cinfo, jpg_buf, 1); // Reads one scanline
-    for (jj = 0 ; jj < jpg.width; jj++ ) {
-      if (jpg.num_bands == 1) {
-        buf[jj] = (float)jpg_buf[0][jj];
+    for (kk=0; kk<jpg.num_bands; kk++) {
+      for (jj = 0 ; jj < jpg.width; jj++ ) {
+        if (jpg.num_bands == 1) {
+          buf[jj] = (float)jpg_buf[0][jj];
+        }
+        else if (jpg.num_bands == 3) {
+          buf[jj] = (float)jpg_buf[0][jj*3+kk];
+        }
+        else {
+          // Shouldn't get here...
+          sprintf(msg,"Invalid number of bands in JPEG file ...Aborting\n");
+          if (outfile && strlen(outfile) > 0) 
+            outFP = (FILE*)FOPEN(outfile,"a"); 
+          else 
+            outFP = NULL;
+          if (outFP) fprintf(outFP, "%s", msg);
+          if (outFP) FCLOSE(outFP);
+          asfPrintError(msg);
+        }
       }
-      else if (jpg.num_bands == 3) {
-        buf[jj] = (float)jpg_buf[0][jj*3+band_no];
-      }
-      else {
-        // Shouldn't get here...
-        sprintf(msg,"Invalid number of bands in JPEG file ...Aborting\n");
-        if (outfile && strlen(outfile) > 0) 
-	  outFP = (FILE*)FOPEN(outfile,"a"); 
-	else 
-	  outFP = NULL;
-        if (outFP) fprintf(outFP, "%s", msg);
-        if (outFP) FCLOSE(outFP);
-        asfPrintError(msg);
-      }
+      put_band_float_line(imgFP, md, kk, row, buf);
     }
-    put_float_line(imgFP, md, row, buf);
     row++;
   }
   asfPercentMeter(1.0);
@@ -5363,7 +5408,7 @@ void export_tiff_to_asf_img(char *inFile, char *outfile,
     asfPrintError(msg);
   }
 
-  uint32 ii;
+  uint32 ii, kk;
   TIFF *tif = XTIFFOpen(inFile, "rb");
   if (tif == NULL) {
     sprintf(msg,"Cannot open TIFF file for read ...Aborting\n");
@@ -5418,17 +5463,17 @@ void export_tiff_to_asf_img(char *inFile, char *outfile,
   float *buf = (float*)MALLOC(t.width * sizeof(float));
 
   asfPrintStatus("Converting TIFF file to IMG file..\n");
-  int kk;
-  for (kk=0; ii<t.num_bands; kk++) {
-    for ( ii = 0; ii < t.height; ii++ ) {
-      asfPercentMeter((double)ii/(double)t.height);
+  for ( ii = 0; ii < t.height; ii++ ) {
+    asfPercentMeter((double)ii/(double)t.height);
+    for (kk = 0; kk < t.num_bands; kk++) {
       tiff_get_float_line(tif, buf, ii, kk);
       put_band_float_line(imgFP, md, kk, ii, buf);
     }
-    asfPercentMeter(1.0);
   }
+  asfPercentMeter(1.0);
 
   if (buf) free(buf);
+  //if (tmp) free(tmp);
   if (tif) XTIFFClose(tif);
   if (imgFP) FCLOSE(imgFP);
   if (outFP) FCLOSE(outFP);
@@ -5566,15 +5611,17 @@ void export_png_to_asf_img(char *inFile, char *outfile,
   png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
                &interlace_type, &compression_type, &filter_type);
 
-  uint32 ii;
-  float *buf = (float*)MALLOC(ihdr.width * sizeof(float));
+  uint32 ii, kk;
+  float *buf = (float*)MALLOC(ihdr.width * ihdr.num_bands * sizeof(float));
 
   for ( ii = 0; ii < ihdr.height; ii++ ) {
     asfPercentMeter((double)ii/(double)ihdr.height);
     png_sequential_get_float_line(png_ptr, info_ptr, buf, band_no);
-    put_float_line(imgFP, md, ii, buf);
+    for (kk = 0; kk < ihdr.num_bands; kk++) {      
+      put_band_float_line(imgFP, md, kk, ii, &buf[kk*ihdr.width]);
+    }
   }
-  asfPercentMeter(1.0);
+  asfPercentMeter(1.0);    
 
   png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
   if (buf) free(buf);
@@ -5992,4 +6039,104 @@ void diff_check_complex_stats(char *outputFile, char *inFile1, char *inFile2,
   if (output_file_exists && outputFP) FCLOSE(outputFP);
   free_band_names(&band_names1, num_extracted_bands1);
   free_band_names(&band_names2, num_extracted_bands2);
+}
+
+void matrix2asf(char *inFile, char **outFile, char **outMeta)
+{
+  int ii, kk, tif = FALSE;
+  char *dataFile = (char *) MALLOC(sizeof(char)*(strlen(inFile)+15));
+  char *hdrFile = (char *) MALLOC(sizeof(char)*(strlen(inFile)+15));
+  char *outfile = (char *) MALLOC(sizeof(char)*(strlen(inFile)+15));
+  char *outmeta = (char *) MALLOC(sizeof(char)*(strlen(inFile)+15));
+  char *matrixType = (char *) MALLOC(sizeof(char)*5);
+  char *error = (char *) MALLOC(sizeof(char)*255);
+  int matrix = isPolsarproMatrix(inFile, &matrixType, &error);
+  if (matrix) {
+    if (strcmp_case(matrixType, "C2") == 0 ||
+      strcmp_case(matrixType, "C3") == 0 ||
+      strcmp_case(matrixType, "C4") == 0) {
+      sprintf(dataFile, "%s%cC11.tif", inFile, DIR_SEPARATOR);
+      if (fileExists(dataFile))
+        tif = TRUE;
+      else
+        sprintf(dataFile, "%s%cC11.bin", inFile, DIR_SEPARATOR);
+      sprintf(hdrFile, "%s%cC11.bin.hdr", inFile, DIR_SEPARATOR);
+      sprintf(outfile, "%s%cC11.img", inFile, DIR_SEPARATOR);
+      sprintf(outmeta, "%s%cC11.meta", inFile, DIR_SEPARATOR);
+    }
+    else if (strcmp_case(matrixType, "T3") == 0 ||
+      strcmp_case(matrixType, "T4") == 0) {
+      sprintf(dataFile, "%s%cT11.tif", inFile, DIR_SEPARATOR);
+      if (fileExists(dataFile))
+        tif = TRUE;
+      else
+        sprintf(dataFile, "%s%cT11.bin", inFile, DIR_SEPARATOR);
+      sprintf(hdrFile, "%s%cT11.bin.hdr", inFile, DIR_SEPARATOR);
+      sprintf(outfile, "%s%cT11.img", inFile, DIR_SEPARATOR);
+      sprintf(outmeta, "%s%cT11.meta", inFile, DIR_SEPARATOR);
+    }
+    else if (strcmp_case(matrixType, "S2") == 0) {
+      sprintf(dataFile, "%s%cS11.tif", inFile, DIR_SEPARATOR);
+      if (fileExists(dataFile))
+        tif = TRUE;
+      else
+        sprintf(dataFile, "%s%cS11.bin", inFile, DIR_SEPARATOR);
+      sprintf(hdrFile, "%s%cS11.bin.hdr", inFile, DIR_SEPARATOR);
+      sprintf(outfile, "%s%cS11.img", inFile, DIR_SEPARATOR);
+      sprintf(outmeta, "%s%cS11.meta", inFile, DIR_SEPARATOR);
+    }
+  }
+  else {
+    strcpy(dataFile, inFile);
+    char *f = STRDUP(inFile);
+    char *ext = findExt(f);
+    *ext = '\0';
+    sprintf(outfile, "%s.img", f);
+    sprintf(outmeta, "%s.meta", f);
+    sprintf(hdrFile, "%s.hdr", inFile);
+  }
+  if (tif) {
+    tiff_data_t t;
+    get_tiff_info_from_file(dataFile, &t);
+    export_tiff_to_asf_img(dataFile, NULL, outfile, outmeta,
+                            t.height, t.width, REAL32, 0);
+  }
+  else {
+    envi_header* envi = read_envi(hdrFile);
+    meta_parameters *meta = envi2meta(envi);
+    if (strcmp_case(matrixType, "C2") == 0)
+      meta->general->image_data_type = POLARIMETRIC_C2_MATRIX;
+    else if (strcmp_case(matrixType, "C3") == 0)
+      meta->general->image_data_type = POLARIMETRIC_C3_MATRIX;
+    else if (strcmp_case(matrixType, "C4") == 0)
+      meta->general->image_data_type = POLARIMETRIC_C4_MATRIX;
+    else if (strcmp_case(matrixType, "T3") == 0)
+      meta->general->image_data_type = POLARIMETRIC_T3_MATRIX;
+    else if (strcmp_case(matrixType, "T4") == 0)
+      meta->general->image_data_type = POLARIMETRIC_T4_MATRIX;
+    else if (strcmp_case(matrixType, "S2") == 0)
+      meta->general->image_data_type = POLARIMETRIC_S2_MATRIX;
+    else
+      meta->general->image_data_type = AMPLITUDE_IMAGE;
+    float *floatBuf = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+  
+    FILE *fpIn = FOPEN(dataFile, "rb");
+    FILE *fpOut = FOPEN(outfile, "wb");
+    for (ii=0; ii<meta->general->line_count; ii++) {
+      get_float_line(fpIn, meta, ii, floatBuf);
+      for (kk=0; kk<meta->general->sample_count; kk++)
+        ieee_big32(floatBuf[kk]);  
+      put_float_line(fpOut, meta, ii, floatBuf);
+    }
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
+  
+    meta_write(meta, outmeta);
+    meta_free(meta);
+    FREE(hdrFile);
+    FREE(envi);
+    FREE(floatBuf);
+  }
+  *outFile = outfile;
+  *outMeta = outmeta;
 }

@@ -4,7 +4,7 @@ CFLAGS += $(GEOTIFF_CFLAGS)
 
 include ../../make_support/system_rules
 
-LIBS = $(XML_LIBS) $(GSL_LIBS) $(PROJ_LIBS) -lm
+LIBS = $(XML_LIBS) $(GSL_LIBS) $(GLIB_LIBS) $(PROJ_LIBS) -lm
 
 # Had to add -Wno-unused-function because flex generates some
 CFLAGS += $(W_ERROR) -Wno-unused-function $(XML_CFLAGS) $(GEOTIFF_CFLAGS) $(HDF5_CFLAGS)

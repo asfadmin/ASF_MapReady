@@ -223,6 +223,7 @@ int fit_warp(const char *offsetsFile, const char *imageName, const char *outName
 typedef enum {
   UNKNOWN_GRAPHICS_TYPE=0,
   ASF_IMG,
+  ENVI_IMG,
   JPEG_IMG,
   PGM_IMG,
   PPM_IMG,
@@ -231,7 +232,9 @@ typedef enum {
   GEO_TIFF_IMG,
   BMP_IMG,
   GIF_IMG,
-  PNG_IMG
+  PNG_IMG,
+  ENVI_MAT,
+  GEO_TIFF_MAT
 } graphics_file_t;
 
 typedef struct {
