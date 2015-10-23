@@ -154,6 +154,7 @@ int strmatches(const char *key, ...)
     return found;
 }
 
+/*
 static void meta2iso_date(meta_parameters *meta, 
 	char *begin, char *center, char *end)
 {
@@ -185,7 +186,6 @@ static void meta2iso_date(meta_parameters *meta,
     date.year, date.month, date.day, time.hour, time.min, time.sec);
 }
 
-/*
 static void line2iso_date(char *line, char *time)
 {
   char buf[100];
@@ -2035,49 +2035,83 @@ int main(int argc, char **argv)
     char *begin = (char *) MALLOC(sizeof(char)*30);
     char *center = (char *) MALLOC(sizeof(char)*30);
     char *end = (char *) MALLOC(sizeof(char)*30);
-    int year;
+    int year=0, month=0, day=0;
+    hms_time time;
     fprintf(fp, "  <metadata>\n");
    
     int range_looks=0, azimuth_looks=0;
     double slant_spacing=0, azimuth_spacing=0;
-    fpFiles = FOPEN(params->processing_log, "r");
-    while (NULL != fgets(line, 255, fpFiles)) {
-      char *key, *value;
-      split2(line, ':', &key, &value);
-      if (strcmp(key, "range looks") == 0 && strstr(line, "azimuth looks") == NULL)
-        range_looks = atoi(value);
-      else if (strcmp(key, "azimuth looks") == 0)
-        azimuth_looks = atoi(value);
-      else if (strcmp(key, "MLI range sample spacing (m)") == 0)
-        slant_spacing = atof(value);
-      else if (strcmp(key, "MLI azimuth sample spacing (m)") == 0)
-        azimuth_spacing = atof(value);
-    }
-    FCLOSE(fpFiles);
-
     double dop0=0, dop1=0, dop2=0, ddop0=0, ddop1=0, ddop2=0;
+    double slant_first=0, slant_center=0, slant_last=0, prf=0;
+    double frequency, wavelength=0, start_sec=0, center_sec=0, end_sec=0;
+    double speedOfLight = 299792458.0;
+    char platform[15], beam_mode[15];
     if (params->mli_par_file && fileExists(params->mli_par_file)) {
       fpFiles = FOPEN(params->mli_par_file, "r");
       while (NULL != fgets(line, 255, fpFiles)) {
         char *key, *value;
         split2(line, ':', &key, &value);
-        if (strcmp(key, "doppler_polynomial") == 0) {
+        if (strcmp(key, "sensor") == 0) {
+          if (strstr(value, "ERS1"))
+            strcpy(platform, "ERS-1");
+          else if (strstr(value, "ERS2"))
+            strcpy(platform, "ERS-2");
+          else if (strstr(value, "PALSAR"))
+            strcpy(platform, "ALOS");
+          else
+            asfPrintError("Could not identify sensor!\n");
+        }
+        else if (strcmp(key, "date") == 0)
+          sscanf(value, "%d %d %d", &year, &month, &day);
+        else if (strcmp(key, "start_time") == 0)
+          sscanf(value, "%lf", &start_sec);
+        else if (strcmp(key, "center_time") == 0)
+          sscanf(value, "%lf", &center_sec);
+        else if (strcmp(key, "end_time") == 0)
+          sscanf(value, "%lf", &end_sec);
+        else if (strcmp(key, "doppler_polynomial") == 0)
           sscanf(value, "%lf %lf %lf", &dop0, &dop1, &dop2);
-        }
-        else if (strcmp(key, "doppler_poly_dot") == 0) {
+        else if (strcmp(key, "doppler_poly_dot") == 0)
           sscanf(value, "%lf %lf %lf", &ddop0, &ddop1, &ddop2);
+        else if (strcmp(key, "near_range_slc") == 0)
+          sscanf(value, "%lf", &slant_first);
+        else if (strcmp(key, "center_range_slc") == 0)
+          sscanf(value, "%lf", &slant_center);
+        else if (strcmp(key, "far_range_slc") == 0)
+          sscanf(value, "%lf", &slant_last);
+        else if (strcmp(key, "prf") == 0)
+          sscanf(value, "%lf", &prf);
+        else if (strcmp(key, "radar_frequency") == 0) {
+          sscanf(value, "%lf", &frequency);
+          wavelength = speedOfLight / frequency;
         }
+        else if (strcmp(key, "range_looks") == 0)
+          sscanf(value, "%d", &range_looks);
+        else if (strcmp(key, "azimuth_looks") == 0)
+          sscanf(value, "%d", &azimuth_looks);
+        else if (strcmp(key, "range_pixel_spacing") == 0)
+          sscanf(value, "%lf", &slant_spacing);
+        else if (strcmp(key, "azimuth_pixel_spacing") == 0)
+          sscanf(value, "%lf", &azimuth_spacing);
       }
       FCLOSE(fpFiles);
+      date_sec2hms(start_sec, &time);
+      sprintf(begin, "%4d-%02d-%02dT%02d:%02d:%09.6lfZ", 
+        year, month, day, time.hour, time.min, time.sec);
+      date_sec2hms(center_sec, &time);
+      sprintf(center, "%4d-%02d-%02dT%02d:%02d:%09.6lfZ", 
+        year, month, day, time.hour, time.min, time.sec);
+      date_sec2hms(end_sec, &time);
+      sprintf(end, "%4d-%02d-%02dT%02d:%02d:%09.6lfZ", 
+        year, month, day, time.hour, time.min, time.sec);
     }
-    else {
-      asfPrintWarning("mli.par not found: %s\n", params->mli_par_file);
-    }
+    else
+      asfPrintError("Could not fine MLI parameter file!\n");
 
     double range_offset=0, azimuth_offset=0;
     double range_stddev=0, azimuth_stddev=0;
     int patches_accepted=0, patches_attempted=0;
-    if (fileExists(params->mk_geo_radcal_2_log)) {
+    if (params->mk_geo_radcal_2_log && fileExists(params->mk_geo_radcal_2_log)) {
       fpFiles = FOPEN(params->mk_geo_radcal_2_log, "r");
       while (NULL != fgets(line, 255, fpFiles)) {
         char *key, *value;
@@ -2115,28 +2149,34 @@ int main(int argc, char **argv)
     }
 
     // Original input image
-    char beam_mode[5];
     fprintf(fp, "    <input_image>\n");
 
-    meta = meta_read(params->metadata);
-    int ns = meta->general->sample_count;
-    double xs = meta->general->x_pixel_size;
-    double slant_first = meta->sar->slant_range_first_pixel;
-    double slant_center = slant_first + ns*xs/2.0;
-    double slant_last = slant_first + ns*xs;
-    if (strcmp_case(meta->general->sensor, "ALOS") == 0) {
-      strcpy(beam_mode, "FBS");
+    int orbit=0, frame=0;
+    char orbitStr[10], frameStr[10];
+    if (params->metadata && fileExists(params->metadata))
+      meta = meta_read(params->metadata);
+    else
+      asfPrintError("Metadata file does not exist!\n");
+    if (strcmp_case(platform, "ALOS") == 0) {
+      strcpy(beam_mode, meta->general->mode);
       strcpy(original_file, params->input_HH_file);
       if (params->input_HV_file) {
-        strcpy(beam_mode, "FBD");
         sprintf(original_file, "%s,%s", params->input_HH_file, 
           params->input_HV_file);
       }
       if (params->input_VH_file && params->input_VV_file) {
-        strcpy(beam_mode, "PLR");
         sprintf(original_file, "%s,%s,%s,%s", params->input_HH_file, 
           params->input_HV_file, params->input_VH_file, params->input_VV_file);
       }
+      char *fileName = (char *) MALLOC(sizeof(char)*strlen(original_file));
+      strcpy(fileName, original_file);
+      strncpy(orbitStr, &fileName[3], 5);
+      orbitStr[6] = '\0';
+      orbit = atoi(orbitStr);
+      strncpy(frameStr, &fileName[14], 4);
+      frameStr[5] = '\0';
+      frame = atoi(frameStr);
+      FREE(fileName);      
     }
     else {
       strcpy(beam_mode, "STD");
@@ -2146,35 +2186,44 @@ int main(int argc, char **argv)
         strcpy(original_file, params->input_VV_file);
       else
         asfPrintError("Could not find metadata file\n");
+      if (strncmp_case(platform, "ERS", 3) == 0) {
+        char *fileName = (char *) MALLOC(sizeof(char)*strlen(original_file));
+        strcpy(fileName, original_file);
+        strncpy(orbitStr, &fileName[3], 5);
+        orbitStr[6] = '\0';
+        orbit = atoi(orbitStr);
+        strncpy(frameStr, &fileName[15], 3);
+        frameStr[4] = '\0';
+        frame = atoi(frameStr);
+        FREE(fileName);
+      }
     }
-    meta2iso_date(meta, begin, center, end);
     fprintf(fp, "      <file type=\"string\" definition=\"file name(s) of the "
       "input image\">%s</file>\n", original_file);
     fprintf(fp, "      <platform type=\"string\" definition=\"name of the "
-      "platform\">%s</platform>\n", meta->general->sensor);
-    if (strcmp_case(meta->general->sensor, "ALOS") == 0 && 
-    strcmp_case(meta->general->sensor_name, "SAR") == 0)
+      "platform\">%s</platform>\n", platform);
+    if (strcmp_case(platform, "ALOS") == 0)
       fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
         "sensor\">PALSAR</sensor>\n");
     else
       fprintf(fp, "      <sensor type=\"string\" definition=\"name of the "
-        "sensor\">%s</sensor>\n", meta->general->sensor_name);
+        "sensor\">SAR</sensor>\n");
     fprintf(fp, "      <wavelength type=\"double\" definition=\"wavelength of "
-      "the sensor\" units=\"m\">%g</wavelength>\n", meta->sar->wavelength);
+      "the sensor\" units=\"m\">%g</wavelength>\n", wavelength);
     fprintf(fp, "      <beam_mode type=\"string\" definition=\"beam mode of the"
-      " sensor\">%s</beam_mode>\n", meta->general->mode);
+      " sensor\">%s</beam_mode>\n", beam_mode);
     fprintf(fp, "      <absolute_orbit type=\"int\" definition=\"absolute orbit"
-      " of the image\">%d</absolute_orbit>\n", meta->general->orbit);
-    if (meta->general->frame > 0)
+      " of the image\">%d</absolute_orbit>\n", orbit);
+    if (frame > 0)
       fprintf(fp, "      <frame type=\"int\" definition=\"frame number of the "
-        "image\">%d</frame>\n",  meta->general->frame);
+        "image\">%d</frame>\n",  frame);
     if (meta->general->orbit_direction == 'A')
       fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
       "direction of the sensor\">ascending</flight_direction>\n");
     else if (meta->general->orbit_direction == 'D')
       fprintf(fp, "      <flight_direction type=\"string\" definition=\"flight "
       "direction of the sensor\">descending</flight_direction>\n");
-    if (strcmp_case(meta->sar->polarization, "HH") == 0) {
+    if (params->input_HH_file) {
       fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
         "\"polarization of transmitted signal\">horizontal</"
         "transmitted_polarization>\n");
@@ -2182,14 +2231,14 @@ int main(int argc, char **argv)
         "polarization of received signal\">horizontal</received_polarization>"
         "\n");
     }
-    else if (strcmp_case(meta->sar->polarization, "HV") == 0) {
+    else if (params->input_HV_file) {
       fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
         "\"polarization of transmitted signal\">horizontal</"
         "transmitted_polarization>\n");
       fprintf(fp, "      <received_polarization type=\"string\" definition=\""
         "polarization of received signal\">vertical</received_polarization>\n");
     }
-    else if (strcmp_case(meta->sar->polarization, "VH") == 0) {
+    else if (params->input_VH_file) {
       fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
         "\"polarization of transmitted signal\">vertical</"
         "transmitted_polarization>\n");
@@ -2197,7 +2246,7 @@ int main(int argc, char **argv)
         "polarization of received signal\">horizontal</received_polarization>"
         "\n");
     }
-    else if (strcmp_case(meta->sar->polarization, "VV") == 0) {
+    else if (params->input_HH_file) {
       fprintf(fp, "      <transmitted_polarization type=\"string\" definition="
         "\"polarization of transmitted signal\">vertical</"
         "transmitted_polarization>\n");
@@ -2211,7 +2260,7 @@ int main(int argc, char **argv)
     fprintf(fp, "      <data_format type=\"string\" definition=\"data format "
       "of input data\">CEOS</data_format>\n");
     fprintf(fp, "      <prf type=\"double\" definition=\"pulse repetition "
-      "frequency\" units=\"Hz\">%g</prf>\n", meta->sar->prf);
+      "frequency\" units=\"Hz\">%g</prf>\n", prf);
     fprintf(fp, "      <start_datetime type=\"string\" definition=\"UTC "
       "time at the start of the image\">%s</start_datetime>\n", begin); 	
     fprintf(fp, "      <center_datetime type=\"string\" definition=\"UTC "
@@ -2259,7 +2308,12 @@ int main(int argc, char **argv)
     
     // Terrain corrected result
     char hh[64]="", hv[64]="", vh[64]="", vv[64]="";
-    split_dir_and_file(params->rtc_HH_file, directory, filename);
+    if (params->rtc_HH_file)
+      split_dir_and_file(params->rtc_HH_file, directory, filename);
+    else if (params->rtc_VV_file)
+      split_dir_and_file(params->rtc_VV_file, directory, filename);
+    else
+      asfPrintError("Could not find terrain corrected product!\n");
     sprintf(hh, "%s", filename);
     if (strcmp_case(beam_mode, "FBD") == 0 || 
         strcmp_case(beam_mode, "PLR") == 0) {
@@ -2641,7 +2695,7 @@ int main(int argc, char **argv)
     fprintf(fp, "  <processing>\n");
 
     // Initial processing
-    char *p;
+    /*
     fpFiles = FOPEN(params->processing_log, "rt");
     while (NULL != fgets(line, 255, fpFiles)) {
       if (strstr(line, "PROCESSING START:")) {
@@ -2651,14 +2705,17 @@ int main(int argc, char **argv)
       }
     }
     FCLOSE(fpFiles);
+    */
 
     // Terrain correction
+    char *p;
     fpFiles = FOPEN(params->mk_geo_radcal_0_log, "r");
     while (NULL != fgets(line, 255, fpFiles)) {
       if (strstr(line, "mk_geo_radcal") && strstr(line, "processing start:") &&
           strstr(line, "mode: 0")) {
         p = strstr(line, "processing start:");
         gamma2iso_date(p+18, str);
+        fprintf(fp, "    <data_ingest>%s</data_ingest>\n", str);
         fprintf(fp, "    <simulate_sar>%s</simulate_sar>\n", str);
       }
     }
@@ -2702,20 +2759,17 @@ int main(int argc, char **argv)
     
     // Root metadata
     char data_source[25], processing[100], copyright[50];
-    meta = meta_read(params->metadata);
-    if (strcmp_case(meta->general->sensor, "ALOS") == 0 && 
-        strcmp_case(meta->general->sensor_name, "SAR") == 0) {
+    if (strcmp_case(platform, "ALOS") == 0) {
       sprintf(data_source, "ALOS PALSAR");
       sprintf(copyright, "JAXA, METI (%d)", year);
     }
-    else if (strncmp_case(meta->general->sensor, "ERS", 3) == 0) {
-      sprintf(data_source, "%s SAR", meta->general->sensor);
+    else if (strncmp_case(platform, "ERS", 3) == 0) {
+      sprintf(data_source, "%s SAR", platform);
       sprintf(copyright, "ESA (%d)", year);
     }
     else
-      asfPrintError("Could not set data source or copyright for %s!\n",
-        meta->general->sensor);
-    meta_free(meta);
+      asfPrintError("Could not set data source or copyright for %s!\n", 
+        platform);
     sprintf(processing, "Terrain corrected product, processed by GAMMA");
     if (params->gamma_version) {
       sprintf(str, " (%s)", params->gamma_version);
