@@ -51,10 +51,25 @@ envi_header* read_envi(char *envi_name)
     sscanf(line, "%s = %s", key, value);
     //asfPrintStatus("key: %s\n", key);
     if (strncmp(key, "description", 11)==0) {
-      fgets(line, 255, fp);
-      char *p = strchr(line, '}');
-      p[0] = '\0';
-      sprintf(envi->description, "%s", line);
+      if (strchr(line, '}') == NULL) {
+        fgets(line, 255, fp);
+        char *p = strchr(line, '}');
+        p[0] = '\0';
+        sprintf(envi->description, "%s", p);
+      }
+      else {
+        char *q = strchr(line, '{');
+        char *p = strchr(line, '}');
+        p[0] = '\0';
+        q++;
+        if (q) {
+          while (q[0] == ' ' || q[0] == '-')
+            q++;
+          sprintf(envi->description, "%s", q);
+        }
+        else
+          sprintf(envi->description, "%s", line);
+      }
     }
     if (strncmp(key, "samples", 6)==0) envi->samples = atoi(value);
     else if (strncmp(key, "lines", 5)==0) envi->lines = atoi(value);
@@ -108,12 +123,19 @@ envi_header* read_envi(char *envi_name)
     sprintf(envi->wavelength_units, "%s", value);
     }
     else if (strncmp(key, "band", 4)==0) {
-      fgets(line, 255, fp);
-      envi->band_name = trim_spaces(line);
-      int len = (int) strlen(envi->band_name);
-      if (envi->band_name[len-1] == '}' ||
-	  envi->band_name[len-1] == ',')
-	envi->band_name[len-1] = '\0';
+      if (strchr(line, '}') == NULL) {
+        fgets(line, 255, fp);
+        char *p = strchr(line, '}');
+        p[0] = '\0';
+        envi->band_name = trim_spaces(line);
+      }
+      else {
+        char *q = strchr(line, '{');
+        char *p = strchr(line, '}');
+        p[0] = '\0';
+        q++;
+        envi->band_name = trim_spaces(q);
+      }
     }
     // ignore wavelength for the moment
     // ignore data ignore for the moment
