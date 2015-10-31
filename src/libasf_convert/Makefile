@@ -1,6 +1,7 @@
 CFLAGS += $(HDF5_CFLAGS)
 CFLAGS += $(GEOTIFF_CFLAGS)
 CFLAGS += $(HDF5_CFLAGS)
+CFLAGS += $(XML_CFLAGS)
 # Makefile for libasf_convert library
 
 include ../../make_support/system_rules
