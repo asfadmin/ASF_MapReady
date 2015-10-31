@@ -13,6 +13,7 @@ localenv.ParseConfig("pkg-config --cflags --libs gsl")
 localenv.AppendUnique(LIBS = [
     "m",
     "proj",
+    "glib-2.0",
     "asf",
     "asf_proj",
 ])
