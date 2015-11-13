@@ -2,8 +2,8 @@
 #include "asf_nan.h"
 #include "asf_raster.h"
 
-void floats_to_bytes_from_file(const char *inFile, const char *outFile,
-                               char *band, float mask, scale_t scaling)
+void floats_to_bytes_from_file_ext(const char *inFile, const char *outFile,
+  char *band, float mask, scale_t scaling, float scale_factor)
 {
   FILE *fp;
   meta_parameters *meta;
@@ -22,7 +22,8 @@ void floats_to_bytes_from_file(const char *inFile, const char *outFile,
   fp = FOPEN(inFile, "rb");
   get_float_lines(fp, meta, offset, meta->general->line_count, float_data);
   FCLOSE(fp);
-  byte_data = floats_to_bytes (float_data, pixel_count, mask, scaling);
+  byte_data = floats_to_bytes_ext(float_data, pixel_count, mask, scaling,
+    scale_factor);
   for (ii=0; ii<pixel_count; ii++)
     float_data[ii] = (float) byte_data[ii];
   meta->general->data_type = ASF_BYTE;
@@ -35,8 +36,14 @@ void floats_to_bytes_from_file(const char *inFile, const char *outFile,
   meta_free(meta);
 }
 
-unsigned char *floats_to_bytes (float *data, long long pixel_count, float mask,
-				scale_t scaling)
+void floats_to_bytes_from_file(const char *inFile, const char *outFile,
+  char *band, float mask, scale_t scaling)
+{
+  floats_to_bytes_from_file_ext(inFile, outFile, band, mask, scaling, 1.0);
+}
+				
+unsigned char *floats_to_bytes_ext(float *data, long long pixel_count, 
+  float mask, scale_t scaling, float scale_factor)
 {
   long long ii;
   double imin=99999, imax=-99999, imean=0, isdev=0;
@@ -117,6 +124,12 @@ unsigned char *floats_to_bytes (float *data, long long pixel_count, float mask,
 	  pixels[ii] = slope * data[ii] + offset;
       }
       break;
+      
+    case FIXED:
+      for (ii=0; ii<pixel_count; ii++)
+        pixels[ii] = data[ii]*scale_factor;
+      break;
+    
     default:
       asfPrintError("Undefined scaling mechanism!");
       break;
@@ -124,4 +137,10 @@ unsigned char *floats_to_bytes (float *data, long long pixel_count, float mask,
     }
   
   return pixels;
+}
+
+unsigned char *floats_to_bytes(float *data, long long pixel_count, float mask,
+	scale_t scaling)
+{
+  return floats_to_bytes_ext(data, pixel_count, mask, scaling, 1.0);
 }
