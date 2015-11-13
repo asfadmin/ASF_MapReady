@@ -145,12 +145,12 @@ static void do_freeman(char *cpFile, char *xpFile, char *outFile)
   meta_parameters *metaOut = meta_read(cpFile);
   strcpy(metaOut->general->bands,"Ps,Pv,Pd");
   metaOut->general->band_count=3;
-  float *a = (float *) MALLOC(sizeof(float)*line_count);
-  float *b = (float *) MALLOC(sizeof(float)*line_count);
+  float *a = (float *) MALLOC(sizeof(float)*sample_count);
+  float *b = (float *) MALLOC(sizeof(float)*sample_count);
   float pd, ps, pv;
-  float *pdBuf = (float *) MALLOC(sizeof(float)*line_count);
-  float *psBuf = (float *) MALLOC(sizeof(float)*line_count);
-  float *pvBuf = (float *) MALLOC(sizeof(float)*line_count);
+  float *pdBuf = (float *) MALLOC(sizeof(float)*sample_count);
+  float *psBuf = (float *) MALLOC(sizeof(float)*sample_count);
+  float *pvBuf = (float *) MALLOC(sizeof(float)*sample_count);
 
   FILE *fpIn1 = FOPEN(cpFile, "r");
   FILE *fpIn2 = FOPEN(xpFile, "r");
