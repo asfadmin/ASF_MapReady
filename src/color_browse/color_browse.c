@@ -46,7 +46,8 @@ void usage(char *name)
 {
   printf("\n"
    "USAGE:\n"
-   "   color_browse [-sentinel <resampleScale> <pixelScale>] [-tmpDir <directory]\n"
+   "   color_browse [-sentinel <resampleScale> <slope> <modeScale> <psScale>\n"
+   "     <pvScale> <pdScale> ] [-tmpDir <directory]\n"
    "     <inFile1> <inFile2> [<inFile3>] <outFile\n");
   printf("\n"
    "REQUIRED ARGUMENTS:\n"
@@ -136,7 +137,8 @@ static char *read_str(char *line, char *param)
   return value;
 }
 
-static void do_freeman(char *cpFile, char *xpFile, char *outFile)
+static void do_freeman(char *cpFile, char *xpFile, float slope, float modeScale,
+  float psScale, float pvScale, float pdScale, char *outFile)
 {
   int ii, kk;
   meta_parameters *metaIn = meta_read(cpFile);
@@ -147,7 +149,7 @@ static void do_freeman(char *cpFile, char *xpFile, char *outFile)
   metaOut->general->band_count=3;
   float *a = (float *) MALLOC(sizeof(float)*sample_count);
   float *b = (float *) MALLOC(sizeof(float)*sample_count);
-  float pd, ps, pv;
+  float cp, xp, pd, ps, pv;
   float *pdBuf = (float *) MALLOC(sizeof(float)*sample_count);
   float *psBuf = (float *) MALLOC(sizeof(float)*sample_count);
   float *pvBuf = (float *) MALLOC(sizeof(float)*sample_count);
@@ -159,21 +161,23 @@ static void do_freeman(char *cpFile, char *xpFile, char *outFile)
     get_float_line(fpIn1, metaIn, kk, a);
     get_float_line(fpIn2, metaIn, kk, b);  
     for (ii=0; ii<sample_count; ii++) {
-      pv = 4.0*b[ii]*b[ii];
-      ps = a[ii]*a[ii] - 3.0*b[ii]*b[ii];
+      cp = a[ii]*slope*modeScale;
+      xp = b[ii]*slope*modeScale; 
+      pv = 4.0*xp*xp;
+      ps = cp*cp - 3.0*xp*xp;
       pd = pv - ps;
       if (pv < 0.0)
         pvBuf[ii]= 0.0;
       else
-        pvBuf[ii] = sqrt(pv);
+        pvBuf[ii] = sqrt(pv)*pvScale*255;
       if (ps < 0.0)
         psBuf[ii] = 0.0;
       else
-        psBuf[ii] = sqrt(ps);
+        psBuf[ii] = sqrt(ps)*psScale*255;
       if (pd < 0.0)
         pdBuf[ii] = 0.0;
       else
-        pdBuf[ii] = sqrt(pd);
+        pdBuf[ii] = sqrt(pd)*pdScale*255;
     }
     put_band_float_line(fpOut, metaOut, 0, kk, psBuf);
     put_band_float_line(fpOut, metaOut, 1, kk, pvBuf);
@@ -193,6 +197,7 @@ static void do_freeman(char *cpFile, char *xpFile, char *outFile)
   FREE(pvBuf);
 }
 
+/*
 static void scale_browse(char *inFile, char *outFile, float scale)
 {
   long ii, kk;
@@ -216,6 +221,7 @@ static void scale_browse(char *inFile, char *outFile, float scale)
   meta_free(meta);
   FREE(buf);
 }
+*/
 
 int main(int argc,char *argv[])
 {
@@ -225,8 +231,7 @@ int main(int argc,char *argv[])
   browse_type_t mode = NOTYPE;
   int   i,j;
   int   sample_count;
-  double resampleScale;
-  float pixelScale;
+  float resampleScale, slope, modeScale, psScale, pvScale, pdScale;
   extern int currArg;
   strcpy(tmpPath, "");
 
@@ -239,9 +244,13 @@ int main(int argc,char *argv[])
   while (currArg < (argc-2)) {
     char *key = argv[currArg++];
     if (strmatches(key, "-sentinel", "--sentinel", NULL)) {
-      CHECK_ARG(2);
-      resampleScale = atof(GET_ARG(2));
-      pixelScale = atof(GET_ARG(1));
+      CHECK_ARG(6);
+      resampleScale = atof(GET_ARG(6));
+      slope = atof(GET_ARG(5));
+      modeScale = atof(GET_ARG(4));
+      psScale = atof(GET_ARG(3));
+      pvScale = atof(GET_ARG(2));
+      pdScale = atof(GET_ARG(1));
       mode = SENTINEL_DUAL;
     }
     else if (strmatches(key, "-tmpDir", "--tmpDir", NULL)) {
@@ -504,14 +513,14 @@ int main(int argc,char *argv[])
     asfPrintStatus("Creating colorized browse image from Sentinel dual-pol "
       "data\n");
     if (strlen(tmpPath) > 0) {
-      create_name(infile1,argv[6],".img");
-      create_name(infile2,argv[7],".img");
-      create_name(outfile,argv[8],".tif");
+      create_name(infile1,argv[10],".img");
+      create_name(infile2,argv[11],".img");
+      create_name(outfile,argv[12],".tif");
     }
     else {
-      create_name(infile1,argv[4],".img");
-      create_name(infile2,argv[5],".img");
-      create_name(outfile,argv[6],".tif");
+      create_name(infile1,argv[8],".img");
+      create_name(infile2,argv[9],".img");
+      create_name(outfile,argv[10],".tif");
     }
 
     // Create temporary directory
@@ -528,11 +537,12 @@ int main(int argc,char *argv[])
     char tmpIn[512], tmpOut[512], formula[512];
     sprintf(tmpIn, "%s%cfreeman.img", tmpDir, DIR_SEPARATOR);
     sprintf(tmpOut, "%s%cbrowse.img", tmpDir, DIR_SEPARATOR);
-    do_freeman(infile1, infile2, tmpIn);
+    do_freeman(infile1, infile2, slope, modeScale, psScale, pvScale, pdScale, 
+      tmpIn);
     meta_parameters *metaIn = meta_read(tmpIn);
     double scaleFactor = 1.0/(resampleScale/metaIn->general->x_pixel_size);
     resample(tmpIn, tmpOut, scaleFactor, scaleFactor);
-    if (pixelScale > 0) {
+    if (slope > 0) {
       gsl_histogram *h;
       double min, max, mean, stdDev;
       calc_stats_from_file(tmpOut, "Ps", 0.0, &min, &max, &mean, &stdDev, &h);
@@ -545,13 +555,13 @@ int main(int argc,char *argv[])
       asfPrintStatus("Stats (Pv) - min: %f, max: %f, mean: %f, stdDev: %f\n",
         min, max, mean, stdDev);
       sprintf(tmpIn, "%s", tmpOut);
-      sprintf(tmpOut, "%s%cscaled_browse.img", tmpDir, DIR_SEPARATOR);
-      scale_browse(tmpIn, tmpOut, pixelScale);
+      //sprintf(tmpOut, "%s%cscaled_browse.img", tmpDir, DIR_SEPARATOR);
+      //scale_browse(tmpIn, tmpOut, pixelScale);
     }
 
     // Export to GeoTIFF
     char *band_names[3] = { "Ps", "Pv", "Pd" };
-    if (pixelScale > 0) {
+    if (slope > 0) {
       asfPrintStatus("Export truncating values to byte\n");
       asf_export_bands(GEOTIFF, TRUNCATE, TRUE, FALSE, FALSE, NULL, FALSE, 
         tmpOut, outfile, band_names, NULL, NULL);
