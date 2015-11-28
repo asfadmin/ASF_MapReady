@@ -52,6 +52,7 @@ lasErr FUNCTION do_open(struct FDESC *fd)
 /*int type, chans, lines, linsiz, labels, labsiz, lun;*/
 int  opflg;		       /* open flag */
 /*char buf[64];*/                  /* buffer to check type of file */
+int io_error;
 
 if (fd->acc == IWRITE)
       {
@@ -69,10 +70,11 @@ if (fd->acc == IWRITE)
 		strcpy(fd->fname,appendExt(fd->fname,".img"));
 	opflg = O_RDWR | O_CREAT | O_TRUNC;
 #ifdef __MWERKS__
-        if ((fd->dalfd = open(fd->fname,opflg)) == -1)
+        io_error = ((fd->dalfd = open(fd->fname,opflg)) == -1);
 #else
-        if ((fd->dalfd = open(fd->fname,opflg,0777)) == -1)
+        io_error = ((fd->dalfd = open(fd->fname,opflg,0777)) == -1);
 #endif
+        if (io_error)
           {
 	   perror("doopen-dal");
            c_errmsg("Error opening file","doopen-open",NON_FATAL);
@@ -96,10 +98,11 @@ else
 	else if (extExists(fd->fname,".dem"))
 		strcpy(fd->fname,appendExt(fd->fname,".dem"));
 #ifdef __MWERKS__
-        if ((fd->dalfd = open(fd->fname,opflg)) == -1)
+        io_error = ((fd->dalfd = open(fd->fname,opflg)) == -1);
 #else
-        if ((fd->dalfd = open(fd->fname,opflg,0777)) == -1)
+        io_error = ((fd->dalfd = open(fd->fname,opflg,0777)) == -1);
 #endif
+        if (io_error)
           {
 	   perror("doopen-dal");
            c_errmsg("Error opening file","doopen-open",NON_FATAL);
