@@ -37,6 +37,7 @@ CFLAGS += \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(TIFF_CFLAGS) \
+	$(XML_CFLAGS) \
 	$(GEOTIFF_CFLAGS)
 
 OBJS  = $(TARGET).o \

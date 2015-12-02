@@ -2058,6 +2058,10 @@ int main(int argc, char **argv)
             strcpy(platform, "ERS-2");
           else if (strstr(value, "PALSAR"))
             strcpy(platform, "ALOS");
+          else if (strstr(value, "S1A"))
+            strcpy(platform, "Sentinel-1A");
+          else if (strstr(value, "S1B"))
+            strcpy(platform, "Sentinel-1B");
           else
             asfPrintError("Could not identify sensor!\n");
         }
@@ -2178,6 +2182,17 @@ int main(int argc, char **argv)
       frame = atoi(frameStr);
       FREE(fileName);      
     }
+    else if (strncmp_case(platform, "SENTINEL", 8) == 0) {
+      if (params->input_HH_file)
+        strcpy(original_file, params->input_HH_file);
+      else if (params->input_VV_file)
+        strcpy(original_file, params->input_VV_file);
+      else
+        asfPrintError("Could not find metadata file\n");
+      strcpy(beam_mode, meta->general->mode);
+      strncpy(orbitStr, &meta->general->basename[49], 6);
+      orbit = atoi(orbitStr); 
+    }
     else {
       strcpy(beam_mode, "STD");
       if (params->input_HH_file)
@@ -2257,8 +2272,12 @@ int main(int argc, char **argv)
       fprintf(fp, "      <data_processing_level type=\"string\" definition=\""
         "processing level of the input data\">single look complex"
         "</data_processing_level>\n");
-    fprintf(fp, "      <data_format type=\"string\" definition=\"data format "
-      "of input data\">CEOS</data_format>\n");
+    if (strncmp_case(platform, "SENTINEL", 8) == 0)
+      fprintf(fp, "      <data_format type=\"string\" definition=\"data format "
+        "of input data\">SAFE</data_format>\n");
+    else
+      fprintf(fp, "      <data_format type=\"string\" definition=\"data format "
+        "of input data\">CEOS</data_format>\n");
     fprintf(fp, "      <prf type=\"double\" definition=\"pulse repetition "
       "frequency\" units=\"Hz\">%g</prf>\n", prf);
     fprintf(fp, "      <start_datetime type=\"string\" definition=\"UTC "
@@ -2766,6 +2785,14 @@ int main(int argc, char **argv)
     else if (strncmp_case(platform, "ERS", 3) == 0) {
       sprintf(data_source, "%s SAR", platform);
       sprintf(copyright, "ESA (%d)", year);
+    }
+    else if (strcmp_case(platform, "Sentinel-1A") == 0) {
+      sprintf(data_source, "Copernicus Sentinel-1A");
+      sprintf(copyright, "ESA (%d)", year);
+    }
+    else if (strcmp_case(platform, "Sentinel-1B") == 0) {
+      sprintf(data_source, "Copernicus Sentinel-1B");
+      sprintf(copyright, "EAS (%d)", year);
     }
     else
       asfPrintError("Could not set data source or copyright for %s!\n", 

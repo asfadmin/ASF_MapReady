@@ -190,6 +190,7 @@ c2v_config *init_fill_c2v_config()
   cfg->transparency = 50;
   cfg->list = 0;
   cfg->nosplit = 0;
+  cfg->wrapdateline = -1;
   strcpy(cfg->boundary, "polygon");
   strcpy(cfg->altitude, "absolute");
   cfg->height = 7000;
@@ -233,6 +234,8 @@ c2v_config *read_c2v_config(char *configFile)
       	cfg->list = read_int(line, "list");
       if (strncmp(test, "nosplit", 7)==0) 
       	cfg->nosplit = read_int(line, "nosplit");
+      if (strncmp(test, "wrapdateline", 12)==0)
+        cfg->wrapdateline = read_double(line, "wrapdateline");
       if (strncmp(test, "debug", 5)==0)
         cfg->debug = read_int(line, "debug");
       FREE(test);
