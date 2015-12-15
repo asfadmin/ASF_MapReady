@@ -38,7 +38,7 @@ shares = [
         "convert2vector.config",
     ]),
     localenv.Dir([
-        "#src/libasf_raster/data_dictionaries",
+        "#src/libasf_vector/data_dictionaries",
     ]),
 ]
 
