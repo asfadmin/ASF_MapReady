@@ -165,6 +165,7 @@ static void do_freeman(char *cpFile, char *xpFile, float scale, char *outFile)
   meta_parameters *metaOut = meta_read(cpFile);
   strcpy(metaOut->general->bands,"Ps,Pv,Pd");
   metaOut->general->band_count=3;
+  metaOut->general->data_type = REAL32;
   float *a = (float *) MALLOC(sizeof(float)*sample_count);
   float *b = (float *) MALLOC(sizeof(float)*sample_count);
   float cp, xp, pd, ps, pv;
@@ -187,15 +188,15 @@ static void do_freeman(char *cpFile, char *xpFile, float scale, char *outFile)
       if (pv < 0.0)
         pvBuf[ii]= 0.0;
       else
-        pvBuf[ii] = pv*scale;
+        pvBuf[ii] = sqrt(pv)*scale;
       if (ps < 0.0)
         psBuf[ii] = 0.0;
       else
-        psBuf[ii] = ps*scale;
+        psBuf[ii] = sqrt(ps)*scale;
       if (pd < 0.0)
         pdBuf[ii] = 0.0;
       else
-        pdBuf[ii] = pd*scale;
+        pdBuf[ii] = sqrt(pd)*scale;
     }
     put_band_float_line(fpOut, metaOut, 0, kk, psBuf);
     put_band_float_line(fpOut, metaOut, 1, kk, pvBuf);
@@ -244,9 +245,13 @@ static void stretch_two_sigma(char *inFile, char *outFile, stretch_type_t *stret
     minLimit = stretch[ii].minNewLimit;
     maxLimit = stretch[ii].maxNewLimit;
     get_band_float_lines(fpIn, meta, ii, 0, line_count, fBufIn);
-    for (kk=0; kk<pixel_count; kk++)
-      fBufOut[kk] = (fBufIn[kk]*(maxLimit - minLimit) + 2.0*sigma - mu)/
-        (4.0*sigma);
+    for (kk=0; kk<pixel_count; kk++) {
+      if (FLOAT_EQUIVALENT(fBufIn[kk], 0.0))
+        fBufOut[kk] = 0.0;
+      else
+        fBufOut[kk] = (fBufIn[kk]*(maxLimit - minLimit) + 2.0*sigma - mu)/
+          (4.0*sigma);
+    }
     put_band_float_lines(fpOut, meta, ii, 0, line_count, fBufOut);
   }
   FCLOSE(fpIn);
@@ -279,8 +284,12 @@ static void stretch_limits(char *inFile, char *outFile, stretch_type_t *stretch)
     old_mean = (xl + xh)/2.0;
     old_std = old_mean/4.0;
     get_band_float_lines(fpIn, meta, ii, 0, line_count, fBufIn);
-    for (kk=0; kk<pixel_count; kk++)
-      fBufOut[kk] = (fBufIn[kk] - xl)*(yh - yl)/(xh - xl) + yl;
+    for (kk=0; kk<pixel_count; kk++) {
+      if (FLOAT_EQUIVALENT(fBufIn[kk], 0.0))
+        fBufOut[kk] = 0.0;
+      else
+        fBufOut[kk] = (fBufIn[kk] - xl)*(yh - yl)/(xh - xl) + yl;
+    }
     put_band_float_lines(fpOut, meta, ii, 0, line_count, fBufOut);
   }
   FCLOSE(fpIn);
@@ -295,16 +304,24 @@ static void image_two_sigma(char *inFile, char *outFile, char *tmpPath,
 {
   int ii;
   char tmpFile[512];
-  float minLimit = 0.0;
-  float maxLimit = 1.0;
+  double min, max, mu, sigma;
+  gsl_histogram *hist;
   float s = 4.0;
   float ll, ul, left, right;
 
   meta_parameters *meta = meta_read(inFile);
   int band_count = meta->general->band_count;
+  char **bands = extract_band_names(meta->general->bands, band_count);
   channel_stats_t *stats = 
     (channel_stats_t *) MALLOC(sizeof(channel_stats_t)*band_count);
   sprintf(tmpFile, "%s%ctwo_sigma.img", tmpPath, DIR_SEPARATOR);
+  for (ii=0; ii<band_count; ii++) {
+    calc_stats_from_file(inFile, bands[ii], 0, &min, &max, &mu, &sigma, &hist);
+    stretch[ii].minOldLimit = min;
+    stretch[ii].maxOldLimit = max;
+    stretch[ii].minNewLimit = 0.0;
+    stretch[ii].maxNewLimit = 1.0;
+  }
   stretch_two_sigma(inFile, tmpFile, stretch, stats);
   meta_write(meta, tmpFile);
   for (ii=0; ii<band_count; ii++) {
@@ -312,15 +329,16 @@ static void image_two_sigma(char *inFile, char *outFile, char *tmpPath,
     right = stretch[ii].floor;
     ll = left > right ? left : right;
     left = stats[ii].mean + s/2.0*stats[ii].standard_deviation;
-    right = stretch[ii].floor*s*stretch[ii].sigma;
+    right = stretch[ii].floor+s*stretch[ii].sigma;
     ul = left > right ? left : right;
-    stretch[ii].minOldLimit = minLimit;
-    stretch[ii].maxOldLimit = maxLimit;
-    stretch[ii].minNewLimit = ll;
-    stretch[ii].maxNewLimit = ul;
+    stretch[ii].minOldLimit = 0.0;
+    stretch[ii].maxOldLimit = 1.0;
+    stretch[ii].minNewLimit = ll*255.0;
+    stretch[ii].maxNewLimit = ul*255.0;
   }
   stretch_limits(tmpFile, outFile, stretch);
   meta_free(meta);
+  FREE(bands);
 }
 
 static void dual_browse_2sig_floor(char *inFile1, char *inFile2, char *tmpPath,
@@ -362,7 +380,7 @@ static void dual_browse_2sig_floor(char *inFile1, char *inFile2, char *tmpPath,
       }
     }
   }
-  FCLOSE(fp);    
+  FCLOSE(fp);
   float bright = my_bright*brighter;
   stretch[0].floor *= my_bright;
   stretch[1].floor *= my_bright;
