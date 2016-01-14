@@ -49,7 +49,7 @@ typedef struct {
 unsigned char *my_floats_to_bytes (float *data, long long pixel_count, float mask,
 				scale_t scaling,float min, float max);
 
-#define VERSION 1.1
+#define VERSION 1.2
 
 void usage(char *name)
 {
@@ -185,16 +185,13 @@ static void do_freeman(char *cpFile, char *xpFile, float scale, char *outFile)
       pv = 4.0*xp*xp;
       ps = cp*cp - 3.0*xp*xp;
       pd = pv - ps;
-      if (pv < 0.0)
-        pvBuf[ii]= 0.0;
-      else
-        pvBuf[ii] = sqrt(pv)*scale;
+      pvBuf[ii] = sqrt(pv)*scale;
       if (ps < 0.0)
-        psBuf[ii] = 0.0;
+        psBuf[ii] = -sqrt(fabsf(ps))*scale;
       else
         psBuf[ii] = sqrt(ps)*scale;
       if (pd < 0.0)
-        pdBuf[ii] = 0.0;
+        pdBuf[ii] = -sqrt(fabsf(pd))*scale;
       else
         pdBuf[ii] = sqrt(pd)*scale;
     }
@@ -225,6 +222,7 @@ static void stretch_two_sigma(char *inFile, char *outFile, stretch_type_t *stret
   gsl_histogram *hist;
 
   meta_parameters *meta = meta_read(inFile);
+  meta_write(meta, outFile);
   int line_count = meta->general->line_count;
   int sample_count = meta->general->sample_count;
   long pixel_count = line_count*sample_count;
@@ -237,11 +235,6 @@ static void stretch_two_sigma(char *inFile, char *outFile, stretch_type_t *stret
   FILE *fpOut = FOPEN(outFile, "wb");
   for (ii=0; ii<band_count; ii++) {
     calc_stats_from_file(inFile, bands[ii], 0, &min, &max, &mu, &sigma, &hist);
-    stats[ii].min = min;
-    stats[ii].max = max;
-    stats[ii].mean = mu;
-    stats[ii].standard_deviation = sigma;
-    stats[ii].hist = hist;
     minLimit = stretch[ii].minNewLimit;
     maxLimit = stretch[ii].maxNewLimit;
     get_band_float_lines(fpIn, meta, ii, 0, line_count, fBufIn);
@@ -259,6 +252,14 @@ static void stretch_two_sigma(char *inFile, char *outFile, stretch_type_t *stret
   FREE(fBufIn);
   FREE(fBufOut);
   meta_free(meta);
+  for (ii=0; ii<band_count; ii++) {
+    calc_stats_from_file(outFile, bands[ii], 0, &min, &max, &mu, &sigma, &hist);
+    stats[ii].min = min;
+    stats[ii].max = max;
+    stats[ii].mean = mu;
+    stats[ii].standard_deviation = sigma;
+    stats[ii].hist = hist;
+  }
 }
 
 static void stretch_limits(char *inFile, char *outFile, stretch_type_t *stretch)
@@ -266,11 +267,15 @@ static void stretch_limits(char *inFile, char *outFile, stretch_type_t *stretch)
   int ii, kk;
   float xl, xh, yl, yh, old_mean, old_std;
   meta_parameters *meta = meta_read(inFile);
-  meta_write(meta, outFile);
   int line_count = meta->general->line_count;
   int sample_count = meta->general->sample_count;
   long pixel_count = line_count*sample_count;
   int band_count = meta->general->band_count;
+  if (meta->stats) {
+    FREE(meta->stats);
+    meta->stats = NULL;
+  }
+  meta_write(meta, outFile);
 
   float *fBufIn = (float *) MALLOC(sizeof(float)*pixel_count);
   float *fBufOut = (float *) MALLOC(sizeof(float)*pixel_count);
@@ -304,8 +309,6 @@ static void image_two_sigma(char *inFile, char *outFile, char *tmpPath,
 {
   int ii;
   char tmpFile[512];
-  double min, max, mu, sigma;
-  gsl_histogram *hist;
   float s = 4.0;
   float ll, ul, left, right;
 
@@ -316,14 +319,10 @@ static void image_two_sigma(char *inFile, char *outFile, char *tmpPath,
     (channel_stats_t *) MALLOC(sizeof(channel_stats_t)*band_count);
   sprintf(tmpFile, "%s%ctwo_sigma.img", tmpPath, DIR_SEPARATOR);
   for (ii=0; ii<band_count; ii++) {
-    calc_stats_from_file(inFile, bands[ii], 0, &min, &max, &mu, &sigma, &hist);
-    stretch[ii].minOldLimit = min;
-    stretch[ii].maxOldLimit = max;
     stretch[ii].minNewLimit = 0.0;
     stretch[ii].maxNewLimit = 1.0;
   }
   stretch_two_sigma(inFile, tmpFile, stretch, stats);
-  meta_write(meta, tmpFile);
   for (ii=0; ii<band_count; ii++) {
     left = stats[ii].mean - s/2.0*stats[ii].standard_deviation;
     right = stretch[ii].floor;
@@ -331,10 +330,10 @@ static void image_two_sigma(char *inFile, char *outFile, char *tmpPath,
     left = stats[ii].mean + s/2.0*stats[ii].standard_deviation;
     right = stretch[ii].floor+s*stretch[ii].sigma;
     ul = left > right ? left : right;
-    stretch[ii].minOldLimit = 0.0;
-    stretch[ii].maxOldLimit = 1.0;
-    stretch[ii].minNewLimit = ll*255.0;
-    stretch[ii].maxNewLimit = ul*255.0;
+    stretch[ii].minOldLimit = stats[ii].min;
+    stretch[ii].maxOldLimit = stats[ii].max;
+    stretch[ii].minNewLimit = ll;
+    stretch[ii].maxNewLimit = ul;
   }
   stretch_limits(tmpFile, outFile, stretch);
   meta_free(meta);
@@ -380,7 +379,7 @@ static void dual_browse_2sig_floor(char *inFile1, char *inFile2, char *tmpPath,
       }
     }
   }
-  FCLOSE(fp);
+  FCLOSE(fp);    
   float bright = my_bright*brighter;
   stretch[0].floor *= my_bright;
   stretch[1].floor *= my_bright;
@@ -389,12 +388,14 @@ static void dual_browse_2sig_floor(char *inFile1, char *inFile2, char *tmpPath,
   stretch[1].sigma *= my_bright;
   stretch[2].sigma *= my_bright;
 
+  /*
   printf("my_bright: %f, brighter: %f, resample: %f\n", 
     my_bright, brighter, resampleScale);
   printf("floor - 1: %f, 2: %f, 3: %f\n", 
     stretch[0].floor, stretch[1].floor, stretch[2].floor);
   printf("sigma - 1: %f, 2: %f, 3: %f\n",
     stretch[0].sigma, stretch[1].sigma, stretch[2].sigma);
+  */
 
   // Create temporary directory
   char tmpDir[1024];
@@ -412,29 +413,22 @@ static void dual_browse_2sig_floor(char *inFile1, char *inFile2, char *tmpPath,
   sprintf(tmpIn, "%s%cfreeman.img", tmpDir, DIR_SEPARATOR);
   do_freeman(inFile1, inFile2, bright, tmpIn);
 
-  // Stretch Freeman image
-  asfPrintStatus("Stretching image to preserve features\n");
-  sprintf(tmpOut, "%s%cstretch.img", tmpDir, DIR_SEPARATOR);
-  image_two_sigma(tmpIn, tmpOut, tmpDir, stretch);
-
   // Resample stretched image to browse size
   asfPrintStatus("Resampling to browse image size\n");
-  sprintf(tmpIn, "%s", tmpOut);
   sprintf(tmpOut, "%s%cresample.img", tmpDir, DIR_SEPARATOR);
   meta_parameters *metaIn = meta_read(tmpIn);
   double scaleFactor = 1.0/(resampleScale/metaIn->general->x_pixel_size);
   resample(tmpIn, tmpOut, scaleFactor, scaleFactor);
   meta_free(metaIn);
 
-  // Export to GeoTIFF
-  char *band_names[3] = { "Ps", "Pv", "Pd" };
-  asfPrintStatus("Export truncating values to byte\n");
-  asf_export_bands(GEOTIFF, TRUNCATE, TRUE, FALSE, FALSE, NULL, FALSE,
-    tmpOut, outFile, band_names, NULL, NULL);
+  // Stretch Freeman image
+  asfPrintStatus("Stretching image to preserve features\n");
+  sprintf(tmpIn, "%s", tmpOut);
+  image_two_sigma(tmpIn, outFile, tmpDir, stretch);
 
   // Clean up
   asfPrintStatus("Removing temporary directory: %s\n", tmpDir);
-  //remove_dir(tmpDir);
+  remove_dir(tmpDir);
 }
 
 int main(int argc,char *argv[])
@@ -723,12 +717,12 @@ int main(int argc,char *argv[])
     if (strlen(tmpPath) > 0) {
       create_name(infile1,argv[5],".img");
       create_name(infile2,argv[6],".img");
-      create_name(outfile,argv[7],".tif");
+      create_name(outfile,argv[7],".img");
     }
     else {
       create_name(infile1,argv[3],".img");
       create_name(infile2,argv[4],".img");
-      create_name(outfile,argv[5],".tif");
+      create_name(outfile,argv[5],".img");
     }
     
     dual_browse_2sig_floor(infile1, infile2, tmpPath, configFile, outfile);
