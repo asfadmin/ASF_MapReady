@@ -357,6 +357,139 @@ int xml_get_children_count(xmlDoc *doc, char *format, ...)
   return count;
 }
 
+int xml_xpath_element_exists(xmlDoc *doc, char *format, ...)
+{
+  va_list ap;
+  char str[100000];
+
+  va_start(ap, format);
+  vsnprintf(str, 99999, format, ap);
+  va_end(ap);
+
+  xmlXPathContext *xpathContext;
+  xmlXPathObject *xpathObject;
+  xmlNodeSet *nodeset;
+  
+  xpathContext = xmlXPathNewContext(doc);
+  if (xpathContext == NULL) {
+    asfPrintWarning("Unable to create new XPath context.\n");
+    return MAGIC_UNSET_STRING;
+  }
+  xpathObject = xmlXPathEvalExpression((xmlChar *)str, xpathContext);
+  xmlXPathFreeContext(xpathContext);
+  if (xpathObject == NULL) {
+    asfPrintWarning("Unable to evaluate XPath expression.\n");
+    return MAGIC_UNSET_STRING;
+  }
+  if (xmlXPathNodeSetIsEmpty(xpathObject->nodesetval)) {
+    xmlXPathFreeObject(xpathObject);
+    return FALSE;
+  }
+  else {
+    xmlXPathFreeObject(xpathObject);
+    return TRUE;
+  }
+}
+
+const char *xml_xpath_get_string_value(xmlDoc *doc, char *format, ...)
+{
+  va_list ap;
+  char str[100000];
+
+  va_start(ap, format);
+  vsnprintf(str, 99999, format, ap);
+  va_end(ap);
+
+  xmlXPathContext *xpathContext;
+  xmlXPathObject *xpathObject;
+  xmlNodeSet *nodeset;
+  
+  xpathContext = xmlXPathNewContext(doc);
+  if (xpathContext == NULL) {
+    asfPrintWarning("Unable to create new XPath context.\n");
+    return MAGIC_UNSET_STRING;
+  }
+  xpathObject = xmlXPathEvalExpression((xmlChar *)str, xpathContext);
+  xmlXPathFreeContext(xpathContext);
+  if (xpathObject == NULL) {
+    asfPrintWarning("Unable to evaluate XPath expression.\n");
+    return MAGIC_UNSET_STRING;
+  }
+  if (xmlXPathNodeSetIsEmpty(xpathObject->nodesetval)) {
+    xmlXPathFreeObject(xpathObject);
+    asfPrintWarning("Could not find '%s'.\n", str);
+    return MAGIC_UNSET_STRING;
+  }
+  nodeset = xpathObject->nodesetval;
+  return 
+    (char *)xmlNodeListGetString(doc, nodeset->nodeTab[0]->xmlChildrenNode,1);
+}
+
+int xml_xpath_get_int_value(xmlDoc *doc, char *format, ...)
+{
+  va_list ap;
+  char str[4096];
+
+  va_start(ap, format);
+  vsnprintf(str, 4095, format, ap);
+  va_end(ap);
+
+  const char *val = xml_xpath_get_string_value(doc, str);
+  if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
+    return atoi(val);
+  else
+    return MAGIC_UNSET_INT;
+}
+
+double xml_xpath_get_double_value(xmlDoc *doc, char *format, ...)
+{
+  va_list ap;
+  char str[4096];
+
+  va_start(ap, format);
+  vsnprintf(str, 4095, format, ap);
+  va_end(ap);
+
+  const char *val = xml_xpath_get_string_value(doc, str);
+  if (val && strcmp(val, MAGIC_UNSET_STRING) != 0)
+    return atof(val);
+  else
+    return MAGIC_UNSET_DOUBLE;
+}
+
+int xml_xpath_get_count(xmlDoc *doc, char *format, ...)
+{
+  va_list ap;
+  char str[100000];
+
+  va_start(ap, format);
+  vsnprintf(str, 99999, format, ap);
+  va_end(ap);
+
+  xmlXPathContext *xpathContext;
+  xmlXPathObject *xpathObject;
+  xmlNodeSet *nodeset;
+  
+  xpathContext = xmlXPathNewContext(doc);
+  if (xpathContext == NULL) {
+    asfPrintWarning("Unable to create new XPath context.\n");
+    return MAGIC_UNSET_STRING;
+  }
+  xpathObject = xmlXPathEvalExpression((xmlChar *)str, xpathContext);
+  xmlXPathFreeContext(xpathContext);
+  if (xpathObject == NULL) {
+    asfPrintWarning("Unable to evaluate XPath expression.\n");
+    return MAGIC_UNSET_STRING;
+  }
+  if (xmlXPathNodeSetIsEmpty(xpathObject->nodesetval)) {
+    xmlXPathFreeObject(xpathObject);
+    asfPrintWarning("Could not find '%s'.\n", str);
+    return MAGIC_UNSET_STRING;
+  }
+  nodeset = xpathObject->nodesetval;
+  return nodeset->nodeNr;
+}
+
 
 // Whole bunch of test code... 
 

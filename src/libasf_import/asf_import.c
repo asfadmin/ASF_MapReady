@@ -271,6 +271,10 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     import_smap(inBaseName, outBaseName, 
 		upperLat, upperLon, lowerLat, lowerLon);
   }
+  else if (format_type == SENTINEL) {
+    asfPrintStatus("   Data format: SENTINEL\n");
+    import_sentinel(inBaseName, outBaseName);
+  }
   // Don't recognize this data format; report & quit
   else {
     asfPrintError("Unrecognized data format: '%d'\n",format_type);

@@ -2926,6 +2926,9 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
             case SAMPLEFORMAT_INT:
               ((long*)buf)[col] = (long)(((long*)sbuf)[idx]);
               break;
+            case SAMPLEFORMAT_COMPLEXINT:
+              ((uint32*)buf)[col] = (uint32)(((uint32*)sbuf)[idx]);
+              break;
             case SAMPLEFORMAT_IEEEFP:
               ((float*)buf)[col] = (float)(((float*)sbuf)[idx]);
               break;
