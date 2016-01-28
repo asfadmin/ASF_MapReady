@@ -26,6 +26,7 @@ localenv.AppendUnique(LIBS = [
     "geotiff",
     "glib-2.0",
     "gdal",
+    "netcdf",
 ])
 
 libs = localenv.SharedLibrary("libasf_import", [
