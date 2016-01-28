@@ -29,7 +29,6 @@ typedef enum {
   POINT,
   POLYGON,
   SMAP_BOUNDARY,
-  SENTINEL,
   SENTINEL_META,
   RGPS,
   RGPS_GRID,
