@@ -64,6 +64,8 @@ libs = localenv.SharedLibrary("libasf_import", [
         "import_dem.c",
         "import_roipac.c",
         "import_smap.c",
+	"import_sentinel.c",
+	"import_netcdf.c",
         "config_fgdc.c",
         "missing.c",
         "projected_image_import.c",
