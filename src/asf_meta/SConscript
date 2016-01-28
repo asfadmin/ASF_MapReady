@@ -74,7 +74,7 @@ sources = [
     "earth_radius2datum.c",
     "err_die.c",
     "fixed2gei.c",
-    "frame_calc.c"
+    "frame_calc.c",
     "gcp2transform.c",
     "gei2fixed.c",
     "getLatLong.c",
