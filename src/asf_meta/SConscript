@@ -74,7 +74,8 @@ sources = [
     "earth_radius2datum.c",
     "err_die.c",
     "fixed2gei.c",
-    "frame_calc.c",
+    "frame_calc.c"
+    "gcp2transform.c",
     "gei2fixed.c",
     "getLatLong.c",
     "getLoc.c",
@@ -111,6 +112,7 @@ sources = [
     "meta2vexcel_plain.c",
     "meta2alos_mosaic.c",
     "meta2radarsat.c",
+    "meta2sentinel.c",
     "meta2terrasar.c",
     "meta2uavsar.c",
     "meta2smap.c",

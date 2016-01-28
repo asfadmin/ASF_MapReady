@@ -110,6 +110,7 @@ typedef enum {
   DIVERGENCE,
   VORTICITY,
   SHEAR,
+  MODEL_OUTPUT,
   UNKNOWN_IMAGE_DATA_TYPE
 } image_data_type_t;
 
@@ -133,6 +134,7 @@ typedef enum {
   SMAP,
   SEASAT_H5,
   GRIDDED_RGPS,
+  SENTINEL,
   UNKNOWN_INPUT_FORMAT
 } input_format_t;
 
@@ -1071,5 +1073,14 @@ meta_parameters* uavsar_insar2meta(uavsar_insar *params);
 
 // Prototypes for gamma_dem2meta.c
 meta_parameters *gamma_dem2meta(char *demFile, char *demPar);
+
+typedef struct {
+  int line, pixel;
+  double lat, lon;
+} gcp_location;
+
+// Prototypes from gcp2transform.c
+meta_transform *gcp2transform(gcp_location *gcp, int gcp_count, char *type);
+
 
 #endif

@@ -88,6 +88,8 @@ OBJS  = \
 	import_roipac.o \
 	import_smap.o \
 	import_seasat_h5.o \
+	import_netcdf.o \
+	import_sentinel.o \
 	config_fgdc.o \
 	missing.o \
 	projected_image_import.o \
