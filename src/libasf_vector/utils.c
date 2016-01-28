@@ -169,8 +169,8 @@ int read_header_config(const char *format, dbf_header_t **dbf,
   strcpy(shape_type, "UNKNOWN");
 
   char header_file[1024];
-  sprintf(header_file, "%s%c%s", 
-	  get_asf_share_dir(), DIR_SEPARATOR, "header.lst");
+  sprintf(header_file, "%s%cdata_dictionaries%c%s", 
+	  get_asf_share_dir(), DIR_SEPARATOR, DIR_SEPARATOR, "header.lst");
   
   FILE *fp;
   char line[1024], params[255], format_str[255], dictionary[255], *str=NULL;
@@ -204,8 +204,8 @@ int read_header_config(const char *format, dbf_header_t **dbf,
 
   // Fill the header information
   char dictionary_file[1024], type[25];
-  sprintf(dictionary_file, "%s%c%s", 
-    get_asf_share_dir(), DIR_SEPARATOR, dictionary);
+  sprintf(dictionary_file, "%s%cdata_dictionaries%c%s", 
+    get_asf_share_dir(), DIR_SEPARATOR, DIR_SEPARATOR, dictionary);
   fp = FOPEN(dictionary_file, "r");
   fgets(line, 1024, fp);
   int n = 0;
@@ -248,7 +248,7 @@ int read_header_config(const char *format, dbf_header_t **dbf,
 }
 
 void split_polygon(double *lat, double *lon, int nCoords, 
-  int *start, double *mLat, double *mLon)
+  int *start, double *mLat, double *mLon, double tolerance)
 {
   double projX1, projY1, projX2, projY2, mProjX, mProjY;
   double dateX1, dateY1, dateX2, dateY2, m, mDate, height, maxLat = 0.0;
@@ -282,7 +282,7 @@ void split_polygon(double *lat, double *lon, int nCoords,
       nNeg++;
     }
     // check longitude range - stay with geographic coordinates
-    if ((maxLon - minLon) < 60.0) {
+    if (maxLon > (180 - tolerance) && minLon < (-180.0 + tolerance)) {
       // crossing dateline
       if ((lon[ii] < 0 && lon[ii+1] > 0) || (lon[ii] > 0 && lon[ii+1] < 0)) {
         char projFile[255];
@@ -330,25 +330,6 @@ void split_polygon(double *lat, double *lon, int nCoords,
           &mLat[nPos], &mLon[nPos], &height);
         mLat[nPos] *= R2D;
         mLat[nNeg] = mLat[nPos];
-        mLon[nPos] = 180.0;
-        mLon[nNeg] = -180.0;
-        nPos++;
-        nNeg++;
-      }
-    }
-    else {
-      // crossing dateline
-      if (lon[ii] < 0 && lon[ii+1] > 0) { 
-        m = (lat[ii+1] - lat[ii])/(fabs(lon[ii+1] - lon[ii]) - 360.0);
-        mLat[nPos] = mLat[nNeg] = m*(180.0 - lon[ii+1]) + lat[ii+1];
-        mLon[nPos] = 180.0;
-        mLon[nNeg] = -180.0;
-        nPos++;
-        nNeg++;
-      }
-      else if (lon[ii] > 0 && lon[ii+1] < 0) {
-        m = (lat[ii+1] - lat[ii])/(360.0 - fabs(lon[ii+1] - lon[ii]));
-        mLat[nPos] = mLat[nNeg] = m*(180.0 - lon[ii]) + lat[ii];
         mLon[nPos] = 180.0;
         mLon[nNeg] = -180.0;
         nPos++;

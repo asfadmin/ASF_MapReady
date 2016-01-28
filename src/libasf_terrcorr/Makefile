@@ -25,6 +25,7 @@ CFLAGS += $(GSL_CFLAGS) \
 	  $(GEOTIFF_CFLAGS) \
 	  $(HDF5_CFLAGS) \
 	  $(SHAPELIB_CFLAGS) \
+	  $(XML_CFLAGS) \
 	  -D_XOPEN_SOURCE=600
 
 all: build_only

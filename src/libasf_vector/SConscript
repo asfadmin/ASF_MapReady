@@ -33,23 +33,14 @@ libs = localenv.SharedLibrary("libasf_vector", [
         "config.c",
         ])
 
-shares = localenv.File([
-    "header.lst",
-    "convert2vector.config",
-    "datapool_data_dictionary.csv",
-    "geotiff_data_dictionary.csv",
-    "granule_data_dictionary.csv",
-    "latlon_data_dictionary.csv",
-    "meta_data_dictionary.csv",
-    "point_data_dictionary.csv",
-    "polygon_data_dictionary.csv",
-    "smap_data_dictionary.csv",
-    "ursa_data_dictionary.csv",
-    "rgps_dp_cell_data_dictionary.csv",
-    "rgps_dp_grid_data_dictionary.csv",
-    "rgps_ep_data_dictionary.csv",
-    "rgps_lp_data_dictionary.csv"
-])
+shares = [
+    localenv.File([
+        "convert2vector.config",
+    ]),
+    localenv.Dir([
+        "#src/libasf_vector/data_dictionaries",
+    ]),
+]
 
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)
 localenv.Install(globalenv["inst_dirs"]["shares"], shares)

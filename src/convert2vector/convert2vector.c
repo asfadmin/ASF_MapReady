@@ -15,6 +15,7 @@ void usage(char *name)
    "   %s [-list] [-input-format <format>] [-output-format "
    "<format>]\n"
    "                   [-config <configuration file>] [-nosplit]\n"
+   "                   [-wrapdateline <tolerance>]\n"
    "                   [-log <filename>] [-help [<input format>]]\n"
    "                   <input file> <output file>\n", name);
   printf("\n"
@@ -30,6 +31,9 @@ void usage(char *name)
    "                          GeoTIFF file, TerraSAR-X XML file, Radarsat-2 XML"
    " file\n"
    "                   SMAP - SMAP file in HDF format\n"
+   "                   SENTINEL_RAW - SENTINEL (raw data) XML metadata file\n"
+   "                   SENTINEL_SLC - SENTINEL (SLC data) XML metadata file\n"
+   "                   SENTINEL_GRD - SENTINEL (GRD data) XML metadata file\n"
    "                   GEOTIFF - GeoTIFF file\n"
    "                   CSV - generic CSV file\n"
    "                   POINT - point CSV file (ID,LAT,LON)\n"
@@ -42,6 +46,8 @@ void usage(char *name)
    "                   SHAPE - ArcGIS shapefile\n"
    "                   KML - Keyhole Markup Language file\n"
    "   -nosplit        No splitting of vectors at the dateline (SMAP only)\n"
+   "   -wrapdateline   Splits the polygon is the coordinate range is within \n"
+   "                   the tolerance\n"
    "   -log            Name of the logfile.\n"
    "   -help           Returns the usage of the tool. If a known format is "
    "defined,\n"
@@ -96,8 +102,8 @@ int main(int argc, char **argv)
       char format[25], data_dictionary[512];
       CHECK_ARG(1);
       strcpy(format, GET_ARG(1));
-      sprintf(data_dictionary, "%s%c%s_data_dictionary.csv", 
-        get_asf_share_dir(), DIR_SEPARATOR, format);
+      sprintf(data_dictionary, "%s%cdata_dictionaries%c%s_data_dictionary.csv", 
+        get_asf_share_dir(), DIR_SEPARATOR, DIR_SEPARATOR, format);
       if (fileExists(data_dictionary)) {
         asfPrintStatus("\nFormat defined in %s_data_dictionary.csv\n\n", 
         format);
@@ -142,6 +148,10 @@ int main(int argc, char **argv)
       cfg->list = TRUE;
     else if (strmatches(key, "-nosplit", "--nosplit", "-ns", NULL))
       cfg->nosplit = TRUE;
+    else if (strmatches(key, "-wrapdateline", "--wrapdateline", NULL)) {
+      CHECK_ARG(1);
+      cfg->wrapdateline = atof(GET_ARG(1));
+    }
     else if (strmatches(key, "-input-format", "--input-format", "-i", NULL)) {
       CHECK_ARG(1);
       strcpy(cfg->input_format, GET_ARG(1));
