@@ -1,6 +1,3 @@
-CFLAGS += $(HDF5_CFLAGS)
-CFLAGS += $(GEOTIFF_CFLAGS)
-CFLAGS += $(HDF5_CFLAGS)
 # Makefile for write_ppf
 
 include ../../make_support/system_rules
@@ -17,6 +14,12 @@ LIBS  = \
 	$(GLIB_LIBS) \
 	$(ZLIB_LIBS) \
 	-lm
+
+CFLAGS += \
+	$(HDF5_CFLAGS) \
+	$(GEOTIFF_CFLAGS) \
+	$(HDF5_CFLAGS) \
+	$(XML_CFLAGS)
 
 OBJS  = write_ppf.o
 
