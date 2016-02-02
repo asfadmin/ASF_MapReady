@@ -147,33 +147,51 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
   char str[512], id[35], annotation[1024], file[128];
   char absPath[1024], manifest[1024], href[1024], **arr;
 
+  printf("read_sentinel_meta 1\n");
   sentinel_meta *sentinel = sentinel_meta_init();
+  printf("read_sentinel_meta 2\n");
 
+  printf("read_sentinel_meta 3\n");
   if (!fileExists(fileName))
     asfPrintError("Metadata file (%s) does not exist!\n", fileName);
+  printf("read_sentinel_meta 4\n");
   realpath(fileName, manifest);
+  printf("read_sentinel_meta 5\n");
   split_dir_and_file(manifest, absPath, file);
+  printf("read_sentinel_meta 6\n");
   split_into_array(absPath, '/', &n, &arr);
+  printf("read_sentinel_meta 7\n");
   strncpy(sentinel->granule, arr[n-2], strlen(arr[n-2])-5);
+  printf("read_sentinel_meta 8\n");
 
   // Read manifest
   //asfPrintStatus("\n   Reading manifest ...\n");
+  printf("read_sentinel_meta 9\n");
   xmlDoc *doc = xmlReadFile(manifest, NULL, 0);
+  printf("read_sentinel_meta 10\n");
   if (!doc)
     asfPrintError("Could not parse file %s\n", manifest);
+  printf("read_sentinel_meta 11\n");
  
+  printf("read_sentinel_meta 12\n");
   xmlNode *root = xmlDocGetRootElement(doc);
+  printf("read_sentinel_meta 13\n");
   remove_namespace(root);
+  printf("read_sentinel_meta 13\n");
  
+  printf("read_sentinel_meta 14\n");
   strcpy(sentinel->familyName, xml_xpath_get_string_value(doc,
     "/XFDU/metadataSection/metadataObject[@ID='platform']/metadataWrap/xmlData/"
     "platform/familyName"));
+  printf("read_sentinel_meta 15\n");
   strcpy(sentinel->number, xml_xpath_get_string_value(doc,
     "/XFDU/metadataSection/metadataObject[@ID='platform']/metadataWrap/xmlData/"
     "platform/number"));
+  printf("read_sentinel_meta 16\n");
   strcpy(sentinel->instrument, xml_xpath_get_string_value(doc,
     "/XFDU/metadataSection/metadataObject[@ID='platform']/metadataWrap/xmlData/"
     "platform/instrument/familyName/@abbreviation"));
+  printf("read_sentinel_meta 17\n");
   strcpy(sentinel->mode, xml_xpath_get_string_value(doc,
     "/XFDU/metadataSection/metadataObject[@ID='platform']/metadataWrap/xmlData/"
     "platform/instrument/extension/instrumentMode/mode"));
@@ -238,6 +256,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
   strcpy(sentinel->stopTime, xml_xpath_get_string_value(doc,
     "/XFDU/metadataSection/metadataObject[@ID='acquisitionPeriod']/"
     "metadataWrap/xmlData/acquisitionPeriod/stopTime"));
+  printf("read_sentinel_meta 18\n");
 
   char tifStr[15], ncStr[15], hrefStr[15], **files;
   sentinel->data = (char **) MALLOC(sizeof(char *)*255);
@@ -245,6 +264,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
     sentinel->data[ii] = (char *) MALLOC(sizeof(char)*1024);
     strcpy(sentinel->data[ii], MAGIC_UNSET_STRING);
   }
+  printf("read_sentinel_meta 19\n");
   int count = xml_xpath_get_count(doc, "/XFDU/dataObjectSection/dataObject");
   files = (char **) MALLOC(sizeof(char *)*count);
   for (ii=0; ii<count; ii++)
@@ -256,6 +276,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
     sprintf(beamMode, "%s%d", lc(sentinel->mode), channel);
   else
     sprintf(beamMode, "%s", lc(sentinel->mode));
+  printf("read_sentinel_meta 20\n");
   for (ii=0; ii<count; ii++) {
     sprintf(str, "/XFDU/dataObjectSection/dataObject[%d]/@ID", ii+1);
     strcpy(id, xml_xpath_get_string_value(doc, str));
@@ -279,6 +300,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
       }
     }
   }
+  printf("read_sentinel_meta 21\n");
   for (ii=0; ii<count; ii++)
     FREE(files[ii]);
   FREE(files);
