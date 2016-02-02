@@ -258,18 +258,21 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
   strcpy(beamMode, "");
   sprintf(hrefStr, "%03d.xml", channel);
   printf("hrefStr: %s\n", hrefStr);
-  printf("sentinel->mode= %s\n", sentinel->mode);
-  printf("lc sentinel->mode= %s\n", lc(sentinel->mode));
   if (strcmp_case(sentinel->productType, "SLC") == 0)
     sprintf(beamMode, "%s%d", lc(sentinel->mode), channel);
   else
     sprintf(beamMode, "%s", lc(sentinel->mode));
+  printf("0hrefStr: %s\n", hrefStr);
   for (ii=0; ii<count; ii++) {
+    printf("1hrefStr: %s\n", hrefStr);
     sprintf(str, "/XFDU/dataObjectSection/dataObject[%d]/@ID", ii+1);
+    printf("2hrefStr: %s\n", hrefStr);
     strcpy(id, xml_xpath_get_string_value(doc, str));
+    printf("3hrefStr: %s\n", hrefStr);
     printf("ID: %s\n", id);
     sprintf(str, "/XFDU/dataObjectSection/dataObject[%d]/byteStream/"
       "fileLocation/@href", ii+1);
+    printf("4hrefStr: %s\n", hrefStr);
     strcpy(href, xml_xpath_get_string_value(doc, str));
     printf("href: %s\n", href);
     printf("%d\n", strncmp_case(id, "product", 7));
