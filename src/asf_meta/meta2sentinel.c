@@ -258,6 +258,8 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
   strcpy(beamMode, "");
   sprintf(hrefStr, "%03d.xml", channel);
   printf("hrefStr: %s\n", hrefStr);
+  printf("sentinel->mode= %s\n", sentinel->mode);
+  printf("lc sentinel->mode= %s\n", lc(sentinel->mode));
   if (strcmp_case(sentinel->productType, "SLC") == 0)
     sprintf(beamMode, "%s%d", lc(sentinel->mode), channel);
   else
