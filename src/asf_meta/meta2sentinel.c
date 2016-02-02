@@ -144,7 +144,7 @@ static verify_gcps(gcp_location *gcp, int gcp_count)
 sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
 {
   int ii=0, kk, n;
-  char str[512], id[35], annotation[1024], file[128];
+  char str[512], id[128], annotation[1024], file[128];
   char absPath[1024], manifest[1024], href[1024], **arr;
 
   sentinel_meta *sentinel = sentinel_meta_init();
