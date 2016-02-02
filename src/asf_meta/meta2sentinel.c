@@ -270,6 +270,10 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
       "fileLocation/@href", ii+1);
     strcpy(href, xml_xpath_get_string_value(doc, str));
     printf("href: %s\n", href);
+    printf("%d\n", strncmp_case(id, "product", 7));
+    char *p = strstr(href, hrefStr);
+    if (p) printf("p: %s\n", p);
+    if (!p) printf("p is null: %s %s\n", href, hrefStr);
     if (strncmp_case(id, "product", 7) == 0 && strstr(href, hrefStr)) {
       printf("==> %s\n", href);
       sprintf(annotation, "%s%s", absPath, &href[2]);
