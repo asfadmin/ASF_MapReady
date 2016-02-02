@@ -262,7 +262,6 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
     sprintf(beamMode, "%s%d", lc(sentinel->mode), channel);
   else
     sprintf(beamMode, "%s", lc(sentinel->mode));
-  printf("read_sentinel_meta 20\n");
   for (ii=0; ii<count; ii++) {
     sprintf(str, "/XFDU/dataObjectSection/dataObject[%d]/@ID", ii+1);
     strcpy(id, xml_xpath_get_string_value(doc, str));
@@ -270,6 +269,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
     sprintf(str, "/XFDU/dataObjectSection/dataObject[%d]/byteStream/"
       "fileLocation/@href", ii+1);
     strcpy(href, xml_xpath_get_string_value(doc, str));
+    printf("href: %s\n", href);
     if (strncmp_case(id, "product", 7) == 0 && strstr(href, hrefStr)) {
       printf("==> %s\n", href);
       sprintf(annotation, "%s%s", absPath, &href[2]);
