@@ -621,8 +621,8 @@ meta_parameters* sentinel2meta(sentinel_meta *sentinel)
 
   // Determine center lat/lon, earth radius and satellite height
   meta->general->center_longitude = centerLon / 4.0 - 360.0;
-  location_to_latlon(meta, meta->general->sample_count/2, 
-		     meta->general->line_count/2, 0.0, &lat, &lon, &height);
+  meta_get_latLon(meta, meta->general->sample_count/2, 
+    meta->general->line_count/2, 0.0, &lat, &lon);
   meta->general->center_latitude = lat;
   meta->general->center_longitude = lon;
   
