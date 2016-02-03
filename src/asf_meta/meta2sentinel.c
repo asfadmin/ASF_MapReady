@@ -144,7 +144,7 @@ static verify_gcps(gcp_location *gcp, int gcp_count)
 sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
 {
   int ii=0, kk, n;
-  char str[512], id[35], annotation[1024], file[128];
+  char str[512], id[128], annotation[1024], file[128];
   char absPath[1024], manifest[1024], href[1024], **arr;
 
   sentinel_meta *sentinel = sentinel_meta_init();
@@ -152,12 +152,9 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
   if (!fileExists(fileName))
     asfPrintError("Metadata file (%s) does not exist!\n", fileName);
   realpath(fileName, manifest);
-  asfPrintStatus("Manifest: %s\n", manifest);
   split_dir_and_file(manifest, absPath, file);
-  asfPrintStatus("absPath: %s\n", absPath);
   split_into_array(absPath, '/', &n, &arr);
   strncpy(sentinel->granule, arr[n-2], strlen(arr[n-2])-5);
-  asfPrintStatus("Granule: %s\n", sentinel->granule);
 
   // Read manifest
   //asfPrintStatus("\n   Reading manifest ...\n");
@@ -257,32 +254,19 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
   char beamMode[10];
   strcpy(beamMode, "");
   sprintf(hrefStr, "%03d.xml", channel);
-  printf("hrefStr: %s\n", hrefStr);
   if (strcmp_case(sentinel->productType, "SLC") == 0)
     sprintf(beamMode, "%s%d", lc(sentinel->mode), channel);
   else
     sprintf(beamMode, "%s", lc(sentinel->mode));
-  printf("0hrefStr: %s\n", hrefStr);
   for (ii=0; ii<count; ii++) {
-    printf("1hrefStr: %s\n", hrefStr);
     sprintf(str, "/XFDU/dataObjectSection/dataObject[%d]/@ID", ii+1);
-    printf("2hrefStr: %s\n", hrefStr);
     strcpy(id, xml_xpath_get_string_value(doc, str));
-    printf("3hrefStr: %s\n", hrefStr);
-    printf("ID: %s\n", id);
     sprintf(str, "/XFDU/dataObjectSection/dataObject[%d]/byteStream/"
       "fileLocation/@href", ii+1);
-    printf("4hrefStr: %s\n", hrefStr);
     strcpy(href, xml_xpath_get_string_value(doc, str));
-    printf("href: %s\n", href);
-    printf("%d\n", strncmp_case(id, "product", 7));
     char *p = strstr(href, hrefStr);
-    if (p) printf("p: %s\n", p);
-    if (!p) printf("p is null: %s %s\n", href, hrefStr);
-    if (strncmp_case(id, "product", 7) == 0 && strstr(href, hrefStr)) {
-      printf("==> %s\n", href);
+    if (strncmp_case(id, "product", 7) == 0 && strstr(href, hrefStr))
       sprintf(annotation, "%s%s", absPath, &href[2]);
-    }
     strcpy(files[ii], href);
   }
   int fileCount = 0;
@@ -304,7 +288,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
   sentinel->file_count = fileCount;
   xmlFreeDoc(doc);
   xmlCleanupParser();
-  printf("Found %d files\n", fileCount);
+  //printf("Found %d files\n", fileCount);
   
   if (strcmp_case(sentinel->productType, "SLC") == 0 ||
       strcmp_case(sentinel->productType, "GRD") == 0) {
