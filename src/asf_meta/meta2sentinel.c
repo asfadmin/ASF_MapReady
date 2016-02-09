@@ -282,6 +282,23 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
       }
     }
   }
+  if (strcmp_case(sentinel->productType, "OCN") == 0) {
+    char location[512];
+    int gcp_count = fileCount*4;
+    sentinel->gcp = (gcp_location *) MALLOC(sizeof(gcp_location)*gcp_count);
+    for (ii=0; ii<fileCount; ii++) {
+      sprintf(str, "/XFDU/metadataSection/"
+        "metadataObject[@ID='measurementFrameSet']/metadataWrap/xmlData/"
+        "frameSet/frame[%d]/footPrint/coordinates", ii+1);
+      strcpy(location, xml_xpath_get_string_value(doc, str));
+      split_into_array(location, ' ', &n, &arr);
+      //sentinel->gcp[ii].lat = xml_xpath_get_double_value(doc, str);
+      //sentinel->gcp[ii].lon = xml_xpath_get_double_value(doc, str);
+    }
+    //verify_gcps(sentinel->gcp, gcp_count);
+    sentinel->gcp_count = gcp_count;
+  }
+  
   for (ii=0; ii<count; ii++)
     FREE(files[ii]);
   FREE(files);
@@ -437,7 +454,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
 meta_parameters* sentinel2meta(sentinel_meta *sentinel)
 {
   int ii;
-  double centerLon=0.0, lat, lon, height, re, rp;
+  double lat, lon, re, rp;
   ymd_date imgStartDate, imgStopDate, vecYmd;
   hms_time imgStartTime, imgStopTime, vecHms;
 
@@ -568,17 +585,17 @@ meta_parameters* sentinel2meta(sentinel_meta *sentinel)
       meta->state_vectors->vecs[ii].vec.vel.y = sentinel->stVec[ii].velY;
       meta->state_vectors->vecs[ii].vec.vel.z = sentinel->stVec[ii].velZ;
     }
-  }
 
-  // Propagate the state vectors to start, center, end
-  int vector_count = 3;
-  double data_int = date_difference(&imgStopDate, &imgStopTime, 
-				    &imgStartDate, &imgStartTime) / 2.0;
-  while (fabs(data_int) > 10.0) {
-    data_int /= 2;
-    vector_count = vector_count*2-1;
+    // Propagate the state vectors to start, center, end
+    int vector_count = 3;
+    double data_int = date_difference(&imgStopDate, &imgStopTime, 
+              &imgStartDate, &imgStartTime) / 2.0;
+    while (fabs(data_int) > 10.0) {
+      data_int /= 2;
+      vector_count = vector_count*2-1;
+    }
+    propagate_state(meta, vector_count, data_int);
   }
-  propagate_state(meta, vector_count, data_int);
   
   // Transform block
   if (strcmp_case(sentinel->productType, "GRD") == 0)
@@ -590,53 +607,54 @@ meta_parameters* sentinel2meta(sentinel_meta *sentinel)
 
   // Location block
   if (strcmp_case(sentinel->productType, "SLC") == 0 ||
-      strcmp_case(sentinel->productType, "GRD") == 0) {
+      strcmp_case(sentinel->productType, "GRD") == 0 ||
+      strcmp_case(sentinel->productType, "OCN") == 0) {
     meta->location = meta_location_init();
     for (ii=0; ii<sentinel->gcp_count; ii++) {
       if (sentinel->gcp[ii].line == 0 && sentinel->gcp[ii].pixel == 0) {
         meta->location->lat_start_near_range = sentinel->gcp[ii].lat;
         meta->location->lon_start_near_range = sentinel->gcp[ii].lon;
-        centerLon += sentinel->gcp[ii].lon + 360.0;
       }
       else if (sentinel->gcp[ii].line == 0 && 
         sentinel->gcp[ii].pixel == sentinel->numberOfSamples-1) {
         meta->location->lat_start_far_range = sentinel->gcp[ii].lat;
         meta->location->lon_start_far_range = sentinel->gcp[ii].lon;
-        centerLon += sentinel->gcp[ii].lon + 360.0;
       }
       else if (sentinel->gcp[ii].line == sentinel->numberOfLines-1 && 
         sentinel->gcp[ii].pixel == 0) {
         meta->location->lat_end_near_range = sentinel->gcp[ii].lat;
         meta->location->lon_end_near_range = sentinel->gcp[ii].lon;
-        centerLon += sentinel->gcp[ii].lon + 360.0;
       }
       else if (sentinel->gcp[ii].line == sentinel->numberOfLines-1 &&
         sentinel->gcp[ii].pixel == sentinel->numberOfSamples-1) {
         meta->location->lat_end_far_range = sentinel->gcp[ii].lat;
         meta->location->lon_end_far_range = sentinel->gcp[ii].lon;
-        centerLon += sentinel->gcp[ii].lon + 360.0;
       }
     }
   }
 
-  // Determine center lat/lon, earth radius and satellite height
-  meta->general->center_longitude = centerLon / 4.0 - 360.0;
-  meta_get_latLon(meta, meta->general->sample_count/2, 
-    meta->general->line_count/2, 0.0, &lat, &lon);
-  meta->general->center_latitude = lat;
-  meta->general->center_longitude = lon;
+  if (meta->sar) {
+    // Determine center lat/lon, earth radius and satellite height
+    meta_get_latLon(meta, meta->general->sample_count/2, 
+      meta->general->line_count/2, 0.0, &lat, &lon);
+    meta->general->center_latitude = lat;
+    if (lon > 180.0)
+      meta->general->center_longitude = lon - 360.0;
+    else
+      meta->general->center_longitude = lon;
   
-  lat = meta->general->center_latitude * D2R;
-  re = meta->general->re_major;
-  rp = meta->general->re_minor;
-  meta->sar->earth_radius = 
-    (re*rp) / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+    lat = meta->general->center_latitude * D2R;
+    re = meta->general->re_major;
+    rp = meta->general->re_minor;
+    meta->sar->earth_radius = 
+      (re*rp) / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
   
-  ii = meta->state_vectors->vector_count / 2;
-  double posx = meta->state_vectors->vecs[ii].vec.pos.x;
-  double posy = meta->state_vectors->vecs[ii].vec.pos.y;
-  double posz = meta->state_vectors->vecs[ii].vec.pos.z;
-  meta->sar->satellite_height = sqrt(posx*posx + posy*posy + posz*posz);
+    ii = meta->state_vectors->vector_count / 2;
+    double posx = meta->state_vectors->vecs[ii].vec.pos.x;
+    double posy = meta->state_vectors->vecs[ii].vec.pos.y;
+    double posz = meta->state_vectors->vecs[ii].vec.pos.z;
+    meta->sar->satellite_height = sqrt(posx*posx + posy*posy + posz*posz);
+  }
 
   return meta;
 }
