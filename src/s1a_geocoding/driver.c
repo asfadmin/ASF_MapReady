@@ -23,7 +23,9 @@ FILE REFERENCES:
 PROGRAM HISTORY:
     VERS:   DATE:    AUTHOR:      PURPOSE:
     ---------------------------------------------------------------
-    1.0     9/15     T. Logan     Create geocoding mapping for s1a
+    0.0     9/15     T. Logan     Create geocoding mapping for s1a
+    1.0     9/7      K. Hogenson  Made first set of mappings work
+
     
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -66,7 +68,7 @@ int main(int argc, char *argv[])
   for (i=0; i<25; i++) printf("%g ",ls2lat[i]);
   printf("\n");
 
-  printf("LL2LON: ");
+  printf("LS2LON: ");
   for (i=0; i<25; i++) printf("%g ",ls2lon[i]);
   printf("\n");
 
