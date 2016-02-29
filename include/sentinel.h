@@ -11,6 +11,23 @@ typedef struct {
 } sentinel_vector;
 
 typedef struct {
+  char polarization[25];
+  char annotation[512];
+  char noise[512];
+  char calibration[512];
+} sentinel_files;
+
+typedef struct {
+  int line;
+  int pixel;
+  float sigma;
+  float beta;
+  float gamma;
+  float dn;
+  float noise;
+} sentinel_lut;
+
+typedef struct {
   char granule[128];
   char familyName[25];
   char number[3];
@@ -54,6 +71,8 @@ typedef struct {
   int band_count;
   int file_count;
   char **data;
+  char polarization_count;
+  sentinel_files *file;
 } sentinel_meta;
 
 // Function prototypes

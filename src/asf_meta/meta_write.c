@@ -1192,6 +1192,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
 			"Constant offset B");
 	meta_put_double(fp,"slc:",meta->calibration->r2->slc,"Data SLC?");
 	break;
+	    case sentinel_cal:
+	    meta_put_string(fp,"type:","SENTINEL",comment);
+	    meta_put_double(fp,"noise_mean:",meta->calibration->sentinel->noise_mean,
+	      "Mean value of the noise floor");
+	    break;
     }
 
     meta_put_string(fp,"}","","End calibration");
@@ -2201,6 +2206,11 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	      mc->uavsar->altitude);
       fprintf(fp, "    <terrain_height units=\"m\">%.3f</terrain_height>\n",
 	      mc->uavsar->terrain_height);
+    }
+    else if (mc->type == sentinel_cal) {
+      fprintf(fp, "    <type>SENTINEL</type>\n");
+      fprintf(fp, "    <noise_mean>%.6f</noise_mean>\n", 
+        mc->sentinel->noise_mean);
     }
     fprintf(fp, "  </calibration>\n");
   }

@@ -149,7 +149,8 @@ void import_roipac_new(const char *baseName, const char *outName,
 void import_smap(const char *inBaseName, const char *outBaseName,
 		 float latUL, float lonUL, float latLR, float lonLR);
 
-void import_sentinel(const char *inBaseName, const char *outBaseName);
+void import_sentinel(const char *inBaseName, radiometry_t radiometry,
+  const char *lutFile, const char *outBaseName);
 
 void import_netcdf_xml(const char *ncFile, char *xmlFile);
 xmlDoc *netcdf2xml(const char *ncFile);

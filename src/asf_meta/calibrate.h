@@ -27,7 +27,8 @@ typedef enum {
   alos_cal,         // ALOS: calibration coefficient CF
   tsx_cal,          // TERRASAR-X: calibration constant K
   r2_cal,           // RADARSAT-2: range dependent gain
-  uavsar_cal        // UAVSAR: parameters for calibration calculation
+  uavsar_cal,       // UAVSAR: parameters for calibration calculation
+  sentinel_cal      // SENTINEL: only noise floor stats; LUTs saved separately
 } cal_type;
 
 typedef struct {
@@ -87,6 +88,10 @@ typedef struct {
 } uavsar_cal_params;
 
 typedef struct {
+  double noise_mean;     // mean value of the noise floor
+} sentinel_cal_params;
+
+typedef struct {
   asf_cal_params* asf;
   asf_scansar_cal_params *asf_scansar;
   esa_cal_params* esa;
@@ -95,6 +100,7 @@ typedef struct {
   tsx_cal_params* tsx;
   r2_cal_params* r2;
   uavsar_cal_params *uavsar;
+  sentinel_cal_params *sentinel;
   quadratic_2d incid;
   radiometry_t radiometry;
 } cal_params;

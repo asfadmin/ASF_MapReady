@@ -560,7 +560,7 @@ int main(int argc, char *argv[])
         if(flags[f_GAMMA] != FLAG_NOT_SET)    temp++;
         if(flags[f_POWER] != FLAG_NOT_SET)    temp++;
         if(flags[f_SPROCKET] != FLAG_NOT_SET) temp++;
-        if(flags[f_LUT] != FLAG_NOT_SET)      temp++;
+        //if(flags[f_LUT] != FLAG_NOT_SET)      temp++;
         if(temp > 1)/*If more than one option was selected*/
 
             print_usage();
@@ -859,11 +859,11 @@ int main(int argc, char *argv[])
         if (flags[f_POWER] != FLAG_NOT_SET) {
             pixel_type_flag_looker(&flag_count, flags_used, "power");
         }
-        if (flags[f_LUT] != FLAG_NOT_SET) {
-            pixel_type_flag_looker(&flag_count, flags_used, "lut");
-        }
+        //if (flags[f_LUT] != FLAG_NOT_SET) {
+        //    pixel_type_flag_looker(&flag_count, flags_used, "lut");
+        //}
         if (flag_count > 1) {
-            sprintf(logbuf, "Cannot mix the %s flags.", flags_used);
+            sprintf(logbuf, "Cannot mix the %s flags.\n", flags_used);
             asfPrintError(logbuf);
         }
     } /* END: Check for conflict between pixel type flags */
