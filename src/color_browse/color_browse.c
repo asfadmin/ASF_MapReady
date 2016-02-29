@@ -34,6 +34,7 @@ typedef enum {
   PALSAR_FBD,
   PALSAR_PLR,
   SENTINEL_DUAL,
+  NOISE_CAL,
   NOTYPE
 } browse_type_t;
 
@@ -55,8 +56,8 @@ void usage(char *name)
 {
   printf("\n"
    "USAGE:\n"
-   "   color_browse [-sentinel <configFile>] [-tmpDir <directory]\n"
-   "     <inFile1> <inFile2> [<inFile3>] <outFile\n");
+   "   color_browse [-sentinel <configFile>] [-noise-cal <configFile>]\n"
+   "     [-tmpDir <directory] <inFile1> <inFile2> [<inFile3>] <outFile\n");
   printf("\n"
    "REQUIRED ARGUMENTS:\n"
    "   inFile1   Name of an ASF internal file (HH or VV)\n"
@@ -65,8 +66,9 @@ void usage(char *name)
   printf("\n"
    "OPTIONAL ARGUMENTS:\n"
    "  -sentinel  Input data is from Sentinel instead of ALOS PALSAR (default)\n"
-   "             <resampleScale> defines the scale factor for image resampling\n"
-   "             <pixelScale> defines the scale factor for pixel values\n"
+   "             <configFile> defines the parameters for the calculation\n"
+   "  -noise-cal Calculation using noise/calibration information\n"
+   "             <configFile> defines the parameters for the calculation\n"
    "   inFile3   Name of an ASF internal file (VV for PLR data)\n");
   printf("\n"
    "DESCRIPTION:\n"
@@ -381,16 +383,10 @@ static void dual_browse_2sig_floor(char *inFile1, char *inFile2, char *tmpPath,
   }
   FCLOSE(fp);    
   float bright = my_bright*brighter;
-  stretch[0].floor *= my_bright;
-  stretch[1].floor *= my_bright;
-  stretch[2].floor *= my_bright;
-  stretch[0].sigma *= my_bright;
-  stretch[1].sigma *= my_bright;
-  stretch[2].sigma *= my_bright;
 
   /*
-  printf("my_bright: %f, brighter: %f, resample: %f\n", 
-    my_bright, brighter, resampleScale);
+  printf("my_bright: %f, brighter: %f, channel ratio: %f, resample: %f\n", 
+    my_bright, brighter, channel_ratio, resampleScale);
   printf("floor - 1: %f, 2: %f, 3: %f\n", 
     stretch[0].floor, stretch[1].floor, stretch[2].floor);
   printf("sigma - 1: %f, 2: %f, 3: %f\n",
@@ -431,6 +427,119 @@ static void dual_browse_2sig_floor(char *inFile1, char *inFile2, char *tmpPath,
   remove_dir(tmpDir);
 }
 
+static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
+  char *configFile, char *outFile)
+{
+  char line[1024], *test, params[512], tmpFile[1024];
+  float my_bright = 1.0/20.0;
+  float brighter = 1.0;
+  float channel_ratio = 1.0;
+  float resampleScale = 1.0;
+
+  // Create temporary directory
+  char tmpDir[1024];
+  if (strlen(tmpPath) > 0)
+    sprintf(tmpDir, "%s%cbrowse-", tmpPath, DIR_SEPARATOR);
+  else
+    strcpy(tmpDir, "browse-");
+  strcat(tmpDir, time_stamp_dir());
+  create_clean_dir(tmpDir);
+  asfPrintStatus("Temp dir is: %s\n", tmpDir);
+
+  // Read parameters from configuration file
+  FILE *fpConfig = FOPEN(configFile, "r");
+  if (fpConfig) {
+    while (fgets(line, 1024, fpConfig) != NULL) {
+      if (strncmp(line, "[Scaling]", 9) == 0)
+	      strcpy(params, "scaling");
+      if (strncmp(params, "scaling", 7) == 0) {
+	      test = read_param(line);
+	      if (strncmp(test, "general", 7) == 0)
+	        my_bright = read_float(line, "general");
+	      if (strncmp(test, "mode", 4) == 0)
+	        brighter = read_float(line, "mode");
+	      if (strncmp(test, "channel ratio", 13) == 0)
+	        channel_ratio = read_float(line, "channel ratio");
+	      if (strncmp_case(test, "resample", 8) == 0)
+	        resampleScale = read_float(line, "resample");
+	      FREE(test);
+      }
+    }
+  }
+  FCLOSE(fpConfig);    
+  float bright = my_bright*brighter;
+
+  // Calculate the color browse image
+  int ii, kk;
+  meta_parameters *metaIn = meta_read(inFile1);
+  float mean = metaIn->calibration->sentinel->noise_mean;
+  float g = channel_ratio*mean*bright*bright;
+  int line_count = metaIn->general->line_count;
+  int sample_count = metaIn->general->sample_count;
+  float *red = (float *) MALLOC(sizeof(float)*sample_count);
+  float *green = (float *) MALLOC(sizeof(float)*sample_count);
+  float *blue = (float *) MALLOC(sizeof(float)*sample_count);
+  meta_parameters *metaOut = meta_read(inFile1);
+  strcpy(metaOut->general->bands, "Ps,Pv,Pd");
+  metaOut->general->band_count=3;
+  metaOut->general->data_type = REAL32;
+  float *a = (float *) MALLOC(sizeof(float)*sample_count);
+  float *b = (float *) MALLOC(sizeof(float)*sample_count);
+  float cp, xp, rp, zp;
+  int blue_mask;
+
+  sprintf(tmpFile, "%s%ccolor_browse.img", tmpDir, DIR_SEPARATOR);
+  FILE *fpIn1 = FOPEN(inFile1, "rb");
+  FILE *fpIn2 = FOPEN(inFile2, "rb");
+  FILE *fpOut = FOPEN(tmpFile, "wb");
+  for (kk=0; kk<line_count; kk++) {
+    get_float_line(fpIn1, metaIn, kk, a);
+    get_float_line(fpIn2, metaIn, kk, b);
+    for (ii=0; ii<sample_count; ii++) {
+      cp = a[ii]*bright;
+      xp = b[ii]*bright; 
+      blue_mask = ((g > xp*xp) ? 1 : 0);
+      if (cp*cp > xp*xp)
+        zp = atan(sqrt(cp*cp-xp*xp))*2.0/PI;
+      else
+        zp = 0.0;
+      if (cp*cp > 3.0*xp*xp)
+        rp = sqrt(cp*cp - 3.0*xp*xp);
+      else
+        rp = 0.0;
+      red[ii] = 2.0*rp*(1 - blue_mask) + zp*blue_mask;
+      green[ii] = 3.0*sqrt(xp*xp)*(1 - blue_mask) + 2.0*zp*blue_mask;
+      blue[ii] = 5.0*zp*blue_mask;
+    }
+    put_band_float_line(fpOut, metaOut, 0, kk, red);
+    put_band_float_line(fpOut, metaOut, 1, kk, green);
+    put_band_float_line(fpOut, metaOut, 2, kk, blue);
+    asfLineMeter(kk, line_count);
+  }
+  FCLOSE(fpIn1);
+  FCLOSE(fpIn2);
+  FCLOSE(fpOut);
+  meta_free(metaIn);
+  meta_write(metaOut, tmpFile);
+  meta_free(metaOut);
+  FREE(a);
+  FREE(b);
+  FREE(red);
+  FREE(green);
+  FREE(blue);
+
+  // Resample image to browse size
+  asfPrintStatus("Resampling to browse image size\n");
+  metaOut = meta_read(tmpFile);
+  double scaleFactor = 1.0/(resampleScale/metaOut->general->x_pixel_size);
+  resample(tmpFile, outFile, scaleFactor, scaleFactor);
+  meta_free(metaOut);
+  
+  // Clean up
+  asfPrintStatus("Removing temporary directory: %s\n", tmpDir);
+  remove_dir(tmpDir);  
+}
+
 int main(int argc,char *argv[])
 {
   char  infile1[256], infile2[256], infile3[256];  // Input file name                         
@@ -454,6 +563,11 @@ int main(int argc,char *argv[])
       CHECK_ARG(1);
       strcpy(configFile, GET_ARG(1));
       mode = SENTINEL_DUAL;
+    }
+    else if (strmatches(key, "-noise-cal", "--noise-cal", NULL)) {
+      CHECK_ARG(1);
+      strcpy(configFile, GET_ARG(1));
+      mode = NOISE_CAL;
     }
     else if (strmatches(key, "-tmpDir", "--tmpDir", NULL)) {
       CHECK_ARG(1);
@@ -726,6 +840,22 @@ int main(int argc,char *argv[])
     }
     
     dual_browse_2sig_floor(infile1, infile2, tmpPath, configFile, outfile);
+  }
+  else if (mode == NOISE_CAL) {
+    asfPrintStatus("Creating colorized browse image using noise/calibration "
+      "information\n");
+    if (strlen(tmpPath) > 0) {
+      create_name(infile1,argv[5],".img");
+      create_name(infile2,argv[6],".img");
+      create_name(outfile,argv[7],".img");
+    }
+    else {
+      create_name(infile1,argv[3],".img");
+      create_name(infile2,argv[4],".img");
+      create_name(outfile,argv[5],".img");
+    }
+
+    freeman_mask_atan(infile1, infile2, tmpPath, configFile, outfile);
   }
   else
     asfPrintError("Mode is not defined!\n");

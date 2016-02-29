@@ -1533,6 +1533,14 @@ void fill_structure_field(char *field_name, void *valp)
 	(MCALIBRATION)->uavsar->terrain_height = MAGIC_UNSET_DOUBLE;	
 	return;
       }
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "SENTINEL") ) {
+        sentinel_cal_params *sentinel =
+          (sentinel_cal_params *) MALLOC(sizeof(sentinel_cal_params));
+        (MCALIBRATION)->sentinel = sentinel;
+        (MCALIBRATION)->type = sentinel_cal;
+        (MCALIBRATION)->sentinel->noise_mean = MAGIC_UNSET_DOUBLE;
+        return;
+      }
     }
     // ASF calibration
     if ( !strcmp(field_name, "a(0)") && (MCALIBRATION)->type == asf_cal)
@@ -1659,6 +1667,11 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(field_name, "terrain_height") &&
 	 (MCALIBRATION)->type == uavsar_cal)
       { (MCALIBRATION)->uavsar->terrain_height = VALP_AS_DOUBLE; return; }
+      
+    // SENTINEL calibration  
+    if ( !strcmp(field_name, "noise_mean") &&
+      (MCALIBRATION)->type == sentinel_cal)
+      { (MCALIBRATION)->sentinel->noise_mean = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields which normally go in a colormap block.  */

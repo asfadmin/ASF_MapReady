@@ -442,6 +442,7 @@ typedef struct {
   tsx_cal_params *tsx;
   r2_cal_params *r2;
   uavsar_cal_params *uavsar;
+  sentinel_cal_params *sentinel;
 } meta_calibration;
 
 typedef struct {

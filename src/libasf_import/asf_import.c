@@ -129,8 +129,9 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
        radiometry == r_GAMMA ||
        radiometry == r_POWER)   &&
        !(format_type == CEOS || format_type == STF || format_type == AIRSAR ||
-	 format_type == ALOS_MOSAIC || format_type == TERRASAR ||
-	 format_type == RADARSAT2 || format_type == UAVSAR))
+	       format_type == ALOS_MOSAIC || format_type == TERRASAR ||
+	       format_type == RADARSAT2 || format_type == UAVSAR ||
+	       format_type == SENTINEL))
   {
     // A power flag is on, but the input file is not CEOS or STF format
     // so it will be ignored
@@ -273,7 +274,8 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
   else if (format_type == SENTINEL) {
     asfPrintStatus("   Data format: SENTINEL\n");
-    import_sentinel(inBaseName, outBaseName);
+    import_sentinel(inBaseName, update(radiometry, db_flag), lutName, 
+      outBaseName);
   }
   // Don't recognize this data format; report & quit
   else {

@@ -54,6 +54,8 @@ sentinel_meta *sentinel_meta_init(void)
   sentinel->gcp = NULL;
   sentinel->band_count = 0;
   sentinel->data = NULL;
+  sentinel->polarization_count = 0;
+  sentinel->file = NULL;
 
   return sentinel;
 }
@@ -101,7 +103,7 @@ void check_sentinel_meta(const char *fileName, char *mission, char *beamMode,
     "metadataWrap/xmlData/standAloneProductInformation/productType"));
 }
 
-static verify_gcps(gcp_location *gcp, int gcp_count)
+static void verify_gcps(gcp_location *gcp, int gcp_count)
 {
   int ii, nPos=0, nNeg=0, left=0, right=0;
   double diff=0, leftDiff=0, rightDiff=0;
@@ -144,7 +146,7 @@ static verify_gcps(gcp_location *gcp, int gcp_count)
 sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
 {
   int ii=0, kk, n;
-  char str[512], id[128], annotation[1024], file[128];
+  char str[512], id[128], annotation[1024], file[512];
   char absPath[1024], manifest[1024], href[1024], **arr;
 
   sentinel_meta *sentinel = sentinel_meta_init();
@@ -241,7 +243,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
     "/XFDU/metadataSection/metadataObject[@ID='acquisitionPeriod']/"
     "metadataWrap/xmlData/acquisitionPeriod/stopTime"));
 
-  char tifStr[15], ncStr[15], hrefStr[15], **files;
+  char **files;
   sentinel->data = (char **) MALLOC(sizeof(char *)*255);
   for (ii=0; ii<255; ii++) {
     sentinel->data[ii] = (char *) MALLOC(sizeof(char)*1024);
@@ -253,30 +255,62 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
     files[ii] = (char *) MALLOC(sizeof(char)*1024);
   char beamMode[10];
   strcpy(beamMode, "");
-  sprintf(hrefStr, "%03d.xml", channel);
   if (strcmp_case(sentinel->productType, "SLC") == 0)
     sprintf(beamMode, "%s%d", lc(sentinel->mode), channel);
   else
     sprintf(beamMode, "%s", lc(sentinel->mode));
+    
+  // Collect the names of all ancillary files
+  int pol_count = 1;
+  if (strcmp_case(pol2, MAGIC_UNSET_STRING) != 0)
+    pol_count = 2;
+  sentinel->polarization_count = pol_count;
+  sentinel->file = (sentinel_files *) MALLOC(sizeof(sentinel_files)*pol_count);
+  strcpy(sentinel->file[0].polarization, pol1);
+  if (pol_count == 2)
+    strcpy(sentinel->file[1].polarization, pol2);
   for (ii=0; ii<count; ii++) {
     sprintf(str, "/XFDU/dataObjectSection/dataObject[%d]/@ID", ii+1);
     strcpy(id, xml_xpath_get_string_value(doc, str));
     sprintf(str, "/XFDU/dataObjectSection/dataObject[%d]/byteStream/"
       "fileLocation/@href", ii+1);
     strcpy(href, xml_xpath_get_string_value(doc, str));
-    char *p = strstr(href, hrefStr);
-    if (strncmp_case(id, "product", 7) == 0 && strstr(href, hrefStr))
+    if (strncmp_case(id, "product", 7) == 0 && strstr(href, "annotation")) {
+      if (strstr(id, lc(pol1)))
+        sprintf(sentinel->file[0].annotation, "%s%s", absPath, &href[2]);
+      else if (strcmp_case(pol2, MAGIC_UNSET_STRING) != 0 && 
+        strstr(id, lc(pol2)))
+        sprintf(sentinel->file[1].annotation, "%s%s", absPath, &href[2]);
       sprintf(annotation, "%s%s", absPath, &href[2]);
+    }
+    if (strncmp_case(id, "noise", 5) == 0 && strstr(href, "annotation")) {
+      if (strstr(id, lc(pol1)))
+        sprintf(sentinel->file[0].noise, "%s%s", absPath, &href[2]);
+      else if (strcmp_case(pol2, MAGIC_UNSET_STRING) != 0 &&
+        strstr(id, lc(pol2)))
+        sprintf(sentinel->file[1].noise, "%s%s", absPath, &href[2]);
+    }
+    if (strncmp_case(id, "calibration", 11) == 0 && 
+      strstr(href, "annotation")) {
+      if (strstr(id, lc(pol1)))
+        sprintf(sentinel->file[0].calibration, "%s%s", absPath, &href[2]);
+      else if (strcmp_case(pol2, MAGIC_UNSET_STRING) != 0 &&
+        strstr(id, lc(pol2)))
+        sprintf(sentinel->file[1].calibration, "%s%s", absPath, &href[2]);
+    }
     strcpy(files[ii], href);
   }
+  
+  // Collect the names of actual data sets
+  char tifStr[15], ncStr[15];
   int fileCount = 0;
   for (kk=0; kk<255; kk++) {
     sprintf(tifStr, "%03d.tiff", kk+1);
     sprintf(ncStr, "%03d.nc", kk+1);
     for (ii=0; ii<count; ii++) {
       strcpy(href, files[ii]);
-      if ((strstr(href, tifStr) || strstr(href, ncStr)) && 
-        strstr(href, beamMode)) {
+      if (strstr(href, "measurement") && strstr(href, beamMode) &&
+        (strstr(href, tifStr) || strstr(href, ncStr))) {
         sprintf(sentinel->data[fileCount], "%s%s", absPath, &href[2]);
         fileCount++;
       }
