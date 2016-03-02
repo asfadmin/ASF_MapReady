@@ -431,9 +431,7 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
   char *configFile, char *outFile)
 {
   char line[1024], *test, params[512], tmpFile[1024];
-  float my_bright = 1.0/20.0;
-  float brighter = 1.0;
-  float channel_ratio = 1.0;
+  float threshold = -99;
   float resampleScale = 1.0;
 
   // Create temporary directory
@@ -454,12 +452,8 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
 	      strcpy(params, "scaling");
       if (strncmp(params, "scaling", 7) == 0) {
 	      test = read_param(line);
-	      if (strncmp(test, "general", 7) == 0)
-	        my_bright = read_float(line, "general");
-	      if (strncmp(test, "mode", 4) == 0)
-	        brighter = read_float(line, "mode");
-	      if (strncmp(test, "channel ratio", 13) == 0)
-	        channel_ratio = read_float(line, "channel ratio");
+	      if (strncmp(test, "threshold", 9) == 0)
+	        threshold = read_float(line, "threshold");
 	      if (strncmp_case(test, "resample", 8) == 0)
 	        resampleScale = read_float(line, "resample");
 	      FREE(test);
@@ -467,13 +461,11 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
     }
   }
   FCLOSE(fpConfig);    
-  float bright = my_bright*brighter;
 
   // Calculate the color browse image
   int ii, kk;
+  float g = pow(10, threshold/10.0);
   meta_parameters *metaIn = meta_read(inFile1);
-  float mean = metaIn->calibration->sentinel->noise_mean;
-  float g = channel_ratio*mean*bright*bright;
   int line_count = metaIn->general->line_count;
   int sample_count = metaIn->general->sample_count;
   float *red = (float *) MALLOC(sizeof(float)*sample_count);
@@ -496,8 +488,8 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
     get_float_line(fpIn1, metaIn, kk, a);
     get_float_line(fpIn2, metaIn, kk, b);
     for (ii=0; ii<sample_count; ii++) {
-      cp = a[ii]*bright;
-      xp = b[ii]*bright; 
+      cp = a[ii];
+      xp = b[ii]; 
       blue_mask = ((g > xp*xp) ? 1 : 0);
       if (cp*cp > xp*xp)
         zp = atan(sqrt(cp*cp-xp*xp))*2.0/PI;
