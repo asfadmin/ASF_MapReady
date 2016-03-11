@@ -56,7 +56,7 @@ void usage(char *name)
 {
   printf("\n"
    "USAGE:\n"
-   "   color_browse [-sentinel <configFile>] [-noise-cal <configFile>]\n"
+   "   color_browse [-sentinel <configFile>] [-noise-cal <threshold>]\n"
    "     [-tmpDir <directory] <inFile1> <inFile2> [<inFile3>] <outFile\n");
   printf("\n"
    "REQUIRED ARGUMENTS:\n"
@@ -428,43 +428,11 @@ static void dual_browse_2sig_floor(char *inFile1, char *inFile2, char *tmpPath,
 }
 
 static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
-  char *configFile, char *outFile)
+  float threshold, char *outFile)
 {
-  char line[1024], *test, params[512], tmpFile[1024];
-  float threshold = -99;
-  float resampleScale = 1.0;
-
-  // Create temporary directory
-  char tmpDir[1024];
-  if (strlen(tmpPath) > 0)
-    sprintf(tmpDir, "%s%cbrowse-", tmpPath, DIR_SEPARATOR);
-  else
-    strcpy(tmpDir, "browse-");
-  strcat(tmpDir, time_stamp_dir());
-  create_clean_dir(tmpDir);
-  asfPrintStatus("Temp dir is: %s\n", tmpDir);
-
-  // Read parameters from configuration file
-  FILE *fpConfig = FOPEN(configFile, "r");
-  if (fpConfig) {
-    while (fgets(line, 1024, fpConfig) != NULL) {
-      if (strncmp(line, "[Scaling]", 9) == 0)
-	      strcpy(params, "scaling");
-      if (strncmp(params, "scaling", 7) == 0) {
-	      test = read_param(line);
-	      if (strncmp(test, "threshold", 9) == 0)
-	        threshold = read_float(line, "threshold");
-	      if (strncmp_case(test, "resample", 8) == 0)
-	        resampleScale = read_float(line, "resample");
-	      FREE(test);
-      }
-    }
-  }
-  FCLOSE(fpConfig);    
-
+  
   // Calculate the color browse image
   int ii, kk;
-  float g = pow(10, threshold/10.0);
   meta_parameters *metaIn = meta_read(inFile1);
   int line_count = metaIn->general->line_count;
   int sample_count = metaIn->general->sample_count;
@@ -479,29 +447,32 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
   float *b = (float *) MALLOC(sizeof(float)*sample_count);
   float cp, xp, rp, zp;
   int blue_mask;
+  float g = pow(10, threshold/10.0);
 
-  sprintf(tmpFile, "%s%ccolor_browse.img", tmpDir, DIR_SEPARATOR);
   FILE *fpIn1 = FOPEN(inFile1, "rb");
   FILE *fpIn2 = FOPEN(inFile2, "rb");
-  FILE *fpOut = FOPEN(tmpFile, "wb");
+  FILE *fpOut = FOPEN(outFile, "wb");
   for (kk=0; kk<line_count; kk++) {
     get_float_line(fpIn1, metaIn, kk, a);
     get_float_line(fpIn2, metaIn, kk, b);
     for (ii=0; ii<sample_count; ii++) {
       cp = a[ii];
       xp = b[ii]; 
-      blue_mask = ((g > xp*xp) ? 1 : 0);
-      if (cp*cp > xp*xp)
-        zp = atan(sqrt(cp*cp-xp*xp))*2.0/PI;
+      blue_mask = (g > xp) ? 1 : 0;
+      if (cp > xp)
+        zp = atan(sqrt(cp-xp))*2.0/PI;
       else
         zp = 0.0;
-      if (cp*cp > 3.0*xp*xp)
-        rp = sqrt(cp*cp - 3.0*xp*xp);
+      if (cp > 3.0*xp)
+        rp = sqrt(cp - 3.0*xp);
       else
         rp = 0.0;
-      red[ii] = 2.0*rp*(1 - blue_mask) + zp*blue_mask;
-      green[ii] = 3.0*sqrt(xp*xp)*(1 - blue_mask) + 2.0*zp*blue_mask;
-      blue[ii] = 5.0*zp*blue_mask;
+      red[ii] = (2.0*rp*(1 - blue_mask) + zp*blue_mask)*255;
+      if (xp < 0)
+        green[ii] = (2.0*zp*blue_mask)*255;
+      else
+        green[ii] = (3.0*sqrt(xp)*(1 - blue_mask) + 2.0*zp*blue_mask)*255;
+      blue[ii] = (5.0*zp*blue_mask)*255;
     }
     put_band_float_line(fpOut, metaOut, 0, kk, red);
     put_band_float_line(fpOut, metaOut, 1, kk, green);
@@ -512,24 +483,13 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
   FCLOSE(fpIn2);
   FCLOSE(fpOut);
   meta_free(metaIn);
-  meta_write(metaOut, tmpFile);
+  meta_write(metaOut, outFile);
   meta_free(metaOut);
   FREE(a);
   FREE(b);
   FREE(red);
   FREE(green);
   FREE(blue);
-
-  // Resample image to browse size
-  asfPrintStatus("Resampling to browse image size\n");
-  metaOut = meta_read(tmpFile);
-  double scaleFactor = 1.0/(resampleScale/metaOut->general->x_pixel_size);
-  resample(tmpFile, outFile, scaleFactor, scaleFactor);
-  meta_free(metaOut);
-  
-  // Clean up
-  asfPrintStatus("Removing temporary directory: %s\n", tmpDir);
-  remove_dir(tmpDir);  
 }
 
 int main(int argc,char *argv[])
@@ -540,6 +500,7 @@ int main(int argc,char *argv[])
   browse_type_t mode = NOTYPE;
   int   i,j;
   int   sample_count;
+  float threshold;
   extern int currArg;
   strcpy(tmpPath, "");
 
@@ -558,7 +519,7 @@ int main(int argc,char *argv[])
     }
     else if (strmatches(key, "-noise-cal", "--noise-cal", NULL)) {
       CHECK_ARG(1);
-      strcpy(configFile, GET_ARG(1));
+      threshold = atof(GET_ARG(1));
       mode = NOISE_CAL;
     }
     else if (strmatches(key, "-tmpDir", "--tmpDir", NULL)) {
@@ -847,7 +808,7 @@ int main(int argc,char *argv[])
       create_name(outfile,argv[5],".img");
     }
 
-    freeman_mask_atan(infile1, infile2, tmpPath, configFile, outfile);
+    freeman_mask_atan(infile1, infile2, tmpPath, threshold, outfile);
   }
   else
     asfPrintError("Mode is not defined!\n");

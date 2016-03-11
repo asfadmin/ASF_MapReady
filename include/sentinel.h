@@ -19,13 +19,10 @@ typedef struct {
 
 typedef struct {
   int line;
-  int pixel;
-  float sigma;
-  float beta;
-  float gamma;
-  float dn;
-  float noise;
-} sentinel_lut;
+  int count;
+  int *pixel;
+  float *value;
+} sentinel_lut_line;
 
 typedef struct {
   char granule[128];
@@ -42,6 +39,7 @@ typedef struct {
   char polarization[50];
   char productClass[3];
   char productType[5];
+  char resolution;
   char startTime[30];
   char stopTime[30];
   char mission[5];

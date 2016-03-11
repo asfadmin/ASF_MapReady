@@ -80,5 +80,12 @@ libs = localenv.SharedLibrary("libasf_import", [
         "import_seasat_h5.c",
         ])
 
+shares = [
+     localenv.Dir([
+        "#src/libasf_import/sentinel",
+     ]),
+]
+
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
 
