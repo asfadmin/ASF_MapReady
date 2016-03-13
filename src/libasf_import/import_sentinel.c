@@ -12,8 +12,8 @@
 #include "asf_tiff.h"
 #include "geotiff_support.h"
 
-static void write_cal_lut(sentinel_lut *cal, radiometry_t radiometry, int band,
-  int lut_line_count, int lut_pixel_count, char *outFile)
+static void write_cal_lut(sentinel_lut_line *cal, radiometry_t radiometry, 
+  int band, int lut_line_count, char *outFile)
 {
   FILE *fp = NULL;
 
@@ -28,86 +28,61 @@ static void write_cal_lut(sentinel_lut *cal, radiometry_t radiometry, int band,
   else
     fp = FOPEN(outFile, "ab");
   int oldLine = cal[0].line;
-  int newLine = cal[lut_pixel_count+1].line;
-  int oldPixel = cal[0].pixel;
-  int newPixel = cal[1].pixel;
-  int iiLut = 0, kkLut = 0, minX, maxX, minY, maxY;
-  int ii, kk, deltaLine, deltaPixel, lutLine, lutPixel;
+  int newLine = cal[1].line;
+  int deltaLine = newLine - oldLine;
+  int iiLut = 0, kkLut = 0, maxLine = 1;
+  int ii, kk, oldPixel, newPixel, deltaPixel;
+  float cal00, cal01, cal10, cal11;
   float a00, a10, a01, a11, slopeLine, slopePixel;
   for (ii=0; ii<meta->general->line_count; ii++) {
     if (ii == newLine) {
       oldLine = newLine;
       iiLut++;
-      newLine = cal[iiLut*lut_pixel_count+kkLut].line;
+      newLine = cal[iiLut+1].line;
+      deltaLine = newLine - oldLine;
     }
+    if (iiLut+1 <lut_line_count)
+      maxLine = iiLut + 1;
+    else
+      maxLine = iiLut;
     kkLut = 0;
-    newPixel = cal[iiLut*lut_pixel_count].pixel;
+    oldPixel = cal[iiLut].pixel[0];
+    newPixel = cal[iiLut].pixel[1];
+    deltaPixel = newPixel - oldPixel;
+    cal00 = cal[iiLut].value[0];
+    cal10 = cal[iiLut].value[1];
+    cal01 = cal[maxLine].value[0];
+    cal11 = cal[maxLine].value[1];
+    a00 = cal00;
+    a10 = cal10 - cal00;
+    a01 = cal01 - cal00;
+    a11 = cal00 - cal01 - cal10 + cal11;
     for (kk=0; kk<meta->general->sample_count; kk++) {
       if (kk == newPixel) {
-        oldPixel = newPixel;
         kkLut++;
-        newPixel = cal[iiLut*lut_pixel_count+kkLut].pixel;
+        oldPixel = newPixel;
+        if (kkLut+1 < cal[iiLut].count)
+          newPixel = cal[iiLut].pixel[kkLut+1];
+        else
+          newPixel = cal[iiLut].pixel[kkLut];
+        deltaPixel = newPixel - oldPixel;
+        cal00 = cal[iiLut].value[kkLut];
+        if (kkLut+1 < cal[iiLut].count)
+          cal10 = cal[iiLut].value[kkLut+1];
+        else
+          cal10 = cal[iiLut].value[kkLut];
+        cal01 = cal[maxLine].value[kkLut];
+        if (kkLut+1 < cal[maxLine].count)
+          cal11 = cal[maxLine].value[kkLut+1];
+        else
+          cal11 = cal[maxLine].value[kkLut];
+        a00 = cal00;
+        a10 = cal10 - cal00;
+        a01 = cal01 - cal00;
+        a11 = cal00 - cal01 - cal10 + cal11;
       }
-      minX = kkLut;
-      maxX = (kkLut == lut_pixel_count-1 ? kkLut : kkLut+1);
-      minY = iiLut;
-      maxY = (iiLut == lut_line_count-1 ? iiLut : iiLut+1);
-      lutLine = cal[minY*lut_pixel_count+minX].line;
-      deltaLine = cal[maxY*lut_pixel_count+minY].line - lutLine - 1;
-      lutPixel = cal[minY*lut_pixel_count+minX].pixel;
-      deltaPixel = cal[minY*lut_pixel_count+maxX].pixel - lutPixel - 1;
-      if (radiometry == r_AMP) {
-        a00 = cal[minY*lut_pixel_count+minX].dn;
-        a10 = cal[minY*lut_pixel_count+maxX].dn - 
-          cal[minY*lut_pixel_count+minX].dn;
-        a01 = cal[maxY*lut_pixel_count+minX].dn - 
-          cal[minY*lut_pixel_count+minX].dn;
-        a11 = cal[minY*lut_pixel_count+minX].dn - 
-          cal[minY*lut_pixel_count+maxX].dn -
-          cal[maxY*lut_pixel_count+minX].dn + 
-          cal[maxY*lut_pixel_count+maxX].dn;
-      }
-      else if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB) {
-        a00 = cal[minY*lut_pixel_count+minX].sigma;
-        a10 = cal[minY*lut_pixel_count+maxX].sigma - 
-          cal[minY*lut_pixel_count+minX].sigma;
-        a01 = cal[maxY*lut_pixel_count+minX].sigma - 
-          cal[minY*lut_pixel_count+minX].sigma;
-        a11 = cal[minY*lut_pixel_count+minX].sigma - 
-          cal[minY*lut_pixel_count+maxX].sigma -
-          cal[maxY*lut_pixel_count+minX].sigma + 
-          cal[maxY*lut_pixel_count+maxX].sigma;
-      }
-      else if (radiometry == r_BETA || radiometry == r_BETA_DB) {
-        a00 = cal[minY*lut_pixel_count+minX].beta;
-        a10 = cal[minY*lut_pixel_count+maxX].beta - 
-          cal[minY*lut_pixel_count+minX].beta;
-        a01 = cal[maxY*lut_pixel_count+minX].beta - 
-          cal[minY*lut_pixel_count+minX].beta;
-        a11 = cal[minY*lut_pixel_count+minX].beta - 
-          cal[minY*lut_pixel_count+maxX].beta -
-          cal[maxY*lut_pixel_count+minX].beta + 
-          cal[maxY*lut_pixel_count+maxX].beta;
-      }
-      else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB) {
-        a00 = cal[minY*lut_pixel_count+minX].beta;
-        a10 = cal[minY*lut_pixel_count+maxX].beta - 
-          cal[minY*lut_pixel_count+minX].beta;
-        a01 = cal[maxY*lut_pixel_count+minX].beta - 
-          cal[minY*lut_pixel_count+minX].beta;
-        a11 = cal[minY*lut_pixel_count+minX].beta - 
-          cal[minY*lut_pixel_count+maxX].beta -
-          cal[maxY*lut_pixel_count+minX].beta + 
-          cal[maxY*lut_pixel_count+maxX].beta;
-      }
-      if (deltaLine > 0)
-        slopeLine = (float)(ii - lutLine)/(float)deltaLine;
-      else
-        slopeLine = 0.0;
-      if (deltaPixel > 0)
-        slopePixel = (float)(kk - lutPixel)/(float)deltaPixel;
-      else
-        slopePixel = 0.0;
+      slopeLine = (float)(ii - oldLine)/(float)deltaLine;
+      slopePixel = (float)(kk - oldPixel)/(float)deltaPixel;
       amp[kk] = a00 + a10 * slopePixel + a01 * slopeLine 
         + a11 * slopePixel * slopeLine;
     }
@@ -118,8 +93,8 @@ static void write_cal_lut(sentinel_lut *cal, radiometry_t radiometry, int band,
   meta_free(meta);
 }
 
-static void write_noise_lut(sentinel_lut *lut, radiometry_t radiometry, 
-  int band, int lut_line_count, int lut_pixel_count, char *outFile)
+static void write_noise_lut(sentinel_lut_line *lut, radiometry_t radiometry, 
+  int band, int lut_line_count, char *outFile)
 {
   FILE *fp = NULL;
 
@@ -130,51 +105,61 @@ static void write_noise_lut(sentinel_lut *lut, radiometry_t radiometry,
   
   fp = FOPEN(outFile, "ab");
   int oldLine = lut[0].line;
-  int newLine = lut[lut_pixel_count+1].line;
-  int oldPixel = lut[0].pixel;
-  int newPixel = lut[1].pixel;
-  int iiLut = 0, kkLut = 0, minX, maxX, minY, maxY;
-  int ii, kk, deltaLine, deltaPixel, lutLine, lutPixel;
+  int newLine = lut[1].line;
+  int deltaLine = newLine - oldLine;
+  int iiLut = 0, kkLut = 0, maxLine = 1;
+  int ii, kk, oldPixel, newPixel, deltaPixel;
+  float noise00, noise01, noise10, noise11;
   float a00, a10, a01, a11, slopeLine, slopePixel;
   for (ii=0; ii<meta->general->line_count; ii++) {
     if (ii == newLine) {
       oldLine = newLine;
       iiLut++;
-      newLine = lut[iiLut*lut_pixel_count+kkLut].line;
+      if (iiLut+1 < lut_line_count)
+        maxLine = iiLut + 1;
+      else
+        maxLine = iiLut;
+      newLine = lut[maxLine].line;
+      deltaLine = newLine - oldLine;
     }
     kkLut = 0;
-    newPixel = lut[iiLut*lut_pixel_count].pixel;
+    oldPixel = lut[iiLut].pixel[0];
+    newPixel = lut[iiLut].pixel[1];
+    deltaPixel = newPixel - oldPixel;
+    noise00 = lut[iiLut].value[0];
+    noise10 = lut[iiLut].value[1];
+    noise01 = lut[maxLine].value[0];
+    noise11 = lut[maxLine].value[1];
+    a00 = noise00;
+    a10 = noise10 - noise00;
+    a01 = noise01 - noise00;
+    a11 = noise00 - noise01 - noise10 + noise11;
     for (kk=0; kk<meta->general->sample_count; kk++) {
       if (kk == newPixel) {
-        oldPixel = newPixel;
         kkLut++;
-        newPixel = lut[iiLut*lut_pixel_count+kkLut].pixel;
+        oldPixel = newPixel;
+        if (kkLut+1 < lut[iiLut].count)
+          newPixel = lut[iiLut].pixel[kkLut+1];
+        else
+          newPixel = lut[iiLut].pixel[kkLut];
+        deltaPixel = newPixel - oldPixel;
+        noise00 = lut[iiLut].value[kkLut];
+        if (kkLut+1 < lut[iiLut].count)        
+          noise10 = lut[iiLut].value[kkLut+1];
+        else
+          noise10 = lut[iiLut].value[kkLut];
+        noise01 = lut[maxLine].value[kkLut];
+        if (kkLut+1 < lut[maxLine].count)
+          noise11 = lut[maxLine].value[kkLut+1];
+        else
+          noise11 = lut[maxLine].value[kkLut];
+        a00 = noise00;
+        a10 = noise10 - noise00;
+        a01 = noise01 - noise00;
+        a11 = noise00 - noise01 - noise10 + noise11;
       }
-      minX = kkLut;
-      maxX = (kkLut == lut_pixel_count-1 ? kkLut : kkLut+1);
-      minY = iiLut;
-      maxY = (iiLut == lut_line_count-1 ? iiLut : iiLut+1);
-      lutLine = lut[minY*lut_pixel_count+minX].line;
-      deltaLine = lut[maxY*lut_pixel_count+minY].line - lutLine - 1;
-      lutPixel = lut[minY*lut_pixel_count+minX].pixel;
-      deltaPixel = lut[minY*lut_pixel_count+maxX].pixel - lutPixel - 1;
-      a00 = lut[minY*lut_pixel_count+minX].noise;
-      a10 = lut[minY*lut_pixel_count+maxX].noise - 
-        lut[minY*lut_pixel_count+minX].noise;
-      a01 = lut[maxY*lut_pixel_count+minX].noise - 
-        lut[minY*lut_pixel_count+minX].noise;
-      a11 = lut[minY*lut_pixel_count+minX].noise - 
-        lut[minY*lut_pixel_count+maxX].noise -
-        lut[maxY*lut_pixel_count+minX].noise + 
-        lut[maxY*lut_pixel_count+maxX].noise;
-      if (deltaLine > 0)
-        slopeLine = (float)(ii - lutLine)/(float)deltaLine;
-      else
-        slopeLine = 0.0;
-      if (deltaPixel > 0)
-        slopePixel = (float)(kk - lutPixel)/(float)deltaPixel;
-      else
-        slopePixel = 0.0;
+      slopeLine = (float)(ii - oldLine)/(float)deltaLine;
+      slopePixel = (float)(kk - oldPixel)/(float)deltaPixel;
       noise[kk] = a00 + a10 * slopePixel + a01 * slopeLine 
         + a11 * slopePixel * slopeLine;
     }
@@ -185,11 +170,10 @@ static void write_noise_lut(sentinel_lut *lut, radiometry_t radiometry,
   meta_free(meta);
 }
 
-static sentinel_lut *read_sentinel_calibration(char *xmlFile, int *lutLines, 
-  int *lutPixels)
+static sentinel_lut_line *read_sentinel_calibration(char *xmlFile, 
+  radiometry_t radiometry, int *lutLines)
 {
-  int kk, ll, line;
-  long idx;
+  int kk, ll, line, pixel_count;
   char *str = (char *) MALLOC(sizeof(char)*512);
   char pixelStr[8192], valueStr[16384], **pixel, **value;
   float minValue = 9999999;
@@ -206,10 +190,8 @@ static sentinel_lut *read_sentinel_calibration(char *xmlFile, int *lutLines,
   // Get dimensions
   int line_count = xml_xpath_get_int_value(doc, 
     "/calibration/calibrationVectorList/@count");
-  int pixel_count = xml_xpath_get_int_value(doc,
-    "/calibration/calibrationVectorList/calibrationVector/pixel/@count");
-  sentinel_lut *lut = 
-    (sentinel_lut *) MALLOC(sizeof(sentinel_lut)*line_count*pixel_count);
+  sentinel_lut_line *lut = 
+    (sentinel_lut_line *) MALLOC(sizeof(sentinel_lut_line)*line_count);
     
   // Work your way through sigma, beta, gamma and dn
   for (kk=0; kk<line_count; kk++) {
@@ -220,65 +202,72 @@ static sentinel_lut *read_sentinel_calibration(char *xmlFile, int *lutLines,
       "/calibration/calibrationVectorList/calibrationVector[%d]/pixel", kk+1);
     strcpy(pixelStr, xml_xpath_get_string_value(doc, str));
     split_into_array(pixelStr, ' ', &pixel_count, &pixel);
+    lut[kk].line = line;
+    lut[kk].count = pixel_count;
+    lut[kk].pixel = (int *) MALLOC(sizeof(int)*pixel_count);
+    lut[kk].value = (float *) MALLOC(sizeof(float)*pixel_count);
 
-    // sigma
-    sprintf(str, 
-      "/calibration/calibrationVectorList/calibrationVector[%d]/sigmaNought", 
-      kk+1);
-    strcpy(valueStr, xml_xpath_get_string_value(doc, str));
-    split_into_array(valueStr, ' ', &pixel_count, &value);
-    for (ll=0; ll<pixel_count; ll++) {
-      idx = kk*pixel_count + ll;
-      lut[idx].line = line;
-      lut[idx].pixel = atoi(pixel[ll]);
-      lut[idx].sigma = atof(value[ll]);
-      if (lut[idx].sigma < minValue)
-        minValue = lut[idx].sigma;
-      if (lut[idx].sigma > maxValue)
-        maxValue = lut[idx].sigma;
+    if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB) {
+      sprintf(str, 
+        "/calibration/calibrationVectorList/calibrationVector[%d]/sigmaNought", 
+        kk+1);
+      strcpy(valueStr, xml_xpath_get_string_value(doc, str));
+      split_into_array(valueStr, ' ', &pixel_count, &value);
+      for (ll=0; ll<pixel_count; ll++) {
+        lut[kk].line = line;
+        lut[kk].pixel[ll] = atoi(pixel[ll]);
+        lut[kk].value[ll] = atof(value[ll]);
+        if (lut[kk].value[ll] < minValue)
+          minValue = lut[kk].value[ll];
+        if (lut[kk].value[ll] > maxValue)
+          maxValue = lut[kk].value[ll];
+      }
     }
-    
-    // beta
-    sprintf(str, 
-      "/calibration/calibrationVectorList/calibrationVector[%d]/betaNought", 
-      kk+1);
-    strcpy(valueStr, xml_xpath_get_string_value(doc, str));
-    split_into_array(valueStr, ' ', &pixel_count, &value);
-    for (ll=0; ll<pixel_count; ll++) {
-      idx = kk*pixel_count + ll;
-      lut[idx].beta = atof(value[ll]);
-      if (lut[idx].beta < minValue)
-        minValue = lut[idx].beta;
-      if (lut[idx].beta > maxValue)
-        maxValue = lut[idx].beta;
+    else if (radiometry == r_BETA || radiometry == r_BETA_DB) {
+      sprintf(str, 
+        "/calibration/calibrationVectorList/calibrationVector[%d]/betaNought", 
+        kk+1);
+      strcpy(valueStr, xml_xpath_get_string_value(doc, str));
+      split_into_array(valueStr, ' ', &pixel_count, &value);
+      for (ll=0; ll<pixel_count; ll++) {
+        lut[kk].line = line;
+        lut[kk].pixel[ll] = atoi(pixel[ll]);
+        lut[kk].value[ll] = atof(value[ll]);
+        if (lut[kk].value[ll] < minValue)
+          minValue = lut[kk].value[ll];
+        if (lut[kk].value[ll] > maxValue)
+          maxValue = lut[kk].value[ll];
+      }
     }
-    
-    // gamma
-    sprintf(str, 
-      "/calibration/calibrationVectorList/calibrationVector[%d]/gamma", kk+1);
-    strcpy(valueStr, xml_xpath_get_string_value(doc, str));
-    split_into_array(valueStr, ' ', &pixel_count, &value);
-    for (ll=0; ll<pixel_count; ll++) {
-      idx = kk*pixel_count + ll;
-      lut[idx].gamma = atof(value[ll]);
-      if (lut[idx].gamma < minValue)
-        minValue = lut[idx].gamma;
-      if (lut[idx].gamma > maxValue)
-        maxValue = lut[idx].gamma;
+    else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB) {
+      sprintf(str, 
+        "/calibration/calibrationVectorList/calibrationVector[%d]/gamma", kk+1);
+      strcpy(valueStr, xml_xpath_get_string_value(doc, str));
+      split_into_array(valueStr, ' ', &pixel_count, &value);
+      for (ll=0; ll<pixel_count; ll++) {
+        lut[kk].line = line;
+        lut[kk].pixel[ll] = atoi(pixel[ll]);
+        lut[kk].value[ll] = atof(value[ll]);
+        if (lut[kk].value[ll] < minValue)
+          minValue = lut[kk].value[ll];
+        if (lut[kk].value[ll] > maxValue)
+          maxValue = lut[kk].value[ll];
+      }
     }
-    
-    // dn
-    sprintf(str, 
-      "/calibration/calibrationVectorList/calibrationVector[%d]/dn", kk+1);
-    strcpy(valueStr, xml_xpath_get_string_value(doc, str));
-    split_into_array(valueStr, ' ', &pixel_count, &value);
-    for (ll=0; ll<pixel_count; ll++) {
-      idx = kk*pixel_count + ll;
-      lut[idx].dn = atof(value[ll]);
-      if (lut[idx].dn < minValue)
-        minValue = lut[idx].dn;
-      if (lut[idx].dn > maxValue)
-        maxValue = lut[idx].dn;
+    else if (radiometry == r_AMP) {
+      sprintf(str, 
+        "/calibration/calibrationVectorList/calibrationVector[%d]/dn", kk+1);
+      strcpy(valueStr, xml_xpath_get_string_value(doc, str));
+      split_into_array(valueStr, ' ', &pixel_count, &value);
+      for (ll=0; ll<pixel_count; ll++) {
+        lut[kk].line = line;
+        lut[kk].pixel[ll] = atoi(pixel[ll]);
+        lut[kk].value[ll] = atof(value[ll]);
+        if (lut[kk].value[ll] < minValue)
+          minValue = lut[kk].value[ll];
+        if (lut[kk].value[ll] > maxValue)
+          maxValue = lut[kk].value[ll];
+      }
     }
   }
   asfPrintStatus("   Calibration LUT values - minimum: %g, maximum: %g\n", 
@@ -286,16 +275,14 @@ static sentinel_lut *read_sentinel_calibration(char *xmlFile, int *lutLines,
   xmlFreeDoc(doc);
   xmlCleanupParser();
   *lutLines = line_count;
-  *lutPixels = pixel_count;
   
   return lut;
 }
 
-static sentinel_lut *read_sentinel_noise(char *xmlFile, int *lutLines, 
-  int *lutPixels)
+static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
+  int maxLine, int maxPixel, int *lutLines)
 {
-  int kk, ll, line;
-  long idx;
+  int kk, ll, line, pixel_count;
   char *str = (char *) MALLOC(sizeof(char)*512);
   char pixelStr[8192], noiseStr[16384], **pixel, **noise;
   float minNoise = 9999999;
@@ -312,10 +299,8 @@ static sentinel_lut *read_sentinel_noise(char *xmlFile, int *lutLines,
   // Get dimensions  
   int line_count = xml_xpath_get_int_value(doc, 
     "/noise/noiseVectorList/@count");
-  int pixel_count = xml_xpath_get_int_value(doc,
-    "/noise/noiseVectorList/noiseVector/pixel/@count");
-  sentinel_lut *lut = 
-    (sentinel_lut *) MALLOC(sizeof(sentinel_lut)*line_count*pixel_count);
+  sentinel_lut_line *lut = 
+    (sentinel_lut_line *) MALLOC(sizeof(sentinel_lut_line)*line_count);
     
   // Work your way through the noise LUT
   for (kk=0; kk<line_count; kk++) {
@@ -327,23 +312,61 @@ static sentinel_lut *read_sentinel_noise(char *xmlFile, int *lutLines,
     sprintf(str, "/noise/noiseVectorList/noiseVector[%d]/noiseLut", kk+1);
     strcpy(noiseStr, xml_xpath_get_string_value(doc, str));
     split_into_array(noiseStr, ' ', &pixel_count, &noise);
+    lut[kk].line = line;
+    lut[kk].count = pixel_count;
+    lut[kk].pixel = (int *) MALLOC(sizeof(int)*pixel_count);
+    lut[kk].value = (float *) MALLOC(sizeof(float)*pixel_count);
     for (ll=0; ll<pixel_count; ll++) {
-      idx = kk*pixel_count + ll;
-      lut[idx].line = line;
-      lut[idx].pixel = atoi(pixel[ll]);
-      lut[idx].noise = atof(noise[ll]);
-      if (lut[idx].noise < minNoise)
-        minNoise = lut[idx].noise;
-      if (lut[idx].noise > maxNoise)
-        maxNoise = lut[idx].noise;
+      lut[kk].pixel[ll] = atoi(pixel[ll]);
+      lut[kk].value[ll] = atof(noise[ll]);
+      if (lut[kk].value[ll] < minNoise)
+        minNoise = lut[kk].value[ll];
+      if (lut[kk].value[ll] > maxNoise)
+        maxNoise = lut[kk].value[ll];
     }
+    lut[kk].pixel[pixel_count-1] = maxPixel;
   }
+  lut[line_count-1].line = maxLine;
   asfPrintStatus("   Noise LUT values - minimum: %g, maximum: %g\n", 
     minNoise, maxNoise);
   xmlFreeDoc(doc);
   xmlCleanupParser();
-  *lutLines = line_count;
-  *lutPixels = pixel_count;
+  
+  // Check whether noise floor is looking good
+  if (maxNoise > 0 && maxNoise < 5e-09) {
+    asfPrintStatus("   Noise floor is not within the expected value range!\n"
+      "   Scaling noise floor values ...\n");
+    minNoise = 9999999;
+    maxNoise = -9999999;
+    for (kk=0; kk<line_count; kk++)
+      for (ll=0; ll<pixel_count; ll++) {
+        lut[kk].value[ll] *= 1e12;
+        if (lut[kk].value[ll] < minNoise)
+          minNoise = lut[kk].value[ll];
+        if (lut[kk].value[ll] > maxNoise)
+          maxNoise = lut[kk].value[ll];
+      }
+    asfPrintStatus("   Noise LUT values - minimum: %g, maximum: %g\n", 
+      minNoise, maxNoise);
+    *lutLines = line_count;
+  }
+  else if (maxNoise < 10.0) {
+    char newXmlFile[1024];
+    sprintf(newXmlFile, "%s%csentinel%cnoise-s1a-%s.xml", get_asf_share_dir(), 
+      DIR_SEPARATOR, DIR_SEPARATOR, mode);
+    asfPrintStatus("   Noise floor is not within the expected value range!\n"
+      "   Replacing it with standard noise floor for beam mode (%s) ...\n",
+      newXmlFile);
+    for (kk=0; kk<line_count; kk++) {
+      FREE(lut[kk].pixel);
+      FREE(lut[kk].value);
+    }
+    FREE(lut);
+    lut = (sentinel_lut_line *) MALLOC(sizeof(sentinel_lut_line)*line_count);
+    lut = read_sentinel_noise(newXmlFile, mode, maxLine, maxPixel, lutLines);
+  }
+  else
+    *lutLines = line_count;
   
   return lut;
 }
@@ -357,12 +380,13 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
   meta_parameters *metaNoise = NULL;
   char inDataName[1024], *outDataName=NULL, outCalName[1024], outNoiseName[1024];
   char mission[25], beamMode[10], productType[10], bandName[25];
+  char dirName[1024], fileName[1024], mode[25], modeStr[25];
   float *amp = NULL, *phase = NULL, *calValue = NULL, *lutNoise = NULL;
   float *noise = NULL, *tmp = NULL, re, im;
   double noise_mean = 0.0;
   long pixelCount = 0; 
   float mask = MAGIC_UNSET_DOUBLE;
-  int ii, file_count, band, sample, detected=TRUE, band_count=0;
+  int ii, kk, file_count, band, sample, detected=TRUE, band_count=0;
 
   check_sentinel_meta(inBaseName, mission, beamMode, productType);
   asfPrintStatus("   Mission: %s, beam mode: %s, product type: %s\n",
@@ -374,7 +398,11 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
 
     // Create temporary directory
     char tmpDir[1024];
-    strcpy(tmpDir, "browse-");
+    split_dir_and_file(outBaseName, dirName, fileName);
+    if (strlen(dirName) > 0)
+      sprintf(tmpDir, "%sbrowse-", dirName);
+    else
+      strcpy(tmpDir, "browse-");
     strcat(tmpDir, time_stamp_dir());
     create_clean_dir(tmpDir);
     asfPrintStatus("Temp dir is: %s\n", tmpDir);
@@ -405,10 +433,15 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
       if (lutFile)
         strcpy(outCalName, lutFile);
       else
-        sprintf(outCalName, "%s%c%s_lut.img", tmpDir, DIR_SEPARATOR,outBaseName);
+        sprintf(outCalName, "%s%c%s_lut.img", tmpDir, DIR_SEPARATOR, fileName);
       sprintf(outNoiseName, "%s%c%s_noise.img", 
-        tmpDir, DIR_SEPARATOR, outBaseName);
+        tmpDir, DIR_SEPARATOR, fileName);
       sentinel_meta *sentinel = read_sentinel_meta(inBaseName, ii+1);
+      if (beamMode[0] == 'S')
+        sprintf(mode, "SM-%s%c", productType, sentinel->resolution);
+      else
+        sprintf(mode, "%s-%s%c", beamMode, productType, sentinel->resolution);
+      strcpy(modeStr, lc(mode));
       meta = sentinel2meta(sentinel);
       meta->general->radiometry = radiometry;
       meta_write(meta, outDataName);
@@ -439,9 +472,10 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
         // Read calibration LUTs
         asfPrintStatus("\n   Reading calibration LUT (%s) ...\n",
           files[band].calibration);
-        int lutLines, lutPixels;
-        sentinel_lut *cal = read_sentinel_calibration(files[band].calibration, 
-          &lutLines, &lutPixels);
+        int lutLines;
+        sentinel_lut_line *cal = 
+          read_sentinel_calibration(files[band].calibration, radiometry, 
+            &lutLines);
         if (lutCount == 0) {
           metaCal = meta_read(outDataName);
           sprintf(metaCal->general->bands, "LUT_%s_%s", 
@@ -463,21 +497,31 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
         meta_write(metaCal, outCalName);
         metaNoise->general->band_count = noiseCount + 1;
         meta_write(metaNoise, outNoiseName);
-        write_cal_lut(cal, radiometry, lutCount, lutLines, lutPixels, 
-          outCalName);
+        write_cal_lut(cal, radiometry, lutCount, lutLines, outCalName);
+        for (kk=0; kk<lutLines; kk++) {
+          FREE(cal[kk].pixel);
+          FREE(cal[kk].value);
+        }
+        FREE(cal);
         lutCount++;
         
         // Read noise LUT
         asfPrintStatus("\n   Reading noise LUT (%s) ...\n", files[band].noise);
-        sentinel_lut *lut = read_sentinel_noise(files[band].noise, 
-          &lutLines, &lutPixels);
+        sentinel_lut_line *lut = 
+          read_sentinel_noise(files[band].noise, modeStr, 
+            metaNoise->general->line_count, metaNoise->general->sample_count,
+            &lutLines);
         metaCal = meta_read(outCalName);
         sprintf(bandName, ",LUT_NOISE_%s", files[band].polarization);
         strcat(metaCal->general->bands, bandName);
         metaCal->general->band_count = lutCount + 1;
         meta_write(metaCal, outCalName);
-        write_noise_lut(lut, radiometry, lutCount, lutLines, lutPixels, 
-          outCalName);
+        write_noise_lut(lut, radiometry, lutCount, lutLines, outCalName);
+        for (kk=0; kk<lutLines; kk++) {
+          FREE(lut[kk].pixel);
+          FREE(lut[kk].value);
+        }
+        FREE(lut);
         lutCount++;
 
         // Import GeoTIFF file
@@ -590,14 +634,14 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
                   pixelCount++;
                 }
               }
-              if (re*re > noise[sample])
-                scaledPower = 
-                  (re*re - noise[sample])/(calValue[sample]*calValue[sample]);
-              else
-                scaledPower = 0.0001;
+              scaledPower = 
+                (re*re - lutNoise[sample])/(calValue[sample]*calValue[sample]);
               if (radiometry == r_SIGMA_DB || radiometry == r_BETA_DB || 
                 radiometry == r_GAMMA_DB)
-                amp[sample] = 10.0 * log10(scaledPower);
+                if (scaledPower < 0)
+                  amp[sample] = -40.0;
+                else
+                  amp[sample] = 10.0 * log10(scaledPower);
               else
                 amp[sample] = scaledPower;
             }

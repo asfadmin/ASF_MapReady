@@ -105,6 +105,8 @@ all: build_only
 	mv libasf_import.a $(LIBDIR)
 	cp asf_import.h fgdc_meta.h dem_meta.h prc_stvecs.h \
 	$(ASF_INCLUDE_DIR)
+	rm -rf $(SHAREDIR)/sentinel
+	cp -R sentinel $(SHAREDIR)
 
 build_only: $(OBJS)
 	rm -f libasf_import.a

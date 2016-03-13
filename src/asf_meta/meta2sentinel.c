@@ -157,6 +157,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
   split_dir_and_file(manifest, absPath, file);
   split_into_array(absPath, '/', &n, &arr);
   strncpy(sentinel->granule, arr[n-2], strlen(arr[n-2])-5);
+  sentinel->resolution = sentinel->granule[10];
 
   // Read manifest
   //asfPrintStatus("\n   Reading manifest ...\n");
