@@ -606,6 +606,9 @@ int main(int argc, char *argv[])
     // Update location block
     update_location_block(meta_out);
 
+    meta_get_latLon(meta_out, meta_out->general->line_count/2, meta_out->general->sample_count/2, 0,
+ 		  &meta_out->general->center_latitude, &meta_out->general->center_longitude);
+
     meta_write(meta_out, outfile);
 
     char *outfile_full = appendExt(outfile, ".img");
