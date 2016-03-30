@@ -729,10 +729,10 @@ void subset_by_latlon(char *infile, char *outfile, double *lat, double *lon,
     minSample = sample;
   if (sample > maxSample)
     maxSample = sample;
-  startX = (int) (minSample + 0.5);
-  startY = (int) (minLine + 0.5);
-  sizeX = (int) (maxSample - minSample);
-  sizeY = (int) (maxLine - minLine);
+  startX = (int) (minSample - 0.5);
+  startY = (int) (minLine - 0.5);
+  sizeX = (int) (maxSample - minSample + 2);
+  sizeY = (int) (maxLine - minLine + 2);
   trim(infile, outfile, startX, startY, sizeX, sizeY);
   meta_free(meta); 
 }

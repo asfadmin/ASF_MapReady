@@ -350,6 +350,23 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
       minNoise, maxNoise);
     *lutLines = line_count;
   }
+  else if (maxNoise > 0 && maxNoise < 5e-07) {
+    asfPrintStatus("   Noise floor is not within the expected value range!\n"
+      "   Scaling noise floor values ...\n");
+    minNoise = 9999999;
+    maxNoise = -9999999;
+    for (kk=0; kk<line_count; kk++)
+      for (ll=0; ll<pixel_count; ll++) {
+        lut[kk].value[ll] *= 2e10;
+        if (lut[kk].value[ll] < minNoise)
+          minNoise = lut[kk].value[ll];
+        if (lut[kk].value[ll] > maxNoise)
+          maxNoise = lut[kk].value[ll];
+      }
+    asfPrintStatus("   Noise LUT values - minimum: %g, maximum: %g\n", 
+      minNoise, maxNoise);
+    *lutLines = line_count;
+  }
   else if (maxNoise < 10.0) {
     char newXmlFile[1024];
     sprintf(newXmlFile, "%s%csentinel%cnoise-s1a-%s.xml", get_asf_share_dir(), 
