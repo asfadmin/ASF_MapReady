@@ -22,7 +22,7 @@ void help()
 "Tool name:\n"
 "    %s\n\n"
 "Usage:\n"
-"    %s [-background <value>] <outfile> <infile1> <infile2> ... \n\n"
+"    %s [-background <value>] [-list <file>] <outfile> <infile1> <infile2> ... \n\n"
 "Description:\n"
 "    This program mosaics the input files together, producing an output image\n"
 "    that is the union of all listed input images.  Where the input images\n"
@@ -48,6 +48,8 @@ void help()
 "    -background <value> (-b)\n"
 "        Specifies a value to use for background pixels.  If not given, 0 is\n"
 "        used.\n"
+"    -list <file>\n"
+"        Use a list file instead of adding images on the command line.\n"
 "    -help\n"
 "        Print this help information and exit.\n"
 "    -license\n"
@@ -75,7 +77,7 @@ ASF_CONTACT_STRING);
 void usage()
 {
     printf("Usage:\n"
-           "    %s [-background <value>] <outfile> <infile1> <infile2> ... \n\n"
+           "    %s [-background <value>] [-list <file>] <outfile> <infile1> <infile2> ... \n\n"
            "At least 2 input files are required.\n", ASF_NAME_STRING);
     exit(1);
 }
@@ -517,6 +519,26 @@ void update_location_block(meta_parameters *meta)
   meta->location->lon_end_far_range = lon*R2D;
 }
 
+void read_input_files(char *listFile, char ***infiles, int *n_inputs)
+{
+  char line[1024], **inFiles;
+  int ii, nFiles = 0;
+  FILE *fpIn = FOPEN(listFile, "r");
+  while (fgets(line, 1024, fpIn) != NULL)
+    nFiles++;
+  FCLOSE(fpIn);
+  fpIn = FOPEN(listFile, "r");
+  inFiles = (char **) MALLOC(sizeof(char *)*nFiles);
+  for (ii=0; ii<nFiles; ii++) {
+    inFiles[ii] = (char *) MALLOC(sizeof(char)*1024);
+    fgets(inFiles[ii], 1024, fpIn);
+    chomp(inFiles[ii]);
+  }
+  FCLOSE(fpIn);
+  *infiles = inFiles;
+  *n_inputs = nFiles;
+}
+
 int main(int argc, char *argv[])
 {
     handle_common_asf_args(&argc, &argv, ASF_NAME_STRING);
@@ -541,9 +563,19 @@ int main(int argc, char *argv[])
 	strcmp_case(preference, "new") != 0)
       asfPrintError("Can't handle this preference (%s)!\n", preference);
     
+    char *list = (char *) MALLOC(sizeof(char)*512);
+    strcpy(list, "");
+    extract_string_options(&argc, &argv, list, "-list", "--list", "-l", NULL);
+    
     char *outfile = argv[1];
-    char **infiles = &argv[2];
-    int n_inputs = argc - 2;
+    char **infiles;
+    int ii, n_inputs;
+    if (strlen(list) > 0)
+      read_input_files(list, &infiles, &n_inputs);
+    else {
+      infiles = &argv[2];
+      n_inputs = argc - 2;
+    }
 
     int ret, i, size_x, size_y, n_bands;
     double start_x, start_y;
@@ -580,8 +612,16 @@ int main(int argc, char *argv[])
 
     // loop over the input images, last to first, so that the files listed
     // first have their pixels overwrite files listed later on the command line
-    int n = argc-1;
-    do {
+    if (strlen(list)) {
+      for (ii=0; ii<n_inputs; ii++) {
+        asfPrintStatus("\nProcessing %s... \n", infiles[ii]);
+        add_pixels(out, infiles[ii], size_x, size_y, start_x, start_y, per_x,
+          per_y);
+      }
+    }
+    else {
+      int n = argc-1;
+      do {
         char *p = argv[n];
         if (p && strlen(p)>0) {
             asfPrintStatus("\nProcessing %s... \n", p);
@@ -589,14 +629,19 @@ int main(int argc, char *argv[])
             // add this image's pixels
             add_pixels(out, p, size_x, size_y, start_x, start_y, per_x, per_y);
         }
-    } while (--n>1);
+      } while (--n>1);
+    }
 
     asfPrintStatus("Combined all images, saving result.\n");
 
     // first the metadata -- use infile1's metadata as the template
     asfPrintStatus("Writing metadata.\n");
 
-    meta_parameters *meta_out = meta_read(argv[2]);
+    meta_parameters *meta_out;
+    if (strlen(list))
+      meta_out = meta_read(infiles[0]);
+    else
+      meta_out = meta_read(argv[2]);
 
     meta_out->projection->startX = start_x;
     meta_out->projection->startY = start_y;
@@ -615,6 +660,11 @@ int main(int argc, char *argv[])
     free(outfile_full);
 
     meta_free(meta_out);
+    if (strlen(list)) {
+      for (ii=0; ii<n_inputs; ii++)
+        FREE(infiles[ii]);
+      FREE(infiles);
+    }
 
     asfPrintStatus("Done.\n");
     return 0;

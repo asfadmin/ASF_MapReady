@@ -456,8 +456,8 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
     get_float_line(fpIn1, metaIn, kk, a);
     get_float_line(fpIn2, metaIn, kk, b);
     for (ii=0; ii<sample_count; ii++) {
-      cp = a[ii];
-      xp = b[ii]; 
+      cp = (a[ii] > 0.0) ? a[ii] : 0.0;
+      xp = (b[ii] > 0.0) ? b[ii] : 0.0; 
       blue_mask = (g > xp) ? 1 : 0;
       if (cp > xp)
         zp = atan(sqrt(cp-xp))*2.0/PI;
