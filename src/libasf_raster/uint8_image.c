@@ -70,7 +70,7 @@ initialize_tile_cache_file (GString **tile_file_name)
   // filled in in different ways depending on which creation routine
   // we are using.
   g_assert(*tile_file_name == NULL);
-  *tile_file_name = g_string_new ("");
+  *tile_file_name = g_string_new (get_asf_tmp_dir());
 
   // Here we do a slightly weird thing: if the current directory is
   // writable, we create a temporary file in the current directory.

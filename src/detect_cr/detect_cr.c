@@ -244,7 +244,8 @@ int main(int argc, char *argv[])
     strcpy(logFile, argv[flags[f_LOG] + 1]);
   else
     /* default behavior: log to tmp<pid>.log */
-    sprintf(logFile, "tmp%i.log", (int)getpid());
+    //sprintf(logFile, "tmp%i.log", (int)getpid());
+    strcpy(logFile, get_tmp_log_file("detect_cr"));
   fLog = FOPEN(logFile, "a");
 
   /* Fetch required arguments */

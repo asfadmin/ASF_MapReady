@@ -1,4 +1,5 @@
 #include "asf.h"
+#include "config.h"
 #include <errno.h>
 
 /* static var for holding the temporary directory        */
@@ -20,17 +21,44 @@ set_asf_tmp_dir(const char *tmp_dir)
 
 /* Getting the temporary directory.                    */
 /* You may want to use fopen_tmp_file instead, though. */
-const char *
-get_asf_tmp_dir()
+const char *get_asf_tmp_dir()
 {
   if (!s_tmp_dir) {
 
-    // default to current directory
-    s_tmp_dir = STRDUP(".");
+#if defined(win32)
 
+    // on windows, pull the share dir from the registry
+
+    char str_value[REG_VALUE_SIZE];
+    get_string_from_registry(s_asf_tmp_dir_key, str_value);
+    s_tmp_dir = STRDUP(str_value);
+
+#else
+
+    // on UNIX, assume ASF_TMP_DIR has been set by the configure
+    // script -- in config.h
+
+    s_tmp_dir = STRDUP(ASF_TMP_DIR);
+
+#endif
+
+    // remove trailing path separator, if one is present
+
+    if (s_tmp_dir[strlen(s_tmp_dir) - 1] == DIR_SEPARATOR) {
+      s_tmp_dir[strlen(s_tmp_dir) - 1] = '\0';
+    }
   }
 
   return s_tmp_dir;
+}
+
+const char *get_tmp_log_file(char *tool)
+{
+  char *tmpDir = get_asf_tmp_dir();
+  char *tmpLog = (char *) MALLOC(sizeof(char)*(strlen(tmpDir)+strlen(tool)+20));
+  sprintf(tmpLog, "%s%c%s%i.log", tmpDir, DIR_SEPARATOR, tool, (int)getpid());
+  
+  return tmpLog;
 }
 
 // internal function, prepending tmp dir to a filename

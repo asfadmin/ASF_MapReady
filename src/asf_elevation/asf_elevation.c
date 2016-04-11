@@ -153,7 +153,8 @@ int main(int argc, char **argv)
   asfSplashScreen (argc, argv);
   
   if (!logflag)
-    sprintf(logFile, "tmp%d.log", (int)getpid());
+    //sprintf(logFile, "tmp%d.log", (int)getpid());
+    strcpy(logFile, get_tmp_log_file("asf_elevation"));
 
   // Call library function that gets the work done
   asf_elevation(unwrapped_phase, phase_mask, baseline, seeds,
