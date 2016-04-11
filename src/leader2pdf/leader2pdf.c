@@ -66,7 +66,8 @@ int main(int argc, char *argv[])
   file = argv[1];
   sprintf(leaderFile, "%s.L", file);
   sprintf(dataFile, "%s.D", file);
-  sprintf(texFile, "tmp%i.tex", pid);
+  sprintf(texFile, "%s%cleader2pdf%i.tex", 
+    get_asf_tmp_dir(), DIR_SEPARATOR, pid);
 
   /* Data Set Summary Record */
   dssr = (struct dataset_sum_rec *) malloc(sizeof(struct dataset_sum_rec));

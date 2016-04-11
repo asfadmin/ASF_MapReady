@@ -1,6 +1,7 @@
 static char * s_share_dir = 0;
 static char * s_bin_dir = 0;
 static char * s_argv0 = 0;
+static char * s_tmp_dir = 0;
 
 #if defined(win32)
 

@@ -84,6 +84,7 @@ f = open("include/config.h", "w")
 f.write("#define ASF_SHARE_DIR \"" + header_dirs["shares"] + "\"\n")
 f.write("#define ASF_BIN_DIR \"" + header_dirs["bins"] + "\"\n")
 f.write("#define ASF_DOC_DIR \"" + header_dirs["docs"] + "\"\n") 
+f.write("#define ASF_TMP_DIR \"" + header_dirs["tmp"] + \"\"\n")
 f.close()
 
 # List out all the subdirectories we want to build in, with library directories grouped separately.
