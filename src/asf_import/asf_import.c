@@ -759,6 +759,7 @@ int main(int argc, char *argv[])
     strcpy(tmp, logFile);
     sprintf(logFile, "%s%s", path, tmp);
     */
+    printf("Log File: %s\n", logFile);
     fLog = fopen(logFile, "a");
     if ( fLog == NULL ) {
       logflag = FALSE;
@@ -1113,7 +1114,8 @@ int main(int argc, char *argv[])
 
     /* If the user didn't ask for a log file then we can nuke the one that
        we've been keeping since we've finished everything  */
-    fclose (fLog);
+    if (logflag && fLog)
+        FCLOSE (fLog);
     if(flags[f_LOG] == FLAG_NOT_SET)
         remove(logFile);
 
