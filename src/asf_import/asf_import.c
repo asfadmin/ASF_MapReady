@@ -759,7 +759,6 @@ int main(int argc, char *argv[])
     strcpy(tmp, logFile);
     sprintf(logFile, "%s%s", path, tmp);
     */
-    printf("Log File: %s\n", logFile);
     fLog = fopen(logFile, "a");
     if ( fLog == NULL ) {
       logflag = FALSE;
