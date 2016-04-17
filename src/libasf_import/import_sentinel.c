@@ -12,6 +12,70 @@
 #include "asf_tiff.h"
 #include "geotiff_support.h"
 
+static float *get_cal_lut_lines(sentinel_lut_line *cal, radiometry_t radiometry,
+  int band, int lut_line_count, int start, int end, char *outFile)
+{
+  meta_parameters *meta = meta_read(outFile);
+  int sample_count = meta->general->sample_count;
+  int oldLine = cal[start].line;
+  int newLine = cal[end].line;
+  int deltaLine = newLine - oldLine;
+  if (oldLine == newLine)
+    newLine++;
+  int ii, kk, kkLut, oldPixel, newPixel, deltaPixel, idx;
+  float cal00, cal01, cal10, cal11;
+  float a00, a10, a01, a11, slopeLine, slopePixel;
+  float *amp = (float *) MALLOC(sizeof(float)*sample_count*deltaLine);
+  
+  // Determine actual calibration value
+  for (ii=oldLine; ii<newLine; ii++) {
+    kkLut = 0;
+    oldPixel = cal[start].pixel[0];
+    newPixel = cal[start].pixel[1];
+    deltaPixel = newPixel - oldPixel;
+    cal00 = cal[start].value[0];
+    cal10 = cal[start].value[1];
+    cal01 = cal[end].value[0];
+    cal11 = cal[end].value[1];
+    a00 = cal00;
+    a10 = cal10 - cal00;
+    a01 = cal01 - cal00;
+    a11 = cal00 - cal01 - cal10 + cal11;
+    for (kk=0; kk<sample_count; kk++) {
+      idx = (ii - oldLine)*sample_count + kk;
+      if (kk == newPixel) {
+        kkLut++;
+        oldPixel = newPixel;
+        if (kkLut+1 < cal[start].count)
+          newPixel = cal[start].pixel[kkLut+1];
+        else
+          newPixel = cal[start].pixel[kkLut];
+        deltaPixel = newPixel - oldPixel;
+        cal00 = cal[start].value[kkLut];
+        if (kkLut+1 < cal[start].count)
+          cal10 = cal[start].value[kkLut+1];
+        else
+          cal10 = cal[start].value[kkLut];
+        cal01 = cal[end].value[kkLut];
+        if (kkLut+1 < cal[end].count)
+          cal11 = cal[end].value[kkLut+1];
+        else
+          cal11 = cal[end].value[kkLut];
+        a00 = cal00;
+        a10 = cal10 - cal00;
+        a01 = cal01 - cal00;
+        a11 = cal00 - cal01 - cal10 + cal11;
+      }
+      slopeLine = (float)(ii - oldLine)/(float)deltaLine;
+      slopePixel = (float)(kk - oldPixel)/(float)deltaPixel;
+      idx = (ii - oldLine)*meta->general->sample_count + kk;
+      amp[idx] = a00 + a10 * slopePixel + a01 * slopeLine 
+        + a11 * slopePixel * slopeLine;
+    }
+  }
+  return amp;
+}
+
 static void write_cal_lut(sentinel_lut_line *cal, radiometry_t radiometry, 
   int band, int lut_line_count, char *outFile)
 {
@@ -91,6 +155,69 @@ static void write_cal_lut(sentinel_lut_line *cal, radiometry_t radiometry,
   }
   FCLOSE(fp);
   meta_free(meta);
+}
+
+static float *get_noise_lut_lines(sentinel_lut_line *lut, radiometry_t radiometry, 
+  int band, int lut_line_count, int start, int end, char *outFile)
+{
+  meta_parameters *meta = meta_read(outFile);
+  int sample_count = meta->general->sample_count;
+  int oldLine = lut[start].line;
+  int newLine = lut[end].line;
+  int deltaLine = newLine - oldLine;
+  if (oldLine == newLine)
+    newLine++;
+  int ii, kk, kkLut, oldPixel, newPixel, deltaPixel, idx;
+  float noise00, noise01, noise10, noise11;
+  float a00, a10, a01, a11, slopeLine, slopePixel;
+  float *noise = (float *) MALLOC(sizeof(float)*sample_count*deltaLine);
+  
+  // Determine actual value
+  for (ii=oldLine; ii<newLine; ii++) {
+    kkLut = 0;
+    oldPixel = lut[start].pixel[0];
+    newPixel = lut[start].pixel[1];
+    deltaPixel = newPixel - oldPixel;
+    noise00 = lut[start].value[0];
+    noise10 = lut[start].value[1];
+    noise01 = lut[end].value[0];
+    noise11 = lut[end].value[1];
+    a00 = noise00;
+    a10 = noise10 - noise00;
+    a01 = noise01 - noise00;
+    a11 = noise00 - noise01 - noise10 + noise11;
+    for (kk=0; kk<meta->general->sample_count; kk++) {
+      idx = (ii - oldLine)*sample_count + kk;
+      if (kk == newPixel) {
+        kkLut++;
+        oldPixel = newPixel;
+        if (kkLut+1 < lut[start].count)
+          newPixel = lut[start].pixel[kkLut+1];
+        else
+          newPixel = lut[start].pixel[kkLut];
+        deltaPixel = newPixel - oldPixel;
+        noise00 = lut[start].value[kkLut];
+        if (kkLut+1 < lut[start].count)        
+          noise10 = lut[start].value[kkLut+1];
+        else
+          noise10 = lut[start].value[kkLut];
+        noise01 = lut[end].value[kkLut];
+        if (kkLut+1 < lut[end].count)
+          noise11 = lut[end].value[kkLut+1];
+        else
+          noise11 = lut[end].value[kkLut];
+        a00 = noise00;
+        a10 = noise10 - noise00;
+        a01 = noise01 - noise00;
+        a11 = noise00 - noise01 - noise10 + noise11;
+      }
+      slopeLine = (float)(ii - oldLine)/(float)deltaLine;
+      slopePixel = (float)(kk - oldPixel)/(float)deltaPixel;
+      noise[idx] = a00 + a10 * slopePixel + a01 * slopeLine 
+        + a11 * slopePixel * slopeLine;
+    }
+  }
+  return noise;
 }
 
 static void write_noise_lut(sentinel_lut_line *lut, radiometry_t radiometry, 
@@ -393,17 +520,15 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
 {
   sentinel_files *files = NULL;
   meta_parameters *meta = NULL;
-  meta_parameters *metaCal = NULL;
-  meta_parameters *metaNoise = NULL;
-  char inDataName[1024], *outDataName=NULL, outCalName[1024], outNoiseName[1024];
-  char mission[25], beamMode[10], productType[10], bandName[25];
-  char dirName[1024], fileName[1024], mode[25], modeStr[25];
+  char inDataName[1024], *outDataName=NULL;
+  char mission[25], beamMode[10], productType[10];
+  char mode[25], modeStr[25];
   float *amp = NULL, *phase = NULL, *calValue = NULL, *lutNoise = NULL;
-  float *noise = NULL, *tmp = NULL, re, im;
+  float noise, re, im, scaledPower;
   double noise_mean = 0.0;
   long pixelCount = 0; 
   float mask = MAGIC_UNSET_DOUBLE;
-  int ii, kk, file_count, band, sample, detected=TRUE, band_count=0;
+  int ii, file_count, band, line, sample, detected=TRUE, band_count=0;
 
   check_sentinel_meta(inBaseName, mission, beamMode, productType);
   asfPrintStatus("   Mission: %s, beam mode: %s, product type: %s\n",
@@ -412,17 +537,6 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
     asfPrintError("Product type 'RAW' currently not supported!\n");  
   else if (strcmp_case(productType, "SLC") == 0 ||
     strcmp_case(productType, "GRD") == 0) {
-
-    // Create temporary directory
-    char tmpDir[1024];
-    split_dir_and_file(outBaseName, dirName, fileName);
-    if (strlen(dirName) > 0)
-      sprintf(tmpDir, "%sbrowse-", dirName);
-    else
-      strcpy(tmpDir, "browse-");
-    strcat(tmpDir, time_stamp_dir());
-    create_clean_dir(tmpDir);
-    asfPrintStatus("Temp dir is: %s\n", tmpDir);
 
     // Work out how many files we need to take care of
     if (strcmp_case(productType, "GRD") == 0)
@@ -447,12 +561,6 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
         outDataName = (char *) MALLOC(sizeof(char)*1024);
         sprintf(outDataName, "%s%d.img", outBaseName, ii+1);
       }
-      if (lutFile)
-        strcpy(outCalName, lutFile);
-      else
-        sprintf(outCalName, "%s%c%s_lut.img", tmpDir, DIR_SEPARATOR, fileName);
-      sprintf(outNoiseName, "%s%c%s_noise.img", 
-        tmpDir, DIR_SEPARATOR, fileName);
       sentinel_meta *sentinel = read_sentinel_meta(inBaseName, ii+1);
       if (beamMode[0] == 'S')
         sprintf(mode, "SM-%s%c", productType, sentinel->resolution);
@@ -462,6 +570,7 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
       meta = sentinel2meta(sentinel);
       meta->general->radiometry = radiometry;
       meta_write(meta, outDataName);
+      int sample_count = meta->general->sample_count;
 
       // Let's check the GeoTIFF data.
       TIFF *tiff = NULL;
@@ -472,11 +581,9 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
       int is_scanline_format, is_palette_color_tiff;
   
       FILE *fpOut = FOPEN(outDataName, "wb");
-      FILE *fpNoise = FOPEN(outNoiseName, "wb");
       band_count = meta->general->band_count;
       if (strcmp_case(sentinel->productType, "SLC") == 0)
         band_count /= 2;
-      int lutCount = 0;
       int noiseCount = 0;
       for (band=0; band<band_count; band++) {
   
@@ -489,59 +596,20 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
         // Read calibration LUTs
         asfPrintStatus("\n   Reading calibration LUT (%s) ...\n",
           files[band].calibration);
-        int lutLines;
+        int calLutLines;
         sentinel_lut_line *cal = 
           read_sentinel_calibration(files[band].calibration, radiometry, 
-            &lutLines);
-        if (lutCount == 0) {
-          metaCal = meta_read(outDataName);
-          sprintf(metaCal->general->bands, "LUT_%s_%s", 
-            radiometry2str(radiometry), files[band].polarization);
-          metaNoise = meta_read(outDataName);
-          sprintf(metaNoise->general->bands, "NOISE_%s", 
-            files[band].polarization);
-        }
-        else {
-          metaCal = meta_read(outCalName);
-          sprintf(bandName, ",LUT_%s_%s", radiometry2str(radiometry),
-            files[band].polarization);
-          strcat(metaCal->general->bands, bandName);
-          metaNoise = meta_read(outNoiseName);
-          sprintf(bandName, ",NOISE_%s", files[band].polarization);
-          strcat(metaNoise->general->bands, bandName);
-        }
-        metaCal->general->band_count = lutCount + 1;
-        meta_write(metaCal, outCalName);
-        metaNoise->general->band_count = noiseCount + 1;
-        meta_write(metaNoise, outNoiseName);
-        write_cal_lut(cal, radiometry, lutCount, lutLines, outCalName);
-        for (kk=0; kk<lutLines; kk++) {
-          FREE(cal[kk].pixel);
-          FREE(cal[kk].value);
-        }
-        FREE(cal);
-        lutCount++;
+            &calLutLines);
         
         // Read noise LUT
         asfPrintStatus("\n   Reading noise LUT (%s) ...\n", files[band].noise);
+        int noiseLutLines;
         sentinel_lut_line *lut = 
           read_sentinel_noise(files[band].noise, modeStr, 
-            metaNoise->general->line_count, metaNoise->general->sample_count,
-            &lutLines);
-        metaCal = meta_read(outCalName);
-        sprintf(bandName, ",LUT_NOISE_%s", files[band].polarization);
-        strcat(metaCal->general->bands, bandName);
-        metaCal->general->band_count = lutCount + 1;
-        meta_write(metaCal, outCalName);
-        write_noise_lut(lut, radiometry, lutCount, lutLines, outCalName);
-        for (kk=0; kk<lutLines; kk++) {
-          FREE(lut[kk].pixel);
-          FREE(lut[kk].value);
-        }
-        FREE(lut);
-        lutCount++;
+            meta->general->line_count, meta->general->sample_count, 
+            &noiseLutLines);
 
-        // Import GeoTIFF file
+        // Open GeoTIFF file
         tiff = XTIFFOpen(inDataName, "r");
         if (!tiff)
           asfPrintError("Could not open data file (%s)\n", inDataName);
@@ -591,8 +659,6 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
           asfPrintError("Can't read the GeoTIFF file (%s). Unrecognized TIFF "
                 "type!\n", sentinel->data[band]);
   
-        // If we made it here, we are reasonably sure that we have the file that
-        // we are looking for.
         asfPrintStatus("\n   Importing %s ...\n", sentinel->data[band]);
   
         uint32 scanlineSize = TIFFScanlineSize(tiff);
@@ -602,19 +668,49 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
   
         amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
         phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-        calValue = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-        lutNoise = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-        noise = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-        float scaledPower;
   
-        // Read file line by line
+        // Loop through the LUTs
         uint32 row;
         uint16 *intValue;
-        FILE *fpCal = FOPEN(outCalName, "rb");
-        for (row=0; row<(uint32)meta->general->line_count; row++) {
-          asfLineMeter(row, meta->general->line_count);
-          get_band_float_line(fpCal, metaCal, lutCount-2, (int)row, calValue);
-          get_band_float_line(fpCal, metaCal, lutCount-1, (int)row, lutNoise);
+        int kkCal = 0, kkNoise = 0;
+        int calIndex, calStart, calEnd, calLimit = 0;
+        int noiseIndex, noiseStart, noiseEnd, noiseLimit = 0;
+        for (line=0; line<meta->general->line_count; line++) {
+        
+          // Check LUT information
+          if (line == calLimit) {
+            if (calValue)
+              FREE(calValue);
+            if (kkCal < calLutLines - 1) {
+              calStart = kkCal;
+              calEnd = kkCal + 1;
+            }
+            else {
+              calStart = calEnd = kkCal;
+            }
+            calLimit = cal[calEnd].line;
+            calValue = get_cal_lut_lines(cal, radiometry, band, calLutLines, 
+              calStart, calEnd, outDataName);
+            kkCal++; 
+          }
+          if (line == noiseLimit) {
+            if (lutNoise)
+              FREE(lutNoise);
+            if (kkNoise < noiseLutLines - 1) {
+              noiseStart = kkNoise;
+              noiseEnd = kkNoise + 1;
+            }
+            else {
+              noiseStart = noiseEnd = kkNoise;
+            }
+            noiseLimit = lut[noiseEnd].line;
+            lutNoise = get_noise_lut_lines(lut, radiometry, band, noiseLutLines, 
+              noiseStart, noiseEnd, outDataName);
+            kkNoise++;
+          }
+
+          // Apply values while going through data
+          row = (uint32)line;
           switch (tiffInfo.format) 
           {
             case SCANLINE_TIFF:
@@ -630,7 +726,9 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
               asfPrintError("Can't read this TIFF format!\n");
               break;
           }
-          for (sample=0; sample<meta->general->sample_count; sample++) {
+          for (sample=0; sample<sample_count; sample++) {
+            calIndex = (line - cal[calStart].line)*sample_count + sample;
+            noiseIndex = (line - lut[noiseStart].line)*sample_count + sample;
             switch (sample_format)
             {
               case SAMPLEFORMAT_UINT:
@@ -643,16 +741,16 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
                 break;
             }
             if (detected) {
-              noise[sample] = 
-                fabs(lutNoise[sample])/(calValue[sample]*calValue[sample]);
+              noise = fabs(lutNoise[noiseIndex])/
+                (calValue[calIndex]*calValue[calIndex]);
               if (noiseCount == 0) {
-                if (ISNAN(mask) || !FLOAT_EQUIVALENT(noise[sample], mask)) {
-                  noise_mean += noise[sample];
+                if (ISNAN(mask) || !FLOAT_EQUIVALENT(noise, mask)) {
+                  noise_mean += noise;
                   pixelCount++;
                 }
               }
-              scaledPower = 
-                (re*re - lutNoise[sample])/(calValue[sample]*calValue[sample]);
+              scaledPower = (re*re - lutNoise[noiseIndex])/
+                (calValue[calIndex]*calValue[calIndex]);
               if (radiometry == r_SIGMA_DB || radiometry == r_BETA_DB || 
                 radiometry == r_GAMMA_DB)
                 if (scaledPower < 0)
@@ -667,33 +765,26 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
               phase[sample] = atan2(im, re);
             }
           }
-          if (detected) {
-            put_band_float_line(fpOut, meta, band, (int)row, amp);
-            put_band_float_line(fpNoise, metaNoise, noiseCount, (int)row, noise);
-          }
+          if (detected)
+            put_band_float_line(fpOut, meta, band, line, amp);
           else {
-            put_band_float_line(fpOut, meta, band*2, (int)row, amp);
-            put_band_float_line(fpOut, meta, band*2+1, (int)row, phase);
+            put_band_float_line(fpOut, meta, band*2, line, amp);
+            put_band_float_line(fpOut, meta, band*2+1, line, phase);
           }
+          asfLineMeter(line, meta->general->line_count);
         }
-        
+          
         noiseCount++;
         FREE(amp);
         FREE(phase);
         FREE(calValue);
+        calValue = NULL;
         FREE(lutNoise);
-        FREE(noise);
-        if (tmp)
-          FREE(tmp);
+        lutNoise = NULL;
         _TIFFfree(tiff_buf);
         GTIFFree(gtif);
         XTIFFClose(tiff);
-        FCLOSE(fpCal);
-        meta_free(metaCal);
-        meta_free(metaNoise);
       }
-      FCLOSE(fpOut);
-      FCLOSE(fpNoise);
       FREE(sentinel->stVec);
       FREE(sentinel->gcp);
       for (band=0; band<255; band++)
@@ -701,10 +792,6 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
       FREE(sentinel->data);
       FREE(sentinel->file);
       FREE(sentinel);
-
-      // Clean up
-      asfPrintStatus("Removing temporary directory: %s\n", tmpDir);
-      remove_dir(tmpDir);
     }
     
     // Store the mean value for the noise floor
@@ -716,7 +803,6 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
     meta_write(meta, outDataName);
     meta_free(meta);
     FREE(files);
-    FREE(tmp);
   }
   else if (strcmp_case(productType, "OCN") == 0) {
     if (strcmp_case(beamMode, "IW") == 0 ||
