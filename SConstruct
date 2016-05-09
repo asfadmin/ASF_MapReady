@@ -40,7 +40,7 @@ AddOption("--release_build",
 
 # parse and check command line options
 release_build = GetOption("release_build")
-inst_base = GetOption("prefix")
+inst_base = os.path.expanduser(GetOption("prefix"))
 pkg_version = GetOption("pkg_version")
 
 globalenv = Environment(TOOLS = ["default", add_UnitTest, checkEndian])
@@ -58,12 +58,13 @@ header_dirs = {}
 if GetOption("header_prefix") is None:
     header_dirs = inst_dirs
 else:
+    header_prefix = os.path.expanduser(GetOption("header_prefix"))
     header_dirs = {
-        "bins":   os.path.join(GetOption("header_prefix"), "bin"),
-        "libs":   os.path.join(GetOption("header_prefix"), "lib"),
-        "shares": os.path.join(GetOption("header_prefix"), "share/asf_tools"),
-        "mans":   os.path.join(GetOption("header_prefix"), "man"),
-        "docs":   os.path.join(GetOption("header_prefix"), "doc"),
+        "bins":   os.path.join(header_prefix, "bin"),
+        "libs":   os.path.join(header_prefix, "lib"),
+        "shares": os.path.join(header_prefix, "share/asf_tools"),
+        "mans":   os.path.join(header_prefix, "man"),
+        "docs":   os.path.join(header_prefix, "doc"),
     }
 
 endian = checkEndian(globalenv)
