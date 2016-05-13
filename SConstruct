@@ -38,6 +38,13 @@ AddOption("--release_build",
           default = False,
           )
 
+AddOption("--no_gui",
+          dest = "no_gui",
+          action = "store_true",
+          help = "Don't build the GUI tools.",
+          default = False,
+          )
+
 # parse and check command line options
 release_build = GetOption("release_build")
 inst_base = os.path.expanduser(GetOption("prefix"))
@@ -109,10 +116,15 @@ lib_subs = [
     "libasf_remap",
 ]
 
-src_subs = lib_subs + [
-    "add_aux_band",
+gui_tool_subs = [
     "asf_view",
+    "metadata_gui",
     "mapready",
+    "proj2proj",
+]
+
+cmdline_tool_subs = [
+    "add_aux_band",
     "adjust_bands",
     "asf_import",
     "asf_export",
@@ -132,8 +144,6 @@ src_subs = lib_subs + [
     "make_overlay",
     "asf_kml_overlay",
     "sample_plugin",
-    "metadata_gui",
-    "proj2proj",
     "refine_geolocation",
     "shift_geolocation",
     "flip",
@@ -178,8 +188,13 @@ src_subs = lib_subs + [
     "measures2netcdf",
     "measures2geotiff",
     "measures_hdf2csv",
-    "rgps2vector"
-    ]
+    "rgps2vector",
+]
+
+if GetOption("no_gui") == True:
+    src_subs = lib_subs + cmdline_tool_subs
+else:
+    src_subs = lib_subs + cmdline_tool_subs + gui_tool_subs
 
 # paths where the libraries will be built
 build_base = os.path.join("build", platform.system() + "-" + platform.machine() + "-")
