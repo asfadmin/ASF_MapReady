@@ -468,10 +468,7 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
       else
         rp = 0.0;
       red[ii] = (2.0*rp*(1 - blue_mask) + zp*blue_mask)*255;
-      if (xp < 0)
-        green[ii] = (2.0*zp*blue_mask)*255;
-      else
-        green[ii] = (3.0*sqrt(xp)*(1 - blue_mask) + 2.0*zp*blue_mask)*255;
+      green[ii] = (3.0*sqrt(xp)*(1 - blue_mask) + 2.0*zp*blue_mask)*255;
       blue[ii] = (5.0*zp*blue_mask)*255;
     }
     put_band_float_line(fpOut, metaOut, 0, kk, red);
