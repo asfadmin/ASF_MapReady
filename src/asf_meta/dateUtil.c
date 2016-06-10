@@ -917,3 +917,26 @@ void ursa2date(const char *s, ymd_date *date, hms_time *time)
   time->sec = sec;
 #undef subStr
 }
+
+// YYYY-MM-DDThh:mm:ss.ssssss
+// 01234567890123456789
+void iso2date(const char *s, ymd_date *date, hms_time *time)
+{
+  char inStr[256];
+  if (strlen(s)>255) asfPrintError("iso2date: string too long: %s\n", s);
+  strcpy(inStr, s);
+  char buf[100];
+  int i,sec,msec;
+  if (strcmp(inStr, "???") == 0)
+    sprintf(inStr, "1900-01-01T00:00:00.000000");
+#define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
+  subStr(0,4,&date->year);
+  subStr(5,2,&date->month);
+  subStr(8,2,&date->day);
+  subStr(11,2,&time->hour);
+  subStr(14,2,&time->min);
+  subStr(17,2,&sec);
+  subStr(20,6,&msec);
+  time->sec = sec + msec/1000000.0;
+#undef subStr
+}

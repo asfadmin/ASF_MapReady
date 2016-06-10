@@ -211,6 +211,8 @@ char *image_data_type2str(image_data_type_t image_data_type)
     strcpy(str, "VORTICITY");
   else if (image_data_type == SHEAR)
     strcpy(str, "SHEAR");
+  else if (image_data_type == MODEL_OUTPUT)
+    strcpy(str, "MODEL_OUTPUT");
   else
     strcpy(str, MAGIC_UNSET_STRING);
 
@@ -1190,6 +1192,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
 			"Constant offset B");
 	meta_put_double(fp,"slc:",meta->calibration->r2->slc,"Data SLC?");
 	break;
+	    case sentinel_cal:
+	    meta_put_string(fp,"type:","SENTINEL",comment);
+	    meta_put_double(fp,"noise_mean:",meta->calibration->sentinel->noise_mean,
+	      "Mean value of the noise floor");
+	    break;
     }
 
     meta_put_string(fp,"}","","End calibration");
@@ -1545,14 +1552,12 @@ void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 void meta_put_double(FILE *meta_file,char *name,double value,char *comment)
 {
   char param[64];
+  strcpy(param,"NaN");
   if (meta_is_valid_double(value))
   {
     sprintf(param,"%-16.11g",value);
     strtok(param," ");/*remove all trailing spaces */
     if (is_empty(param)) { strcpy(param,"NaN"); }
-  }
-  else {
-    strcpy(param,"NaN");
   }
   meta_put_string(meta_file,name,param,comment);
 }
@@ -1576,17 +1581,15 @@ void meta_put_char(FILE *meta_file,char *name,char value,char *comment)
 void meta_put_double_lf(FILE *meta_file,char *name,double value,int decimals,
             char *comment)
 {
-  char param[100];
+  char param[250];
+  strcpy(param, "NaN");
   if (meta_is_valid_double(value))
   {
-    char format[15];
+    char format[64];
     sprintf(format, "%%-16.%if", decimals);
-    snprintf(param,99,format,value);
+    snprintf(param,249,format,value);
     strtok(param," ");/*remove all trailing spaces */
     if (is_empty(param)) { strcpy(param,"nan"); }
-  }
-  else {
-    strcpy(param,"nan");
   }
   meta_put_string(meta_file,name,param,comment);
 }
@@ -2203,6 +2206,11 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
 	      mc->uavsar->altitude);
       fprintf(fp, "    <terrain_height units=\"m\">%.3f</terrain_height>\n",
 	      mc->uavsar->terrain_height);
+    }
+    else if (mc->type == sentinel_cal) {
+      fprintf(fp, "    <type>SENTINEL</type>\n");
+      fprintf(fp, "    <noise_mean>%.6f</noise_mean>\n", 
+        mc->sentinel->noise_mean);
     }
     fprintf(fp, "  </calibration>\n");
   }

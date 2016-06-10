@@ -80,7 +80,7 @@ following defines.
 "        Force input data to be read as the given format type. Valid formats\n"\
 "        are 'ceos', 'stf', 'geotiff', 'airsar', 'uavsar', 'bil',\n"\
 "        'gridfloat', 'vp', 'polsarpro', 'gamma', 'roipac', 'alos_mosaic',\n"\
-"        'terrasar', 'radarsat2', 'seasat_h5' and 'jaxa_L0'.\n"\
+"        'terrasar', 'radarsat2', 'seasat_h5', 'sentinel' and 'jaxa_L0'.\n"\
 "        The 'jaxa_L0' format refers to the ALOS AVNIR-2 Level 0 dataset\n"\
 "        format. 'CEOS' is the default behavior.\n"\
 "   -ancillary-file <file>\n"\
@@ -560,7 +560,7 @@ int main(int argc, char *argv[])
         if(flags[f_GAMMA] != FLAG_NOT_SET)    temp++;
         if(flags[f_POWER] != FLAG_NOT_SET)    temp++;
         if(flags[f_SPROCKET] != FLAG_NOT_SET) temp++;
-        if(flags[f_LUT] != FLAG_NOT_SET)      temp++;
+        //if(flags[f_LUT] != FLAG_NOT_SET)      temp++;
         if(temp > 1)/*If more than one option was selected*/
 
             print_usage();
@@ -748,14 +748,17 @@ int main(int argc, char *argv[])
     if(flags[f_LOG] != FLAG_NOT_SET)
         strcpy(logFile, argv[flags[f_LOG] + 1]);
     else /*default behavior: log to tmp<pid>.log*/
-        sprintf(logFile, "tmp%i.log", (int)getpid());
+        //sprintf(logFile, "tmp%i.log", (int)getpid());
+        strcpy(logFile, get_tmp_log_file("asf_import"));
     logflag = TRUE; /* Since we always log, set the old school logflag to true */
 
+    /*
     // Open log file in output folder
     char path[1024], tmp[1024];
     split_dir_and_file(argv[argc-1], path, tmp);
     strcpy(tmp, logFile);
     sprintf(logFile, "%s%s", path, tmp);
+    */
     fLog = fopen(logFile, "a");
     if ( fLog == NULL ) {
       logflag = FALSE;
@@ -859,11 +862,11 @@ int main(int argc, char *argv[])
         if (flags[f_POWER] != FLAG_NOT_SET) {
             pixel_type_flag_looker(&flag_count, flags_used, "power");
         }
-        if (flags[f_LUT] != FLAG_NOT_SET) {
-            pixel_type_flag_looker(&flag_count, flags_used, "lut");
-        }
+        //if (flags[f_LUT] != FLAG_NOT_SET) {
+        //    pixel_type_flag_looker(&flag_count, flags_used, "lut");
+        //}
         if (flag_count > 1) {
-            sprintf(logbuf, "Cannot mix the %s flags.", flags_used);
+            sprintf(logbuf, "Cannot mix the %s flags.\n", flags_used);
             asfPrintError(logbuf);
         }
     } /* END: Check for conflict between pixel type flags */
@@ -923,6 +926,8 @@ int main(int argc, char *argv[])
       format_type = SMAP;
     else if (strncmp_case(format_type_str, "SEASAT_H5", 9) == 0)
       format_type = SEASAT_H5;
+    else if (strncmp_case(format_type_str, "SENTINEL", 8) == 0)
+      format_type = SENTINEL;
     else
       asfPrintError("Unsupported format: %s\n", format_type_str);
     }
@@ -1108,7 +1113,8 @@ int main(int argc, char *argv[])
 
     /* If the user didn't ask for a log file then we can nuke the one that
        we've been keeping since we've finished everything  */
-    fclose (fLog);
+    if (logflag && fLog)
+        FCLOSE (fLog);
     if(flags[f_LOG] == FLAG_NOT_SET)
         remove(logFile);
 

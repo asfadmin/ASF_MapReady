@@ -216,5 +216,6 @@ int date_diff(long date1, long date2);
 char *fgdc_date(void);
 char *iso_date(void);
 void ursa2date(const char *inStr, ymd_date *date, hms_time *time);
+void iso2date(const char *s, ymd_date *date, hms_time *time);
 
 #endif

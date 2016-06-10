@@ -188,7 +188,7 @@ void write_kml_placemark(FILE *kml_file, char *name, double center_lat,
     double *mLat = (double *) MALLOC(sizeof(double)*(nCoords+5));
     double *mLon = (double *) MALLOC(sizeof(double)*(nCoords+5));
 
-    split_polygon(lat, lon, 5, start, mLat, mLon);
+    split_polygon(lat, lon, 5, start, mLat, mLon, 60);
     fprintf(kml_file, "  <MultiGeometry>\n");
     write_kml_object(kml_file, cfg, png_filename, 0, start[1], mLat, mLon);
     write_kml_object(kml_file, cfg, png_filename, start[1], 10, mLat, mLon);

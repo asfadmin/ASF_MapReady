@@ -1121,7 +1121,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     check_return(asf_import(r_AMP, FALSE, FALSE, FALSE, -1, -1, FALSE, 
 			    GENERIC_GEOTIFF, NULL, NULL, what, NULL, NULL, 
 			    -999, -999, -999, -999, 0, 0, -99, -99, 0, NULL, 
-			    NULL, NULL, FALSE, NULL, tiff_basename, 
+			    NULL, NULL, FALSE, NULL, tiff_file, 
 			    ancillary_file, NULL, NULL, NULL, NULL, NULL, 
 			    FALSE, NULL, FALSE, imported),
         status);

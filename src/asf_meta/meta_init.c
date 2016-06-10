@@ -213,7 +213,7 @@ meta_calibration *meta_calibration_init(void)
   cal->alos = NULL;
   cal->tsx = NULL;
   cal->uavsar = NULL;
-
+  cal->sentinel = NULL;
   return cal;
 }
 
@@ -642,6 +642,7 @@ void meta_free(meta_parameters *meta)
       FREE(meta->calibration->asf_scansar);
       FREE(meta->calibration->tsx);
       FREE(meta->calibration->uavsar);
+      FREE(meta->calibration->sentinel);
       FREE(meta->calibration);
       meta->calibration = NULL;
     }

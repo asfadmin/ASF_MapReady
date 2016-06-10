@@ -250,7 +250,8 @@ int main(int argc, char *argv[])
     strcpy(logFile, argv[flags[f_LOG] + 1]);
   else
     /* default behavior: log to tmp<pid>.log */
-    sprintf(logFile, "tmp%i.log", (int)getpid());
+    //sprintf(logFile, "tmp%i.log", (int)getpid());
+    strcpy(logFile, get_tmp_log_file("image_stats"));
   fLog = FOPEN(logFile, "a");
 
   /* Fetch required arguments */
@@ -316,7 +317,8 @@ int main(int argc, char *argv[])
       bufImage = (float *) MALLOC(samples * sizeof(float));
       printf("   Generating mask file ...\n");
       maskFile = (char *) MALLOC(255*sizeof(char));
-      sprintf(maskFile, "tmp%i.mask", (int)getpid());
+      sprintf(maskFile, "%s%ctmp%i.mask", 
+        get_asf_tmp_dir(), DIR_SEPARATOR, (int)getpid());
       fpMask = fopenImage(maskFile, "wb");
       bufMask = (unsigned char *) MALLOC(samples * sizeof(char));
       for (ii=0; ii<lines; ii++) {
@@ -339,15 +341,18 @@ int main(int argc, char *argv[])
   /* Create grid for least square approach */
   printf("   Initialization ...\n");
   if (flags[f_LOOK] != FLAG_NOT_SET) {
-    sprintf(outLook, "tmp%i.look", (int)getpid());
+    sprintf(outLook, "%s%ctmp%i.look", 
+      get_asf_tmp_dir(), DIR_SEPARATOR, (int)getpid());
     fpLook = FOPEN(outLook, "w");
   }
   if (flags[f_INCIDENCE] != FLAG_NOT_SET) {
-    sprintf(outIncid, "tmp%i.incid", (int)getpid());
+    sprintf(outIncid, "%s%ctmp%i.incid", 
+      get_asf_tmp_dir(), DIR_SEPARATOR, (int)getpid());
     fpIncid = FOPEN(outIncid, "w");
   }
   if (flags[f_RANGE] != FLAG_NOT_SET) {
-    sprintf(outRange, "tmp%i.range", (int)getpid());
+    sprintf(outRange, "%s%ctmp%i.range", 
+      get_asf_tmp_dir(), DIR_SEPARATOR, (int)getpid());
     fpRange = FOPEN(outRange, "w");
   }
 

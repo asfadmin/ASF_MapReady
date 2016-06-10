@@ -16,6 +16,7 @@ DESCRIPTION:
 #include "radarsat2.h"
 #include "smap.h"
 #include "asf_license.h"
+#include "xml_util.h"
 
 // NOTE: The META format type applies to both ASF metadata files and all
 // leader data files (.L, .par, LED- etcetera)
@@ -28,6 +29,7 @@ typedef enum {
   POINT,
   POLYGON,
   SMAP_BOUNDARY,
+  SENTINEL_META,
   RGPS,
   RGPS_GRID,
   RGPS_WEATHER,
@@ -142,6 +144,8 @@ typedef struct
   char color[25];                // color of boundary line
   int short_config;              // short configuration file flag
   int nosplit;                   // no splitting of vectors at the dateline
+  double wrapdateline;           // tolerance for wrapping around the dateline
+                                 // default of -1 means no wrapping
   int debug;                     // debugging flag
 } c2v_config;
 
@@ -164,7 +168,7 @@ int isrgps(char *inFile);
 int isparfile(char *inFile);
 int isterrasar(char *inFile);
 void split_polygon(double *lat, double *lon, int nCoords, 
-  int *start, double *mLat, double *mLon);
+  int *start, double *mLat, double *mLon, double tolerance);
 
 // Prototypes from header.c
 char *get_column(char *line, int column);
@@ -193,6 +197,7 @@ void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape);
 void close_shape(DBFHandle dbase, SHPHandle shape);
 int latlon2shape(char *inFile, char *outFile);
 int smap2shape(char *inFile, char *outFile);
+int sentinel2shape(char *inFile, char *outFile);
 int point2shape(char *inFile, char *outFile);
 void csv2shape(char *inFile, char *format, char *outFile, c2v_config *cfg);
 void shape2latlon(char *infile, double **latArray, double **lonArray, 
@@ -208,6 +213,10 @@ void geotiff2vector(char *inFile, dbf_header_t **dbf, int *nAttr,
 void polygon2vector(char *inFile, dbf_header_t **dbf, int *nAttr, 
   double **latArray, double **lonArray, int *nCoords);
 void smap2vector(char *inFile, dbf_header_t **dbf, int *nAttr, 
+  double **latArray, double **lonArray, int *nCoords);
+void sentinel2vector(char *inFile, char *type, dbf_header_t **dbf, int *nAttr, 
+  double **latArray, double **lonArray, int *nCoords);
+void satellite2vector(char *line, char *type, dbf_header_t **dbf, int *nAttr, 
   double **latArray, double **lonArray, int *nCoords);
 
 #endif

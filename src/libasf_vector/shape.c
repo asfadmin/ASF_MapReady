@@ -842,7 +842,7 @@ void write_shape_object_ext(SHPHandle shape, int nCoords, double *lat,
     double *mLat = (double *) MALLOC(sizeof(double)*(nCoords+5));
     double *mLon = (double *) MALLOC(sizeof(double)*(nCoords+5));
 
-    split_polygon(lat, lon, nCoords, start, mLat, mLon);
+    split_polygon(lat, lon, nCoords, start, mLat, mLon, 60);
     
     SHPObject *shapeObject=NULL;
     shapeObject = SHPCreateObject(SHPT_POLYGON, -1, 2, start, NULL, nCoords+5, 
@@ -850,6 +850,35 @@ void write_shape_object_ext(SHPHandle shape, int nCoords, double *lat,
     SHPWriteObject(shape, -1, shapeObject);
     SHPDestroyObject(shapeObject);
 
+    FREE(mLat);
+    FREE(mLon);
+    FREE(start);
+  }
+  else {
+    SHPObject *shapeObject=NULL;
+    shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, nCoords, lon, lat, NULL);
+    SHPWriteObject(shape, -1, shapeObject);
+    SHPDestroyObject(shapeObject);
+  }
+}
+
+void write_shape_object_dateline(SHPHandle shape, int nCoords, double *lat,
+  double *lon, double tolerance)
+{
+  // Check whether we need to split up the polygon
+  if (crosses_dateline(lon, 0, nCoords) && tolerance > 0) {
+    int *start = (int *) MALLOC(sizeof(int)*2);
+    double *mLat = (double *) MALLOC(sizeof(double)*(nCoords+5));
+    double *mLon = (double *) MALLOC(sizeof(double)*(nCoords+5));
+  
+    split_polygon(lat, lon, nCoords, start, mLat, mLon, tolerance);
+  
+    SHPObject *shapeObject=NULL;
+    shapeObject = SHPCreateObject(SHPT_POLYGON, -1, 2, start, NULL, nCoords+5,
+      mLon, mLat, NULL, NULL);
+    SHPWriteObject(shape, -1, shapeObject);
+    SHPDestroyObject(shapeObject);
+  
     FREE(mLat);
     FREE(mLon);
     FREE(start);
@@ -976,7 +1005,7 @@ void csv2shape(char *inFile, char *format, char *outFile, c2v_config *cfg)
 {  
   DBFHandle dbase = NULL;
   SHPHandle shape = NULL;
- 
+
   // Read header file
   FILE *fpIn;
   dbf_header_t *header;
@@ -1191,7 +1220,8 @@ void csv2shape(char *inFile, char *format, char *outFile, c2v_config *cfg)
       FREE(cols);
       write_shape_attributes(dbase, nCols, n, header);
       if (strcmp_case(shape_type, "POLYGON") == 0)
-        write_shape_object(shape, nVertices+1, lat, lon);
+        write_shape_object_dateline(shape, nVertices+1, lat, lon, 
+          cfg->wrapdateline);
       else {
         SHPObject *shapeObject = NULL;
         shapeObject = SHPCreateSimpleObject(SHPT_ARC, nVertices, lon, lat,

@@ -16,6 +16,7 @@ LIBS  = \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(XML_LIBS) \
+	$(NETCDF_LIBS) \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
@@ -26,6 +27,7 @@ CFLAGS += $(W_ERROR) \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
 	$(XML_CFLAGS) \
+	$(NETCDF_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GSL_CFLAGS) \

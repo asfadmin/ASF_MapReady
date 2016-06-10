@@ -613,7 +613,6 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     ///////// STANDARD UTM (PCS CODE) //////////
     // Get datum and zone as appropriate
     read_count = GTIFKeyGet (input_gtif, ProjectedCSTypeGeoKey, &pcs, 0, 1);
-
     // Quick hack for Rick's State Plane data
     // Only supports State Plane 
     if (read_count && pcs >= 26931 && pcs <=26940) {
@@ -622,6 +621,34 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
       proj_coords_trans = CT_TransverseMercator;
       datum = mp->datum = NAD83_DATUM;
       mp->spheroid = GRS1980_SPHEROID;
+    }
+
+    // Some GeoTIFF are entirely defined by their predefined project coordinate
+    // system key - the use of gdalwarp for geocoding using an EPSG code does
+    // that, for example
+    if (read_count && pcs == 3413) {
+      // WGS 84 / NSIDC Sea Ice Polar Stereographic North
+      mp->type = POLAR_STEREOGRAPHIC;
+      mp->hem = 'N';
+      mp->param.ps.slat = 0.0;
+      mp->param.ps.slon = 0.0;
+      mp->param.ps.is_north_pole = TRUE;
+      mp->param.ps.false_easting = 0.0;
+      mp->param.ps.false_northing = 0.0;
+      datum = mp->datum = WGS84_DATUM;
+      mp->spheroid = WGS84_SPHEROID;
+    }
+    else if (read_count && pcs == 3031) {
+      // WGS 84 / Antarctic Polar Stereographic
+      mp->type = POLAR_STEREOGRAPHIC;
+      mp->hem = 'S';
+      mp->param.ps.slat = 0.0;
+      mp->param.ps.slon = 0.0;
+      mp->param.ps.is_north_pole = FALSE;
+      mp->param.ps.false_easting = 0.0;
+      mp->param.ps.false_northing = 0.0;
+      datum = mp->datum = WGS84_DATUM;
+      mp->spheroid = WGS84_SPHEROID;
     }
 
     if (!read_count) {
@@ -2898,6 +2925,9 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
               break;
             case SAMPLEFORMAT_INT:
               ((long*)buf)[col] = (long)(((long*)sbuf)[idx]);
+              break;
+            case SAMPLEFORMAT_COMPLEXINT:
+              ((uint32*)buf)[col] = (uint32)(((uint32*)sbuf)[idx]);
               break;
             case SAMPLEFORMAT_IEEEFP:
               ((float*)buf)[col] = (float)(((float*)sbuf)[idx]);

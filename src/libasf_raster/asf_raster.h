@@ -21,6 +21,7 @@ typedef enum {
   SIGMA,
   SIGMA3,
   HISTOGRAM_EQUALIZE,
+  FIXED,
   NONE
 } scale_t;
 
@@ -100,8 +101,12 @@ char *get_band_name(char *band_str, int band_count, int band_num);
 /* Prototypes from scaling.c *************************************************/
 unsigned char *floats_to_bytes (float *data, long long pixel_count, float mask,
 				scale_t scaling);
+unsigned char *floats_to_bytes_ext(float *data, long long pixel_count, 
+  float mask, scale_t scaling, float scale_factor);
 void floats_to_bytes_from_file(const char *inFile, const char *outFile,
                                char *band, float mask, scale_t scaling);
+void floats_to_bytes_from_file_ext(const char *inFile, const char *outFile,
+  char *band, float mask, scale_t scaling, float scale_factor);
 
 /* Prototypes from stats.c ***************************************************/
 void calc_stats_rmse_from_file(const char *inFile, char *band, double mask, double *min,
@@ -223,6 +228,7 @@ int fit_warp(const char *offsetsFile, const char *imageName, const char *outName
 typedef enum {
   UNKNOWN_GRAPHICS_TYPE=0,
   ASF_IMG,
+  ENVI_IMG,
   JPEG_IMG,
   PGM_IMG,
   PPM_IMG,
@@ -231,7 +237,9 @@ typedef enum {
   GEO_TIFF_IMG,
   BMP_IMG,
   GIF_IMG,
-  PNG_IMG
+  PNG_IMG,
+  ENVI_MAT,
+  GEO_TIFF_MAT
 } graphics_file_t;
 
 typedef struct {

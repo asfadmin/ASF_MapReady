@@ -467,6 +467,8 @@ AC_SUBST(BINDIR)
 DOCDIR="$prefix/doc"
 AC_SUBST(DOCDIR)
 
+TMPDIR="/tmp"
+
 AC_OUTPUT([
 Makefile
 include/config.h

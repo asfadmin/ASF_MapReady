@@ -34,20 +34,30 @@ typedef enum {
   PALSAR_FBD,
   PALSAR_PLR,
   SENTINEL_DUAL,
+  NOISE_CAL,
   NOTYPE
 } browse_type_t;
+
+typedef struct {
+  float minOldLimit;
+  float maxOldLimit;
+  float minNewLimit;
+  float maxNewLimit;
+  float floor;
+  float sigma;
+} stretch_type_t;
 
 unsigned char *my_floats_to_bytes (float *data, long long pixel_count, float mask,
 				scale_t scaling,float min, float max);
 
-#define VERSION 1.1
+#define VERSION 1.2
 
 void usage(char *name)
 {
   printf("\n"
    "USAGE:\n"
-   "   color_browse [-sentinel <scale>] [-tmpDir <directory] <inFile1> "
-   "<inFile2> [<inFile3>] <outFile\n");
+   "   color_browse [-sentinel <configFile>] [-noise-cal <threshold>]\n"
+   "     [-tmpDir <directory] <inFile1> <inFile2> [<inFile3>] <outFile\n");
   printf("\n"
    "REQUIRED ARGUMENTS:\n"
    "   inFile1   Name of an ASF internal file (HH or VV)\n"
@@ -56,6 +66,9 @@ void usage(char *name)
   printf("\n"
    "OPTIONAL ARGUMENTS:\n"
    "  -sentinel  Input data is from Sentinel instead of ALOS PALSAR (default)\n"
+   "             <configFile> defines the parameters for the calculation\n"
+   "  -noise-cal Calculation using noise/calibration information\n"
+   "             <configFile> defines the parameters for the calculation\n"
    "   inFile3   Name of an ASF internal file (VV for PLR data)\n");
   printf("\n"
    "DESCRIPTION:\n"
@@ -134,15 +147,360 @@ static char *read_str(char *line, char *param)
   return value;
 }
 
+static float read_float(char *line, char *param)
+{
+  char *tmp;
+  float value;
+
+  tmp = read_str(line, param);
+  sscanf(tmp, "%f", &value);
+
+  return value;
+}
+
+static void do_freeman(char *cpFile, char *xpFile, float scale, char *outFile)
+{
+  int ii, kk;
+  meta_parameters *metaIn = meta_read(cpFile);
+  int line_count = metaIn->general->line_count;
+  int sample_count = metaIn->general->sample_count;
+  meta_parameters *metaOut = meta_read(cpFile);
+  strcpy(metaOut->general->bands,"Ps,Pv,Pd");
+  metaOut->general->band_count=3;
+  metaOut->general->data_type = REAL32;
+  float *a = (float *) MALLOC(sizeof(float)*sample_count);
+  float *b = (float *) MALLOC(sizeof(float)*sample_count);
+  float cp, xp, pd, ps, pv;
+  float *pdBuf = (float *) MALLOC(sizeof(float)*sample_count);
+  float *psBuf = (float *) MALLOC(sizeof(float)*sample_count);
+  float *pvBuf = (float *) MALLOC(sizeof(float)*sample_count);
+
+  FILE *fpIn1 = FOPEN(cpFile, "r");
+  FILE *fpIn2 = FOPEN(xpFile, "r");
+  FILE *fpOut = FOPEN(outFile, "w");
+  for (kk=0; kk<line_count; kk++) {
+    get_float_line(fpIn1, metaIn, kk, a);
+    get_float_line(fpIn2, metaIn, kk, b);  
+    for (ii=0; ii<sample_count; ii++) {
+      cp = a[ii];
+      xp = b[ii]; 
+      pv = 4.0*xp*xp;
+      ps = cp*cp - 3.0*xp*xp;
+      pd = pv - ps;
+      pvBuf[ii] = sqrt(pv)*scale;
+      if (ps < 0.0)
+        psBuf[ii] = -sqrt(fabsf(ps))*scale;
+      else
+        psBuf[ii] = sqrt(ps)*scale;
+      if (pd < 0.0)
+        pdBuf[ii] = -sqrt(fabsf(pd))*scale;
+      else
+        pdBuf[ii] = sqrt(pd)*scale;
+    }
+    put_band_float_line(fpOut, metaOut, 0, kk, psBuf);
+    put_band_float_line(fpOut, metaOut, 1, kk, pvBuf);
+    put_band_float_line(fpOut, metaOut, 2, kk, pdBuf);
+    asfLineMeter(kk, line_count);
+  }
+  FCLOSE(fpIn1);
+  FCLOSE(fpIn2);
+  FCLOSE(fpOut);
+  meta_free(metaIn);
+  meta_write(metaOut, outFile);
+  meta_free(metaOut);
+  FREE(a);
+  FREE(b);
+  FREE(pdBuf);
+  FREE(psBuf);
+  FREE(pvBuf);
+}
+
+static void stretch_two_sigma(char *inFile, char *outFile, stretch_type_t *stretch,
+  channel_stats_t *stats)
+{
+  int ii, kk;
+  float minLimit, maxLimit;
+  double min, max, mu, sigma;
+  gsl_histogram *hist;
+
+  meta_parameters *meta = meta_read(inFile);
+  meta_write(meta, outFile);
+  int line_count = meta->general->line_count;
+  int sample_count = meta->general->sample_count;
+  long pixel_count = line_count*sample_count;
+  int band_count = meta->general->band_count;
+  char **bands = extract_band_names(meta->general->bands, band_count);
+
+  float *fBufIn = (float *) MALLOC(sizeof(float)*pixel_count);
+  float *fBufOut = (float *) MALLOC(sizeof(float)*pixel_count);
+  FILE *fpIn = FOPEN(inFile, "rb");
+  FILE *fpOut = FOPEN(outFile, "wb");
+  for (ii=0; ii<band_count; ii++) {
+    calc_stats_from_file(inFile, bands[ii], 0, &min, &max, &mu, &sigma, &hist);
+    minLimit = stretch[ii].minNewLimit;
+    maxLimit = stretch[ii].maxNewLimit;
+    get_band_float_lines(fpIn, meta, ii, 0, line_count, fBufIn);
+    for (kk=0; kk<pixel_count; kk++) {
+      if (FLOAT_EQUIVALENT(fBufIn[kk], 0.0))
+        fBufOut[kk] = 0.0;
+      else
+        fBufOut[kk] = (fBufIn[kk]*(maxLimit - minLimit) + 2.0*sigma - mu)/
+          (4.0*sigma);
+    }
+    put_band_float_lines(fpOut, meta, ii, 0, line_count, fBufOut);
+  }
+  FCLOSE(fpIn);
+  FCLOSE(fpOut);
+  FREE(fBufIn);
+  FREE(fBufOut);
+  meta_free(meta);
+  for (ii=0; ii<band_count; ii++) {
+    calc_stats_from_file(outFile, bands[ii], 0, &min, &max, &mu, &sigma, &hist);
+    stats[ii].min = min;
+    stats[ii].max = max;
+    stats[ii].mean = mu;
+    stats[ii].standard_deviation = sigma;
+    stats[ii].hist = hist;
+  }
+}
+
+static void stretch_limits(char *inFile, char *outFile, stretch_type_t *stretch)
+{
+  int ii, kk;
+  float xl, xh, yl, yh, old_mean, old_std;
+  meta_parameters *meta = meta_read(inFile);
+  int line_count = meta->general->line_count;
+  int sample_count = meta->general->sample_count;
+  long pixel_count = line_count*sample_count;
+  int band_count = meta->general->band_count;
+  if (meta->stats) {
+    FREE(meta->stats);
+    meta->stats = NULL;
+  }
+  meta_write(meta, outFile);
+
+  float *fBufIn = (float *) MALLOC(sizeof(float)*pixel_count);
+  float *fBufOut = (float *) MALLOC(sizeof(float)*pixel_count);
+  FILE *fpIn = FOPEN(inFile, "rb");
+  FILE *fpOut = FOPEN(outFile, "wb");
+  for (ii=0; ii<band_count; ii++) {
+    xl = stretch[ii].minOldLimit;
+    xh = stretch[ii].maxOldLimit;
+    yl = stretch[ii].minNewLimit;
+    yh = stretch[ii].maxNewLimit;
+    old_mean = (xl + xh)/2.0;
+    old_std = old_mean/4.0;
+    get_band_float_lines(fpIn, meta, ii, 0, line_count, fBufIn);
+    for (kk=0; kk<pixel_count; kk++) {
+      if (FLOAT_EQUIVALENT(fBufIn[kk], 0.0))
+        fBufOut[kk] = 0.0;
+      else
+        fBufOut[kk] = (fBufIn[kk] - xl)*(yh - yl)/(xh - xl) + yl;
+    }
+    put_band_float_lines(fpOut, meta, ii, 0, line_count, fBufOut);
+  }
+  FCLOSE(fpIn);
+  FCLOSE(fpOut);
+  FREE(fBufIn);
+  FREE(fBufOut);
+  meta_free(meta);
+}
+
+static void image_two_sigma(char *inFile, char *outFile, char *tmpPath, 
+  stretch_type_t *stretch)
+{
+  int ii;
+  char tmpFile[512];
+  float s = 4.0;
+  float ll, ul, left, right;
+
+  meta_parameters *meta = meta_read(inFile);
+  int band_count = meta->general->band_count;
+  char **bands = extract_band_names(meta->general->bands, band_count);
+  channel_stats_t *stats = 
+    (channel_stats_t *) MALLOC(sizeof(channel_stats_t)*band_count);
+  sprintf(tmpFile, "%s%ctwo_sigma.img", tmpPath, DIR_SEPARATOR);
+  for (ii=0; ii<band_count; ii++) {
+    stretch[ii].minNewLimit = 0.0;
+    stretch[ii].maxNewLimit = 1.0;
+  }
+  stretch_two_sigma(inFile, tmpFile, stretch, stats);
+  for (ii=0; ii<band_count; ii++) {
+    left = stats[ii].mean - s/2.0*stats[ii].standard_deviation;
+    right = stretch[ii].floor;
+    ll = left > right ? left : right;
+    left = stats[ii].mean + s/2.0*stats[ii].standard_deviation;
+    right = stretch[ii].floor+s*stretch[ii].sigma;
+    ul = left > right ? left : right;
+    stretch[ii].minOldLimit = stats[ii].min;
+    stretch[ii].maxOldLimit = stats[ii].max;
+    stretch[ii].minNewLimit = ll;
+    stretch[ii].maxNewLimit = ul;
+  }
+  stretch_limits(tmpFile, outFile, stretch);
+  meta_free(meta);
+  FREE(bands);
+}
+
+static void dual_browse_2sig_floor(char *inFile1, char *inFile2, char *tmpPath,
+  char *configFile, char *outFile)
+{
+  char line[1024], *test, params[512];
+  float my_bright = 1.0/500.0;
+  float brighter = 1.0;
+  float resampleScale = 1.0;
+  stretch_type_t *stretch = (stretch_type_t *) MALLOC(sizeof(stretch_type_t)*3);
+
+  // Read parameters from configuration file
+  FILE *fp = FOPEN(configFile, "r");
+  if (fp) {
+    while (fgets(line, 1024, fp) != NULL) {
+      if (strncmp(line, "[Scaling]", 9) == 0)
+	      strcpy(params, "scaling");
+      if (strncmp(params, "scaling", 7) == 0) {
+	      test = read_param(line);
+	      if (strncmp(test, "general", 7) == 0)
+	        my_bright = read_float(line, "general");
+	      if (strncmp(test, "mode", 4) == 0)
+	        brighter = read_float(line, "mode");
+	      if (strncmp_case(test, "resample", 8) == 0)
+	        resampleScale = read_float(line, "resample");
+	      if (strncmp(test, "floor1", 6) == 0)
+	        stretch[0].floor = read_float(line, "floor1");
+	      if (strncmp(test, "floor2", 6) == 0)
+	        stretch[1].floor = read_float(line, "floor2");
+	      if (strncmp(test, "floor3", 6) == 0)
+	        stretch[2].floor = read_float(line, "floor3");
+	      if (strncmp(test, "sigma1", 6) == 0)
+	        stretch[0].sigma = read_float(line, "sigma1");
+	      if (strncmp(test, "sigma2", 6) == 0)
+	        stretch[1].sigma = read_float(line, "sigma2");
+	      if (strncmp(test, "sigma3", 6) == 0)
+	        stretch[2].sigma = read_float(line, "sigma3");
+	      FREE(test);
+      }
+    }
+  }
+  FCLOSE(fp);    
+  float bright = my_bright*brighter;
+
+  /*
+  printf("my_bright: %f, brighter: %f, channel ratio: %f, resample: %f\n", 
+    my_bright, brighter, channel_ratio, resampleScale);
+  printf("floor - 1: %f, 2: %f, 3: %f\n", 
+    stretch[0].floor, stretch[1].floor, stretch[2].floor);
+  printf("sigma - 1: %f, 2: %f, 3: %f\n",
+    stretch[0].sigma, stretch[1].sigma, stretch[2].sigma);
+  */
+
+  // Create temporary directory
+  char tmpDir[1024];
+  if (strlen(tmpPath) > 0)
+    sprintf(tmpDir, "%s%cbrowse-", tmpPath, DIR_SEPARATOR);
+  else
+    strcpy(tmpDir, "browse-");
+  strcat(tmpDir, time_stamp_dir());
+  create_clean_dir(tmpDir);
+  asfPrintStatus("Temp dir is: %s\n", tmpDir);
+
+  // Calculate simplified Freeman
+  char tmpIn[512], tmpOut[512];
+  asfPrintStatus("Calculating simplified Freeman decomposition\n");
+  sprintf(tmpIn, "%s%cfreeman.img", tmpDir, DIR_SEPARATOR);
+  do_freeman(inFile1, inFile2, bright, tmpIn);
+
+  // Resample stretched image to browse size
+  asfPrintStatus("Resampling to browse image size\n");
+  sprintf(tmpOut, "%s%cresample.img", tmpDir, DIR_SEPARATOR);
+  meta_parameters *metaIn = meta_read(tmpIn);
+  double scaleFactor = 1.0/(resampleScale/metaIn->general->x_pixel_size);
+  resample(tmpIn, tmpOut, scaleFactor, scaleFactor);
+  meta_free(metaIn);
+
+  // Stretch Freeman image
+  asfPrintStatus("Stretching image to preserve features\n");
+  sprintf(tmpIn, "%s", tmpOut);
+  image_two_sigma(tmpIn, outFile, tmpDir, stretch);
+
+  // Clean up
+  asfPrintStatus("Removing temporary directory: %s\n", tmpDir);
+  remove_dir(tmpDir);
+}
+
+static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
+  float threshold, char *outFile)
+{
+  
+  // Calculate the color browse image
+  int ii, kk;
+  meta_parameters *metaIn = meta_read(inFile1);
+  int line_count = metaIn->general->line_count;
+  int sample_count = metaIn->general->sample_count;
+  float *red = (float *) MALLOC(sizeof(float)*sample_count);
+  float *green = (float *) MALLOC(sizeof(float)*sample_count);
+  float *blue = (float *) MALLOC(sizeof(float)*sample_count);
+  meta_parameters *metaOut = meta_read(inFile1);
+  strcpy(metaOut->general->bands, "Ps,Pv,Pd");
+  metaOut->general->band_count=3;
+  metaOut->general->data_type = REAL32;
+  float *a = (float *) MALLOC(sizeof(float)*sample_count);
+  float *b = (float *) MALLOC(sizeof(float)*sample_count);
+  float cp, xp, rp, zp;
+  int blue_mask;
+  float g = pow(10, threshold/10.0);
+
+  FILE *fpIn1 = FOPEN(inFile1, "rb");
+  FILE *fpIn2 = FOPEN(inFile2, "rb");
+  FILE *fpOut = FOPEN(outFile, "wb");
+  for (kk=0; kk<line_count; kk++) {
+    get_float_line(fpIn1, metaIn, kk, a);
+    get_float_line(fpIn2, metaIn, kk, b);
+    for (ii=0; ii<sample_count; ii++) {
+      cp = (a[ii] > 0.0) ? a[ii] : 0.0;
+      xp = (b[ii] > 0.0) ? b[ii] : 0.0; 
+      blue_mask = (g > xp) ? 1 : 0;
+      if (cp > xp)
+        zp = atan(sqrt(cp-xp))*2.0/PI;
+      else
+        zp = 0.0;
+      if (cp > 3.0*xp)
+        rp = sqrt(cp - 3.0*xp);
+      else
+        rp = 0.0;
+      red[ii] = (2.0*rp*(1 - blue_mask) + zp*blue_mask)*255;
+      if (xp < 0)
+        green[ii] = (2.0*zp*blue_mask)*255;
+      else
+        green[ii] = (3.0*sqrt(xp)*(1 - blue_mask) + 2.0*zp*blue_mask)*255;
+      blue[ii] = (5.0*zp*blue_mask)*255;
+    }
+    put_band_float_line(fpOut, metaOut, 0, kk, red);
+    put_band_float_line(fpOut, metaOut, 1, kk, green);
+    put_band_float_line(fpOut, metaOut, 2, kk, blue);
+    asfLineMeter(kk, line_count);
+  }
+  FCLOSE(fpIn1);
+  FCLOSE(fpIn2);
+  FCLOSE(fpOut);
+  meta_free(metaIn);
+  meta_write(metaOut, outFile);
+  meta_free(metaOut);
+  FREE(a);
+  FREE(b);
+  FREE(red);
+  FREE(green);
+  FREE(blue);
+}
+
 int main(int argc,char *argv[])
 {
   char  infile1[256], infile2[256], infile3[256];  // Input file name                         
   char  outfile[256];         			   // Output file name
-  char tmpPath[1024];
+  char tmpPath[1024], configFile[1024];
   browse_type_t mode = NOTYPE;
   int   i,j;
   int   sample_count;
-  double scale;
+  float threshold;
   extern int currArg;
   strcpy(tmpPath, "");
 
@@ -156,8 +514,13 @@ int main(int argc,char *argv[])
     char *key = argv[currArg++];
     if (strmatches(key, "-sentinel", "--sentinel", NULL)) {
       CHECK_ARG(1);
-      scale = atof(GET_ARG(1));
+      strcpy(configFile, GET_ARG(1));
       mode = SENTINEL_DUAL;
+    }
+    else if (strmatches(key, "-noise-cal", "--noise-cal", NULL)) {
+      CHECK_ARG(1);
+      threshold = atof(GET_ARG(1));
+      mode = NOISE_CAL;
     }
     else if (strmatches(key, "-tmpDir", "--tmpDir", NULL)) {
       CHECK_ARG(1);
@@ -421,90 +784,31 @@ int main(int argc,char *argv[])
     if (strlen(tmpPath) > 0) {
       create_name(infile1,argv[5],".img");
       create_name(infile2,argv[6],".img");
-      create_name(outfile,argv[7],".tif");
+      create_name(outfile,argv[7],".img");
     }
     else {
       create_name(infile1,argv[3],".img");
       create_name(infile2,argv[4],".img");
-      create_name(outfile,argv[5],".tif");
+      create_name(outfile,argv[5],".img");
+    }
+    
+    dual_browse_2sig_floor(infile1, infile2, tmpPath, configFile, outfile);
+  }
+  else if (mode == NOISE_CAL) {
+    asfPrintStatus("Creating colorized browse image using noise/calibration "
+      "information\n");
+    if (strlen(tmpPath) > 0) {
+      create_name(infile1,argv[5],".img");
+      create_name(infile2,argv[6],".img");
+      create_name(outfile,argv[7],".img");
+    }
+    else {
+      create_name(infile1,argv[3],".img");
+      create_name(infile2,argv[4],".img");
+      create_name(outfile,argv[5],".img");
     }
 
-    // Create temporary directory
-    char tmpDir[1024];
-    if (strlen(tmpPath) > 0)
-      sprintf(tmpDir, "%s%cbrowse-", tmpPath, DIR_SEPARATOR);
-    else
-      strcpy(tmpDir, "browse-");
-    strcat(tmpDir, time_stamp_dir());
-    create_clean_dir(tmpDir);
-    asfPrintStatus("Temp dir is: %s\n", tmpDir);
-  
-    // Calculate ratio image
-    char tmpRatio[512], tmpRed[512], tmpGreen[512], tmpBlue[512], tmpIn[512];
-    char *inFiles[2]; 
-    inFiles[0] = (char *) MALLOC(sizeof(char)*255);
-    inFiles[1] = (char *) MALLOC(sizeof(char)*255);
-    strcpy(inFiles[0], infile1);
-    strcpy(inFiles[1], infile2);
-    sprintf(tmpRatio, "%s%cdiv.img", tmpDir, DIR_SEPARATOR);
-    raster_calc(tmpRatio, "a/b", 2, inFiles);
-    
-    // Resample all three bands and scale to byte
-    meta_parameters *metaIn = meta_read(tmpRatio);
-    double scaleFactor = 1.0/(scale/metaIn->general->x_pixel_size);
-    meta_free(metaIn);
-    sprintf(tmpIn, "%s%cred.img", tmpDir, DIR_SEPARATOR);
-    resample(infile1, tmpIn, scaleFactor, scaleFactor);
-    sprintf(tmpRed, "%s%cred_byte.img", tmpDir, DIR_SEPARATOR);
-    floats_to_bytes_from_file(tmpIn, tmpRed, NULL, -40.0, SIGMA);
-    sprintf(tmpIn, "%s%cgreen.img", tmpDir, DIR_SEPARATOR);
-    resample(infile2, tmpIn, scaleFactor, scaleFactor);
-    sprintf(tmpGreen, "%s%cgreen_byte.img", tmpDir, DIR_SEPARATOR);
-    floats_to_bytes_from_file(tmpIn, tmpGreen, NULL, -40.0, SIGMA);
-    sprintf(tmpIn, "%s%cblue.img", tmpDir, DIR_SEPARATOR);
-    resample(tmpRatio, tmpIn, scaleFactor, scaleFactor);    
-    sprintf(tmpBlue, "%s%cblue_byte.img", tmpDir, DIR_SEPARATOR);
-    floats_to_bytes_from_file(tmpIn, tmpBlue, NULL, -40.0, SIGMA);
-
-    // Layer stack the bands
-    char tmpBrowse[512];
-    sprintf(tmpBrowse, "%s%cbrowse.img", tmpDir, DIR_SEPARATOR);
-    FILE *fpOut = FOPEN(tmpBrowse, "w");    
-    meta_parameters *metaOut = meta_read(tmpRed);
-    metaOut->general->band_count = 3;
-    metaIn = meta_read(tmpRed);
-    int line_count = metaIn->general->line_count;
-    int sample_count = metaIn->general->sample_count;
-    
-    float *buf = (float *) MALLOC(sizeof(float)*line_count*sample_count);
-    FILE *fpIn = FOPEN(tmpBlue, "r");
-    get_float_lines(fpIn, metaIn, 0, line_count, buf);
-    put_band_float_lines(fpOut, metaOut, 0, 0, line_count, buf);
-    FCLOSE(fpIn);
-    fpIn = FOPEN(tmpGreen, "r");
-    get_float_lines(fpIn, metaIn, 0, line_count, buf);
-    put_band_float_lines(fpOut, metaOut, 1, 0, line_count, buf);
-    FCLOSE(fpIn);
-    fpIn = FOPEN(tmpRed, "r");
-    get_float_lines(fpIn, metaIn, 0, line_count, buf);
-    put_band_float_lines(fpOut, metaOut, 2, 0, line_count, buf);
-    FCLOSE(fpIn);
-    FCLOSE(fpOut);
-    FREE(buf);
-
-    strcpy(metaOut->general->bands, "red,green,blue");
-    meta_write(metaOut, tmpBrowse);
-    
-    // Export to GeoTIFF
-    char *band_names[3] = { "blue", "green", "red" };
-    asf_export_bands(GEOTIFF, NONE, TRUE, FALSE, FALSE, NULL, FALSE, 
-      tmpBrowse, outfile, band_names, NULL, NULL);
-
-    // Clean up
-    asfPrintStatus("Removing temporary directory: %s\n", tmpDir);
-    remove_dir(tmpDir);
-    meta_free(metaIn);
-    meta_free(metaOut);
+    freeman_mask_atan(infile1, infile2, tmpPath, threshold, outfile);
   }
   else
     asfPrintError("Mode is not defined!\n");
@@ -531,30 +835,14 @@ unsigned char *my_floats_to_bytes (float *data, long long pixel_count, float mas
 	}
 	else if (data[ii] > 255) {
 	  pixels[ii] = 255;
-	}
-	else
-	  pixels[ii] = data[ii] + 0.5;
-      break;
+        }
+        else
+          pixels[ii] = data[ii] + 0.5;
 
     case MINMAX:
       /* Determine the minimum and maximum values for the image. Exclude the 
        * mask value for this calculation */
-      printf("USING MINMAX MAPPING...\n");
-/*
-      for (ii=0; ii<pixel_count; ii++) {
-        if (!ISNAN(mask)) {  
-	  if (data[ii] < imin && !FLOAT_EQUIVALENT(data[ii], mask)) 
-	    imin = data[ii];
-	  if (data[ii] > imax && !FLOAT_EQUIVALENT(data[ii], mask)) 
-	    imax = data[ii];
-	}
-	else {
-	  if (data[ii] < imin) imin = data[ii];
-	  if (data[ii] > imax) imax = data[ii];
-	} 
-      }
-      printf("Calculated min/max as %lf/%lf\n",imin,imax);
-*/
+      printf("USING MINMAX MAPPING ...\n");      
 
       imin = inmin;
       imax = inmax;
@@ -654,4 +942,3 @@ unsigned char *my_floats_to_bytes (float *data, long long pixel_count, float mas
   
   return pixels;
 }
-

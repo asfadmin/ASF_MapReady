@@ -1,6 +1,3 @@
-CFLAGS += $(HDF5_CFLAGS)
-CFLAGS += $(GEOTIFF_CFLAGS)
-CFLAGS += $(HDF5_CFLAGS)
 # Makefile for asf2geobrowse
 
 include ../../make_support/system_rules
@@ -35,7 +32,11 @@ CFLAGS += \
 	$(JPEG_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(SHAPELIB_CFLAGS)
+	$(SHAPELIB_CFLAGS) \
+	$(HDF5_CFLAGS) \
+	$(GEOTIFF_CFLAGS) \
+	$(HDF5_CFLAGS) \
+	$(XML_CFLAGS)
 
 OBJS  = asf2geobrowse.o
 

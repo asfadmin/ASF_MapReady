@@ -4,7 +4,7 @@ CFLAGS += $(GEOTIFF_CFLAGS)
 
 include ../../make_support/system_rules
 
-LIBS = $(XML_LIBS) $(GSL_LIBS) $(PROJ_LIBS) -lm
+LIBS = $(XML_LIBS) $(GSL_LIBS) $(GLIB_LIBS) $(PROJ_LIBS) -lm
 
 # Had to add -Wno-unused-function because flex generates some
 CFLAGS += $(W_ERROR) -Wno-unused-function $(XML_CFLAGS) $(GEOTIFF_CFLAGS) $(HDF5_CFLAGS)
@@ -90,6 +90,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	fixed2gei.o \
 	frame_calc.o \
   gamma_dem2meta.o \
+  gcp2transform.o \
 	gei2fixed.o \
 	getLatLong.o \
 	getLoc.o \
@@ -132,6 +133,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta2terrasar.o \
 	meta2uavsar.o \
 	meta2smap.o \
+	meta2sentinel.o \
 	meta2iso.o \
 	meta_read.o \
 	meta_write.o \

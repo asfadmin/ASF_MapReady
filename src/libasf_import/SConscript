@@ -26,6 +26,7 @@ localenv.AppendUnique(LIBS = [
     "geotiff",
     "glib-2.0",
     "gdal",
+    "netcdf",
 ])
 
 libs = localenv.SharedLibrary("libasf_import", [
@@ -64,6 +65,8 @@ libs = localenv.SharedLibrary("libasf_import", [
         "import_dem.c",
         "import_roipac.c",
         "import_smap.c",
+	"import_sentinel.c",
+	"import_netcdf.c",
         "config_fgdc.c",
         "missing.c",
         "projected_image_import.c",
@@ -77,5 +80,12 @@ libs = localenv.SharedLibrary("libasf_import", [
         "import_seasat_h5.c",
         ])
 
+shares = [
+     localenv.Dir([
+        "#src/libasf_import/sentinel",
+     ]),
+]
+
 localenv.Install(globalenv["inst_dirs"]["libs"], libs)
+localenv.Install(globalenv["inst_dirs"]["shares"], shares)
 

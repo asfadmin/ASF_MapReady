@@ -201,7 +201,8 @@ int main (int argc, char *argv[])
   meta_parameters *meta = meta_read(inFile);
   if (strcmp_case(meta->general->sensor, "SMAP") == 0)
     smap = TRUE;
-  if (meta->projection && meta->projection->type != SCANSAR_PROJECTION) {
+  if (meta->projection && meta->projection->type != SCANSAR_PROJECTION &&
+    latlon == FALSE) {
     map = TRUE;
     projected = TRUE;
   }

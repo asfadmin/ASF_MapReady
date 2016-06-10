@@ -1,6 +1,3 @@
-CFLAGS += $(HDF5_CFLAGS)
-CFLAGS += $(GEOTIFF_CFLAGS)
-CFLAGS += $(HDF5_CFLAGS)
 # Makefile for write_hdf5_xml
 # Author Rudi Gens
 
@@ -23,11 +20,15 @@ LIBS  = \
 	-lm
 
 CFLAGS += $(GSL_CFLAGS) \
-  $(GLIB_CFLAGS) \
-  $(PROJ_CFLAGS) \
-  $(TIFF_CFLAGS) \
-  $(GEOTIFF_CFLAGS) \
-  $(JPEG_CFLAGS)
+ 	$(GLIB_CFLAGS) \
+ 	$(PROJ_CFLAGS) \
+ 	$(TIFF_CFLAGS) \
+ 	$(GEOTIFF_CFLAGS) \
+ 	$(JPEG_CFLAGS) \
+	$(HDF5_CFLAGS) \
+	$(GEOTIFF_CFLAGS) \
+	$(HDF5_CFLAGS) \
+        $(XML_CFLAGS)
 
 OBJS_M2X = write_hdf5_xml.o
 
