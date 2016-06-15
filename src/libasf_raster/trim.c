@@ -115,7 +115,7 @@ int trim(char *infile, char *outfile,
     offset=0;
     
     for (;y<lastReadY;y++) {
-      int inputY=y+startY,
+      long long int inputY=y+startY,
         inputX=firstReadX+startX,
         outputX=firstReadX;
       
