@@ -1,3 +1,4 @@
 #define ASF_SHARE_DIR "@SHAREDIR@"
 #define ASF_BIN_DIR "@BINDIR@"
 #define ASF_DOC_DIR "@DOCDIR@"
+#define ASF_TMP_DIR "@TMPDIR@"

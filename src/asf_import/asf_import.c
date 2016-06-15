@@ -748,14 +748,17 @@ int main(int argc, char *argv[])
     if(flags[f_LOG] != FLAG_NOT_SET)
         strcpy(logFile, argv[flags[f_LOG] + 1]);
     else /*default behavior: log to tmp<pid>.log*/
-        sprintf(logFile, "tmp%i.log", (int)getpid());
+        //sprintf(logFile, "tmp%i.log", (int)getpid());
+        strcpy(logFile, get_tmp_log_file("asf_import"));
     logflag = TRUE; /* Since we always log, set the old school logflag to true */
 
+    /*
     // Open log file in output folder
     char path[1024], tmp[1024];
     split_dir_and_file(argv[argc-1], path, tmp);
     strcpy(tmp, logFile);
     sprintf(logFile, "%s%s", path, tmp);
+    */
     fLog = fopen(logFile, "a");
     if ( fLog == NULL ) {
       logflag = FALSE;
@@ -1110,7 +1113,8 @@ int main(int argc, char *argv[])
 
     /* If the user didn't ask for a log file then we can nuke the one that
        we've been keeping since we've finished everything  */
-    fclose (fLog);
+    if (logflag && fLog)
+        FCLOSE (fLog);
     if(flags[f_LOG] == FLAG_NOT_SET)
         remove(logFile);
 

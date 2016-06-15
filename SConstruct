@@ -38,9 +38,16 @@ AddOption("--release_build",
           default = False,
           )
 
+AddOption("--no_gui",
+          dest = "no_gui",
+          action = "store_true",
+          help = "Don't build the GUI tools.",
+          default = False,
+          )
+
 # parse and check command line options
 release_build = GetOption("release_build")
-inst_base = GetOption("prefix")
+inst_base = os.path.expanduser(GetOption("prefix"))
 pkg_version = GetOption("pkg_version")
 
 globalenv = Environment(TOOLS = ["default", add_UnitTest, checkEndian])
@@ -58,12 +65,13 @@ header_dirs = {}
 if GetOption("header_prefix") is None:
     header_dirs = inst_dirs
 else:
+    header_prefix = os.path.expanduser(GetOption("header_prefix"))
     header_dirs = {
-        "bins":   os.path.join(GetOption("header_prefix"), "bin"),
-        "libs":   os.path.join(GetOption("header_prefix"), "lib"),
-        "shares": os.path.join(GetOption("header_prefix"), "share/asf_tools"),
-        "mans":   os.path.join(GetOption("header_prefix"), "man"),
-        "docs":   os.path.join(GetOption("header_prefix"), "doc"),
+        "bins":   os.path.join(header_prefix, "bin"),
+        "libs":   os.path.join(header_prefix, "lib"),
+        "shares": os.path.join(header_prefix, "share/asf_tools"),
+        "mans":   os.path.join(header_prefix, "man"),
+        "docs":   os.path.join(header_prefix, "doc"),
     }
 
 endian = checkEndian(globalenv)
@@ -84,6 +92,7 @@ f = open("include/config.h", "w")
 f.write("#define ASF_SHARE_DIR \"" + header_dirs["shares"] + "\"\n")
 f.write("#define ASF_BIN_DIR \"" + header_dirs["bins"] + "\"\n")
 f.write("#define ASF_DOC_DIR \"" + header_dirs["docs"] + "\"\n") 
+f.write("#define ASF_TMP_DIR \"/tmp\"\n")
 f.close()
 
 # List out all the subdirectories we want to build in, with library directories grouped separately.
@@ -107,10 +116,15 @@ lib_subs = [
     "libasf_remap",
 ]
 
-src_subs = lib_subs + [
-    "add_aux_band",
+gui_tool_subs = [
     "asf_view",
+    "metadata_gui",
     "mapready",
+    "proj2proj",
+]
+
+cmdline_tool_subs = [
+    "add_aux_band",
     "adjust_bands",
     "asf_import",
     "asf_export",
@@ -130,8 +144,6 @@ src_subs = lib_subs + [
     "make_overlay",
     "asf_kml_overlay",
     "sample_plugin",
-    "metadata_gui",
-    "proj2proj",
     "refine_geolocation",
     "shift_geolocation",
     "flip",
@@ -163,6 +175,7 @@ src_subs = lib_subs + [
     "asf2geobrowse",
     "sqrt_img",
     "color_browse",
+    "cleanup_pixel",
     "annotate_image",
     "convert2vector",
     "change_value",
@@ -176,8 +189,13 @@ src_subs = lib_subs + [
     "measures2netcdf",
     "measures2geotiff",
     "measures_hdf2csv",
-    "rgps2vector"
-    ]
+    "rgps2vector",
+]
+
+if GetOption("no_gui") == True:
+    src_subs = lib_subs + cmdline_tool_subs
+else:
+    src_subs = lib_subs + cmdline_tool_subs + gui_tool_subs
 
 # paths where the libraries will be built
 build_base = os.path.join("build", platform.system() + "-" + platform.machine() + "-")

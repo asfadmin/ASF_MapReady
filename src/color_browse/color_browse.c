@@ -57,7 +57,8 @@ void usage(char *name)
   printf("\n"
    "USAGE:\n"
    "   color_browse [-sentinel <configFile>] [-noise-cal <threshold>]\n"
-   "     [-tmpDir <directory] <inFile1> <inFile2> [<inFile3>] <outFile\n");
+   "     [-dem <waterThreshold> <waterMask>] [-tmpDir <directory]\n"
+   "     <inFile1> <inFile2> [<inFile3>] <outFile\n");
   printf("\n"
    "REQUIRED ARGUMENTS:\n"
    "   inFile1   Name of an ASF internal file (HH or VV)\n"
@@ -69,6 +70,9 @@ void usage(char *name)
    "             <configFile> defines the parameters for the calculation\n"
    "  -noise-cal Calculation using noise/calibration information\n"
    "             <configFile> defines the parameters for the calculation\n"
+   "  -dem       Applies a water mask to the calculation, where <waterThreshold>\n"
+   "             defines the threshold to be applied and <waterMask> the water\n"
+   "             make file.\n"
    "   inFile3   Name of an ASF internal file (VV for PLR data)\n");
   printf("\n"
    "DESCRIPTION:\n"
@@ -428,7 +432,7 @@ static void dual_browse_2sig_floor(char *inFile1, char *inFile2, char *tmpPath,
 }
 
 static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
-  float threshold, char *outFile)
+  float threshold, float waterThreshold, char *waterMask, char *outFile)
 {
   
   // Calculate the color browse image
@@ -445,19 +449,29 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
   metaOut->general->data_type = REAL32;
   float *a = (float *) MALLOC(sizeof(float)*sample_count);
   float *b = (float *) MALLOC(sizeof(float)*sample_count);
-  float cp, xp, rp, zp;
+  unsigned char *w = (unsigned char *) CALLOC(sample_count, sizeof(char));  
+  float cp, xp, rp, zp, g;
   int blue_mask;
-  float g = pow(10, threshold/10.0);
 
   FILE *fpIn1 = FOPEN(inFile1, "rb");
   FILE *fpIn2 = FOPEN(inFile2, "rb");
   FILE *fpOut = FOPEN(outFile, "wb");
+  FILE *fpWater;
+  meta_parameters *metaWater;
+  if (waterMask) {
+    fpWater = FOPEN(waterMask, "rb");
+    metaWater = meta_read(inFile1);
+    metaWater->general->data_type = ASF_BYTE;
+  }
   for (kk=0; kk<line_count; kk++) {
     get_float_line(fpIn1, metaIn, kk, a);
     get_float_line(fpIn2, metaIn, kk, b);
+    if (waterMask)
+      get_byte_line(fpWater, metaWater, kk, w);
     for (ii=0; ii<sample_count; ii++) {
-      cp = a[ii];
-      xp = b[ii]; 
+      cp = (a[ii] > 0.0) ? a[ii] : 0.0;
+      xp = (b[ii] > 0.0) ? b[ii] : 0.0;
+      g = pow(10, (threshold + (1 - w[ii])*waterThreshold)/10.0); 
       blue_mask = (g > xp) ? 1 : 0;
       if (cp > xp)
         zp = atan(sqrt(cp-xp))*2.0/PI;
@@ -468,10 +482,7 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
       else
         rp = 0.0;
       red[ii] = (2.0*rp*(1 - blue_mask) + zp*blue_mask)*255;
-      if (xp < 0)
-        green[ii] = (2.0*zp*blue_mask)*255;
-      else
-        green[ii] = (3.0*sqrt(xp)*(1 - blue_mask) + 2.0*zp*blue_mask)*255;
+      green[ii] = (3.0*sqrt(xp)*(1 - blue_mask) + 2.0*zp*blue_mask)*255;
       blue[ii] = (5.0*zp*blue_mask)*255;
     }
     put_band_float_line(fpOut, metaOut, 0, kk, red);
@@ -482,11 +493,14 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
   FCLOSE(fpIn1);
   FCLOSE(fpIn2);
   FCLOSE(fpOut);
+  if (waterMask)
+    FCLOSE(fpWater);
   meta_free(metaIn);
   meta_write(metaOut, outFile);
   meta_free(metaOut);
   FREE(a);
   FREE(b);
+  FREE(w);
   FREE(red);
   FREE(green);
   FREE(blue);
@@ -496,13 +510,14 @@ int main(int argc,char *argv[])
 {
   char  infile1[256], infile2[256], infile3[256];  // Input file name                         
   char  outfile[256];         			   // Output file name
-  char tmpPath[1024], configFile[1024];
+  char tmpPath[1024], configFile[1024], waterMask[1024];
   browse_type_t mode = NOTYPE;
   int   i,j;
   int   sample_count;
-  float threshold;
+  float threshold, waterThreshold;
   extern int currArg;
   strcpy(tmpPath, "");
+  strcpy(waterMask, "");
 
   // Parse command line
   if ((argc-currArg)<1) {
@@ -525,6 +540,11 @@ int main(int argc,char *argv[])
     else if (strmatches(key, "-tmpDir", "--tmpDir", NULL)) {
       CHECK_ARG(1);
       strcpy(tmpPath, GET_ARG(1));
+    }
+    else if (strmatches(key, "-dem", "--dem", NULL)) {
+      CHECK_ARG(2);
+      waterThreshold = atof(GET_ARG(2));
+      strcpy(waterMask, GET_ARG(1));
     }
     else if (strmatches(key, "-log", "--log", NULL)) {
       CHECK_ARG(1);
@@ -797,10 +817,20 @@ int main(int argc,char *argv[])
   else if (mode == NOISE_CAL) {
     asfPrintStatus("Creating colorized browse image using noise/calibration "
       "information\n");
-    if (strlen(tmpPath) > 0) {
+    if (strlen(tmpPath) > 0 && strlen(waterMask) > 0) {
+      create_name(infile1,argv[8],".img");
+      create_name(infile2,argv[9],".img");
+      create_name(outfile,argv[10],".img");
+    }
+    else if (strlen(tmpPath) > 0) {
       create_name(infile1,argv[5],".img");
       create_name(infile2,argv[6],".img");
       create_name(outfile,argv[7],".img");
+    }
+    else if (strlen(waterMask) > 0) {
+      create_name(infile1,argv[6],".img");
+      create_name(infile2,argv[7],".img");
+      create_name(outfile,argv[8],".img");
     }
     else {
       create_name(infile1,argv[3],".img");
@@ -808,7 +838,11 @@ int main(int argc,char *argv[])
       create_name(outfile,argv[5],".img");
     }
 
-    freeman_mask_atan(infile1, infile2, tmpPath, threshold, outfile);
+    if (strlen(waterMask) > 0)
+      freeman_mask_atan(infile1, infile2, tmpPath, threshold, waterThreshold,
+        waterMask, outfile);
+    else
+      freeman_mask_atan(infile1, infile2, tmpPath, threshold, 0, NULL, outfile);
   }
   else
     asfPrintError("Mode is not defined!\n");

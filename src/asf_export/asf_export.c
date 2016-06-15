@@ -439,7 +439,8 @@ main (int argc, char *argv[])
     strcpy(logFile, argv[logFlag+1]);
   }
   else {
-    sprintf(logFile, "tmp%i.log", (int)getpid());
+    //sprintf(logFile, "tmp%i.log", (int)getpid());
+    strcpy(logFile, get_tmp_log_file("asf_export"));
   }
   logflag = TRUE; // Since we always log, set the old school logflag to true
   fLog = FOPEN (logFile, "a");

@@ -238,7 +238,8 @@ int main(int argc, char *argv[])
   }
   else {
     // default behavior: log to tmp<pid>.log
-    sprintf(logFile, "tmp%i.log", pid);
+    //sprintf(logFile, "tmp%i.log", pid);
+    strcpy(logFile, get_tmp_log_file("asf_mapready"));
   }
   if (input_f != FLAG_NOT_SET) {
     inFile = (char *) MALLOC(sizeof(char)*512);

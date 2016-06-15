@@ -1,0 +1,23 @@
+Import("globalenv")
+localenv = globalenv.Clone()
+
+localenv.AppendUnique(CPPPATH = [
+        "#src/asf/",
+        "#include/",
+        "#src/asf_meta/",
+        "#src/libasf_proj/",
+        "#src/libasf_raster/",
+        "#src/libasf_import/",
+        ])
+
+
+localenv.AppendUnique(LIBS = [
+    "asf",
+    "asf_raster",
+    "asf_import",
+    "asf_meta",
+])
+
+bins = localenv.Program("cleanup_pixel", Glob("*.c"))
+
+localenv.Install(globalenv["inst_dirs"]["bins"], bins)

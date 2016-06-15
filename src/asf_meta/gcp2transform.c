@@ -211,8 +211,8 @@ static double getObjective(const gsl_vector *x, void *params)
 static void print_state2(int iter, gsl_multimin_fminimizer *s, int NUM_COEFS, int long_f)
 {
   int i;
-  char *fmt = long_f ? "%g\n" : "%.3f";
-
+  char *fmt = long_f ? "%g\n" : "%.3f ";
+ 
   printf("%3d ",iter);
   for (i=0; i<NUM_COEFS;i++)
     printf(fmt,gsl_vector_get(s->x,i));
@@ -269,6 +269,7 @@ void create_mapping(double xs, double ys, double valstart,  double *xin,
     s = gsl_multimin_fminimizer_alloc(T, NUM_COEFS);
     gsl_multimin_fminimizer_set(s, &minex_func, x, ss);
 
+    iter = 0;
     do {
       ++iter;
       status = gsl_multimin_fminimizer_iterate(s);

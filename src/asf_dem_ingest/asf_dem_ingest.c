@@ -222,7 +222,8 @@ int main(int argc, char *argv[])
   }
   else {
     // default behavior: log to tmp<pid>.log
-    sprintf(logFile, "tmp%i.log", pid);
+    //sprintf(logFile, "tmp%i.log", pid);
+    strcpy(logFile, get_tmp_log_file("asf_dem_ingest"));
   }
   logflag = TRUE;
   fLog = FOPEN(logFile, "a");
