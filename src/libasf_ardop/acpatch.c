@@ -105,7 +105,7 @@ void acpatch(patch *p,const satellite *s)
 		for (j=0; j<p->n_az ; j++) 
 			ref[j] = cZero;
 		
-		phase = pi * pow(f0,2.0)/f_rate;
+		phase = PI * pow(f0,2.0)/f_rate;
 		ref[0] = sinCos(phase);
 		
 		/* Check to see if we are going to truncate the bandwidth in azimuth */
@@ -118,7 +118,7 @@ void acpatch(patch *p,const satellite *s)
 		  for (j = 1; j <= np; j++)
 		  { /*Normal case: write both halves of reference function*/
 			float t = j*pixel2time;
-			float quadratic_phase=pi * f_rate*t*t;
+			float quadratic_phase=PI * f_rate*t*t;
 			float linear_phase=pi2*f0*t;
 			ref[j] = sinCos(quadratic_phase+linear_phase);
 			ref[p->n_az-j] = sinCos(quadratic_phase-linear_phase);
@@ -127,7 +127,7 @@ void acpatch(patch *p,const satellite *s)
 		  for (j = 1; j <= np; j++)
 		  { /*Loop for dop_prf: write only one half of reference function*/
 			float t = j*pixel2time;
-			float quadratic_phase=pi * f_rate*t*t;
+			float quadratic_phase=PI * f_rate*t*t;
 			float linear_phase=pi2*f0*t;
 			if (ac_direction>0)
 			  ref[j] = sinCos(quadratic_phase+linear_phase);
@@ -149,8 +149,8 @@ void acpatch(patch *p,const satellite *s)
 			for(j=0;j<np;j++)
 			{
 				weight=0.8;
-				win[j]=weight-(1.0-weight)*-cos(2.0*pi*j/(2*np));
-				win[p->n_az-j-1]=weight-(1.0-weight)*-cos(2.0*pi*j/(2*np));
+				win[j]=weight-(1.0-weight)*-cos(2.0*PI*j/(2*np));
+				win[p->n_az-j-1]=weight-(1.0-weight)*-cos(2.0*PI*j/(2*np));
 			}	
 			for(j=0;j<p->n_az;j++)
 			{

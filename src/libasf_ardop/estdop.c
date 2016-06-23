@@ -81,7 +81,7 @@ void estdop(char file[],int nDopLines, float *a, float *b,float *c)
     lastPhase=0;
     for (x=0;x<r->nSamples/MULTILOOK;x++)
     {
-        float nextPhase=atan2(dop[x].imag, dop[x].real)*(1.0/(2.0*pi));
+        float nextPhase=atan2(dop[x].imag, dop[x].real)*(1.0/(2.0*PI));
         while ((nextPhase-lastPhase)<-0.5) nextPhase+=1.0;
         while ((nextPhase-lastPhase)>0.5) nextPhase-=1.0;
         phase[x]=nextPhase;

@@ -85,9 +85,9 @@ stateVector tle_propagate(sat_t *sat, double t)
   geodetic_t sat_geodetic;
   Calculate_LatLonAlt(sat->jul_utc, &sat->pos, &sat_geodetic);
 
-  while (sat_geodetic.lon < -pi)
+  while (sat_geodetic.lon < -PI)
     sat_geodetic.lon += twopi;
-  while (sat_geodetic.lon > pi)
+  while (sat_geodetic.lon > PI)
     sat_geodetic.lon -= twopi;
 
   //sat->az = Degrees (obs_set.az);
@@ -189,10 +189,10 @@ void read_tle(const char *tle_filename, const char *satellite, sat_t *sat)
           geodetic_t sat_geodetic;
           Calculate_LatLonAlt (sat->jul_utc, &sat->pos, &sat_geodetic);
 
-          while (sat_geodetic.lon < -pi)
+          while (sat_geodetic.lon < -PI)
             sat_geodetic.lon += twopi;
 	
-          while (sat_geodetic.lon > (pi))
+          while (sat_geodetic.lon > (PI))
             sat_geodetic.lon -= twopi;
 
           sat->ssplat = Degrees (sat_geodetic.lat);
