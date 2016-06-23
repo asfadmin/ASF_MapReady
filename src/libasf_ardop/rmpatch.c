@@ -190,7 +190,7 @@ void create_sinc(int nfilter, float *xintp)
        j = i*8;
        dx = (float)(i)/(float)(nfilter+1);
     /*Create one 8-entry kernel, used for interpolating by dx.*/
-       y = sin(pi*dx)/pi;
+       y = sin(PI*dx)/PI;
 
        if (dx != 0.0 && dx != 1.0)
          {
