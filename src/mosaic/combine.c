@@ -22,7 +22,8 @@ void help()
 "Tool name:\n"
 "    %s\n\n"
 "Usage:\n"
-"    %s [-background <value>] [-list <file>] <outfile> <infile1> <infile2> ... \n\n"
+"    %s [-preference <value>] [-overlap <value>] [-background <value>]\n"
+"      [-list <file>] <outfile> <infile1> <infile2> ... \n\n"
 "Description:\n"
 "    This program mosaics the input files together, producing an output image\n"
 "    that is the union of all listed input images.  Where the input images\n"
@@ -42,9 +43,14 @@ void help()
 "Options:\n"
 "    -preference <value>\n"
 "        Specifies a preference for the order the images are combined.\n"
-"        Valied entries are: north, south, east, west, old, new.\n"
+"        Valid entries are: north, south, east, west, old, new.\n"
 "        The value \"north\", for example,  means the image with the center\n"
 "        farthest to the north will be on top of the image stack.\n"
+"    -overlap <value>\n"
+"        Specifies the overlap preference.\n"
+"        Valid entries are: average, minimum, maximum.\n"
+"        All value within the image stack are assessed on a pixel basis.\n"
+"        Requires the use of the -list option.\n"
 "    -background <value> (-b)\n"
 "        Specifies a value to use for background pixels.  If not given, 0 is\n"
 "        used.\n"
@@ -77,7 +83,8 @@ ASF_CONTACT_STRING);
 void usage()
 {
     printf("Usage:\n"
-           "    %s [-background <value>] [-list <file>] <outfile> <infile1> <infile2> ... \n\n"
+           "    %s [-preference <value>] [-overlap <value> ][-background <value>]\n"
+           "      [-list <file>] <outfile> <infile1> <infile2> ... \n\n"
            "At least 2 input files are required.\n", ASF_NAME_STRING);
     exit(1);
 }
@@ -293,8 +300,8 @@ static void determine_extents(char **infiles, int n_inputs,
             why = "Image is in a different projection";
         else if (!proj_parms_match(meta0, meta))
             why = "Projection parameters differ";
-	else if (meta->general->band_count != nBands)
-	  why = "Number of bands differ";
+	      else if (meta->general->band_count != nBands)
+	          why = "Number of bands differ";
 
         if (strlen(why) > 0) {
             ++n_bad;
@@ -424,6 +431,7 @@ static void sort_input_preference(char **infiles, int n_inputs,
 }
 
 static void add_pixels(BandedFloatImage *out, char *file,
+                       int image, char *overlap, 
                        int size_x, int size_y,
                        double start_x, double start_y,
                        double per_x, double per_y)
@@ -451,7 +459,7 @@ static void add_pixels(BandedFloatImage *out, char *file,
         start_line, start_line + nl);
 
     if (start_sample + ns > out->images[0]->size_x || 
-	start_line + nl > out->images[0]->size_y) {
+    	start_line + nl > out->images[0]->size_y) {
         asfPrintError("Image extents were not calculated correctly!\n");
     }
 
@@ -461,6 +469,7 @@ static void add_pixels(BandedFloatImage *out, char *file,
     }
 
     float *line = MALLOC(sizeof(float)*ns);
+    float current;
 
     int z;
     for (z=0; z<nb; ++z) {
@@ -473,12 +482,38 @@ static void add_pixels(BandedFloatImage *out, char *file,
 	
         int x;
         for (x=0; x<ns; ++x) {
-	  float v = line[x];
-	  
-	  // don't write out "no data" values
-	  if (v != meta->general->no_data)
-	    banded_float_image_set_pixel(out, z, 
-					 x+start_sample, y+start_line, v);
+	        float v = line[x];
+
+          if (strlen(overlap) > 0 && 
+            !FLOAT_EQUIVALENT(v, meta->general->no_data)) {
+            current = banded_float_image_get_pixel(out, z, x+start_sample, 
+              y+start_line);
+            if (strcmp_case(overlap, "minimum") == 0 && current < v &&
+              !FLOAT_EQUIVALENT(current, meta->general->no_data)) {
+              v = current;
+              banded_float_image_set_pixel(out, nb, 
+                x+start_sample, y+start_line, (float)image);
+            }
+            else if (strcmp_case(overlap, "maximum") == 0 && current > v &&
+              !FLOAT_EQUIVALENT(current, meta->general->no_data)) {
+              v = current;
+              banded_float_image_set_pixel(out, nb, 
+                x+start_sample, y+start_line, (float)image);
+            }
+            else if (strcmp_case(overlap, "average") == 0) {
+              float image_count = banded_float_image_get_pixel(out, nb, 
+                x+start_sample, y+start_line);
+              if (image_count > 0)
+                v = (image_count*current + v)/(image_count+1);
+              banded_float_image_set_pixel(out, nb,
+                x+start_sample, y+start_line, image_count+1);
+            }
+          }
+          	  
+          // don't write out "no data" values
+          if (!FLOAT_EQUIVALENT(v, meta->general->no_data))
+            banded_float_image_set_pixel(out, z, 
+              x+start_sample, y+start_line, v);
         }
 	
         asfLineMeter(y, nl);
@@ -553,19 +588,31 @@ int main(int argc, char *argv[])
     strcpy(preference, "");
     extract_string_options(&argc, &argv, preference, "-preference",
 			   "--preference", "-p", NULL);
-
     if (strlen(preference) > 0 &&
-	strcmp_case(preference, "north") != 0 &&
-	strcmp_case(preference, "south") != 0 &&
-	strcmp_case(preference, "east") != 0 &&
-	strcmp_case(preference, "west") != 0 &&
-	strcmp_case(preference, "old") != 0 &&
-	strcmp_case(preference, "new") != 0)
+	    strcmp_case(preference, "north") != 0 &&
+	    strcmp_case(preference, "south") != 0 &&
+	    strcmp_case(preference, "east") != 0 &&
+	    strcmp_case(preference, "west") != 0 &&
+	    strcmp_case(preference, "old") != 0 &&
+	    strcmp_case(preference, "new") != 0)
       asfPrintError("Can't handle this preference (%s)!\n", preference);
     
     char *list = (char *) MALLOC(sizeof(char)*512);
     strcpy(list, "");
     extract_string_options(&argc, &argv, list, "-list", "--list", "-l", NULL);
+
+    char *overlap = (char *) MALLOC(sizeof(char)*50);
+    strcpy(overlap, "");
+    extract_string_options(&argc, &argv, overlap, "-overlap",
+			   "--overlap", "-o", NULL);
+    if (strlen(overlap) > 0 &&
+      strcmp_case(overlap, "average") != 0 &&
+      strcmp_case(overlap, "minimum") != 0 &&
+      strcmp_case(overlap, "maximum") != 0)
+      asfPrintError("Can't handle this overlap option (%s)!\n", overlap);
+    if (strlen(overlap) > 0 && strlen(list) == 0)
+      asfPrintError("The -overlap option requires the use of the -list option!"
+        "\n");
     
     char *outfile = argv[1];
     char **infiles;
@@ -600,12 +647,24 @@ int main(int argc, char *argv[])
     // float_image will handle cacheing of the large output image
     asfPrintStatus("\nAllocating space for output image ...\n");
     BandedFloatImage *out;
-    if (background_val != 0)
-      out = banded_float_image_new_with_value(n_bands, size_x, size_y, 
-					      (float)background_val);
-    else
-      out = banded_float_image_new(n_bands, size_x, size_y);
-
+    if (strlen(overlap) > 0) {
+      if (background_val != 0)
+        out = banded_float_image_new_with_value(n_bands+1, size_x, size_y, 
+                  (float)background_val);
+      else
+        out = banded_float_image_new(n_bands+1, size_x, size_y);
+      int ii, kk;
+      for (ii=0; ii<size_x; ii++)
+        for (kk=0; kk<size_y; kk++)
+          banded_float_image_set_pixel(out, n_bands, ii, kk, 0.0);
+    }
+    else {
+      if (background_val != 0)
+        out = banded_float_image_new_with_value(n_bands, size_x, size_y, 
+                  (float)background_val);
+      else
+        out = banded_float_image_new(n_bands, size_x, size_y);
+    }
     asfPrintStatus("\nCombined image size: %dx%d LxS\n", size_y, size_x);
     asfPrintStatus("  Start X,Y: %f,%f\n", start_x, start_y);
     asfPrintStatus("    Per X,Y: %.2f,%.2f\n", per_x, per_y);
@@ -615,8 +674,8 @@ int main(int argc, char *argv[])
     if (strlen(list)) {
       for (ii=0; ii<n_inputs; ii++) {
         asfPrintStatus("\nProcessing %s... \n", infiles[ii]);
-        add_pixels(out, infiles[ii], size_x, size_y, start_x, start_y, per_x,
-          per_y);
+        add_pixels(out, infiles[ii], ii, overlap, size_x, size_y, start_x, 
+          start_y, per_x, per_y);
       }
     }
     else {
@@ -627,7 +686,8 @@ int main(int argc, char *argv[])
             asfPrintStatus("\nProcessing %s... \n", p);
 
             // add this image's pixels
-            add_pixels(out, p, size_x, size_y, start_x, start_y, per_x, per_y);
+            add_pixels(out, p, -99, overlap, size_x, size_y, start_x, start_y, 
+            per_x, per_y);
         }
       } while (--n>1);
     }
@@ -651,8 +711,10 @@ int main(int argc, char *argv[])
     // Update location block
     update_location_block(meta_out);
 
-    meta_get_latLon(meta_out, meta_out->general->line_count/2, meta_out->general->sample_count/2, 0,
- 		  &meta_out->general->center_latitude, &meta_out->general->center_longitude);
+    meta_get_latLon(meta_out, meta_out->general->line_count/2, 
+      meta_out->general->sample_count/2, 0,
+ 		  &meta_out->general->center_latitude, 
+ 		  &meta_out->general->center_longitude);
 
     meta_write(meta_out, outfile);
 
