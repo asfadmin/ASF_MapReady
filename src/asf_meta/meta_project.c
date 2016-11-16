@@ -333,7 +333,8 @@ void alos_to_latlon(meta_parameters *meta,
     assert(meta->transform);
     assert(meta->transform->parameter_count == 4 ||
            meta->transform->parameter_count == 10 ||
-	   meta->transform->parameter_count == 25);
+	   meta->transform->parameter_count == 25 ||
+	   meta->transform->parameter_count == 27);
 
     double *x = meta->transform->x;
     double *y = meta->transform->y;
@@ -396,6 +397,66 @@ void alos_to_latlon(meta_parameters *meta,
     else if (meta->transform->parameter_count == 4) {
         *lat = y[0] + y[1]*j + y[2]*i + y[3]*i*j;
         *lon = x[0] + x[1]*j + x[2]*i + x[3]*i*j;
+    }
+
+    else if (meta->transform->parameter_count == 27) {
+        j -= meta->transform->origin_pixel;
+        i -= meta->transform->origin_line;
+	double i2 = i*i;
+	double j2 = j*j;
+	double i3 = i2*i;
+	double j3 = j2*j;
+	double i4 = i2*i2;
+	double j4 = j2*j2;
+
+        *lon = 
+            y[0] + y[1]*i + y[2]*j +
+            y[3]*i*i + y[4]*i*j + y[5]*j*j +
+            y[6]*i3 +
+            y[7]*i*i*j +
+            y[8]*i*j*j +
+            y[9]*j3 +
+            y[10]*i3*i +
+            y[11]*i3*j +
+            y[12]*i*i*j*j +
+            y[13]*i*j3 +
+            y[14]*j3*j +
+            y[15]*i3*i*j +
+            y[16]*i3*j*j +
+            y[17]*i*i*j3 +
+            y[18]*i*j3*j +
+            y[19]*i3*i*j*j +
+            y[20]*i3*j3 +
+            y[21]*i*i*j3*j +
+            y[22]*i3*i*j3 +
+            y[23]*i3*j3*j +
+            y[24]*i3*i*j3*j +
+            y[25]*i3*i*i +
+            y[26]*j3*j*j;
+        *lat = 
+            x[0] + x[1]*i + x[2]*j +
+            x[3]*i*i + x[4]*i*j + x[5]*j*j +
+            x[6]*i3 +
+            x[7]*i*i*j +
+            x[8]*i*j*j +
+            x[9]*j3 +
+            x[10]*i3*i +
+            x[11]*i3*j +
+            x[12]*i*i*j*j +
+            x[13]*i*j3 +
+            x[14]*j3*j +
+            x[15]*i3*i*j +
+            x[16]*i3*j*j +
+            x[17]*i*i*j3 +
+            x[18]*i*j3*j +
+            x[19]*i3*i*j*j +
+            x[20]*i3*j3 +
+            x[21]*i*i*j3*j +
+            x[22]*i3*i*j3 +
+            x[23]*i3*j3*j +
+            x[24]*i3*i*j3*j +
+            x[25]*i3*i*i +
+            x[26]*j3*j*j;
     }
 
     *height = z;  // FIXME: Do we need to correct the height at all?
