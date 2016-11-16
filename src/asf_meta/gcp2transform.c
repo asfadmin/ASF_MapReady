@@ -77,16 +77,16 @@ meta_transform *gcp2transform(gcp_location *gcp, int gcp_count, char *type)
     lines[ii] = gcp[ii].line;
     samps[ii] = gcp[ii].pixel;
   }
-  double *ls2lat = (double *) MALLOC(sizeof(double)*50);
-  double *ls2lon = (double *) MALLOC(sizeof(double)*50);
-  double *ll2samp = (double *) MALLOC(sizeof(double)*50); 
-  double *ll2line = (double *) MALLOC(sizeof(double)*50);
-
+  double *ls2lat = (double *) MALLOC(sizeof(double)*45);
+  double *ls2lon = (double *) MALLOC(sizeof(double)*45);
+  
+  double *ll2samp = (double *) MALLOC(sizeof(double)*45); 
+  double *ll2line = (double *) MALLOC(sizeof(double)*45);
   create_mapping(mid_lat, mid_lon, mid_line, lats, lons, lines, gcp_count, 
     ll2line, 0);
   create_mapping(mid_lat, mid_lon, mid_samp, lats, lons, samps, gcp_count, 
     ll2samp, 0);
-
+  
   create_mapping(mid_line, mid_samp, mid_lat, lines, samps, lats, gcp_count, 
     ls2lat, 1);
   create_mapping(mid_line, mid_samp, mid_lon, lines, samps, lons, gcp_count, 
@@ -94,19 +94,19 @@ meta_transform *gcp2transform(gcp_location *gcp, int gcp_count, char *type)
 
   meta_transform *mt = meta_transform_init();
   strcpy(mt->type, type);
-  mt->parameter_count = 27;
+  mt->parameter_count = 45;
   mt->origin_pixel = mid_samp;
   mt->origin_line = mid_line;
   mt->origin_lat = mid_lat;
   mt->origin_lon = mid_lon;
   mt->use_reverse_transform = TRUE;
-  for (ii=0; ii<27; ii++) {
+  for (ii=0; ii<45; ii++) {
     mt->x[ii] = ls2lat[ii];
     mt->y[ii] = ls2lon[ii];
     mt->l[ii] = ll2line[ii];
     mt->s[ii] = ll2samp[ii];
   }
-
+ 
   meta_parameters *meta = raw_init();
   meta->transform = mt;
 
@@ -119,7 +119,7 @@ meta_transform *gcp2transform(gcp_location *gcp, int gcp_count, char *type)
 
   for (ii=0; ii<gcp_count; ++ii) {
 
-    double lat, lon, line, samp;    
+    double lat, lon, line, samp;
     meta_get_latLon(meta, lines[ii], samps[ii], 0, &lat, &lon);
     meta_get_lineSamp(meta, lat, lon, 0, &line, &samp);
 
@@ -146,6 +146,9 @@ double value_at_pixel25(double inval1, double inval2, double *coef, int NUM_COEF
 {
   double temp=0;
 
+  double inval1_3 = inval1*inval1*inval1;
+  double inval2_3 = inval2*inval2*inval2;
+
   if (NUM_COEFS>=3)
     temp += coef[0] + coef[1]*inval1 + coef[2]*inval2;
   if (NUM_COEFS>=6)
@@ -162,21 +165,43 @@ double value_at_pixel25(double inval1, double inval2, double *coef, int NUM_COEF
             coef[13]*inval1*inval2*inval2*inval2 +
             coef[14]*inval2*inval2*inval2*inval2;
   if (NUM_COEFS>=19)
-    temp += coef[15]*inval1*inval1*inval1*inval1*inval2 +
-            coef[16]*inval1*inval1*inval1*inval2*inval2 +
-            coef[17]*inval1*inval1*inval2*inval2*inval2 +
-            coef[18]*inval1*inval2*inval2*inval2*inval2;
+    temp += coef[15]*inval1_3*inval1*inval2 +
+            coef[16]*inval1_3*inval2*inval2 +
+            coef[17]*inval1*inval1*inval2_3 +
+            coef[18]*inval1*inval2*inval2_3;
   if (NUM_COEFS>=22)
-    temp += coef[19]*inval1*inval1*inval1*inval1*inval2*inval2 +
-            coef[20]*inval1*inval1*inval1*inval2*inval2*inval2 +
-            coef[21]*inval1*inval1*inval2*inval2*inval2*inval2;
+    temp += coef[19]*inval1_3*inval1*inval2*inval2 +
+            coef[20]*inval1_3*inval2_3 +
+            coef[21]*inval1*inval1*inval2*inval2_3;
   if (NUM_COEFS>=25)
-    temp += coef[22]*inval1*inval1*inval1*inval1*inval2*inval2*inval2 +
-            coef[23]*inval1*inval1*inval1*inval2*inval2*inval2*inval2 +
-            coef[24]*inval1*inval1*inval1*inval1*inval2*inval2*inval2*inval2;
+    temp += coef[22]*inval1_3*inval1*inval2_3 +
+            coef[23]*inval1_3*inval2*inval2_3 +
+            coef[24]*inval1_3*inval1*inval2*inval2_3;
   if (NUM_COEFS>=27)
-    temp += coef[25]*inval1*inval1*inval1*inval1*inval1 +
-            coef[26]*inval2*inval2*inval2*inval2*inval2;
+    temp += coef[25]*inval1_3*inval1*inval1 +
+            coef[26]*inval2_3*inval2*inval2;
+  if (NUM_COEFS>=31)
+    temp += coef[27]*inval1_3*inval1_3 +
+            coef[28]*inval1_3*inval1*inval1*inval2 +
+            coef[29]*inval2_3*inval2_3 +
+            coef[30]*inval1*inval2*inval2*inval2_3;
+  if (NUM_COEFS>=37)
+    temp += coef[31]*inval1_3*inval1*inval1_3 +
+            coef[32]*inval1_3*inval1_3*inval2 +
+            coef[33]*inval1_3*inval1*inval1*inval2*inval2 +
+            coef[34]*inval1*inval1*inval2*inval2*inval2_3 +
+            coef[35]*inval1*inval2_3*inval2_3 +
+            coef[36]*inval2_3*inval2*inval2_3;
+  if (NUM_COEFS>=45)
+    temp += coef[37]*inval1_3*inval1_3*inval1*inval1 +
+            coef[38]*inval1_3*inval1_3*inval1*inval2 +
+            coef[39]*inval1_3*inval1_3*inval2*inval2 +
+            coef[40]*inval1_3*inval2_3*inval1*inval1 +
+            coef[41]*inval2_3*inval2_3*inval2*inval2 +
+            coef[42]*inval2_3*inval2_3*inval2*inval1 +
+            coef[43]*inval2_3*inval2_3*inval1*inval1 +
+            coef[44]*inval1_3*inval2_3*inval2*inval2;
+
   return(temp);
 }
 
@@ -238,7 +263,7 @@ static void print_state2(int iter, gsl_multimin_fminimizer *s, int NUM_COEFS, in
   int i;
   char *fmt = long_f ? "%g\n" : "%.3f ";
  
-  printf("%3d ",iter);
+  printf("%3d\n",iter);
   for (i=0; i<NUM_COEFS;i++)
     printf(fmt,gsl_vector_get(s->x,i));
   printf(" f(x) = %.8f, size = %.3f\n", s->fval, gsl_multimin_fminimizer_size(s));
@@ -267,7 +292,7 @@ void create_mapping(double xs, double ys, double valstart,  double *xin,
   params.cnt = cnt;
   params.NUM_COEFS = 3;
 
-  for (i=0; i<50; i++)
+  for (i=0; i<45; i++)
     coefs[i] = 0;
   asfPrintStatus("   valstart = %f\n", valstart); 
   coefs[0] = valstart;
@@ -275,7 +300,7 @@ void create_mapping(double xs, double ys, double valstart,  double *xin,
   target_size = 1e-9;
   prev = gsl_set_error_handler_off();
 
-  int sizes[8] = {3,6,10,15,19,22,25,27};
+  int sizes[11] = {3,6,10,15,19,22,25,27,31,37,45};
   for (j=0; j<sizeof(sizes)/sizeof(int); j++) {
     int NUM_COEFS = sizes[j];
     asfPrintStatus("   %d: Current poly size: %d\n", j, NUM_COEFS);
@@ -328,16 +353,17 @@ void create_mapping(double xs, double ys, double valstart,  double *xin,
     gsl_vector *output = gsl_vector_alloc(NUM_COEFS);
     double val = getObjective(retrofit, (void*)&params);
     double valper = val/(double)cnt;
+
     int done = FALSE;
     if (use_latlon_objective)  {
       valper *= 111000.;
       asfPrintStatus("   Error per GCP: %.5f m\n", valper);
-      if (valper < 1)
+      if (valper < .1)
         done = TRUE;
     }
     else {
       asfPrintStatus("   Error per GCP: %.12f pixels\n", valper);
-      if (valper < 1)
+      if (valper < .1)
         done = TRUE;
     }
 
@@ -345,7 +371,7 @@ void create_mapping(double xs, double ys, double valstart,  double *xin,
     gsl_vector_free(output);
 
     if (done) {
-      asfPrintStatus("Close enough!!");
+      asfPrintStatus("Close enough!  Stopping with %d coefficients.", NUM_COEFS);
       break;
     }
 

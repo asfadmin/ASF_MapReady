@@ -479,7 +479,7 @@ int meta_get_lineSamp(meta_parameters *meta,
       if (a != NULL && b  != NULL)
       {
         int pc = meta->transform->parameter_count;
-        //assert(pc==25 || pc==10 || pc==4);
+        assert(pc==45 || pc==25 || pc==10 || pc==4);
       
         if (meta->transform->parameter_count >= 25) {
           //printf("before - lat: %.4f, lon: %.4f\n", lat, lon);
@@ -529,64 +529,103 @@ int meta_get_lineSamp(meta_parameters *meta,
             b[4]*lat2     + b[5]*lon2     + b[6]*lat2*lon + b[7]*lat*lon2 +
             b[8]*lat3     + b[9]*lon3;
         }
-        else if (meta->transform->parameter_count == 27) {
-          double i = lon;
-          double j = lat;
-          double i3 = i*i*i;
-          double j3 = j*j*j;
-	  *xSamp =
-	      a[0] + a[1]*i + a[2]*j +
-	      a[3]*i*i + a[4]*i*j + a[5]*j*j +
-	      a[6]*i3 +
-	      a[7]*i*i*j +
-	      a[8]*i*j*j +
-	      a[9]*j3 +
-	      a[10]*i3*i +
-	      a[11]*i3*j +
-	      a[12]*i*i*j*j +
-	      a[13]*i*j3 +
-	      a[14]*j3*j +
-	      a[15]*i3*i*j +
-	      a[16]*i3*j*j +
-	      a[17]*i*i*j3 +
-	      a[18]*i*j3*j +
-	      a[19]*i3*i*j*j +
-	      a[20]*i3*j3 +
-	      a[21]*i*i*j3*j +
-	      a[22]*i3*i*j3 +
-	      a[23]*i3*j3*j +
-	      a[24]*i3*i*j3*j +
-	      a[25]*i3*i*i +
-	      a[26]*j3*j*j;
-	  *yLine =
-	      b[0] + b[1]*i + b[2]*j +
-	      b[3]*i*i + b[4]*i*j + b[5]*j*j +
-	      b[6]*i3 +
-	      b[7]*i*i*j +
-	      b[8]*i*j*j +
-	      b[9]*j3 +
-	      b[10]*i3*i +
-	      b[11]*i3*j +
-	      b[12]*i*i*j*j +
-	      b[13]*i*j3 +
-	      b[14]*j3*j +
-	      b[15]*i3*i*j +
-	      b[16]*i3*j*j +
-	      b[17]*i*i*j3 +
-	      b[18]*i*j3*j +
-	      b[19]*i3*i*j*j +
-	      b[20]*i3*j3 +
-	      b[21]*i*i*j3*j +
-	      b[22]*i3*i*j3 +
-	      b[23]*i3*j3*j +
-	      b[24]*i3*i*j3*j +
-	      b[25]*i3*i*i +
-	      b[26]*j3*j*j;
-        }
-
-        else {
-          asfPrintError("Invalid meta->transform->parameter_count = %d\n", meta->transform->parameter_count);
-        }
+        else if (meta->transform->parameter_count == 45) {
+	    double j = lon;
+	    double i = lat;
+	    double i2 = i*i;
+	    double j2 = j*j;
+	    double i3 = i2*i;
+	    double j3 = j2*j;
+	    double i4 = i2*i2;
+	    double j4 = j2*j2;
+	    *yLine = a[0] +
+                   a[1]*i + a[2]*j +
+                   a[3]*i*i + a[4]*i*j + a[5]*j*j +
+		   a[6]*i*i*i +
+		   a[7]*i*i*j +
+		   a[8]*i*j*j +
+		   a[9]*j*j*j +
+		   a[10]*i*i*i*i +
+		   a[11]*i*i*i*j +
+		   a[12]*i*i*j*j +
+		   a[13]*i*j*j*j +
+		   a[14]*j*j*j*j +
+		   a[15]*i3*i*j +
+		   a[16]*i3*j*j +
+		   a[17]*i*i*j3 +
+		   a[18]*i*j*j3 +
+		   a[19]*i3*i*j*j +
+		   a[20]*i3*j3 +
+		   a[21]*i*i*j*j3 +
+		   a[22]*i3*i*j3 +
+		   a[23]*i3*j*j3 +
+		   a[24]*i3*i*j*j3 +
+		   a[25]*i3*i*i +
+		   a[26]*j3*j*j +
+		   a[27]*i3*i3 +
+		   a[28]*i3*i*i*j +
+		   a[29]*j3*j3 +
+		   a[30]*i*j*j*j3 +
+		   a[31]*i3*i*i3 +
+		   a[32]*i3*i3*j +
+		   a[33]*i3*i*i*j*j +
+		   a[34]*i*i*j*j*j3 +
+		   a[35]*i*j3*j3 +
+		   a[36]*j3*j*j3 +
+		   a[37]*i3*i3*i*i +
+		   a[38]*i3*i3*i*j +
+		   a[39]*i3*i3*j*j +
+		   a[40]*i3*j3*i*i +
+		   a[41]*j3*j3*j*j +
+		   a[42]*j3*j3*j*i +
+		   a[43]*j3*j3*i*i +
+		   a[44]*i3*j3*j*j;
+	    *xSamp = b[0] +
+		   b[1]*i + b[2]*j +
+		   b[3]*i*i + b[4]*i*j + b[5]*j*j +
+		   b[6]*i*i*i +
+		   b[7]*i*i*j +
+		   b[8]*i*j*j +
+		   b[9]*j*j*j +
+		   b[10]*i*i*i*i +
+		   b[11]*i*i*i*j +
+		   b[12]*i*i*j*j +
+		   b[13]*i*j*j*j +
+		   b[14]*j*j*j*j +
+		   b[15]*i3*i*j +
+		   b[16]*i3*j*j +
+		   b[17]*i*i*j3 +
+		   b[18]*i*j*j3 +
+		   b[19]*i3*i*j*j +
+		   b[20]*i3*j3 +
+		   b[21]*i*i*j*j3 +
+		   b[22]*i3*i*j3 +
+		   b[23]*i3*j*j3 +
+		   b[24]*i3*i*j*j3 +
+		   b[25]*i3*i*i +
+		   b[26]*j3*j*j +
+		   b[27]*i3*i3 +
+		   b[28]*i3*i*i*j +
+		   b[29]*j3*j3 +
+		   b[30]*i*j*j*j3 +
+		   b[31]*i3*i*i3 +
+		   b[32]*i3*i3*j +
+		   b[33]*i3*i*i*j*j +
+		   b[34]*i*i*j*j*j3 +
+		   b[35]*i*j3*j3 +
+		   b[36]*j3*j*j3 +
+		   b[37]*i3*i3*i*i +
+		   b[38]*i3*i3*i*j +
+		   b[39]*i3*i3*j*j +
+		   b[40]*i3*j3*i*i +
+		   b[41]*j3*j3*j*j +
+		   b[42]*j3*j3*j*i +
+		   b[43]*j3*j3*i*i +
+		   b[44]*i3*j3*j*j;
+	    }
+	    else {
+	      asfPrintError("Invalid number of parameters: %d\n", meta->transform->parameter_count);
+	    }
  
         if (elev != 0.0) {
           // note that we don't need to worry about an expensive meta_incid()
