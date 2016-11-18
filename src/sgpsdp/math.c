@@ -205,7 +205,7 @@ AcTan(double sinx, double cosx)
 	    return ( twopi + atan(sinx/cosx) );
 	}
       else
-	return ( pi + atan(sinx/cosx) );
+	return ( PI + atan(sinx/cosx) );
     }
 
 } /* Function AcTan */

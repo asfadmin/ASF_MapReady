@@ -175,6 +175,7 @@ cmdline_tool_subs = [
     "asf2geobrowse",
     "sqrt_img",
     "color_browse",
+    "cleanup_pixel",
     "annotate_image",
     "convert2vector",
     "change_value",

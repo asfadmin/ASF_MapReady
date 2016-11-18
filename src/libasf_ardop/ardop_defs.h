@@ -59,8 +59,8 @@ void cfft1d(int n, complexFloat *c, int dir);
 #define   default_n_az 4096
 
 #define   speedOfLight 299792458.0 /*Speed of light in vacuum, m/s */
-#define   pi      	3.14159265358979323
-#define   pi2     	(2*pi)
+/*#define   pi           3.14159265358979323 */
+#define   pi2     	(2*PI)
 /* Flags for calibration */
 #define SIGMA_0 2
 #define GAMMA_0 3

@@ -849,8 +849,8 @@ Deep (int ientry, sat_t *sat)
 		sat->deep_arg.xinc = sat->tle.xincl+sat->dps.ssi*sat->deep_arg.t;
 		if (sat->deep_arg.xinc < 0) {
 			sat->deep_arg.xinc = -sat->deep_arg.xinc;
-			sat->deep_arg.xnode = sat->deep_arg.xnode + pi;
-			sat->deep_arg.omgadf = sat->deep_arg.omgadf-pi;
+			sat->deep_arg.xnode = sat->deep_arg.xnode + PI;
+			sat->deep_arg.omgadf = sat->deep_arg.omgadf-PI;
 		}
 		if( ~sat->flags & RESONANCE_FLAG ) return;
 
@@ -1016,7 +1016,7 @@ Deep (int ientry, sat_t *sat)
 
 			/* This is a patch to Lyddane modification */
 			/* suggested by Rob Matson. */
-			if(fabs(xnoh-sat->deep_arg.xnode) > pi) {
+			if(fabs(xnoh-sat->deep_arg.xnode) > PI) {
 				if(sat->deep_arg.xnode < xnoh)
 					sat->deep_arg.xnode +=twopi;
 				else
