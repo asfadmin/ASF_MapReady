@@ -77,11 +77,11 @@ meta_transform *gcp2transform(gcp_location *gcp, int gcp_count, char *type)
     lines[ii] = gcp[ii].line;
     samps[ii] = gcp[ii].pixel;
   }
-  double *ls2lat = (double *) MALLOC(sizeof(double)*45);
-  double *ls2lon = (double *) MALLOC(sizeof(double)*45);
+  double *ls2lat = (double *) MALLOC(sizeof(double)*MAX_FITTING_ORDER);
+  double *ls2lon = (double *) MALLOC(sizeof(double)*MAX_FITTING_ORDER);
   
-  double *ll2samp = (double *) MALLOC(sizeof(double)*45); 
-  double *ll2line = (double *) MALLOC(sizeof(double)*45);
+  double *ll2samp = (double *) MALLOC(sizeof(double)*MAX_FITTING_ORDER); 
+  double *ll2line = (double *) MALLOC(sizeof(double)*MAX_FITTING_ORDER);
   create_mapping(mid_lat, mid_lon, mid_line, lats, lons, lines, gcp_count, 
     ll2line, 0);
   create_mapping(mid_lat, mid_lon, mid_samp, lats, lons, samps, gcp_count, 
@@ -94,13 +94,13 @@ meta_transform *gcp2transform(gcp_location *gcp, int gcp_count, char *type)
 
   meta_transform *mt = meta_transform_init();
   strcpy(mt->type, type);
-  mt->parameter_count = 45;
+  mt->parameter_count = MAX_FITTING_ORDER;
   mt->origin_pixel = mid_samp;
   mt->origin_line = mid_line;
   mt->origin_lat = mid_lat;
   mt->origin_lon = mid_lon;
   mt->use_reverse_transform = TRUE;
-  for (ii=0; ii<45; ii++) {
+  for (ii=0; ii<MAX_FITTING_ORDER; ii++) {
     mt->x[ii] = ls2lat[ii];
     mt->y[ii] = ls2lon[ii];
     mt->l[ii] = ll2line[ii];
@@ -292,7 +292,7 @@ void create_mapping(double xs, double ys, double valstart,  double *xin,
   params.cnt = cnt;
   params.NUM_COEFS = 3;
 
-  for (i=0; i<45; i++)
+  for (i=0; i<MAX_FITTING_ORDER; i++)
     coefs[i] = 0;
   asfPrintStatus("   valstart = %f\n", valstart); 
   coefs[0] = valstart;
@@ -300,6 +300,7 @@ void create_mapping(double xs, double ys, double valstart,  double *xin,
   target_size = 1e-9;
   prev = gsl_set_error_handler_off();
 
+  // sizes needs to match MAX_FITTING_ORDER as defined in asf_meta.h
   int sizes[11] = {3,6,10,15,19,22,25,27,31,37,45};
   for (j=0; j<sizeof(sizes)/sizeof(int); j++) {
     int NUM_COEFS = sizes[j];

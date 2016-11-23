@@ -479,6 +479,7 @@ int meta_get_lineSamp(meta_parameters *meta,
       if (a != NULL && b  != NULL)
       {
         int pc = meta->transform->parameter_count;
+        // pc should max out at asf_meta.h MAX_FITTING_ORDER
         assert(pc==45 || pc==25 || pc==10 || pc==4);
       
         if (meta->transform->parameter_count >= 25) {
