@@ -333,7 +333,8 @@ void alos_to_latlon(meta_parameters *meta,
     assert(meta->transform);
     assert(meta->transform->parameter_count == 4 ||
            meta->transform->parameter_count == 10 ||
-	   meta->transform->parameter_count == 25);
+	   meta->transform->parameter_count == 25 ||
+	   meta->transform->parameter_count == 45);
 
     double *x = meta->transform->x;
     double *y = meta->transform->y;
@@ -380,7 +381,6 @@ void alos_to_latlon(meta_parameters *meta,
 	       x[14]*i2 + x[15]*i*j4 + x[16]*i*j3 + x[17]*i*j2 + x[18]*i*j +
                x[19]*i + x[20]*j4 + x[21]*j3 + x[22]*j2 + x[23]*j + x[24];
     }
-
     // optical data transformation
     else if (meta->transform->parameter_count == 10) {
 	double i2 = i*i;
@@ -396,6 +396,103 @@ void alos_to_latlon(meta_parameters *meta,
     else if (meta->transform->parameter_count == 4) {
         *lat = y[0] + y[1]*j + y[2]*i + y[3]*i*j;
         *lon = x[0] + x[1]*j + x[2]*i + x[3]*i*j;
+    }
+    else if (meta->transform->parameter_count == 45) {
+        j = xSample - meta->transform->origin_pixel;
+        i = yLine - meta->transform->origin_line;
+	double i2 = i*i;
+	double j2 = j*j;
+	double i3 = i2*i;
+	double j3 = j2*j;
+	double i4 = i2*i2;
+	double j4 = j2*j2;
+        *lon = y[0] +
+               y[1]*i + y[2]*j +
+               y[3]*i*i + y[4]*i*j + y[5]*j*j +
+               y[6]*i*i*i +
+	       y[7]*i*i*j +
+	       y[8]*i*j*j +
+	       y[9]*j*j*j +
+	       y[10]*i*i*i*i +
+	       y[11]*i*i*i*j +
+	       y[12]*i*i*j*j +
+	       y[13]*i*j*j*j +
+	       y[14]*j*j*j*j +
+	       y[15]*i3*i*j +
+	       y[16]*i3*j*j +
+	       y[17]*i*i*j3 +
+	       y[18]*i*j*j3 +
+	       y[19]*i3*i*j*j +
+	       y[20]*i3*j3 +
+	       y[21]*i*i*j*j3 +
+	       y[22]*i3*i*j3 +
+	       y[23]*i3*j*j3 +
+	       y[24]*i3*i*j*j3 +
+	       y[25]*i3*i*i +
+	       y[26]*j3*j*j +
+	       y[27]*i3*i3 +
+	       y[28]*i3*i*i*j +
+	       y[29]*j3*j3 +
+	       y[30]*i*j*j*j3 +
+	       y[31]*i3*i*i3 +
+	       y[32]*i3*i3*j +
+	       y[33]*i3*i*i*j*j +
+	       y[34]*i*i*j*j*j3 +
+	       y[35]*i*j3*j3 +
+	       y[36]*j3*j*j3 +
+	       y[37]*i3*i3*i*i +
+	       y[38]*i3*i3*i*j +
+	       y[39]*i3*i3*j*j +
+	       y[40]*i3*j3*i*i +
+	       y[41]*j3*j3*j*j +
+	       y[42]*j3*j3*j*i +
+	       y[43]*j3*j3*i*i +
+	       y[44]*i3*j3*j*j;
+        *lat = x[0] +
+               x[1]*i + x[2]*j +
+               x[3]*i*i + x[4]*i*j + x[5]*j*j +
+               x[6]*i*i*i +
+	       x[7]*i*i*j +
+	       x[8]*i*j*j +
+	       x[9]*j*j*j +
+	       x[10]*i*i*i*i +
+	       x[11]*i*i*i*j +
+	       x[12]*i*i*j*j +
+	       x[13]*i*j*j*j +
+	       x[14]*j*j*j*j +
+	       x[15]*i3*i*j +
+	       x[16]*i3*j*j +
+	       x[17]*i*i*j3 +
+	       x[18]*i*j*j3 +
+	       x[19]*i3*i*j*j +
+	       x[20]*i3*j3 +
+	       x[21]*i*i*j*j3 +
+	       x[22]*i3*i*j3 +
+	       x[23]*i3*j*j3 +
+	       x[24]*i3*i*j*j3 +
+	       x[25]*i3*i*i +
+	       x[26]*j3*j*j +
+	       x[27]*i3*i3 +
+	       x[28]*i3*i*i*j +
+	       x[29]*j3*j3 +
+	       x[30]*i*j*j*j3 +
+	       x[31]*i3*i*i3 +
+	       x[32]*i3*i3*j +
+	       x[33]*i3*i*i*j*j +
+	       x[34]*i*i*j*j*j3 +
+	       x[35]*i*j3*j3 +
+	       x[36]*j3*j*j3 +
+	       x[37]*i3*i3*i*i +
+	       x[38]*i3*i3*i*j +
+	       x[39]*i3*i3*j*j +
+	       x[40]*i3*j3*i*i +
+	       x[41]*j3*j3*j*j +
+	       x[42]*j3*j3*j*i +
+	       x[43]*j3*j3*i*i +
+	       x[44]*i3*j3*j*j;
+    }
+    else {
+        asfPrintError("Unsupported parameter_count in transform block: %d", meta->transform->parameter_count);
     }
 
     *height = z;  // FIXME: Do we need to correct the height at all?
