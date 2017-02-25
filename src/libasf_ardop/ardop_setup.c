@@ -234,7 +234,7 @@ satellite *newSatellite(void)
 
         for(cols=0;cols<s->vecLen;cols++)
         {
-            s->ang_vec[cols]=(s->ang_vec[cols]/180)*pi;
+            s->ang_vec[cols]=(s->ang_vec[cols]/180)*PI;
             s->gain_vec[cols]=pow(10,-2*s->gain_vec[cols]/10);
 /*          printf("%f %f\n",s->ang_vec[cols],s->gain_vec[cols]); */
         }
@@ -471,7 +471,7 @@ void calc_range_ref(complexFloat *ref,int rangeFFT,int chirpSamples)
         for (i=0; i<chirpSamples; i++)
         {
             float t = (i-chirpSamples/2) / g.fs;
-            float phase = pi*g.slope*t*t;
+            float phase = PI*g.slope*t*t;
             ref[i]=Cmplx(cos(phase),sin(phase));
         }
     }
@@ -482,7 +482,7 @@ void calc_range_ref(complexFloat *ref,int rangeFFT,int chirpSamples)
 
 /*Scale amplitude of ref. function via a cosine on a pedestal*/
     for (i=0; i < chirpSamples; i++)
-        ref[i]=Csmul(g.rhww-(1.0-g.rhww)*cos(2.0*pi*i/chirpSamples),ref[i]);
+        ref[i]=Csmul(g.rhww-(1.0-g.rhww)*cos(2.0*PI*i/chirpSamples),ref[i]);
     if (!quietflag) printf("\n   Range reference function calculated in time domain\n");
 
 /*Output the reference function (for debugging)*/
@@ -517,7 +517,7 @@ void calc_range_ref(complexFloat *ref,int rangeFFT,int chirpSamples)
     ref[0].real = ref[0].imag = 0.0;
     for (i=1; i< scaleLowFreq; i++)
     {
-        float wgt = 0.5 - 0.5 * cos(pi*i/scaleLowFreq);
+        float wgt = 0.5 - 0.5 * cos(PI*i/scaleLowFreq);
         ref[i]  = Csmul(wgt,ref[i]);
         ref[rangeFFT-i] = Csmul(wgt,ref[rangeFFT-i]);
     }

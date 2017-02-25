@@ -205,7 +205,7 @@ typedef struct {
 
 /** Table of constant values **/
 #define de2ra    1.74532925E-2   /* Degrees to Radians */
-#define pi       3.1415926535898 /* Pi */
+#define PI       3.1415926535898 /* Pi */
 #define pio2     1.5707963267949 /* Pi/2 */
 #define x3pio2   4.71238898      /* 3*Pi/2 */
 #define twopi    6.2831853071796 /* 2*Pi  */

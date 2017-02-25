@@ -452,11 +452,11 @@ int meta_get_lineSamp(meta_parameters *meta,
       double *a = get_a_coeffs(meta);
       double *b = get_b_coeffs(meta);
 
-      if (a != NULL && b != NULL &&
-          strcmp_case(meta->general->sensor, "ALOS")==0 &&
-          strcmp_case(meta->general->sensor_name, "SAR")==0) {
+      if (a != NULL && b != NULL) {
+          //strcmp_case(meta->general->sensor, "ALOS")==0 &&
+          //strcmp_case(meta->general->sensor_name, "SAR")==0) {
         meta->transform->use_reverse_transform = TRUE;
-        asfPrintStatus("PALSAR -- Using reverse transform block.\n");
+        asfPrintStatus("PALSAR/Sentinel -- Using reverse transform block.\n");
       }
       else {
         meta->transform->use_reverse_transform = FALSE;
@@ -479,9 +479,10 @@ int meta_get_lineSamp(meta_parameters *meta,
       if (a != NULL && b  != NULL)
       {
         int pc = meta->transform->parameter_count;
-        assert(pc==25 || pc==10 || pc==4);
+        // pc should max out at asf_meta.h MAX_FITTING_ORDER
+        assert(pc==45 || pc==25 || pc==10 || pc==4);
       
-        if (meta->transform->parameter_count == 25) {
+        if (meta->transform->parameter_count >= 25) {
           //printf("before - lat: %.4f, lon: %.4f\n", lat, lon);
           lat -= meta->transform->origin_lat;
           lon -= meta->transform->origin_lon;
@@ -518,7 +519,7 @@ int meta_get_lineSamp(meta_parameters *meta,
             b[21]*lon3      + b[22]*lon2      + b[23]*lon       +
             b[24];
         }
-        else { // if (meta->transform->parameter_count == 10) {
+        else if (meta->transform->parameter_count == 10) {
           *xSamp =
             a[0]          + a[1]*lat      + a[2]*lon      + a[3]*lat*lon +
             a[4]*lat2     + a[5]*lon2     + a[6]*lat2*lon + a[7]*lat*lon2 +
@@ -529,7 +530,104 @@ int meta_get_lineSamp(meta_parameters *meta,
             b[4]*lat2     + b[5]*lon2     + b[6]*lat2*lon + b[7]*lat*lon2 +
             b[8]*lat3     + b[9]*lon3;
         }
-        
+        else if (meta->transform->parameter_count == 45) {
+	    double j = lon;
+	    double i = lat;
+	    double i2 = i*i;
+	    double j2 = j*j;
+	    double i3 = i2*i;
+	    double j3 = j2*j;
+	    double i4 = i2*i2;
+	    double j4 = j2*j2;
+	    *yLine = a[0] +
+                   a[1]*i + a[2]*j +
+                   a[3]*i*i + a[4]*i*j + a[5]*j*j +
+		   a[6]*i*i*i +
+		   a[7]*i*i*j +
+		   a[8]*i*j*j +
+		   a[9]*j*j*j +
+		   a[10]*i*i*i*i +
+		   a[11]*i*i*i*j +
+		   a[12]*i*i*j*j +
+		   a[13]*i*j*j*j +
+		   a[14]*j*j*j*j +
+		   a[15]*i3*i*j +
+		   a[16]*i3*j*j +
+		   a[17]*i*i*j3 +
+		   a[18]*i*j*j3 +
+		   a[19]*i3*i*j*j +
+		   a[20]*i3*j3 +
+		   a[21]*i*i*j*j3 +
+		   a[22]*i3*i*j3 +
+		   a[23]*i3*j*j3 +
+		   a[24]*i3*i*j*j3 +
+		   a[25]*i3*i*i +
+		   a[26]*j3*j*j +
+		   a[27]*i3*i3 +
+		   a[28]*i3*i*i*j +
+		   a[29]*j3*j3 +
+		   a[30]*i*j*j*j3 +
+		   a[31]*i3*i*i3 +
+		   a[32]*i3*i3*j +
+		   a[33]*i3*i*i*j*j +
+		   a[34]*i*i*j*j*j3 +
+		   a[35]*i*j3*j3 +
+		   a[36]*j3*j*j3 +
+		   a[37]*i3*i3*i*i +
+		   a[38]*i3*i3*i*j +
+		   a[39]*i3*i3*j*j +
+		   a[40]*i3*j3*i*i +
+		   a[41]*j3*j3*j*j +
+		   a[42]*j3*j3*j*i +
+		   a[43]*j3*j3*i*i +
+		   a[44]*i3*j3*j*j;
+	    *xSamp = b[0] +
+		   b[1]*i + b[2]*j +
+		   b[3]*i*i + b[4]*i*j + b[5]*j*j +
+		   b[6]*i*i*i +
+		   b[7]*i*i*j +
+		   b[8]*i*j*j +
+		   b[9]*j*j*j +
+		   b[10]*i*i*i*i +
+		   b[11]*i*i*i*j +
+		   b[12]*i*i*j*j +
+		   b[13]*i*j*j*j +
+		   b[14]*j*j*j*j +
+		   b[15]*i3*i*j +
+		   b[16]*i3*j*j +
+		   b[17]*i*i*j3 +
+		   b[18]*i*j*j3 +
+		   b[19]*i3*i*j*j +
+		   b[20]*i3*j3 +
+		   b[21]*i*i*j*j3 +
+		   b[22]*i3*i*j3 +
+		   b[23]*i3*j*j3 +
+		   b[24]*i3*i*j*j3 +
+		   b[25]*i3*i*i +
+		   b[26]*j3*j*j +
+		   b[27]*i3*i3 +
+		   b[28]*i3*i*i*j +
+		   b[29]*j3*j3 +
+		   b[30]*i*j*j*j3 +
+		   b[31]*i3*i*i3 +
+		   b[32]*i3*i3*j +
+		   b[33]*i3*i*i*j*j +
+		   b[34]*i*i*j*j*j3 +
+		   b[35]*i*j3*j3 +
+		   b[36]*j3*j*j3 +
+		   b[37]*i3*i3*i*i +
+		   b[38]*i3*i3*i*j +
+		   b[39]*i3*i3*j*j +
+		   b[40]*i3*j3*i*i +
+		   b[41]*j3*j3*j*j +
+		   b[42]*j3*j3*j*i +
+		   b[43]*j3*j3*i*i +
+		   b[44]*i3*j3*j*j;
+	    }
+	    else {
+	      asfPrintError("Invalid number of parameters: %d\n", meta->transform->parameter_count);
+	    }
+ 
         if (elev != 0.0) {
           // note that we don't need to worry about an expensive meta_incid()
           // call, since for Palsar it is calculated from the transform block
@@ -556,7 +654,7 @@ int meta_get_lineSamp(meta_parameters *meta,
         }
         
         // we use 0-based indexing, whereas these functions are 1-based.
-        if (meta->transform->parameter_count != 25) {
+        if (meta->transform->parameter_count < 25) {
           *xSamp -= 1;
           *yLine -= 1;
         }
@@ -694,7 +792,7 @@ double *get_a_coeffs(meta_parameters *meta)
 
     if (meta && meta->transform) {
         if (is_valid_ll2s_transform(meta) &&
-	    meta->transform->parameter_count == 25)
+	    meta->transform->parameter_count >= 25)
 	    ret = meta->transform->l;
 	else if (is_valid_map2s_transform(meta)) {
             ret = meta->transform->map2ls_a;
@@ -720,7 +818,7 @@ double *get_b_coeffs(meta_parameters *meta)
 
     if (meta && meta->transform) {
         if (is_valid_ll2l_transform(meta) &&
-	    meta->transform->parameter_count == 25)
+	    meta->transform->parameter_count >= 25)
 	    ret = meta->transform->s;
         else if (is_valid_map2l_transform(meta)) {
             ret = meta->transform->map2ls_b;
