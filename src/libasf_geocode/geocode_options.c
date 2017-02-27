@@ -155,7 +155,7 @@ void sanity_check(projection_type_t pt, project_parameters_t * pps)
 
 void apply_defaults(projection_type_t pt, project_parameters_t * pps,
                                         meta_parameters * meta, double * average_height,
-                                        double * pixel_size)
+                                        double * pixel_size, int force_flag)
 {
   if ( ISNAN (*average_height) )
     *average_height = 0.0;
@@ -185,7 +185,7 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
         // such an argument is essentially ambiguous, and the
         // user must resolve it.
         if ( meta->general->center_longitude / 6.0 -
-             floor (meta->general->center_longitude / 6.0) == 0.0 )
+             floor (meta->general->center_longitude / 6.0) == 0.0 && !force_flag )
         {
           asfPrintError ("Center of Scene Longitude (%.6f) lies on a UTM\n"
               "zone boundry, (i.e. is ambiguous as to which UTM zone\n"
