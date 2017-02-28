@@ -116,8 +116,7 @@ void createBlockingStore(fetchRec *g)
 	FILE *outF;/*Blocking store file; output pointer*/
 	
 /*Create the blocking store file:*/
-	sprintf(g->blockName,"%s%cremap_%d_%d.blk", 
-	  get_asf_tmp_dir(), DIR_SEPARATOR, (int)getpid(),0);
+	sprintf(g->blockName,"remap_%d_%d.blk",(int)getpid(),0);
 	//printf("   Creating image block file %s...\n",g->blockName);
 	outF=fopen_tmp_file(g->blockName,"wb");
 	
@@ -213,6 +212,7 @@ pixelFetcher *createFetchRec(FILE *in,meta_parameters *meta)
 {
 	int i;
 	fetchRec *g=(fetchRec *)MALLOC(sizeof(fetchRec));
+	
 /*Set input fields*/
 	g->meta=meta;
 	g->inFile=in;
