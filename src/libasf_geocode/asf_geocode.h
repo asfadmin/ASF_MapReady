@@ -83,7 +83,7 @@ char *proj_info_as_string(projection_type_t projection_type,
 void sanity_check(projection_type_t proj_type, project_parameters_t * pps);
 void apply_defaults(projection_type_t proj_type, project_parameters_t * pps,
                     meta_parameters * meta, double *average_height,
-                    double *pixel_size);
+                    double *pixel_size, int force_flag);
 
 /* Get the UTM zone number in which a given longitude falls.  Puts
    longitudes that fall on zone thresholds into the higher numbered
