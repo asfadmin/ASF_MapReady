@@ -1,8 +1,8 @@
-/******************************************************************************** 
+/********************************************************************************
  *  Mode 0: Create a color image from two bands of FBD data using a modified
  *  Kellndorfer method:
  *
- *   Use 0 as background 
+ *   Use 0 as background
  *   Scale to dB (10*log10)
  *   HH: -30 dB is DN 1, -1 dB is DN 255
  *   HV: -30 dB is DN 1, -10 dB is DN 255
@@ -10,13 +10,14 @@
  *
  *  Mode 1: Create color image from three bands of PLR data using 3sigma stretch
  *
- *   Use 0 as background 
+ *   Use 0 as background
  *   Scale to dB (10*log10)
  *   scale each band separately by 3-sigma
  *
  *  Written by Tom Logan, March 2014
  *  Part of the RTC Project
  *  Extended by Rudi Gens for Sentinel dual-pol browse images (March 2015)
+ *  Update for use of color browse images for hazards (March 2017)
  *
  *******************************************************************************/
 #include "asf_nan.h"
@@ -73,6 +74,8 @@ void usage(char *name)
    "  -dem       Applies a water mask to the calculation, where <waterThreshold>\n"
    "             defines the threshold to be applied and <waterMask> the water\n"
    "             make file.\n"
+   "  -teal      Enhances the blue channel of the color decomposition scheme\n"
+   "  -float     Saves results unscaled as floating point values\n"
    "   inFile3   Name of an ASF internal file (VV for PLR data)\n");
   printf("\n"
    "DESCRIPTION:\n"
@@ -184,10 +187,10 @@ static void do_freeman(char *cpFile, char *xpFile, float scale, char *outFile)
   FILE *fpOut = FOPEN(outFile, "w");
   for (kk=0; kk<line_count; kk++) {
     get_float_line(fpIn1, metaIn, kk, a);
-    get_float_line(fpIn2, metaIn, kk, b);  
+    get_float_line(fpIn2, metaIn, kk, b);
     for (ii=0; ii<sample_count; ii++) {
       cp = a[ii];
-      xp = b[ii]; 
+      xp = b[ii];
       pv = 4.0*xp*xp;
       ps = cp*cp - 3.0*xp*xp;
       pd = pv - ps;
@@ -310,7 +313,7 @@ static void stretch_limits(char *inFile, char *outFile, stretch_type_t *stretch)
   meta_free(meta);
 }
 
-static void image_two_sigma(char *inFile, char *outFile, char *tmpPath, 
+static void image_two_sigma(char *inFile, char *outFile, char *tmpPath,
   stretch_type_t *stretch)
 {
   int ii;
@@ -321,7 +324,7 @@ static void image_two_sigma(char *inFile, char *outFile, char *tmpPath,
   meta_parameters *meta = meta_read(inFile);
   int band_count = meta->general->band_count;
   char **bands = extract_band_names(meta->general->bands, band_count);
-  channel_stats_t *stats = 
+  channel_stats_t *stats =
     (channel_stats_t *) MALLOC(sizeof(channel_stats_t)*band_count);
   sprintf(tmpFile, "%s%ctwo_sigma.img", tmpPath, DIR_SEPARATOR);
   for (ii=0; ii<band_count; ii++) {
@@ -385,13 +388,13 @@ static void dual_browse_2sig_floor(char *inFile1, char *inFile2, char *tmpPath,
       }
     }
   }
-  FCLOSE(fp);    
+  FCLOSE(fp);
   float bright = my_bright*brighter;
 
   /*
-  printf("my_bright: %f, brighter: %f, channel ratio: %f, resample: %f\n", 
+  printf("my_bright: %f, brighter: %f, channel ratio: %f, resample: %f\n",
     my_bright, brighter, channel_ratio, resampleScale);
-  printf("floor - 1: %f, 2: %f, 3: %f\n", 
+  printf("floor - 1: %f, 2: %f, 3: %f\n",
     stretch[0].floor, stretch[1].floor, stretch[2].floor);
   printf("sigma - 1: %f, 2: %f, 3: %f\n",
     stretch[0].sigma, stretch[1].sigma, stretch[2].sigma);
@@ -431,10 +434,11 @@ static void dual_browse_2sig_floor(char *inFile1, char *inFile2, char *tmpPath,
   remove_dir(tmpDir);
 }
 
-static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
-  float threshold, float waterThreshold, char *waterMask, char *outFile)
+static void freeman_mask_atan_ext(char *inFile1, char *inFile2, char *tmpPath,
+  float threshold, float waterThreshold, char *waterMask, int tealFlag,
+  int floatFlag, char *outFile)
 {
-  
+
   // Calculate the color browse image
   int ii, kk;
   meta_parameters *metaIn = meta_read(inFile1);
@@ -449,8 +453,8 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
   metaOut->general->data_type = REAL32;
   float *a = (float *) MALLOC(sizeof(float)*sample_count);
   float *b = (float *) MALLOC(sizeof(float)*sample_count);
-  unsigned char *w = (unsigned char *) CALLOC(sample_count, sizeof(char));  
-  float cp, xp, rp, zp, g;
+  unsigned char *w = (unsigned char *) CALLOC(sample_count, sizeof(char));
+  float cp, xp, rp, zp, bp, g;
   int blue_mask;
 
   FILE *fpIn1 = FOPEN(inFile1, "rb");
@@ -471,7 +475,7 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
     for (ii=0; ii<sample_count; ii++) {
       cp = (a[ii] > 0.0) ? a[ii] : 0.0;
       xp = (b[ii] > 0.0) ? b[ii] : 0.0;
-      g = pow(10, (threshold + (1 - w[ii])*waterThreshold)/10.0); 
+      g = pow(10, (threshold + (1 - w[ii])*waterThreshold)/10.0);
       blue_mask = (g > xp) ? 1 : 0;
       if (cp > xp)
         zp = atan(sqrt(cp-xp))*2.0/PI;
@@ -481,9 +485,20 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
         rp = sqrt(cp - 3.0*xp);
       else
         rp = 0.0;
-      red[ii] = (2.0*rp*(1 - blue_mask) + zp*blue_mask)*255;
-      green[ii] = (3.0*sqrt(xp)*(1 - blue_mask) + 2.0*zp*blue_mask)*255;
-      blue[ii] = (5.0*zp*blue_mask)*255;
+      if (3.0*xp > cp && tealFlag)
+        bp = sqrt(3.0*xp - cp);
+      else
+        bp = 0.0;
+      if (floatFlag) {
+        red[ii] = 2.0*rp*(1 - blue_mask) + zp*blue_mask;
+        green[ii] = 3.0*sqrt(xp)*(1 - blue_mask) + 2.0*zp*blue_mask;
+        blue[ii] = 2.0*bp*(1 - blue_mask) + 5.0*zp*blue_mask;
+      }
+      else {
+        red[ii] = (2.0*rp*(1 - blue_mask) + zp*blue_mask)*255;
+        green[ii] = (3.0*sqrt(xp)*(1 - blue_mask) + 2.0*zp*blue_mask)*255;
+        blue[ii] = (2.0*bp*(1 - blue_mask) + 5.0*zp*blue_mask)*255;
+      }
     }
     put_band_float_line(fpOut, metaOut, 0, kk, red);
     put_band_float_line(fpOut, metaOut, 1, kk, green);
@@ -506,14 +521,23 @@ static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
   FREE(blue);
 }
 
+static void freeman_mask_atan(char *inFile1, char *inFile2, char *tmpPath,
+  float threshold, float waterThreshold, char *waterMask, char *outFile) {
+
+  freeman_mask_atan_ext(inFile1, inFile2, tmpPath, threshold, waterThreshold,
+    waterMask, FALSE, FALSE, outFile);
+}
+
+
 int main(int argc,char *argv[])
 {
-  char  infile1[256], infile2[256], infile3[256];  // Input file name                         
+  char  infile1[256], infile2[256], infile3[256];  // Input file name
   char  outfile[256];         			   // Output file name
   char tmpPath[1024], configFile[1024], waterMask[1024];
   browse_type_t mode = NOTYPE;
   int   i,j;
   int   sample_count;
+  int   tealFlag = FALSE, floatFlag = FALSE;
   float threshold, waterThreshold;
   extern int currArg;
   strcpy(tmpPath, "");
@@ -521,7 +545,7 @@ int main(int argc,char *argv[])
 
   // Parse command line
   if ((argc-currArg)<1) {
-    printf("Insufficient arguments.\n"); 
+    printf("Insufficient arguments.\n");
     usage("");
   }
 
@@ -554,6 +578,10 @@ int main(int argc,char *argv[])
     }
     else if (strmatches(key, "-quiet", "--quiet", "-q", NULL))
       quietflag = TRUE;
+    else if (strmatches(key, "-teal", "--teal", NULL))
+      tealFlag = TRUE;
+    else if (strmatches(key, "-float", "--float", NULL))
+      floatFlag = TRUE;
     else {
       --currArg;
       break;
@@ -565,14 +593,14 @@ int main(int argc,char *argv[])
   }
   if (mode == NOTYPE && argc == 4)
     mode = PALSAR_FBD;
-  else if (mode == NOTYPE && argc == 5) 
+  else if (mode == NOTYPE && argc == 5)
     mode = PALSAR_PLR;
 
-  if (!quietflag) 
+  if (!quietflag)
     asfSplashScreen(argc, argv);
 
   if (mode == PALSAR_FBD) {
-  
+
     asfPrintStatus("Creating colorized browse image from PALSAR FBD data\n");
     create_name(infile1,argv[1],".img");
     create_name(infile2,argv[2],".img");
@@ -586,7 +614,7 @@ int main(int argc,char *argv[])
       {
         asfPrintError("Images must be the same size!!!\n");
         exit(1);
-      }    
+      }
     strcpy(meta1->general->bands,"HH");
     strcpy(meta2->general->bands,"HV");
 
@@ -605,7 +633,7 @@ int main(int argc,char *argv[])
     strcat(ofile1,"_DB.img");
     strcpy(ofile2,argv[2]);
     strcat(ofile2,"_DB.img");
- 
+
     printf("Creating output DB files %s and %s\n",ofile1,ofile2);
     FILE *ofp1 = FOPEN(ofile1, "w");
     FILE *ofp2 = FOPEN(ofile2, "w");
@@ -638,11 +666,11 @@ int main(int argc,char *argv[])
     fclose(ofp2);
 
     /* Scale the data to a byte range using given min/max values */
-    cbuf1 = my_floats_to_bytes(buf1,(long long) pixel_count, 0.0,MINMAX,-30.0,-1.0); 
-    cbuf2 = my_floats_to_bytes(buf2,(long long) pixel_count, 0.0,MINMAX,-30.0,-10.0); 
-   
-    /* 
-    cbuf1 = my_floats_to_bytes(buf1,(long long) pixel_count, 0.0,MINMAX,-31.0,7.1); 
+    cbuf1 = my_floats_to_bytes(buf1,(long long) pixel_count, 0.0,MINMAX,-30.0,-1.0);
+    cbuf2 = my_floats_to_bytes(buf2,(long long) pixel_count, 0.0,MINMAX,-30.0,-10.0);
+
+    /*
+    cbuf1 = my_floats_to_bytes(buf1,(long long) pixel_count, 0.0,MINMAX,-31.0,7.1);
     cbuf2 = my_floats_to_bytes(buf2,(long long) pixel_count, 0.0,MINMAX,-31.0,7.1);
     */
 
@@ -650,7 +678,7 @@ int main(int argc,char *argv[])
     strcat(ofile1,"_byte.img");
     strcpy(ofile2,argv[2]);
     strcat(ofile2,"_byte.img");
- 
+
     printf("Creating output byte files %s and %s\n",ofile1,ofile2);
     ofp1 = FOPEN(ofile1, "w");
     ofp2 = FOPEN(ofile2, "w");
@@ -667,8 +695,8 @@ int main(int argc,char *argv[])
       }
     }
 
-    put_float_lines(ofp1,meta1,0,meta1->general->line_count,buf1); 
-    put_float_lines(ofp2,meta2,0,meta2->general->line_count,buf2); 
+    put_float_lines(ofp1,meta1,0,meta1->general->line_count,buf1);
+    put_float_lines(ofp2,meta2,0,meta2->general->line_count,buf2);
 
     meta_write(meta1, ofile1);
     meta_write(meta2, ofile2);
@@ -682,7 +710,7 @@ int main(int argc,char *argv[])
       for (j=0; j<meta1->general->sample_count; ++j) {
  	 if (buf2[sample_count] != 0) {
            /*
-           buf3[sample_count] = (buf1[sample_count] / buf2[sample_count]); 
+           buf3[sample_count] = (buf1[sample_count] / buf2[sample_count]);
            */
 
            buf3[sample_count] = (buf1[sample_count] - buf2[sample_count]);
@@ -693,7 +721,7 @@ int main(int argc,char *argv[])
        }
     }
 
-    cbuf3 = my_floats_to_bytes(buf3,(long long) pixel_count, 0.0,SIGMA ,-25.0,-10.0); 
+    cbuf3 = my_floats_to_bytes(buf3,(long long) pixel_count, 0.0,SIGMA ,-25.0,-10.0);
     sample_count = 0;
     for (i=0; i<meta1->general->line_count; ++i) {
       for (j=0; j<meta1->general->sample_count; ++j) {
@@ -711,9 +739,9 @@ int main(int argc,char *argv[])
 
     meta_write(meta1,outfile);
 
-  } 
+  }
   else if (mode == PALSAR_PLR) {
-  
+
     /* Mode 1 - Create Color Browse from 3 bands using 3sigma stretch */
     asfPrintStatus("Creating colorized browse image from PALSAR PLR data\n");
     create_name(infile1,argv[1],".img");
@@ -787,7 +815,7 @@ int main(int argc,char *argv[])
           sample_count++;
       }
     }
- 
+
     /* Finally, create the 3 banded image we were looking for */
     strcpy(meta1->general->bands,"HH,HV,VV");
     meta1->general->band_count=3;
@@ -798,7 +826,7 @@ int main(int argc,char *argv[])
     meta_write(meta1,outfile);
   }
   else if (mode == SENTINEL_DUAL) {
-  
+
     asfPrintStatus("Creating colorized browse image from Sentinel dual-pol "
       "data\n");
     if (strlen(tmpPath) > 0) {
@@ -811,34 +839,38 @@ int main(int argc,char *argv[])
       create_name(infile2,argv[4],".img");
       create_name(outfile,argv[5],".img");
     }
-    
+
     dual_browse_2sig_floor(infile1, infile2, tmpPath, configFile, outfile);
   }
   else if (mode == NOISE_CAL) {
     asfPrintStatus("Creating colorized browse image using noise/calibration "
       "information\n");
-    if (strlen(tmpPath) > 0 && strlen(waterMask) > 0) {
-      create_name(infile1,argv[8],".img");
-      create_name(infile2,argv[9],".img");
-      create_name(outfile,argv[10],".img");
-    }
-    else if (strlen(tmpPath) > 0) {
-      create_name(infile1,argv[5],".img");
-      create_name(infile2,argv[6],".img");
-      create_name(outfile,argv[7],".img");
-    }
-    else if (strlen(waterMask) > 0) {
-      create_name(infile1,argv[6],".img");
-      create_name(infile2,argv[7],".img");
-      create_name(outfile,argv[8],".img");
-    }
-    else {
-      create_name(infile1,argv[3],".img");
-      create_name(infile2,argv[4],".img");
-      create_name(outfile,argv[5],".img");
-    }
-
+    int index = 3;
+    if (strlen(tmpPath) > 0)
+      index += 2;
     if (strlen(waterMask) > 0)
+      index += 3;
+    if (tealFlag) {
+      asfPrintStatus("Using enhanced blue channel color decomposition scheme\n");
+      index += 1;
+    }
+    if (floatFlag) {
+      asfPrintStatus("Saving result unscaled as floating point values\n");
+      index += 1;
+    }
+    create_name(infile1,argv[index],".img");
+    create_name(infile2,argv[index+1],".img");
+    create_name(outfile,argv[index+2],".img");
+
+    if (tealFlag || floatFlag) {
+      if (strlen(waterMask) > 0)
+        freeman_mask_atan_ext(infile1, infile2, tmpPath, threshold,
+          waterThreshold, waterMask, tealFlag, floatFlag, outfile);
+      else
+        freeman_mask_atan_ext(infile1, infile2, tmpPath, threshold, 0, NULL,
+          tealFlag, floatFlag, outfile);
+    }
+    else if (strlen(waterMask) > 0)
       freeman_mask_atan(infile1, infile2, tmpPath, threshold, waterThreshold,
         waterMask, outfile);
     else
@@ -859,11 +891,11 @@ unsigned char *my_floats_to_bytes (float *data, long long pixel_count, float mas
   double diff_min, diff_max, omin, omax, slope, offset;
   unsigned char *pixels = malloc (pixel_count * sizeof (unsigned char));
 
-  switch (scaling) 
+  switch (scaling)
     {
     case TRUNCATE:
       /* Compute all the output pixels truncating the input values */
-      for (ii=0; ii<pixel_count; ii++) 
+      for (ii=0; ii<pixel_count; ii++)
 	if (data[ii] < 0) {
 	  pixels[ii] = 0;
 	}
@@ -874,13 +906,13 @@ unsigned char *my_floats_to_bytes (float *data, long long pixel_count, float mas
           pixels[ii] = data[ii] + 0.5;
 
     case MINMAX:
-      /* Determine the minimum and maximum values for the image. Exclude the 
+      /* Determine the minimum and maximum values for the image. Exclude the
        * mask value for this calculation */
-      printf("USING MINMAX MAPPING ...\n");      
+      printf("USING MINMAX MAPPING ...\n");
 
       imin = inmin;
       imax = inmax;
-    
+
       omin = imin;
       omax = imax;
 
@@ -913,10 +945,10 @@ unsigned char *my_floats_to_bytes (float *data, long long pixel_count, float mas
 
       omin = diff_min;
       omax = diff_max;
-      
+
       if (diff_min < imin) omin = imin;
       if (diff_max > imax) omax = imax;
-      
+
       /* Computing output pixels applying the sigma mapping */
       slope = 255 / (omax-omin);
       offset = -slope * omin;
@@ -928,7 +960,7 @@ unsigned char *my_floats_to_bytes (float *data, long long pixel_count, float mas
   	    pixels[ii] = 0;
 	  else if ((slope * data[ii] + offset) > 255)
 	    pixels[ii] = 255;
-	  else 
+	  else
 	    pixels[ii] = slope * data[ii] + offset;
         }
       }
@@ -946,10 +978,10 @@ unsigned char *my_floats_to_bytes (float *data, long long pixel_count, float mas
 
       omin = diff_min;
       omax = diff_max;
-      
+
       if (diff_min < imin) omin = imin;
       if (diff_max > imax) omax = imax;
-      
+
       /* Computing output pixels applying the sigma mapping */
       slope = 255 / (omax-omin);
       offset = -slope * omin;
@@ -961,7 +993,7 @@ unsigned char *my_floats_to_bytes (float *data, long long pixel_count, float mas
   	    pixels[ii] = 0;
 	  else if ((slope * data[ii] + offset) > 255)
 	    pixels[ii] = 255;
-	  else 
+	  else
 	    pixels[ii] = slope * data[ii] + offset;
         }
       }
@@ -971,8 +1003,8 @@ unsigned char *my_floats_to_bytes (float *data, long long pixel_count, float mas
     default:
       asfPrintError("Undefined scaling mechanism!");
       break;
-      
+
     }
-  
+
   return pixels;
 }
