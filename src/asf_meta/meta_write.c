@@ -900,7 +900,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp,coeff,meta->transform->x[ii],
           "Longitude transformation parameter");
     }
-    if (meta->transform->parameter_count == 25) {
+    if (meta->transform->parameter_count >= 25) {
       meta_put_double(fp, "origin pixel:", meta->transform->origin_pixel,
               "Origin pixel for transformation");
       meta_put_double(fp, "origin line:", meta->transform->origin_line,
@@ -916,7 +916,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp,coeff,meta->transform->l[ii],
                       "Line transformation parameter");
     }
-    if (meta->transform->parameter_count == 25) {
+    if (meta->transform->parameter_count >= 25) {
       meta_put_double(fp, "origin lat:", meta->transform->origin_lat,
               "Origin latitude [degrees]");
       meta_put_double(fp, "origin lon:", meta->transform->origin_lon,
@@ -2009,7 +2009,7 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
     for (ii=0; ii<mt->parameter_count; ii++)
       fprintf(fp, "    <lambda coefficient=\"%d\">%.11g</lambda>\n", ii,
 	      mt->x[ii]);
-    if (mt->parameter_count == 25) {
+    if (mt->parameter_count >= 25) {
       fprintf(fp, "    <origin_pixel>%.11g</origin_pixel>\n", 
 	      mt->origin_pixel);
       fprintf(fp, "    <origin_line>%.11g</origin_line>\n", 
@@ -2019,7 +2019,7 @@ void meta_write_xml(meta_parameters *meta, const char *file_name)
       fprintf(fp, "    <i coefficient=\"%d\">%.11g</i>\n", ii, mt->s[ii]);
     for (ii=0; ii<mt->parameter_count; ii++)
       fprintf(fp, "    <j coeeficient=\"%d\">%.11g</j>\n", ii, mt->l[ii]);
-    if (mt->parameter_count == 25) {
+    if (mt->parameter_count >= 25) {
       fprintf(fp, "    <origin_lat units=\"degrees\">%.4f</origin_lat>\n", 
 	      mt->origin_lat);
       fprintf(fp, "    <origin_lon units=\"degrees\">%.4f</origin_lon>\n", 

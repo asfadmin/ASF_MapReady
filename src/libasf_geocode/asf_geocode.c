@@ -1078,7 +1078,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // first time through, set up the defaults for the projection -- e.g, any
     // scene-related defaults are applied.
     if (i==0) {
-      apply_defaults (projection_type, pp, imd, &average_height, &pixel_size);
+      apply_defaults (projection_type, pp, imd, &average_height, &pixel_size, force_flag);
       check_parameters (projection_type, datum, pp, imd, force_flag);
     }
 

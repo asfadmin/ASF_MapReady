@@ -62,6 +62,9 @@
 #define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
                                 (a, b, ASF_EXPORT_FLOAT_MICRON))
 
+// Fitting maximum order
+#define MAX_FITTING_ORDER 45 
+
 // Flag to write ENVI header files for all viewable images
 extern int dump_envi_header;
 
@@ -285,12 +288,12 @@ typedef struct {
   double source_pixel_size; // Original pixel size of the l/s -> lat/lon map
   double target_pixel_size; // New pixel size, after mapping to ground range
   int parameter_count;    // Number of parameters
-  double x[25];           // Transform coeffs for x (ls to lon)
-  double y[25];           // Transform coeffs for y (ls to lat)
+  double x[MAX_FITTING_ORDER];           // Transform coeffs for x (ls to lon)
+  double y[MAX_FITTING_ORDER];           // Transform coeffs for y (ls to lat)
   double origin_pixel;    // Origin pixel (P0)
   double origin_line;     // Origin line (L0)
-  double l[25];           // Transform coeffs for lines (lat/lon to l)
-  double s[25];           // Transform coeffs for samples (lat/lon to s)
+  double l[MAX_FITTING_ORDER];           // Transform coeffs for lines (lat/lon to l)
+  double s[MAX_FITTING_ORDER];           // Transform coeffs for samples (lat/lon to s)
   double origin_lat;      // Origin latitude [degrees]
   double origin_lon;      // Origin longitude [degrees]
   double map2ls_a[10];    // Transform coeffs for map -> L/S (lat/lon to s)

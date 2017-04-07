@@ -224,6 +224,8 @@ char *asf_strReplace(const char *str, const char *searchStr, const char *replace
 
 static void strip_end_whitesp_inplace(char *s)
 {
+    if (!s || strlen(s) == 0)
+        return;
     char *p = s + strlen(s) - 1;
     while (isspace(*p) && p>s)
         *p-- = '\0';
