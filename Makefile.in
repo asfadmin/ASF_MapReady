@@ -76,6 +76,7 @@ MAPREADY_MODULES = \
 	src/asf2geobrowse \
 	src/sqrt_img \
 	src/color_browse \
+	src/color_diff \
 	src/cleanup_pixel \
 	src/annotate_image \
 	src/populate_meta_field \
@@ -502,7 +503,7 @@ LIBDIR = $(DESTDIR)@prefix@/lib
 SHAREDIR = $(DESTDIR)@SHAREDIR@
 
 # This should install any & all package(s) that have been built
-install: 
+install:
 	mkdir -p "$(BINDIR)" "$(LIBDIR)" "$(SHAREDIR)"
 	-cp -R $(S_BINDIR)/* "$(BINDIR)"
 	-cp -R $(S_LIBDIR)/* "$(LIBDIR)"
