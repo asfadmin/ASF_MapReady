@@ -471,6 +471,7 @@ deb: default
 	strip asf-mapready/@prefix@/bin/*
 	sed -e "/Version:/s/$$/ $(DEBIAN_VERSION)/" \
 	    -e "/Installed-Size:/s|$$| $$(expr $$(expr $$(du -bs asf-mapready@prefix@|cut -f1) + 512) / 1024)|" \
+		-e "s/\(Architecture:\)/\1 $$(dpkg --print-architecture)/" \
 		<debian/control \
 		>asf-mapready/DEBIAN/control
 	fakeroot dpkg-deb --build asf-mapready
