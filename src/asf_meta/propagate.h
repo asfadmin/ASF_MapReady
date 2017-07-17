@@ -28,7 +28,7 @@ typedef struct {
 
 typedef struct {
   double mean;
-  double true;
+  double isTrue;
   double eccentric;
 } anomaly_t;
 
