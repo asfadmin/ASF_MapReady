@@ -3,8 +3,8 @@ Version:
 Priority: optional
 Section: science
 Maintainer: Jenkins <uso@asf.alaska.edu>
-Architecture: amd64
-Depends: libgdal1h, libgtk2.0-0, libglade2-0, libtiff5, libgeotiff2, libcunit1, libproj0, libhdf5-8, libgsl0ldbl, libshp2, libfftw3-3
+Architecture: all
+Depends: libgdal20, libgtk2.0-0, libglade2-0, libtiff5, libgeotiff2, libcunit1, libproj12, libhdf5-100, libgsl2, libshp2, libfftw3-3
 Description: Terrain correct and geocode multi-pol SAR data.
  The MapReady Remote Sensing Tool Kit accepts level 1 detected SAR data, single
  look complex SAR data, and optical data from ASF and some other facilities. It
