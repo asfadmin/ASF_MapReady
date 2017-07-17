@@ -1,6 +1,7 @@
 /*GetFFTCorrelation: computes the maximum FFT value of a given interferogram.*/
 #include "fft.h"
 #include "ifm.h"
+#include <stdbool.h>
 #include <math.h>
 
 float getFFTCorrelation(complexFloat *igram,int sizeX,int sizeY);

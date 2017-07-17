@@ -24,6 +24,7 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 
 int fileNumLines(char *fname)
 {

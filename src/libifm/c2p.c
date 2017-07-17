@@ -30,6 +30,7 @@ BUGS:
 
 
 #include "ifm.h"
+#include <stdbool.h>
 
 
 int 

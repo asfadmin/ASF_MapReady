@@ -21,6 +21,7 @@ PROGRAM HISTORY:
   1.0  - Mike Shindle & Rob Fatland. Original development.
 ****************************************************************/
 #include "ifm.h"
+#include <stdbool.h>
 
 complexFloat Cmul(complexFloat a, complexFloat b)
 {

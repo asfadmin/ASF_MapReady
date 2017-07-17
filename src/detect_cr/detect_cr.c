@@ -104,6 +104,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "asf_nan.h"
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 #include "asf_meta.h"
 #include "fft.h"
 #include "fft2d.h"

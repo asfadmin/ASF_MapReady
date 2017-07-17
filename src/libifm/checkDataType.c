@@ -22,6 +22,7 @@ PROGRAM HISTORY:
     1.0 - Rob Fatland & Mike Shindle - Original Devlopment
 ****************************************************************/
 #include "ifm.h"
+#include <stdbool.h>
 
 int checkDataType(data_t type)
 {

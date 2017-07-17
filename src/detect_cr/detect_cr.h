@@ -4,6 +4,7 @@
 #define FLAG_SET 1
 #define FLAG_NOT_SET -1
 #include "ifm.h"
+#include <stdbool.h>
 
 /* Index keys for all flags used in this program via a 'flags' array */
 typedef enum {

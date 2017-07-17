@@ -19,6 +19,7 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 
 #ifdef EPSILON
 #undef EPSILON

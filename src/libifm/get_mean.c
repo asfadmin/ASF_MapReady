@@ -22,6 +22,7 @@ PROGRAM HISTORY:
 
 
 #include "ifm.h"
+#include <stdbool.h>
 
 float get_mean(FILE *famp, int ns, int nl, int doAvg)
 {

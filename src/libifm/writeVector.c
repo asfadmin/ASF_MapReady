@@ -30,6 +30,7 @@ PROGRAM HISTORY:
 #include <unistd.h>
 #include <fcntl.h>
 #include "ifm.h"
+#include <stdbool.h>
 
 void writeVector (void *v, char *fnm, data_t type, int n)
 {

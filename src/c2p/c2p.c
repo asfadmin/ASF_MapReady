@@ -64,6 +64,7 @@ BUGS:
 #include "asf_insar.h"
 #include "asf_sar.h"
 #include "ifm.h"
+#include <stdbool.h>
 
 #define VERSION		1.5
 #define BUF		256

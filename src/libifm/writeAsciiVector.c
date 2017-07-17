@@ -27,6 +27,7 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 
 void writeAsciiVector(void *v, char *fnm, data_t type, int n)
 {

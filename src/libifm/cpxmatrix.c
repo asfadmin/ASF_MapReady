@@ -1,6 +1,7 @@
 #include "asf.h"
 
 #include "ifm.h"
+#include <stdbool.h>
 
 complexFloat **cpxmatrix(int nrl, int nrh, int ncl, int nch)
 {

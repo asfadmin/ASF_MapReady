@@ -89,6 +89,7 @@ BUGS:
 #include "asf_meta.h"
 #include "asf_insar.h"
 #include "ifm.h" /* For Cabs() function */
+#include <stdbool.h>
 
 #define VERSION      2.1
 #define WINDOW_SIZE  3

@@ -21,6 +21,7 @@ PROGRAM HISTORY:
 ****************************************************************/
 
 #include "ifm.h"
+#include <stdbool.h>
 
 float Cabs(complexFloat a)
 {

@@ -109,6 +109,7 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 #include "ifm.h"
+#include <stdbool.h>
 #include "asf_endian.h"
 
 #define borderX 80	/*Distances from edge of image to start correlating.*/

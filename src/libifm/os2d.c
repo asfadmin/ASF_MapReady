@@ -24,6 +24,7 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 
 /* Prototypes */
 void fft2d (complexFloat *array, int n, int direction);

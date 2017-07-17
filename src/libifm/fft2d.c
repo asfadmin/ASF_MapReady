@@ -29,6 +29,7 @@ PROGRAM HISTORY:
 ****************************************************************/
 
 #include "ifm.h"
+#include <stdbool.h>
 
 void fourn(float *data, int *nn, int ndim, int isign);
 

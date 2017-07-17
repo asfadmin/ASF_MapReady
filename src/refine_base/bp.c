@@ -54,6 +54,7 @@ BUGS:
 ******************************************************************************/
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 #include "asf_meta.h"
 
 /* local function declaration */

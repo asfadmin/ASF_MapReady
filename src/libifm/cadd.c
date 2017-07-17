@@ -33,6 +33,7 @@ BUGS:
 
 ****************************************************************/
 #include "ifm.h"
+#include <stdbool.h>
 
 
 complexDouble Cadd_d(complexDouble a, complexDouble b) {

@@ -22,6 +22,7 @@ PROGRAM HISTORY:
 1.0 - Mike Shindle - Original Development
 ****************************************************************/
 #include "ifm.h"
+#include <stdbool.h>
 #include "multilook.h"
 
 void 

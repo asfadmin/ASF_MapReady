@@ -1,5 +1,6 @@
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 #include "asf_meta.h"
 
 int test_base(char *basefile, char *matfile, char *vecfile)

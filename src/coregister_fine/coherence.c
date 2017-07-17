@@ -3,6 +3,7 @@
 #include "las.h"
 #include "asf_meta.h"
 #include "ifm.h"
+#include <stdbool.h>
 #include "ddr.h"
 
 #ifndef TWOPI

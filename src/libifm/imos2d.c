@@ -27,6 +27,7 @@ PROGRAM HISTORY:
 #include "asf.h"
 #include "imsl.h"
 #include "ifm.h"
+#include <stdbool.h>
 
 /* function declarations */
 int init_coeff(int);

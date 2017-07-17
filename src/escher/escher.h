@@ -1,6 +1,7 @@
 
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 #include "ddr.h"
 #include "asf_meta.h"
 

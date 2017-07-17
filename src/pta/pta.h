@@ -4,6 +4,7 @@
 #define FLAG_SET 1
 #define FLAG_NOT_SET -1
 #include "ifm.h"
+#include <stdbool.h>
 #include <fftw3.h>
 
 /* Evaluate to true if floats are within tolerance of each other.  */

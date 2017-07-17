@@ -33,6 +33,7 @@ PROGRAM HISTORY:
 #include "asf.h"
 
 #include "ifm.h"
+#include <stdbool.h>
 #include "multilook.h"
 
 int c2i(float *amp, float *phase, RGBDATA *image, RGBDATA *table, int nsamples, float avg)

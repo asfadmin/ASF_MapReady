@@ -85,6 +85,7 @@ BUGS:
 
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 #include "ifm2ppm.h"
 #include "asf_meta.h"
 #include <sys/types.h>  /* for fstat function */

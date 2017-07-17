@@ -91,6 +91,7 @@ BUGS:
 #include "asf.h"
 #include "las.h"
 #include "ifm.h"
+#include <stdbool.h>
 #include "asf_meta.h"
 #include "multilook.h"
 #include "lzFetch.h"

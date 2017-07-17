@@ -29,6 +29,7 @@ PROGRAM HISTORY:
 #include "asf.h"
 
 #include "ifm.h"
+#include <stdbool.h>
 
 float SNR(float *v, int n, int x, int y, int d)
 {

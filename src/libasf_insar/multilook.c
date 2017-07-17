@@ -2,6 +2,7 @@
 #include "asf_meta.h"
 #include "asf_export.h"
 #include "ifm.h"
+#include <stdbool.h>
 
 /* local constants */
 #define VERSION 4.0

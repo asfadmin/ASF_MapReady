@@ -41,6 +41,7 @@ PROGRAM HISTORY:
 #include <unistd.h>
 #include <fcntl.h>
 #include "ifm.h"
+#include <stdbool.h>
 
 void readMatrix(fnm, a, type, m, n, c0, r0, M, N, h0, h1)
 char   *fnm;      /* source filename                   */

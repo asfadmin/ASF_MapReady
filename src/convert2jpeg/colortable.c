@@ -25,6 +25,7 @@ PROGRAM HISTORY:
 1.0 - Mike Shindle - Original Development, December 11, 1996.
 ****************************************************************/
 #include "ifm.h"
+#include <stdbool.h>
 #include "ifm2ppm.h"
 
 /* local constants */

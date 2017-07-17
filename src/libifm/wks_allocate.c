@@ -21,6 +21,7 @@ PROGRAM HISTORY:
 
 #include "imsl.h"
 #include "ifm.h"
+#include <stdbool.h>
 
 /* imsl functions */
 extern fftci_();

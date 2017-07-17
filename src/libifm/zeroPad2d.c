@@ -43,6 +43,7 @@ PROGRAM HISTORY:
   1.0 - Rob Fatland & Mike Shindle - Original Development
 ****************************************************************/
 #include "ifm.h"
+#include <stdbool.h>
 
 void zeroPad2d(complexFloat **vIn, complexFloat **vOut, int dim, int os)
 {

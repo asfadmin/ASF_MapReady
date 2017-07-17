@@ -1,6 +1,7 @@
 #include "asf.h"
 
 #include "ifm.h"
+#include <stdbool.h>
 
 float *
 alloc_vector(int nl, int nh)

@@ -5,6 +5,7 @@
 #include "functions.h"
 #include "fft.h"
 #include "ifm.h"
+#include <stdbool.h>
 #include "asf_endian.h"
 
 // Coarse coregistration

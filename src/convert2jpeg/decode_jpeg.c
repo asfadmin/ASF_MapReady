@@ -5,6 +5,7 @@ it to the given LAS image.
 ****************************************************************/
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 #include "ifm2ppm.h"
 #include "ddr.h"
 

@@ -1,5 +1,6 @@
 
 #include "ifm.h"
+#include <stdbool.h>
 
 static float at,bt,ct;
 static float maxarg1,maxarg2;

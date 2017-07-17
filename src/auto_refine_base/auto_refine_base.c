@@ -1,5 +1,6 @@
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 
 #ifndef TRUE
 #define TRUE 1

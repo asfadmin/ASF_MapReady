@@ -1,6 +1,7 @@
 #include "asf.h"
 
 #include "ifm.h"
+#include <stdbool.h>
 
 complexFloat *cpxvector(int nl, int nh)
 {

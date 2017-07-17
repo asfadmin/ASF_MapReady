@@ -40,6 +40,7 @@ PROGRAM HISTORY:
 #include <unistd.h>
 #include <fcntl.h>
 #include "ifm.h"
+#include <stdbool.h>
 
 void ReadMatrixFromSIC(char *fnm,            /* source filename       */
                        SIComplex **a,        /* destination buffer    */

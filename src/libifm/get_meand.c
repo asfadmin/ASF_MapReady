@@ -22,6 +22,7 @@ PROGRAM HISTORY:
 
 
 #include "ifm.h"
+#include <stdbool.h>
 
 double get_meand(FILE *famp, int ns, int nl, int doAvg)
 {

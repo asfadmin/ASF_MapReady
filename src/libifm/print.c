@@ -21,6 +21,7 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 
 /* print n-vector in a column */
 void 

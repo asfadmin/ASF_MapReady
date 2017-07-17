@@ -21,6 +21,7 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 
 /* prototype */
 int fcpvec(float *from, float *to, int nitems);

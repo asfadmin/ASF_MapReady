@@ -27,6 +27,7 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "asf.h"
 #include "ifm.h"
+#include <stdbool.h>
 
 /* Prototype */
 void os2d(complexFloat *v, complexFloat *vo, int dim, int os);

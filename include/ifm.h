@@ -25,11 +25,6 @@ typedef struct {
     unsigned char blue;
 } RGBDATA;
 
-#ifndef __bool_var
-#define __bool_var
-typedef int bool;
-#endif
-
 #ifndef __data_t_var
 #define __data_t_var
 typedef int data_t;

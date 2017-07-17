@@ -22,6 +22,7 @@ PROGRAM HISTORY:
     1.0 - Mike Shindle & Rob Fatland - Original Development
 ****************************************************************/
 #include "ifm.h"
+#include <stdbool.h>
 
 complexFloat Csdiv(float s, complexFloat a) {
    complexFloat x;
