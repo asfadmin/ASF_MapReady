@@ -2326,7 +2326,7 @@ int main(int argc, char **argv)
     fprintf(fp, "    </input_image>\n");
     
     // Terrain corrected result
-    char hh[64]="", hv[64]="", vh[64]="", vv[64]="";
+    char hh[256]="", hv[256]="", vh[256]="", vv[256]="";
     if (params->rtc_HH_file)
       split_dir_and_file(params->rtc_HH_file, directory, filename);
     else if (params->rtc_VV_file)
