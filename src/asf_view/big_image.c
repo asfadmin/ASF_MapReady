@@ -1365,8 +1365,8 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         // Tab key: Cycle between the crosshairs (which one is affected by
         // subsequent arrow movements) Shift- or ctrl-tab: other direction
         if (g_poly->n > 0) {
-            if (event->state & GDK_SHIFT_MASK ||
-                event->state & GDK_CONTROL_MASK)
+            if ((event->state & GDK_SHIFT_MASK) ||
+                (event->state & GDK_CONTROL_MASK))
             {
                 if (g_poly->c == 0) {
                     last_was_crosshair = TRUE;
