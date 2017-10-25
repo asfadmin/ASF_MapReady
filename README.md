@@ -31,16 +31,49 @@ installed on your system. In the list below, some of the listed packages
 will have additional dependencies that your package management system
 should automatically pull in.
 
-These are names on Ubuntu systems.  On CentOS, a few of the names are
-different.  On other systems, the packages may have different names.
+On Debian 9/Ubuntu 16.04, the following packages are necessary:
 
-	* bison
-	* flex
-	* g++
-	* gcc
-	* libgdal-dev
-	* libgtk2.0-dev
-	* libglade2-dev
+* gcc
+* g++
+* bison
+* flex
+* libcunit1-dev
+* libexif-dev
+* libfftw3-dev
+* libgdal-dev
+* libgeotiff-dev
+* libglade2-dev
+* libglib2.0-dev
+* libgsl-dev
+* libgtk2.0-dev
+* libjpeg-dev
+* libpng-dev
+* libproj-dev
+* libshp-dev
+* libtiff5-dev
+* libxml2-dev
+
+On Fedora/CentOS, the following packages are necessary:
+
+* gcc
+* gcc-c++
+* bison
+* flex
+* CUnit-devel
+* fftw-devel
+* gdal-devel
+* gsl-devel
+* gtk2-devel
+* libcurl-devel
+* libgeotiff-devel
+* libglade2-devel
+* libjpeg-turbo-devel
+* libtiff-devel
+* netcdf-devel
+* proj-devel
+* shapelib-devel
+
+On other systems, the package names may vary.
   
 #########################################################################  
 The following commands on the most recent Ubuntu should get you up
