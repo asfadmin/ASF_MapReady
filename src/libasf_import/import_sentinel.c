@@ -427,15 +427,14 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
     asfPrintError("Could not get root element %s\n", xmlFile);
   
   // Get dimensions
-  strcpy(xpath, "/noise/noiseVectorList/noiseVector");
+  strcpy(xpath, "/noise/noiseVectorList");
   if (!xml_xpath_element_exists(doc, xpath)){
       asfPrintStatus("Using alternative noiseRangeVectorList");
       strcpy(range, "Range")
   }else{    
       strcpy(range, "")
         
-  sprintf(xpath, "/noise/noise%sVectorList/", range);
-  sprintf(str, "%s/@count", xpath)
+  sprintf(str, "/noise/noise%sVectorList/@count", range, xpath)
     
   int line_count = xml_xpath_get_int_value(doc, str)
   
