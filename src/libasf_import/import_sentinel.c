@@ -427,20 +427,20 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
     asfPrintError("Could not get root element %s\n", xmlFile);
   
   // Get dimensions
-  sprintf(xpath, "/noise/noiseVectorList/noiseVector");
-  int line_count = xml_xpath_get_int_value(doc, 
-    "/noise/noiseVectorList/@count");
+  strcpy(xpath, "/noise/noiseVectorList/noiseVector");
+  if (!xml_xpath_element_exists(doc, xpath)){
+      asfPrintStatus("Using alternative noiseRangeVectorList");
+      strcpy(range, "Range")
+  }else{    
+      strcpy(range, "")
+        
+  sprintf(xpath, "/noise/noise%sVectorList/", range);
+  sprintf(str, "%s/@count", xpath)
+    
+  int line_count = xml_xpath_get_int_value(doc, str)
   
   // Location of NoiseLut changed from noiseVectorList to noiseRangeVectorList
-  if (line_count == MAGIC_UNSET_INT){
-      strcpy(xpath, "/noise/noiseRangeVectorList/noiseRangeVector");
-      strcpy(range, "Range")
-      asfPrintStatus("Using alternative noiseRangeVectorList: %s", xpath);
-      line_count = xml_xpath_get_int_value(doc, 
-         "/noise/noiseRangeVectorList/@count");
-  }else{
-      strcpy(range, "")   
-  }
+  sprintf(xpath, "/noise/noise%sVectorList/noise%sVector", range, range)  
   
   sentinel_lut_line *lut = 
     (sentinel_lut_line *) MALLOC(sizeof(sentinel_lut_line)*line_count);
