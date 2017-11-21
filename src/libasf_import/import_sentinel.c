@@ -435,6 +435,7 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
   if (line_count == MAGIC_UNSET_STRING){
       strcpy(xpath, "/noise/noiseRangeVectorList/noiseRangeVector");
       strcpy(range, "Range")
+      asfPrintStatus("Using alternative noiseRangeVectorList: %s", xpath);
       line_count = xml_xpath_get_int_value(doc, 
          "/noise/noiseRangeVectorList/@count");
   }else{
