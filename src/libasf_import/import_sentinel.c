@@ -425,7 +425,7 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
     asfPrintError("Could not get root element %s\n", xmlFile);
   
   // Get dimensions
-  sprintf(xpath, "/noise/noiseVectorList/noiseVector")
+  sprintf(xpath, "/noise/noiseVectorList/noiseVector");
   int line_count = xml_xpath_get_int_value(doc, 
     "/noise/noiseVectorList/@count");
   
