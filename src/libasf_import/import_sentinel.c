@@ -429,17 +429,18 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
   // Get dimensions
   strcpy(xpath, "/noise/noiseVectorList");
   if (!xml_xpath_element_exists(doc, xpath)){
-      asfPrintStatus("Using alternative noiseRangeVectorList");
-      strcpy(range, "Range")
+    asfPrintStatus("Using alternative noiseRangeVectorList");
+    strcpy(range, "Range");
   }else{    
-      strcpy(range, "")
+    strcpy(range, "");
+  }
         
-  sprintf(str, "/noise/noise%sVectorList/@count", range)
+  sprintf(str, "/noise/noise%sVectorList/@count", range);
     
-  int line_count = xml_xpath_get_int_value(doc, str)
+  int line_count = xml_xpath_get_int_value(doc, str);
   
   // Location of NoiseLut changed from noiseVectorList to noiseRangeVectorList
-  sprintf(xpath, "/noise/noise%sVectorList/noise%sVector", range, range)  
+  sprintf(xpath, "/noise/noise%sVectorList/noise%sVector", range, range);  
   
   sentinel_lut_line *lut = 
     (sentinel_lut_line *) MALLOC(sizeof(sentinel_lut_line)*line_count);
