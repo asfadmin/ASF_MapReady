@@ -412,6 +412,8 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
   int kk, ll, line, pixel_count;
   char *str = (char *) MALLOC(sizeof(char)*512);
   char *xpath = (char *) MALLOC(sizeof(char)*512);
+  char *range = (char *) MALLOC(sizeof(char)*32);
+  
   char pixelStr[8192], noiseStr[16384], **pixel, **noise;
   float minNoise = 9999999;
   float maxNoise = -9999999;
@@ -432,10 +434,11 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
   // Location of NoiseLut changed from noiseVectorList to noiseRangeVectorList
   if (line_count == MAGIC_UNSET_STRING){
       strcpy(xpath, "/noise/noiseRangeVectorList/noiseRangeVector");
+      strcpy(range, "Range")
       line_count = xml_xpath_get_int_value(doc, 
          "/noise/noiseRangeVectorList/@count");
   }else{
-      strcpy(xpath, "/noise/noiseVectorList/noiseRangeList");
+      strcpy(range, "")   
   }
   
   sentinel_lut_line *lut = 
@@ -448,7 +451,7 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
     sprintf(str, "%s[%d]/pixel", xpath, kk+1);
     strcpy(pixelStr, xml_xpath_get_string_value(doc, str));
     split_into_array(pixelStr, ' ', &pixel_count, &pixel);
-    sprintf(str, "%s[%d]/noiseLut", xpath, kk+1);
+    sprintf(str, "%s[%d]/noise%sLut", xpath, kk+1, range);
     strcpy(noiseStr, xml_xpath_get_string_value(doc, str));
     split_into_array(noiseStr, ' ', &pixel_count, &noise);
     lut[kk].line = line;
