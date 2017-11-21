@@ -434,7 +434,7 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
   }else{    
       strcpy(range, "")
         
-  sprintf(str, "/noise/noise%sVectorList/@count", range, xpath)
+  sprintf(str, "/noise/noise%sVectorList/@count", range)
     
   int line_count = xml_xpath_get_int_value(doc, str)
   
