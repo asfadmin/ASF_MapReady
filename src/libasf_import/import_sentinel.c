@@ -432,7 +432,7 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
     "/noise/noiseVectorList/@count");
   
   // Location of NoiseLut changed from noiseVectorList to noiseRangeVectorList
-  if (line_count == MAGIC_UNSET_STRING){
+  if (line_count == MAGIC_UNSET_INT){
       strcpy(xpath, "/noise/noiseRangeVectorList/noiseRangeVector");
       strcpy(range, "Range")
       asfPrintStatus("Using alternative noiseRangeVectorList: %s", xpath);
