@@ -411,6 +411,9 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
 {
   int kk, ll, line, pixel_count;
   char *str = (char *) MALLOC(sizeof(char)*512);
+  char *xpath = (char *) MALLOC(sizeof(char)*512);
+  char *range = (char *) MALLOC(sizeof(char)*32);
+  
   char pixelStr[8192], noiseStr[16384], **pixel, **noise;
   float minNoise = 9999999;
   float maxNoise = -9999999;
@@ -423,20 +426,33 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
   if (!root)
     asfPrintError("Could not get root element %s\n", xmlFile);
   
-  // Get dimensions  
-  int line_count = xml_xpath_get_int_value(doc, 
-    "/noise/noiseVectorList/@count");
+  // Get dimensions
+  strcpy(xpath, "/noise/noiseVectorList");
+  if (!xml_xpath_element_exists(doc, xpath)){
+    asfPrintStatus("Using alternative noiseRangeVectorList");
+    strcpy(range, "Range");
+  }else{    
+    strcpy(range, "");
+  }
+        
+  sprintf(str, "/noise/noise%sVectorList/@count", range);
+    
+  int line_count = xml_xpath_get_int_value(doc, str);
+  
+  // Location of NoiseLut changed from noiseVectorList to noiseRangeVectorList
+  sprintf(xpath, "/noise/noise%sVectorList/noise%sVector", range, range);  
+  
   sentinel_lut_line *lut = 
     (sentinel_lut_line *) MALLOC(sizeof(sentinel_lut_line)*line_count);
     
   // Work your way through the noise LUT
   for (kk=0; kk<line_count; kk++) {
-    sprintf(str, "/noise/noiseVectorList/noiseVector[%d]/line", kk+1);
+    sprintf(str, "%s[%d]/line", xpath, kk+1);
     line = xml_xpath_get_int_value(doc, str);
-    sprintf(str, "/noise/noiseVectorList/noiseVector[%d]/pixel", kk+1);
+    sprintf(str, "%s[%d]/pixel", xpath, kk+1);
     strcpy(pixelStr, xml_xpath_get_string_value(doc, str));
     split_into_array(pixelStr, ' ', &pixel_count, &pixel);
-    sprintf(str, "/noise/noiseVectorList/noiseVector[%d]/noiseLut", kk+1);
+    sprintf(str, "%s[%d]/noise%sLut", xpath, kk+1, range);
     strcpy(noiseStr, xml_xpath_get_string_value(doc, str));
     split_into_array(noiseStr, ' ', &pixel_count, &noise);
     lut[kk].line = line;
