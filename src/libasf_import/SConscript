@@ -12,6 +12,7 @@ localenv.AppendUnique(CPPPATH = [
 
 localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
 localenv.ParseConfig("pkg-config --cflags --libs gsl")
+localenv.ParseConfig("pkg-config --cflags --libs hdf5")
 
 localenv.AppendUnique(LIBS = [
     "m",
@@ -62,7 +63,6 @@ libs = localenv.SharedLibrary("libasf_import", [
         "import_terrasar.c",
         "import_polsarpro.c",
         "import_fgdc_meta.c",
-        "import_dem.c",
         "import_roipac.c",
         "import_smap.c",
 	"import_sentinel.c",
