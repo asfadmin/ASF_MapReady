@@ -26,9 +26,3 @@ typedef struct {
   double lambda;		/* M + NODE + W (RAD) */
 } equinoctial_elements_t;
 
-typedef struct {
-  double mean;
-  double true;
-  double eccentric;
-} anomaly_t;
-

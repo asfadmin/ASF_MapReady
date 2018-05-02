@@ -235,6 +235,9 @@ if platform.system() == "Linux":
         "/usr/include/atk-1.0",
         "/usr/include/libglade-2.0",
         "/usr/include/libxml2",
+	"/usr/include/geotiff",
+        "/usr/include/hdf5/serial",
+        "/usr/lib/x86_64-linux-gnu/glib-2.0/include",
     ])
 elif platform.system() == "Darwin":
     globalenv.AppendUnique(CCFLAGS = ["-Ddarwin",])
