@@ -728,7 +728,7 @@ int main(int argc, char **argv)
   meta_parameters *meta = NULL;
   params_t *params = NULL;
   char line[255], str[50], isoStr[50], rscFile[512], logFile[512];
-  char directory[25], filename[768], creation[30], map_projection[50];
+  char directory[768], filename[768], creation[30], map_projection[50];
   char *type = (char *) MALLOC(sizeof(char)*10);
   double seconds;
   int browse = FALSE, dem = FALSE, tropo = FALSE, stats = FALSE;
