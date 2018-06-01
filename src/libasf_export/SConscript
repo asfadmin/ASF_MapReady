@@ -15,7 +15,6 @@ localenv.AppendUnique(CPPPATH = [
 localenv.ParseConfig("pkg-config --cflags --libs libpng")
 localenv.ParseConfig("pkg-config --cflags --libs gsl")
 localenv.ParseConfig("pkg-config --cflags --libs libxml-2.0")
-localenv.ParseConfig("pkg-config --cflags --libs hdf5")
 
 localenv.AppendUnique(LIBS = [
     "m",
