@@ -126,6 +126,13 @@ void h5_att_str(hid_t file_id, char *group, char *name, char *value)
     attr_id = H5Aopen_by_idx(file_id, group, H5_INDEX_NAME, H5_ITER_NATIVE, ii,
       H5P_DEFAULT, H5P_DEFAULT);
     H5Aget_name(attr_id, 50, attr_name);
+    if (strcmp(group, "/") == 0) {
+      char *global = strstr(attr_name, "_GLOSDS");
+      if (global != NULL) {
+        printf("triggered!\n");
+        attr_name[strlen(attr_name)-7] = '\n';
+      }
+    }
     if (strcmp_case(name, attr_name) == 0) {
       hid_t attr_type = H5Aget_type(attr_id);
       H5T_class_t data_type = H5Tget_native_type(attr_type, H5T_DIR_DEFAULT);
@@ -282,41 +289,41 @@ int main(int argc, char **argv)
     asfPrintError("Cannot open file (%s)!\n", inFile);
     
   // Read global attributes
-  h5_att_float(file_id, "/", "AVG_DISP_X(km):_GLOSDS", &avg_disp_x);
-  h5_att_float(file_id, "/", "AVG_DISP_Y(km):_GLOSDS", &avg_disp_y);
-  h5_att_double(file_id, "/", "CREATE_TIME:_GLOSDS", &create_time);
-  h5_att_int(file_id, "/", "CREATE_YEAR:_GLOSDS", &create_year);
-  h5_att_float(file_id, "/", "D_TIME between images(day):_GLOSDS", &time_diff);
-  h5_att_str(file_id, "/", "Data Region:_GLOSDS", data_region);
-  h5_att_float(file_id, "/", "Grid Spacing(km):_GLOSDS", &grid_spacing);
-  h5_att_str(file_id, "/", "IMV Tracking REQID:_GLOSDS", ref_id);
-  h5_att_float(file_id, "/", "Image Pixel Size(m):_GLOSDS", &pixel_size);
-  h5_att_int(file_id, "/", "NGRID With Obs:_GLOSDS", &num_grids);
-  h5_att_str(file_id, "/", "Product Description:_GLOSDS", description);
-  h5_att_str(file_id, "/", "Product Identifier:_GLOSDS", product_id);
-  h5_att_str(file_id, "/", "SW_VERSION:_GLOSDS", sw_version);
-  h5_att_double(file_id, "/", "Source Img Center Time:_GLOSDS", &source_time);
-  h5_att_str(file_id, "/", "Source Img ID:_GLOSDS", source_image);
-  h5_att_float(file_id, "/", "Source Img Lower left lat:_GLOSDS", &srcLL_lat);
-  h5_att_float(file_id, "/", "Source Img Lower left lon:_GLOSDS", &srcLL_lon);
-  h5_att_float(file_id, "/", "Source Img Lower right lat:_GLOSDS", &srcLR_lat);
-  h5_att_float(file_id, "/", "Source Img Lower right lon:_GLOSDS", &srcLR_lon);
-  h5_att_float(file_id, "/", "Source Img Upper left lat:_GLOSDS", &srcUL_lat);
-  h5_att_float(file_id, "/", "Source Img Upper left lon:_GLOSDS", &srcUL_lon);
-  h5_att_float(file_id, "/", "Source Img Upper right lat:_GLOSDS", &srcUR_lat);
-  h5_att_float(file_id, "/", "Source Img Upper right lon:_GLOSDS", &srcUR_lon);
-  h5_att_int(file_id, "/", "Source Img Year:_GLOSDS", &source_year);
-  h5_att_double(file_id, "/", "Target Img Center Time:_GLOSDS", &target_time);
-  h5_att_str(file_id, "/", "Target Img ID:_GLOSDS", target_image);
-  h5_att_float(file_id, "/", "Target Img Lower left lat:_GLOSDS", &trgLL_lat);
-  h5_att_float(file_id, "/", "Target Img Lower left lon:_GLOSDS", &trgLL_lon);
-  h5_att_float(file_id, "/", "Target Img Lower right lat:_GLOSDS", &trgLR_lat);
-  h5_att_float(file_id, "/", "Target Img Lower right lon:_GLOSDS", &trgLR_lon);
-  h5_att_float(file_id, "/", "Target Img Upper left lat:_GLOSDS", &trgUL_lat);
-  h5_att_float(file_id, "/", "Target Img Upper left lon:_GLOSDS", &trgUL_lon);
-  h5_att_float(file_id, "/", "Target Img Upper right lat:_GLOSDS", &trgUR_lat);
-  h5_att_float(file_id, "/", "Target Img Upper right lon:_GLOSDS", &trgUR_lon);
-  h5_att_int(file_id, "/", "Target Img Year:_GLOSDS", &target_year);
+  h5_att_float(file_id, "/", "AVG_DISP_X(km):", &avg_disp_x);
+  h5_att_float(file_id, "/", "AVG_DISP_Y(km):", &avg_disp_y);
+  h5_att_double(file_id, "/", "CREATE_TIME:", &create_time);
+  h5_att_int(file_id, "/", "CREATE_YEAR:", &create_year);
+  h5_att_float(file_id, "/", "D_TIME between images(day):", &time_diff);
+  h5_att_str(file_id, "/", "Data Region:", data_region);
+  h5_att_float(file_id, "/", "Grid Spacing(km):", &grid_spacing);
+  h5_att_str(file_id, "/", "IMV Tracking REQID:", ref_id);
+  h5_att_float(file_id, "/", "Image Pixel Size(m):", &pixel_size);
+  h5_att_int(file_id, "/", "NGRID With Obs:", &num_grids);
+  h5_att_str(file_id, "/", "Product Description:", description);
+  h5_att_str(file_id, "/", "Product Identifier:", product_id);
+  h5_att_str(file_id, "/", "SW_VERSION:", sw_version);
+  h5_att_double(file_id, "/", "Source Img Center Time:", &source_time);
+  h5_att_str(file_id, "/", "Source Img ID:", source_image);
+  h5_att_float(file_id, "/", "Source Img Lower left lat:", &srcLL_lat);
+  h5_att_float(file_id, "/", "Source Img Lower left lon:", &srcLL_lon);
+  h5_att_float(file_id, "/", "Source Img Lower right lat:", &srcLR_lat);
+  h5_att_float(file_id, "/", "Source Img Lower right lon:", &srcLR_lon);
+  h5_att_float(file_id, "/", "Source Img Upper left lat:", &srcUL_lat);
+  h5_att_float(file_id, "/", "Source Img Upper left lon:", &srcUL_lon);
+  h5_att_float(file_id, "/", "Source Img Upper right lat:", &srcUR_lat);
+  h5_att_float(file_id, "/", "Source Img Upper right lon:", &srcUR_lon);
+  h5_att_int(file_id, "/", "Source Img Year:", &source_year);
+  h5_att_double(file_id, "/", "Target Img Center Time:", &target_time);
+  h5_att_str(file_id, "/", "Target Img ID:", target_image);
+  h5_att_float(file_id, "/", "Target Img Lower left lat:", &trgLL_lat);
+  h5_att_float(file_id, "/", "Target Img Lower left lon:", &trgLL_lon);
+  h5_att_float(file_id, "/", "Target Img Lower right lat:", &trgLR_lat);
+  h5_att_float(file_id, "/", "Target Img Lower right lon:", &trgLR_lon);
+  h5_att_float(file_id, "/", "Target Img Upper left lat:", &trgUL_lat);
+  h5_att_float(file_id, "/", "Target Img Upper left lon:", &trgUL_lon);
+  h5_att_float(file_id, "/", "Target Img Upper right lat:", &trgUR_lat);
+  h5_att_float(file_id, "/", "Target Img Upper right lon:", &trgUR_lon);
+  h5_att_int(file_id, "/", "Target Img Year:", &target_year);
   
   // Read data
   int ii, num_values;
