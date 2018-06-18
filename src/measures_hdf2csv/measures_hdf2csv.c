@@ -118,6 +118,7 @@ void h5_att_str(hid_t file_id, char *group, char *name, char *value)
   int ii, kk;
   void *buf = NULL;
   hid_t attr_id;
+  size_t data_size;
   H5O_info_t object_info;
   char *attr_name = (char *) MALLOC(sizeof(char)*50);
 
@@ -136,7 +137,7 @@ void h5_att_str(hid_t file_id, char *group, char *name, char *value)
     if (strcmp_case(name, attr_name) == 0) {
       hid_t attr_type = H5Aget_type(attr_id);
       H5T_class_t data_type = H5Tget_native_type(attr_type, H5T_DIR_DEFAULT);
-      size_t data_size = H5Tget_size(data_type);
+      data_size = H5Tget_size(data_type);
       hid_t attr_space = H5Aget_space(attr_id);
       hsize_t dims[H5S_MAX_RANK];
       int rank = H5Sget_simple_extent_dims(attr_space, dims, NULL);
@@ -157,6 +158,7 @@ void h5_att_str(hid_t file_id, char *group, char *name, char *value)
   }
   if (buf) {
     strcpy(value, buf);
+    value[(unsigned)data_size] = '\0';
     FREE(buf);
   }
   else
