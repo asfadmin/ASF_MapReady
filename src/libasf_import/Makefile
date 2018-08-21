@@ -84,7 +84,6 @@ OBJS  = \
 	import_terrasar.o \
 	import_polsarpro.o \
 	import_fgdc_meta.o \
-	import_dem.o \
 	import_roipac.o \
 	import_smap.o \
 	import_seasat_h5.o \
