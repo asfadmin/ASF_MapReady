@@ -468,6 +468,7 @@ DOCDIR="$prefix/doc"
 AC_SUBST(DOCDIR)
 
 TMPDIR="/tmp"
+AC_SUBST(TMPDIR)
 
 AC_OUTPUT([
 Makefile
