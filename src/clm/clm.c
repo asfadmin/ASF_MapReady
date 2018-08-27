@@ -246,7 +246,7 @@ main (int argc, char *argv[])
     meta_parameters *meta = meta_read(meta_file);
 
     int ii,jj;
-    for (jj=0, ii=currArg+2; ii<argc; ++ii, ++jj) {
+    for (jj=0, ii=currArg+3; ii<argc; ++ii, ++jj) {
       if (strcmp_case(argv[ii], "CL") == 0) {
         args[jj] = meta->general->line_count/2.0;
       } else if (strcmp_case(argv[ii], "CS") == 0) {
