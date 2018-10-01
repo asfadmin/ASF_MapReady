@@ -106,6 +106,8 @@ typedef struct {
 	char *mli_par_file;
 	char *gamma_version;
 	char *gap_rtc;
+        char *hyp3_rtc;
+        char *ipf;
 	char *dem_source;
 	char *incidence_angle_file;
 	char *incidence_angle_meta;
@@ -334,6 +336,8 @@ params_t *params_init(char *type) {
     params->kml_overlay = NULL;
     params->gamma_version = NULL;
     params->gap_rtc = NULL;
+    params->hyp3_rtc = NULL;
+    params->ipf = NULL;
     params->dem_source = NULL;
     params->incidence_angle_file = NULL;
     params->incidence_angle_meta = NULL;
@@ -403,6 +407,8 @@ void params_free(params_t *params) {
   FREE(params->main_log);
   FREE(params->gamma_version);
   FREE(params->gap_rtc);
+  FREE(params->hyp3_rtc);
+  FREE(params->ipf);
   FREE(params->dem_source);
   FREE(params->incidence_angle_file);
   FREE(params->incidence_angle_meta);
@@ -642,6 +648,14 @@ void read_filenames(const char * file, params_t **params, char *type)
 			  list->gap_rtc = (char *) MALLOC(sizeof(char)*n);
 			  sprintf(list->gap_rtc, "%s", trim_spaces(value));
 			}
+                        if (strncmp_case(line, "hyp3_rtc version", 16) == 0) {
+                          list->hyp3_rtc = (char *) MALLOC(sizeof(char)*10);
+                          sprintf(list->hyp3_rtc, "%s", trim_spaces(value));
+                        }
+                        if (strncmp_case(line, "ipf version", 11) == 0) {
+                          list->ipf = (char *) MALLOC(sizeof(char)*10);
+                          sprintf(list->ipf, "%s", trim_spaces(value));
+                        }
 			if (strncmp_case(line, "dem source", 10) == 0) {
 				list->dem_source = (char *) MALLOC(sizeof(char)*n);
 				sprintf(list->dem_source, "%s", trim_spaces(value));
@@ -2323,6 +2337,10 @@ int main(int argc, char **argv)
     meta_free(meta);
     fprintf(fp, "      <data_source type=\"string\" definition=\"source "
       "providing the data\">Alaska Satellite Facility</data_source>\n");
+    if (params->ipf)
+      fprintf(fp, "      <ipf_version type=\"string\" definition=\"version "
+        "number of the ESA processor used for the processing of the Sentinel-1 "
+        "data\">%s</ipf_version>\n", params->ipf);
     fprintf(fp, "    </input_image>\n");
     
     // Terrain corrected result
@@ -2447,9 +2465,14 @@ int main(int argc, char **argv)
     fprintf(fp, "      <gamma_version type=\"string\" definition=\"version "
       "number of the GAMMA software used for processing\">%s</gamma_version>\n",
       params->gamma_version);
-    fprintf(fp, "      <gap_rtc_version type=\"string\" definition=\"version "
-      "number of gap_rtc script used for terrain correction processing\">%s"
-      "</gap_rtc_version>\n", params->gap_rtc);
+    if (params->gap_rtc)
+      fprintf(fp, "      <gap_rtc_version type=\"string\" definition=\"version "
+        "number of gap_rtc script used for terrain correction processing\">%s"
+        "</gap_rtc_version>\n", params->gap_rtc);
+    if (params->hyp3_rtc)
+      fprintf(fp, "      <hyp3_rtc_version type=\"string\" definition=\"version "
+        "number of hyp3_rtc script used for terrain correction processing\">%s"
+        "</hyp3_rtc_version>\n", params->hyp3_rtc);
     fprintf(fp, "      <patches_attempted type=\"int\" definition=\"number of patches used to coregister\""
       ">%d</patches_attempted>\n", patches_attempted);
     fprintf(fp, "      <patches_accepted type=\"int\" definition=\"number of patches successfully coregistered\""
@@ -2792,7 +2815,7 @@ int main(int argc, char **argv)
     }
     else if (strcmp_case(platform, "Sentinel-1B") == 0) {
       sprintf(data_source, "Copernicus Sentinel-1B");
-      sprintf(copyright, "EAS (%d)", year);
+      sprintf(copyright, "ESA (%d)", year);
     }
     else
       asfPrintError("Could not set data source or copyright for %s!\n", 
