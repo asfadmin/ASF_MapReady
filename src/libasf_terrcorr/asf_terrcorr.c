@@ -660,7 +660,7 @@ int match_dem(meta_parameters *metaSAR,
   char *demClipped = NULL, *demSlant = NULL;
   char *demSimSar = NULL;
   int num_attempts = 0;
-  const int max_attempts = 5; // # of times we re-try co-registration
+  const int max_attempts = 10; // # of times we re-try co-registration
   const float required_match = 2.5;
   double t_off, x_off;
   int redo_clipping;
