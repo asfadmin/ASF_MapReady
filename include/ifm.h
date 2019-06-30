@@ -25,9 +25,11 @@ typedef struct {
     unsigned char blue;
 } RGBDATA;
 
-#ifndef __bool_var
-#define __bool_var
-typedef int bool;
+#if __GNUC__ < 7
+  #ifndef __bool_var
+  #define __bool_var
+  typedef int bool;
+  #endif
 #endif
 
 #ifndef __data_t_var
