@@ -27,21 +27,3 @@ def run_test(target, source, env):
     else:
         sys.stderr.write("warning: unit test failed")
         return 1
-    
-def checkEndian(env):
-    """Endianness test function. Python already knows what endian it is, just ask Python. This code was tested on Intel, AMD 64, and Cell (Playstation 3)."""
-    import struct
-
-    array = struct.pack('cccc', '\x01', '\x02', '\x03', '\x04')
-
-    i = struct.unpack('i', array)
-
-    # Little Endian
-    if i == struct.unpack('<i', array):
-        return "little"
-
-    # Big Endian
-    elif i == struct.unpack('>i', array):
-        return "big"
-
-    return "unknown"
