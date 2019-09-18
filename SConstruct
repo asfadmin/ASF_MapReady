@@ -1,5 +1,6 @@
 import os.path
 import platform
+import sys
 
 AddOption("--prefix",
           dest = "prefix",
@@ -50,7 +51,7 @@ release_build = GetOption("release_build")
 inst_base = os.path.expanduser(GetOption("prefix"))
 pkg_version = GetOption("pkg_version")
 
-globalenv = Environment(TOOLS = ["default", add_UnitTest, checkEndian])
+globalenv = Environment(TOOLS = ["default", add_UnitTest])
 
 inst_dirs = {
     "bins":   os.path.join(inst_base, "bin"),
@@ -74,12 +75,10 @@ else:
         "docs":   os.path.join(header_prefix, "doc"),
     }
 
-endian = checkEndian(globalenv)
-
-if endian == "big" :
+if sys.byteorder == "big" :
     globalenv.AppendUnique(CPPDEFINES = ["ASF_BIG_ENDIAN", "ASF_BIG_IEEE"])
 
-elif endian == "little" :
+elif sys.byteorder == "little" :
     globalenv.AppendUnique(CPPDEFINES = ["ASF_LIL_ENDIAN", "ASF_LIL_IEEE"])
 
 else:
