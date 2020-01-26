@@ -26,7 +26,7 @@ static float *get_cal_lut_lines(sentinel_lut_line *cal, radiometry_t radiometry,
   float cal00, cal01, cal10, cal11;
   float a00, a10, a01, a11, slopeLine, slopePixel;
   float *amp = (float *) MALLOC(sizeof(float)*sample_count*deltaLine);
-  
+
   // Determine actual calibration value
   for (ii=oldLine; ii<newLine; ii++) {
     kkLut = 0;
@@ -69,24 +69,24 @@ static float *get_cal_lut_lines(sentinel_lut_line *cal, radiometry_t radiometry,
       slopeLine = (float)(ii - oldLine)/(float)deltaLine;
       slopePixel = (float)(kk - oldPixel)/(float)deltaPixel;
       idx = (ii - oldLine)*meta->general->sample_count + kk;
-      amp[idx] = a00 + a10 * slopePixel + a01 * slopeLine 
+      amp[idx] = a00 + a10 * slopePixel + a01 * slopeLine
         + a11 * slopePixel * slopeLine;
     }
   }
   return amp;
 }
 
-static void write_cal_lut(sentinel_lut_line *cal, radiometry_t radiometry, 
+static void write_cal_lut(sentinel_lut_line *cal, radiometry_t radiometry,
   int band, int lut_line_count, char *outFile)
 {
   FILE *fp = NULL;
 
-  asfPrintStatus("\n   Writing calibration LUT image (%s) to disk (%s) ...\n", 
+  asfPrintStatus("\n   Writing calibration LUT image (%s) to disk (%s) ...\n",
     radiometry2str(radiometry), outFile);
-  
+
   meta_parameters *meta = meta_read(outFile);
   float *amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  
+
   if (band == 0)
     fp = FOPEN(outFile, "wb");
   else
@@ -147,7 +147,7 @@ static void write_cal_lut(sentinel_lut_line *cal, radiometry_t radiometry,
       }
       slopeLine = (float)(ii - oldLine)/(float)deltaLine;
       slopePixel = (float)(kk - oldPixel)/(float)deltaPixel;
-      amp[kk] = a00 + a10 * slopePixel + a01 * slopeLine 
+      amp[kk] = a00 + a10 * slopePixel + a01 * slopeLine
         + a11 * slopePixel * slopeLine;
     }
     put_band_float_line(fp, meta, band, ii, amp);
@@ -157,7 +157,7 @@ static void write_cal_lut(sentinel_lut_line *cal, radiometry_t radiometry,
   meta_free(meta);
 }
 
-static float *get_noise_lut_lines(sentinel_lut_line *lut, radiometry_t radiometry, 
+static float *get_noise_lut_lines(sentinel_lut_line *lut, radiometry_t radiometry,
   int band, int lut_line_count, int start, int end, char *outFile)
 {
   meta_parameters *meta = meta_read(outFile);
@@ -171,7 +171,7 @@ static float *get_noise_lut_lines(sentinel_lut_line *lut, radiometry_t radiometr
   float noise00, noise01, noise10, noise11;
   float a00, a10, a01, a11, slopeLine, slopePixel;
   float *noise = (float *) MALLOC(sizeof(float)*sample_count*deltaLine);
-  
+
   // Determine actual value
   for (ii=oldLine; ii<newLine; ii++) {
     kkLut = 0;
@@ -197,7 +197,7 @@ static float *get_noise_lut_lines(sentinel_lut_line *lut, radiometry_t radiometr
           newPixel = lut[start].pixel[kkLut];
         deltaPixel = newPixel - oldPixel;
         noise00 = lut[start].value[kkLut];
-        if (kkLut+1 < lut[start].count)        
+        if (kkLut+1 < lut[start].count)
           noise10 = lut[start].value[kkLut+1];
         else
           noise10 = lut[start].value[kkLut];
@@ -213,23 +213,23 @@ static float *get_noise_lut_lines(sentinel_lut_line *lut, radiometry_t radiometr
       }
       slopeLine = (float)(ii - oldLine)/(float)deltaLine;
       slopePixel = (float)(kk - oldPixel)/(float)deltaPixel;
-      noise[idx] = a00 + a10 * slopePixel + a01 * slopeLine 
+      noise[idx] = a00 + a10 * slopePixel + a01 * slopeLine
         + a11 * slopePixel * slopeLine;
     }
   }
   return noise;
 }
 
-static void write_noise_lut(sentinel_lut_line *lut, radiometry_t radiometry, 
+static void write_noise_lut(sentinel_lut_line *lut, radiometry_t radiometry,
   int band, int lut_line_count, char *outFile)
 {
   FILE *fp = NULL;
 
   asfPrintStatus("\n   Writing noise LUT image to disk (%s) ...\n", outFile);
-  
+
   meta_parameters *meta = meta_read(outFile);
   float *noise = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  
+
   fp = FOPEN(outFile, "ab");
   int oldLine = lut[0].line;
   int newLine = lut[1].line;
@@ -271,7 +271,7 @@ static void write_noise_lut(sentinel_lut_line *lut, radiometry_t radiometry,
           newPixel = lut[iiLut].pixel[kkLut];
         deltaPixel = newPixel - oldPixel;
         noise00 = lut[iiLut].value[kkLut];
-        if (kkLut+1 < lut[iiLut].count)        
+        if (kkLut+1 < lut[iiLut].count)
           noise10 = lut[iiLut].value[kkLut+1];
         else
           noise10 = lut[iiLut].value[kkLut];
@@ -287,7 +287,7 @@ static void write_noise_lut(sentinel_lut_line *lut, radiometry_t radiometry,
       }
       slopeLine = (float)(ii - oldLine)/(float)deltaLine;
       slopePixel = (float)(kk - oldPixel)/(float)deltaPixel;
-      noise[kk] = a00 + a10 * slopePixel + a01 * slopeLine 
+      noise[kk] = a00 + a10 * slopePixel + a01 * slopeLine
         + a11 * slopePixel * slopeLine;
     }
     put_band_float_line(fp, meta, band, ii, noise);
@@ -297,7 +297,7 @@ static void write_noise_lut(sentinel_lut_line *lut, radiometry_t radiometry,
   meta_free(meta);
 }
 
-static sentinel_lut_line *read_sentinel_calibration(char *xmlFile, 
+static sentinel_lut_line *read_sentinel_calibration(char *xmlFile,
   radiometry_t radiometry, int *lutLines)
 {
   int kk, ll, line, pixel_count;
@@ -309,23 +309,23 @@ static sentinel_lut_line *read_sentinel_calibration(char *xmlFile,
   // Initialization
   xmlDoc *doc = xmlReadFile(xmlFile, NULL, 0);
   if (!doc)
-    asfPrintError("Could not parse file %s\n", xmlFile); 
+    asfPrintError("Could not parse file %s\n", xmlFile);
   xmlNode *root = xmlDocGetRootElement(doc);
   if (!root)
     asfPrintError("Could not get root element %s\n", xmlFile);
-    
+
   // Get dimensions
-  int line_count = xml_xpath_get_int_value(doc, 
+  int line_count = xml_xpath_get_int_value(doc,
     "/calibration/calibrationVectorList/@count");
-  sentinel_lut_line *lut = 
+  sentinel_lut_line *lut =
     (sentinel_lut_line *) MALLOC(sizeof(sentinel_lut_line)*line_count);
-    
+
   // Work your way through sigma, beta, gamma and dn
   for (kk=0; kk<line_count; kk++) {
-    sprintf(str, 
+    sprintf(str,
       "/calibration/calibrationVectorList/calibrationVector[%d]/line", kk+1);
     line = xml_xpath_get_int_value(doc, str);
-    sprintf(str, 
+    sprintf(str,
       "/calibration/calibrationVectorList/calibrationVector[%d]/pixel", kk+1);
     strcpy(pixelStr, xml_xpath_get_string_value(doc, str));
     split_into_array(pixelStr, ' ', &pixel_count, &pixel);
@@ -335,8 +335,8 @@ static sentinel_lut_line *read_sentinel_calibration(char *xmlFile,
     lut[kk].value = (float *) MALLOC(sizeof(float)*pixel_count);
 
     if (radiometry == r_SIGMA || radiometry == r_SIGMA_DB) {
-      sprintf(str, 
-        "/calibration/calibrationVectorList/calibrationVector[%d]/sigmaNought", 
+      sprintf(str,
+        "/calibration/calibrationVectorList/calibrationVector[%d]/sigmaNought",
         kk+1);
       strcpy(valueStr, xml_xpath_get_string_value(doc, str));
       split_into_array(valueStr, ' ', &pixel_count, &value);
@@ -351,8 +351,8 @@ static sentinel_lut_line *read_sentinel_calibration(char *xmlFile,
       }
     }
     else if (radiometry == r_BETA || radiometry == r_BETA_DB) {
-      sprintf(str, 
-        "/calibration/calibrationVectorList/calibrationVector[%d]/betaNought", 
+      sprintf(str,
+        "/calibration/calibrationVectorList/calibrationVector[%d]/betaNought",
         kk+1);
       strcpy(valueStr, xml_xpath_get_string_value(doc, str));
       split_into_array(valueStr, ' ', &pixel_count, &value);
@@ -367,7 +367,7 @@ static sentinel_lut_line *read_sentinel_calibration(char *xmlFile,
       }
     }
     else if (radiometry == r_GAMMA || radiometry == r_GAMMA_DB) {
-      sprintf(str, 
+      sprintf(str,
         "/calibration/calibrationVectorList/calibrationVector[%d]/gamma", kk+1);
       strcpy(valueStr, xml_xpath_get_string_value(doc, str));
       split_into_array(valueStr, ' ', &pixel_count, &value);
@@ -382,7 +382,7 @@ static sentinel_lut_line *read_sentinel_calibration(char *xmlFile,
       }
     }
     else if (radiometry == r_AMP) {
-      sprintf(str, 
+      sprintf(str,
         "/calibration/calibrationVectorList/calibrationVector[%d]/dn", kk+1);
       strcpy(valueStr, xml_xpath_get_string_value(doc, str));
       split_into_array(valueStr, ' ', &pixel_count, &value);
@@ -397,12 +397,12 @@ static sentinel_lut_line *read_sentinel_calibration(char *xmlFile,
       }
     }
   }
-  asfPrintStatus("   Calibration LUT values - minimum: %g, maximum: %g\n", 
+  asfPrintStatus("   Calibration LUT values - minimum: %g, maximum: %g\n",
     minValue, maxValue);
   xmlFreeDoc(doc);
   xmlCleanupParser();
   *lutLines = line_count;
-  
+
   return lut;
 }
 
@@ -413,7 +413,7 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
   char *str = (char *) MALLOC(sizeof(char)*512);
   char *xpath = (char *) MALLOC(sizeof(char)*512);
   char *range = (char *) MALLOC(sizeof(char)*32);
-  
+
   char pixelStr[8192], noiseStr[16384], **pixel, **noise;
   float minNoise = 9999999;
   float maxNoise = -9999999;
@@ -421,30 +421,30 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
   // Initialization
   xmlDoc *doc = xmlReadFile(xmlFile, NULL, 0);
   if (!doc)
-    asfPrintError("Could not parse file %s\n", xmlFile); 
+    asfPrintError("Could not parse file %s\n", xmlFile);
   xmlNode *root = xmlDocGetRootElement(doc);
   if (!root)
     asfPrintError("Could not get root element %s\n", xmlFile);
-  
+
   // Get dimensions
   strcpy(xpath, "/noise/noiseVectorList");
   if (!xml_xpath_element_exists(doc, xpath)){
     asfPrintStatus("Using alternative noiseRangeVectorList");
     strcpy(range, "Range");
-  }else{    
+  }else{
     strcpy(range, "");
   }
-        
+
   sprintf(str, "/noise/noise%sVectorList/@count", range);
-    
+
   int line_count = xml_xpath_get_int_value(doc, str);
-  
+
   // Location of NoiseLut changed from noiseVectorList to noiseRangeVectorList
-  sprintf(xpath, "/noise/noise%sVectorList/noise%sVector", range, range);  
-  
-  sentinel_lut_line *lut = 
+  sprintf(xpath, "/noise/noise%sVectorList/noise%sVector", range, range);
+
+  sentinel_lut_line *lut =
     (sentinel_lut_line *) MALLOC(sizeof(sentinel_lut_line)*line_count);
-    
+
   // Work your way through the noise LUT
   for (kk=0; kk<line_count; kk++) {
     sprintf(str, "%s[%d]/line", xpath, kk+1);
@@ -470,11 +470,11 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
     lut[kk].pixel[pixel_count-1] = maxPixel;
   }
   lut[line_count-1].line = maxLine;
-  asfPrintStatus("   Noise LUT values - minimum: %g, maximum: %g\n", 
+  asfPrintStatus("   Noise LUT values - minimum: %g, maximum: %g\n",
     minNoise, maxNoise);
   xmlFreeDoc(doc);
   xmlCleanupParser();
-  
+
   // Check whether noise floor is looking good
   if (maxNoise > 0 && maxNoise < 5e-09) {
     asfPrintStatus("   Noise floor is not within the expected value range!\n"
@@ -489,7 +489,7 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
         if (lut[kk].value[ll] > maxNoise)
           maxNoise = lut[kk].value[ll];
       }
-    asfPrintStatus("   Noise LUT values - minimum: %g, maximum: %g\n", 
+    asfPrintStatus("   Noise LUT values - minimum: %g, maximum: %g\n",
       minNoise, maxNoise);
     *lutLines = line_count;
   }
@@ -506,13 +506,13 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
         if (lut[kk].value[ll] > maxNoise)
           maxNoise = lut[kk].value[ll];
       }
-    asfPrintStatus("   Noise LUT values - minimum: %g, maximum: %g\n", 
+    asfPrintStatus("   Noise LUT values - minimum: %g, maximum: %g\n",
       minNoise, maxNoise);
     *lutLines = line_count;
   }
   else if (maxNoise < 10.0) {
     char newXmlFile[1024];
-    sprintf(newXmlFile, "%s%csentinel%cnoise-s1a-%s.xml", get_asf_share_dir(), 
+    sprintf(newXmlFile, "%s%csentinel%cnoise-s1a-%s.xml", get_asf_share_dir(),
       DIR_SEPARATOR, DIR_SEPARATOR, mode);
     asfPrintStatus("   Noise floor is not within the expected value range!\n"
       "   Replacing it with standard noise floor for beam mode (%s) ...\n",
@@ -527,8 +527,76 @@ static sentinel_lut_line *read_sentinel_noise(char *xmlFile, char *mode,
   }
   else
     *lutLines = line_count;
-  
+
   return lut;
+}
+
+static void write_sentinel_incid(sentinel_lut_line *gcp, meta_parameters *meta,
+	int band, int gcp_line_count, char *outFile)
+{
+  FILE *fp = NULL;
+
+  asfPrintStatus("\n   Writing incidence angle image to disk (%s) ...\n",
+  	outFile);
+
+  float *incid = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
+
+  fp = FOPEN(outFile, "ab");
+  int oldLine = gcp[0].line;
+  int newLine = gcp[1].line;
+  int deltaLine = newLine - oldLine;
+  int iiGCP = 0, kkGCP = 0, maxLine = 1;
+  int ii, kk, oldPixel, newPixel, deltaPixel;
+  float incid00, incid01, incid10, incid11;
+  float a00, a10, a01, a11, slopeLine, slopePixel;
+
+  for (ii=0; ii<meta->general->line_count; ii++) {
+    if (ii == newLine) {
+      iiGCP++;
+      oldLine = newLine;
+      newLine = gcp[iiGCP+1].line;
+      deltaLine = newLine - oldLine;
+      if (deltaLine < 0)
+      	break;
+    }
+    kkGCP = 0;
+    oldPixel = gcp[iiGCP].pixel[0];
+    newPixel = gcp[iiGCP].pixel[1];
+    deltaPixel = newPixel - oldPixel;
+    incid00 = gcp[iiGCP].value[0];
+    incid10 = gcp[iiGCP].value[1];
+    incid01 = gcp[iiGCP+1].value[0];
+    incid11 = gcp[iiGCP+1].value[1];
+    a00 = incid00;
+    a10 = incid10 - incid00;
+    a01 = incid01 - incid00;
+    a11 = incid00 - incid01 - incid10 + incid11;
+    for (kk=0; kk<meta->general->sample_count; kk++) {
+      if (kk == newPixel) {
+        kkGCP++;
+        oldPixel = newPixel;
+        newPixel = gcp[iiGCP].pixel[kkGCP+1];
+				deltaPixel = newPixel - oldPixel;
+				incid00 = gcp[iiGCP].value[kkGCP];
+				incid10 = gcp[iiGCP].value[kkGCP+1];
+				incid01 = gcp[iiGCP+1].value[kkGCP];
+				incid11 = gcp[iiGCP+1].value[kkGCP+1];
+        a00 = incid00;
+        a10 = incid10 - incid00;
+        a01 = incid01 - incid00;
+        a11 = incid00 - incid01 - incid10 + incid11;
+      }
+      slopeLine = (float)(ii - oldLine)/(float)deltaLine;
+      slopePixel = (float)(kk - oldPixel)/(float)deltaPixel;
+      incid[kk] = a00 + a10 * slopePixel + a01 * slopeLine
+        + a11 * slopePixel * slopeLine;
+    }
+    put_band_float_line(fp, meta, band, ii, incid);
+    asfLineMeter(ii, meta->general->line_count);
+  }
+  put_band_float_line(fp, meta, band, ii, incid);
+  FCLOSE(fp);
+  FREE(incid);
 }
 
 void import_sentinel(const char *inBaseName, radiometry_t radiometry,
@@ -542,15 +610,17 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
   float *amp = NULL, *phase = NULL, *calValue = NULL, *lutNoise = NULL;
   float noise, re, im, scaledPower;
   double noise_mean = 0.0;
-  long pixelCount = 0; 
+  long pixelCount = 0;
   float mask = MAGIC_UNSET_DOUBLE;
   int ii, file_count, band, line, sample, detected=TRUE, band_count=0;
+  sentinel_lut_line *gcp = NULL;
+  int gcp_line_count;
 
   check_sentinel_meta(inBaseName, mission, beamMode, productType);
   asfPrintStatus("   Mission: %s, beam mode: %s, product type: %s\n",
     mission, beamMode, productType);
   if (strcmp_case(productType, "RAW") == 0)
-    asfPrintError("Product type 'RAW' currently not supported!\n");  
+    asfPrintError("Product type 'RAW' currently not supported!\n");
   else if (strcmp_case(productType, "SLC") == 0 ||
     strcmp_case(productType, "GRD") == 0) {
 
@@ -570,7 +640,7 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
 
     // Go through the files and import them
     for (ii=0; ii<file_count; ii++) {
-    
+
       if (file_count == 1)
         outDataName = appendExt(outBaseName, ".img");
       else {
@@ -588,6 +658,27 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
       meta_write(meta, outDataName);
       int sample_count = meta->general->sample_count;
 
+      // Extract GCP information for incidence angle calculations
+      if (ii == 0) {
+				int kk, ll, idx, gcp_pixel_count = 0, gcp_line_count = 0;
+				for (ii=0; ii<sentinel->gcp_count; ii++)
+					if (sentinel->gcp[ii].line == 0)
+						gcp_pixel_count += 1;
+				gcp_line_count = sentinel->gcp_count / gcp_pixel_count;
+				gcp = (sentinel_lut_line *)
+					MALLOC(sizeof(sentinel_lut_line)*gcp_line_count);
+				for (kk=0; kk<gcp_line_count; kk++) {
+					gcp[kk].pixel = (int *) MALLOC(sizeof(int)*gcp_pixel_count);
+					gcp[kk].value = (float *) MALLOC(sizeof(float)*gcp_pixel_count);
+					for (ll=0; ll<gcp_pixel_count; ll++) {
+						idx = kk*gcp_pixel_count + ll;
+						gcp[kk].line = sentinel->gcp[idx].line;
+						gcp[kk].pixel[ll] = sentinel->gcp[idx].pixel;
+						gcp[kk].value[ll] = sentinel->gcp[idx].incid;
+					}
+				}
+			}
+
       // Let's check the GeoTIFF data.
       TIFF *tiff = NULL;
       GTIF *gtif = NULL;
@@ -595,14 +686,14 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
       short sample_format, bits_per_sample, planar_config;
       short num_bands;
       int is_scanline_format, is_palette_color_tiff;
-  
+
       FILE *fpOut = FOPEN(outDataName, "wb");
-      band_count = meta->general->band_count;
+      band_count = meta->general->band_count - 1;
       if (strcmp_case(sentinel->productType, "SLC") == 0)
         band_count /= 2;
       int noiseCount = 0;
       for (band=0; band<band_count; band++) {
-  
+
         strcpy(inDataName, sentinel->data[band]);
         strcpy(files[band].polarization, sentinel->file[band].polarization);
         strcpy(files[band].annotation, sentinel->file[band].annotation);
@@ -613,16 +704,16 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
         asfPrintStatus("\n   Reading calibration LUT (%s) ...\n",
           files[band].calibration);
         int calLutLines;
-        sentinel_lut_line *cal = 
-          read_sentinel_calibration(files[band].calibration, radiometry, 
+        sentinel_lut_line *cal =
+          read_sentinel_calibration(files[band].calibration, radiometry,
             &calLutLines);
-        
+
         // Read noise LUT
         asfPrintStatus("\n   Reading noise LUT (%s) ...\n", files[band].noise);
         int noiseLutLines;
-        sentinel_lut_line *lut = 
-          read_sentinel_noise(files[band].noise, modeStr, 
-            meta->general->line_count, meta->general->sample_count, 
+        sentinel_lut_line *lut =
+          read_sentinel_noise(files[band].noise, modeStr,
+            meta->general->line_count, meta->general->sample_count,
             &noiseLutLines);
 
         // Open GeoTIFF file
@@ -633,40 +724,40 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
         if (!gtif)
           asfPrintError("Could not read GeoTIFF keys from data file (%s)\n",
                 inDataName);
-  
+
         // Check image dimensions
         uint32 tif_sample_count;
         uint32 tif_line_count;
-  
+
         TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &tif_line_count);
         TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, &tif_sample_count);
         if ((meta->general->sample_count != tif_sample_count) ||
         (meta->general->line_count != tif_line_count))
           asfPrintError( "Problem with image dimensions. Was looking for %d lines "
-                "and %d samples.\nFound %ld lines and %ld samples instead!\n", 
-                meta->general->line_count, meta->general->sample_count, 
+                "and %d samples.\nFound %ld lines and %ld samples instead!\n",
+                meta->general->line_count, meta->general->sample_count,
                 tif_line_count, tif_sample_count);
-  
+
         // Check general TIFF tags
-        get_tiff_data_config(tiff, &sample_format, &bits_per_sample, 
-          &planar_config, &data_type, &num_bands, &is_scanline_format, 
+        get_tiff_data_config(tiff, &sample_format, &bits_per_sample,
+          &planar_config, &data_type, &num_bands, &is_scanline_format,
           &is_palette_color_tiff, REPORT_LEVEL_WARNING);
-  
+
         if (sample_format == SAMPLEFORMAT_UINT && bits_per_sample == 16)
           asfPrintStatus("   Found Unsigned 16 bit data\n");
-        else if (sample_format == SAMPLEFORMAT_COMPLEXINT && 
+        else if (sample_format == SAMPLEFORMAT_COMPLEXINT &&
           bits_per_sample == 32) {
           asfPrintStatus("   Found Complex 16 bit data\n");
           detected = FALSE;
         }
-  
+
         // Check the image description
         const char *imageDescription;
         TIFFGetField(tiff, TIFFTAG_IMAGEDESCRIPTION, &imageDescription);
         if (strncmp_case(imageDescription, "SENTINEL-1", 10) != 0)
           asfPrintError("GeoTIFF file (%s) does not contain Sentinel data\n",
             inDataName);
-      
+
         tiff_type_t tiffInfo;
         get_tiff_type(tiff, &tiffInfo);
         if (tiffInfo.format != SCANLINE_TIFF &&
@@ -674,17 +765,17 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
         tiffInfo.format != TILED_TIFF)
           asfPrintError("Can't read the GeoTIFF file (%s). Unrecognized TIFF "
                 "type!\n", sentinel->data[band]);
-  
+
         asfPrintStatus("\n   Importing %s ...\n", sentinel->data[band]);
-  
+
         uint32 scanlineSize = TIFFScanlineSize(tiff);
         tdata_t *tiff_buf = _TIFFmalloc(scanlineSize);
         if (!tiff_buf)
           asfPrintError("Can't allocate buffer for reading TIFF lines!\n");
-  
+
         amp = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
         phase = (float *) MALLOC(sizeof(float)*meta->general->sample_count);
-  
+
         // Loop through the LUTs
         uint32 row;
         uint16 *intValue;
@@ -692,7 +783,7 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
         int calIndex, calStart, calEnd, calLimit = 0;
         int noiseIndex, noiseStart, noiseEnd, noiseLimit = 0;
         for (line=0; line<meta->general->line_count; line++) {
-        
+
           // Check LUT information
           if (line == calLimit) {
             if (calValue)
@@ -705,9 +796,9 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
               calStart = calEnd = kkCal;
             }
             calLimit = cal[calEnd].line;
-            calValue = get_cal_lut_lines(cal, radiometry, band, calLutLines, 
+            calValue = get_cal_lut_lines(cal, radiometry, band, calLutLines,
               calStart, calEnd, outDataName);
-            kkCal++; 
+            kkCal++;
           }
           if (line == noiseLimit) {
             if (lutNoise)
@@ -720,14 +811,14 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
               noiseStart = noiseEnd = kkNoise;
             }
             noiseLimit = lut[noiseEnd].line;
-            lutNoise = get_noise_lut_lines(lut, radiometry, band, noiseLutLines, 
+            lutNoise = get_noise_lut_lines(lut, radiometry, band, noiseLutLines,
               noiseStart, noiseEnd, outDataName);
             kkNoise++;
           }
 
           // Apply values while going through data
           row = (uint32)line;
-          switch (tiffInfo.format) 
+          switch (tiffInfo.format)
           {
             case SCANLINE_TIFF:
               TIFFReadScanline(tiff, tiff_buf, row, 0);
@@ -767,7 +858,7 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
               }
               scaledPower = (re*re - lutNoise[noiseIndex])/
                 (calValue[calIndex]*calValue[calIndex]);
-              if (radiometry == r_SIGMA_DB || radiometry == r_BETA_DB || 
+              if (radiometry == r_SIGMA_DB || radiometry == r_BETA_DB ||
                 radiometry == r_GAMMA_DB)
                 if (scaledPower < 0)
                   amp[sample] = -40.0;
@@ -789,7 +880,7 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
           }
           asfLineMeter(line, meta->general->line_count);
         }
-          
+
         noiseCount++;
         FREE(amp);
         FREE(phase);
@@ -809,11 +900,15 @@ void import_sentinel(const char *inBaseName, radiometry_t radiometry,
       FREE(sentinel->file);
       FREE(sentinel);
     }
-    
+
+		// Write incidence angle band
+		write_sentinel_incid(gcp, meta, meta->general->band_count-1, gcp_line_count,
+			outDataName);
+
     // Store the mean value for the noise floor
     meta->calibration = meta_calibration_init();
     meta->calibration->type = sentinel_cal;
-    meta->calibration->sentinel = 
+    meta->calibration->sentinel =
       (sentinel_cal_params *) MALLOC(sizeof(sentinel_cal_params));
     meta->calibration->sentinel->noise_mean = noise_mean/pixelCount;
     meta_write(meta, outDataName);

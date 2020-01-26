@@ -69,7 +69,7 @@ void remove_namespace(xmlNode *node)
   }
 }
 
-void check_sentinel_meta(const char *fileName, char *mission, char *beamMode, 
+void check_sentinel_meta(const char *fileName, char *mission, char *beamMode,
   char *productType)
 {
   char manifest[1024], familyName[15], number[3];
@@ -80,10 +80,10 @@ void check_sentinel_meta(const char *fileName, char *mission, char *beamMode,
   xmlDoc *doc = xmlReadFile(manifest, NULL, 0);
   if (!doc)
     asfPrintError("Could not parse file %s\n", manifest);
- 
+
   xmlNode *root = xmlDocGetRootElement(doc);
   remove_namespace(root);
- 
+
   strcpy(familyName, xml_xpath_get_string_value(doc,
     "/XFDU/metadataSection/metadataObject[@ID='platform']/metadataWrap/xmlData/"
     "platform/familyName"));
@@ -95,9 +95,9 @@ void check_sentinel_meta(const char *fileName, char *mission, char *beamMode,
     "/XFDU/metadataSection/metadataObject[@ID='platform']/metadataWrap/xmlData/"
     "platform/instrument/extension/instrumentMode/mode"));
   if (strcmp_case(beamMode, "SM") == 0)
-    strcpy(beamMode, xml_xpath_get_string_value(doc, 
+    strcpy(beamMode, xml_xpath_get_string_value(doc,
       "/XFDU/metadataSection/metadataObject[@ID='platform']/metadataWrap/"
-      "xmlData/platform/instrument/extension/instrumentMode/swath"));  
+      "xmlData/platform/instrument/extension/instrumentMode/swath"));
   strcpy(productType, xml_xpath_get_string_value(doc,
     "/XFDU/metadataSection/metadataObject[@ID='generalProductInformation']/"
     "metadataWrap/xmlData/standAloneProductInformation/productType"));
@@ -107,7 +107,7 @@ static void verify_gcps(gcp_location *gcp, int gcp_count)
 {
   int ii, nPos=0, nNeg=0, left=0, right=0;
   double diff=0, leftDiff=0, rightDiff=0;
-  
+
   for (ii=0; ii<gcp_count; ii++) {
     if (gcp[ii].lon > 0.0) {
       diff = 180.0 - gcp[ii].lon;
@@ -164,12 +164,12 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
   xmlDoc *doc = xmlReadFile(manifest, NULL, 0);
   if (!doc)
     asfPrintError("Could not parse file %s\n", manifest);
- 
+
   xmlNode *root = xmlDocGetRootElement(doc);
   if (!root)
     asfPrintError("Could not get root element %s\n", manifest);
   remove_namespace(root);
- 
+
   strcpy(sentinel->familyName, xml_xpath_get_string_value(doc,
     "/XFDU/metadataSection/metadataObject[@ID='platform']/metadataWrap/xmlData/"
     "platform/familyName"));
@@ -183,13 +183,13 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
     "/XFDU/metadataSection/metadataObject[@ID='platform']/metadataWrap/xmlData/"
     "platform/instrument/extension/instrumentMode/mode"));
   if (strcmp_case(sentinel->mode, "SM") == 0)
-    strcpy(sentinel->mode, xml_xpath_get_string_value(doc, 
+    strcpy(sentinel->mode, xml_xpath_get_string_value(doc,
       "/XFDU/metadataSection/metadataObject[@ID='platform']/metadataWrap/"
       "xmlData/platform/instrument/extension/instrumentMode/swath"));
-  strcpy(sentinel->missionDataTakeID, xml_xpath_get_string_value(doc, 
+  strcpy(sentinel->missionDataTakeID, xml_xpath_get_string_value(doc,
     "/XFDU/metadataSection/metadataObject[@ID='generalProductInformation']/"
     "metadataWrap/xmlData/standAloneProductInformation/missionDataTakeID"));
-  strcpy(sentinel->productClass, xml_xpath_get_string_value(doc, 
+  strcpy(sentinel->productClass, xml_xpath_get_string_value(doc,
     "/XFDU/metadataSection/metadataObject[@ID='generalProductInformation']/"
     "metadataWrap/xmlData/standAloneProductInformation/productClass"));
   strcpy(sentinel->processor, xml_xpath_get_string_value(doc,
@@ -226,7 +226,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
       "standAloneProductInformation/transmitterReceiverPolarisation[2]"));
   if (strcmp_case(sentinel->productType, "SLC") == 0) {
     if (strcmp_case(pol2, MAGIC_UNSET_STRING) != 0)
-      sprintf(sentinel->polarization, "%s-AMP,%s-PHASE,%s-AMP,%s-PHASE", 
+      sprintf(sentinel->polarization, "%s-AMP,%s-PHASE,%s-AMP,%s-PHASE",
         pol1, pol1, pol2, pol2);
     else
       sprintf(sentinel->polarization, "%s-AMP,%s-PHASE", pol1, pol1);
@@ -260,7 +260,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
     sprintf(beamMode, "%s%d", lc(sentinel->mode), channel);
   else
     sprintf(beamMode, "%s", lc(sentinel->mode));
-    
+
   // Collect the names of all ancillary files
   int pol_count = 1;
   if (strcmp_case(pol2, MAGIC_UNSET_STRING) != 0)
@@ -279,7 +279,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
     if (strncmp_case(id, "product", 7) == 0 && strstr(href, "annotation")) {
       if (strstr(id, lc(pol1)))
         sprintf(sentinel->file[0].annotation, "%s%s", absPath, &href[2]);
-      else if (strcmp_case(pol2, MAGIC_UNSET_STRING) != 0 && 
+      else if (strcmp_case(pol2, MAGIC_UNSET_STRING) != 0 &&
         strstr(id, lc(pol2)))
         sprintf(sentinel->file[1].annotation, "%s%s", absPath, &href[2]);
       sprintf(annotation, "%s%s", absPath, &href[2]);
@@ -291,7 +291,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
         strstr(id, lc(pol2)))
         sprintf(sentinel->file[1].noise, "%s%s", absPath, &href[2]);
     }
-    if (strncmp_case(id, "calibration", 11) == 0 && 
+    if (strncmp_case(id, "calibration", 11) == 0 &&
       strstr(href, "annotation")) {
       if (strstr(id, lc(pol1)))
         sprintf(sentinel->file[0].calibration, "%s%s", absPath, &href[2]);
@@ -301,7 +301,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
     }
     strcpy(files[ii], href);
   }
-  
+
   // Collect the names of actual data sets
   char tifStr[15], ncStr[15];
   int fileCount = 0;
@@ -333,7 +333,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
     //verify_gcps(sentinel->gcp, gcp_count);
     sentinel->gcp_count = gcp_count;
   }
-  
+
   for (ii=0; ii<count; ii++)
     FREE(files[ii]);
   FREE(files);
@@ -341,7 +341,7 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
   xmlFreeDoc(doc);
   xmlCleanupParser();
   //printf("Found %d files\n", fileCount);
-  
+
   if (strcmp_case(sentinel->productType, "SLC") == 0 ||
       strcmp_case(sentinel->productType, "GRD") == 0) {
     // Reading annotation file
@@ -349,91 +349,91 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
     doc = xmlReadFile(annotation, NULL, 0);
     if (!doc)
       asfPrintError("Could not parse file %s\n", annotation);
-   
+
     root = xmlDocGetRootElement(doc);
     remove_namespace(root);
-  
-    strcpy(sentinel->mission, xml_xpath_get_string_value(doc, 
+
+    strcpy(sentinel->mission, xml_xpath_get_string_value(doc,
       "/product/adsHeader/missionId"));
-    strcpy(sentinel->projection, xml_xpath_get_string_value(doc, 
+    strcpy(sentinel->projection, xml_xpath_get_string_value(doc,
       "/product/generalAnnotation/productInformation/projection"));
-    sentinel->rangeSamplingRate = xml_xpath_get_double_value(doc, 
+    sentinel->rangeSamplingRate = xml_xpath_get_double_value(doc,
       "/product/generalAnnotation/productInformation/rangeSamplingRate");
-    sentinel->radarFrequency = xml_xpath_get_double_value(doc, 
+    sentinel->radarFrequency = xml_xpath_get_double_value(doc,
       "/product/generalAnnotation/productInformation/radarFrequency");
-    
+
     // Average roll, pitch and yaw values
-    int attitude_count = xml_xpath_get_int_value(doc, 
+    int attitude_count = xml_xpath_get_int_value(doc,
       "/product/generalAnnotation/attitudeList/@count");
     double roll, pitch, yaw;
     for (ii=0; ii<attitude_count; ii++) {
-      sprintf(str, "/product/generalAnnotation/attitudeList/attitude[%d]/roll", 
+      sprintf(str, "/product/generalAnnotation/attitudeList/attitude[%d]/roll",
         ii+1);
       roll += xml_xpath_get_double_value(doc, str);
-      sprintf(str, "/product/generalAnnotation/attitudeList/attitude[%d]/pitch", 
+      sprintf(str, "/product/generalAnnotation/attitudeList/attitude[%d]/pitch",
         ii+1);
       pitch += xml_xpath_get_double_value(doc, str);
-      sprintf(str, "/product/generalAnnotation/attitudeList/attitude[%d]/yaw", 
+      sprintf(str, "/product/generalAnnotation/attitudeList/attitude[%d]/yaw",
         ii+1);
       yaw += xml_xpath_get_double_value(doc, str);
     }
     sentinel->roll = roll/attitude_count;
     sentinel->pitch = pitch/attitude_count;
     sentinel->yaw = yaw/attitude_count;
-    sentinel->slantRangeTime = xml_xpath_get_double_value(doc, 
+    sentinel->slantRangeTime = xml_xpath_get_double_value(doc,
       "/product/imageAnnotation/imageInformation/slantRangeTime");
-    strcpy(sentinel->pixelValue, xml_xpath_get_string_value(doc, 
+    strcpy(sentinel->pixelValue, xml_xpath_get_string_value(doc,
       "/product/imageAnnotation/imageInformation/pixelValue"));
-    strcpy(sentinel->outputPixels, xml_xpath_get_string_value(doc, 
+    strcpy(sentinel->outputPixels, xml_xpath_get_string_value(doc,
       "/product/imageAnnotation/imageInformation/outputPixels"));
-    sentinel->rangePixelSpacing = xml_xpath_get_double_value(doc, 
+    sentinel->rangePixelSpacing = xml_xpath_get_double_value(doc,
       "/product/imageAnnotation/imageInformation/rangePixelSpacing");
-    sentinel->azimuthPixelSpacing = xml_xpath_get_double_value(doc, 
+    sentinel->azimuthPixelSpacing = xml_xpath_get_double_value(doc,
       "/product/imageAnnotation/imageInformation/azimuthPixelSpacing");
-    sentinel->azimuthTimeInterval = xml_xpath_get_double_value(doc, 
+    sentinel->azimuthTimeInterval = xml_xpath_get_double_value(doc,
       "/product/imageAnnotation/imageInformation/azimuthTimeInterval");
-    sentinel->numberOfSamples = xml_xpath_get_int_value(doc, 
+    sentinel->numberOfSamples = xml_xpath_get_int_value(doc,
       "/product/imageAnnotation/imageInformation/numberOfSamples");
-    sentinel->numberOfLines = xml_xpath_get_int_value(doc, 
+    sentinel->numberOfLines = xml_xpath_get_int_value(doc,
       "/product/imageAnnotation/imageInformation/numberOfLines");
-    sentinel->incidenceAngleMidSwath = xml_xpath_get_double_value(doc, 
+    sentinel->incidenceAngleMidSwath = xml_xpath_get_double_value(doc,
       "/product/imageAnnotation/imageInformation/incidenceAngleMidSwath");
-    strcpy(sentinel->ellipsoidName , xml_xpath_get_string_value(doc, 
+    strcpy(sentinel->ellipsoidName , xml_xpath_get_string_value(doc,
       "/product/imageAnnotation/processingInformation/ellipsoidName"));
-    sentinel->ellipsoidSemiMajorAxis = xml_xpath_get_double_value(doc, 
+    sentinel->ellipsoidSemiMajorAxis = xml_xpath_get_double_value(doc,
       "/product/imageAnnotation/processingInformation/ellipsoidSemiMajorAxis");
-    sentinel->ellipsoidSemiMinorAxis = xml_xpath_get_double_value(doc, 
+    sentinel->ellipsoidSemiMinorAxis = xml_xpath_get_double_value(doc,
       "/product/imageAnnotation/processingInformation/ellipsoidSemiMinorAxis");
-    
+
     // Read state vectors
-    int vector_count = xml_xpath_get_int_value(doc, 
+    int vector_count = xml_xpath_get_int_value(doc,
       "/product/generalAnnotation/orbitList/@count");
-    sentinel->stVec = 
+    sentinel->stVec =
       (sentinel_vector *) MALLOC(sizeof(sentinel_vector)*vector_count);
     for (ii=0; ii<vector_count; ii++) {
       sprintf(str, "/product/generalAnnotation/orbitList/orbit[%d]/time", ii+1);
       strcpy(sentinel->stVec[ii].time, xml_xpath_get_string_value(doc, str));
-      sprintf(str, "/product/generalAnnotation/orbitList/orbit[%d]/position/x", 
+      sprintf(str, "/product/generalAnnotation/orbitList/orbit[%d]/position/x",
         ii+1);
       sentinel->stVec[ii].posX = xml_xpath_get_double_value(doc, str);
-      sprintf(str, "/product/generalAnnotation/orbitList/orbit[%d]/position/y", 
+      sprintf(str, "/product/generalAnnotation/orbitList/orbit[%d]/position/y",
         ii+1);
       sentinel->stVec[ii].posY = xml_xpath_get_double_value(doc, str);
-      sprintf(str, "/product/generalAnnotation/orbitList/orbit[%d]/position/z", 
+      sprintf(str, "/product/generalAnnotation/orbitList/orbit[%d]/position/z",
         ii+1);
       sentinel->stVec[ii].posZ = xml_xpath_get_double_value(doc, str);
-      sprintf(str, "/product/generalAnnotation/orbitList/orbit[%d]/velocity/x", 
+      sprintf(str, "/product/generalAnnotation/orbitList/orbit[%d]/velocity/x",
         ii+1);
       sentinel->stVec[ii].velX = xml_xpath_get_double_value(doc, str);
-      sprintf(str, "/product/generalAnnotation/orbitList/orbit[%d]/velocity/y", 
+      sprintf(str, "/product/generalAnnotation/orbitList/orbit[%d]/velocity/y",
         ii+1);
       sentinel->stVec[ii].velY = xml_xpath_get_double_value(doc, str);
-      sprintf(str, "/product/generalAnnotation/orbitList/orbit[%d]/velocity/z", 
+      sprintf(str, "/product/generalAnnotation/orbitList/orbit[%d]/velocity/z",
         ii+1);
       sentinel->stVec[ii].velZ = xml_xpath_get_double_value(doc, str);
     }
     sentinel->vector_count = vector_count;
-    
+
     // Read ground control points
     int gcp_count = xml_xpath_get_int_value(doc, "/product/geolocationGrid/"
       "geolocationGridPointList/@count");
@@ -451,6 +451,9 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
       sprintf(str, "/product/geolocationGrid/geolocationGridPointList/"
         "geolocationGridPoint[%d]/longitude", ii+1);
       sentinel->gcp[ii].lon = xml_xpath_get_double_value(doc, str);
+      sprintf(str, "/product/geolocationGrid/geolocationGridPointList/"
+        "geolocationGridPoint[%d]/incidenceAngle", ii+1);
+      sentinel->gcp[ii].incid = xml_xpath_get_double_value(doc, str);
     }
     verify_gcps(sentinel->gcp, gcp_count);
     sentinel->gcp_count = gcp_count;
@@ -463,26 +466,26 @@ sentinel_meta *read_sentinel_meta(const char *fileName, int channel)
           "geolocationGridPoint[%d]/azimuthTime", ii+1);
         strcpy(sentinel->startTime, xml_xpath_get_string_value(doc, str));
       }
-      else if (sentinel->gcp[ii].line == sentinel->numberOfLines-1 && 
+      else if (sentinel->gcp[ii].line == sentinel->numberOfLines-1 &&
         sentinel->gcp[ii].pixel == 0) {
         sprintf(str, "/product/geolocationGrid/geolocationGridPointList/"
           "geolocationGridPoint[%d]/azimuthTime", ii+1);
         strcpy(sentinel->stopTime, xml_xpath_get_string_value(doc, str));
       }
     }
-    
+
     xmlFreeDoc(doc);
     xmlCleanupParser();
   }
   else if (strcmp_case(sentinel->productType, "OCN") == 0) {
-    if (strcmp_case(sentinel->familyName, "Sentinel-1") == 0 && 
+    if (strcmp_case(sentinel->familyName, "Sentinel-1") == 0 &&
       strcmp_case(sentinel->number, "A") == 0)
       strcpy(sentinel->mission, "S1A");
-    else if (strcmp_case(sentinel->familyName, "Sentinel-1") == 0 && 
+    else if (strcmp_case(sentinel->familyName, "Sentinel-1") == 0 &&
       strcmp_case(sentinel->number, "B") == 0)
       strcpy(sentinel->mission, "S1B");
   }
-  
+
   return sentinel;
 }
 
@@ -495,14 +498,14 @@ meta_parameters* sentinel2meta(sentinel_meta *sentinel)
 
   // Allocate memory for metadata structure
   meta_parameters *meta = raw_init();
-  
+
   // General block
   strcpy(meta->general->basename, sentinel->granule);
-  sprintf(meta->general->sensor, "%s%s", 
+  sprintf(meta->general->sensor, "%s%s",
     sentinel->familyName, sentinel->number);
   strcpy(meta->general->sensor_name, sentinel->instrument);
   strcpy(meta->general->mode, sentinel->mode);
-  sprintf(meta->general->processor, "%s %s", 
+  sprintf(meta->general->processor, "%s %s",
     sentinel->processor, sentinel->version);
   meta->general->data_type = REAL32;
   if (strcmp_case(sentinel->productType, "RAW") == 0)
@@ -526,7 +529,7 @@ meta_parameters* sentinel2meta(sentinel_meta *sentinel)
     meta->general->orbit_direction = 'A';
   else if (strcmp_case(sentinel->pass, "DESCENDING") == 0)
     meta->general->orbit_direction = 'D';
-  strcpy(meta->general->bands, sentinel->polarization);
+  sprintf(meta->general->bands, "%s,INCID", sentinel->polarization);
   meta->general->line_count = sentinel->numberOfLines;
   meta->general->sample_count = sentinel->numberOfSamples;
   meta->general->start_line = 0;
@@ -550,6 +553,7 @@ meta_parameters* sentinel2meta(sentinel_meta *sentinel)
       meta->general->band_count = 1;
     if (strcmp_case(sentinel->productType, "SLC") == 0)
       meta->general->band_count *= 2;
+    meta->general->band_count += 1; // add band for incidence angle
     meta->sar->look_direction = 'R';
     if (strcmp_case(meta->general->mode, "IW") == 0) {
       meta->sar->azimuth_look_count = 5;
@@ -569,9 +573,9 @@ meta_parameters* sentinel2meta(sentinel_meta *sentinel)
     meta->sar->line_increment = 1;
     meta->sar->sample_increment = 1;
     meta->sar->azimuth_time_per_pixel = sentinel->azimuthTimeInterval;
-    meta->sar->range_time_per_pixel = 
+    meta->sar->range_time_per_pixel =
       meta->general->x_pixel_size * 2.0 / speedOfLight;
-    meta->sar->slant_range_first_pixel = 
+    meta->sar->slant_range_first_pixel =
       sentinel->slantRangeTime * speedOfLight / 2.0;
     meta->sar->slant_shift = 0.0;
     meta->sar->time_shift = 0.0;
@@ -582,9 +586,9 @@ meta_parameters* sentinel2meta(sentinel_meta *sentinel)
     if (strcmp_case(sentinel->productType, "GRD") == 0)
       meta->sar->multilook = TRUE;
     else if (strcmp_case(sentinel->productType, "SLC") == 0) {
-      if (strcmp(sentinel->mode, "IW") == 0 || 
+      if (strcmp(sentinel->mode, "IW") == 0 ||
         strcmp_case(sentinel->mode, "EW") == 0)
-        meta->sar->multilook = FALSE;      
+        meta->sar->multilook = FALSE;
       else
         meta->sar->multilook = TRUE;
     }
@@ -611,7 +615,7 @@ meta_parameters* sentinel2meta(sentinel_meta *sentinel)
     meta->state_vectors->num = meta->state_vectors->vector_count;
     for (ii=0; ii<meta->state_vectors->vector_count; ii++) {
       iso2date(sentinel->stVec[ii].time, &vecYmd, &vecHms);
-      meta->state_vectors->vecs[ii].time = 
+      meta->state_vectors->vecs[ii].time =
         time_difference(&vecYmd, &vecHms, &imgStartDate, &imgStartTime);
       meta->state_vectors->vecs[ii].vec.pos.x = sentinel->stVec[ii].posX;
       meta->state_vectors->vecs[ii].vec.pos.y = sentinel->stVec[ii].posY;
@@ -623,7 +627,7 @@ meta_parameters* sentinel2meta(sentinel_meta *sentinel)
 
     // Propagate the state vectors to start, center, end
     int vector_count = 3;
-    double data_int = date_difference(&imgStopDate, &imgStopTime, 
+    double data_int = date_difference(&imgStopDate, &imgStopTime,
               &imgStartDate, &imgStartTime) / 2.0;
     while (fabs(data_int) > 10.0) {
       data_int /= 2;
@@ -631,13 +635,13 @@ meta_parameters* sentinel2meta(sentinel_meta *sentinel)
     }
     propagate_state(meta, vector_count, data_int);
   }
-  
+
   // Transform block
   if (strcmp_case(sentinel->productType, "GRD") == 0)
-    meta->transform = 
+    meta->transform =
       gcp2transform(sentinel->gcp, sentinel->gcp_count, "ground");
   else if (strcmp_case(sentinel->productType, "SLC") == 0)
-    meta->transform = 
+    meta->transform =
       gcp2transform(sentinel->gcp, sentinel->gcp_count, "slant");
 
   // Location block
@@ -650,12 +654,12 @@ meta_parameters* sentinel2meta(sentinel_meta *sentinel)
         meta->location->lat_start_near_range = sentinel->gcp[ii].lat;
         meta->location->lon_start_near_range = sentinel->gcp[ii].lon;
       }
-      else if (sentinel->gcp[ii].line == 0 && 
+      else if (sentinel->gcp[ii].line == 0 &&
         sentinel->gcp[ii].pixel == sentinel->numberOfSamples-1) {
         meta->location->lat_start_far_range = sentinel->gcp[ii].lat;
         meta->location->lon_start_far_range = sentinel->gcp[ii].lon;
       }
-      else if (sentinel->gcp[ii].line == sentinel->numberOfLines-1 && 
+      else if (sentinel->gcp[ii].line == sentinel->numberOfLines-1 &&
         sentinel->gcp[ii].pixel == 0) {
         meta->location->lat_end_near_range = sentinel->gcp[ii].lat;
         meta->location->lon_end_near_range = sentinel->gcp[ii].lon;
@@ -670,20 +674,20 @@ meta_parameters* sentinel2meta(sentinel_meta *sentinel)
 
   if (meta->sar) {
     // Determine center lat/lon, earth radius and satellite height
-    meta_get_latLon(meta, meta->general->sample_count/2, 
+    meta_get_latLon(meta, meta->general->sample_count/2,
       meta->general->line_count/2, 0.0, &lat, &lon);
     meta->general->center_latitude = lat;
     if (lon > 180.0)
       meta->general->center_longitude = lon - 360.0;
     else
       meta->general->center_longitude = lon;
-  
+
     lat = meta->general->center_latitude * D2R;
     re = meta->general->re_major;
     rp = meta->general->re_minor;
-    meta->sar->earth_radius = 
+    meta->sar->earth_radius =
       (re*rp) / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
-  
+
     ii = meta->state_vectors->vector_count / 2;
     double posx = meta->state_vectors->vecs[ii].vec.pos.x;
     double posy = meta->state_vectors->vecs[ii].vec.pos.y;

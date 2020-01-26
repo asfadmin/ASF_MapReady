@@ -1081,6 +1081,7 @@ meta_parameters *gamma_dem2meta(char *demFile, char *demPar);
 typedef struct {
   int line, pixel;
   double lat, lon;
+  double incid;
 } gcp_location;
 
 // Prototypes from gcp2transform.c
