@@ -245,6 +245,7 @@ else
         fd->compres = FALSE;
 
 		if (opt[0] != 0)
+		    {
 		    if ((opt[0] > 0) && (opt[0] < NDTYPES))	
 			{
 		        if (opt[0] != fd->dtype)
@@ -258,12 +259,13 @@ else
                                 fd->cnvlsz = *ns * datasize[opt[0]];
                             }
 		        }
-		else
-	           {
-	           c_errmsg("Invalid option specified","eopens-option",
-		            NON_FATAL);
-	           return(E_FAIL);
-	           }
+		    else
+	                {
+	                c_errmsg("Invalid option specified","eopens-option",
+		                 NON_FATAL);
+	                return(E_FAIL);
+	                }
+		    }
 	if (fd->dal)
 	    {
             fd->linsiz = *ns * datasize[*dtype];
