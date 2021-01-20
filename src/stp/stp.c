@@ -181,7 +181,7 @@ static void set_images()
 	glade_xml_get_widget(glade_xml, "flowchart_image");
     
     int i;
-    for (i = 1; i <= 12; ++i)
+    for (i = 1; i <= 12; i=i+1)
       set_help_image(i);
 
     strcpy(image_file, "");
@@ -330,7 +330,7 @@ on_file_selection_dialog_ok_button_clicked(GtkWidget *w)
     while (*current)
     {	
 	add_file(*current);
-	++current;
+	current= current + 1;
     }
 
     g_strfreev(selections);
@@ -988,7 +988,7 @@ static void delete_all_generated_images()
     char *f = MALLOC(sizeof(float)*(strlen(filename)+64));
 
     int i;
-    for (i=1; i<=12; ++i) {
+    for (i=1; i<=12; i=i+1) {
         sprintf(f, "%s%s.jpg", filename, suffix_for_step(i));
         remove_file_silent(f);
         sprintf(f, "%s%s.png", filename, suffix_for_step(i));
@@ -1029,7 +1029,7 @@ static void delete_all_generated_images()
         STRDUP(gtk_entry_get_text(GTK_ENTRY(input_file_entry)));
     filename = stripExt(input_filename_full);
 
-    for (i=1; i<=12; ++i) {
+    for (i=1; i<=12; i=i+1) {
         sprintf(f, "%s%s.txt", filename, suffix_for_step(i));
         remove_file_silent(f);
     }
@@ -1152,7 +1152,7 @@ static void check_status_file(const char *statFile)
     //else if (strcmp_case(buf, "Range-doppler done")==0)
     //  on_step=12;
     else {
-      for (i=1; i<=12; ++i) {
+      for (i=1; i<=12; i=i+1) {
         if (strstr(buf,suffix_for_step(i))!=NULL) {
           on_step=i;
           break;
@@ -1162,7 +1162,7 @@ static void check_status_file(const char *statFile)
 
     // if we figured it out, highlight that step's text
     if (on_step>0) {
-      for (i=1; i<=12; ++i) {
+      for (i=1; i<=12; i=i+1) {
         int highlight_level = 0;
         if (i<on_step)
           highlight_level = 1;
@@ -1370,7 +1370,8 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 
 	g_usleep(50);
 
-        if (++counter % 200 == 0) {
+	    counter= counter + 1;
+        if (counter % 200 == 0) {
           /* check status file */
           check_status_file(statFile);
         }
@@ -1389,7 +1390,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     gtk_widget_set_sensitive(stop_button, FALSE);
     gtk_widget_set_sensitive(clear_button, TRUE );
 
-    for (i=1; i<=12; ++i)
+    for (i=1; i<=12; i=i+1)
       highlight_step(i, FALSE);
 }
 
@@ -1427,7 +1428,7 @@ set_toggles()
     azimuth_complex_multiply_checkbutton_toggled();
 
     int i;
-    for (i = 1; i <= 12; ++i)
+    for (i = 1; i <= 12; i=i+1)
 	set_underlines_off(i);
 }
 
@@ -1717,7 +1718,7 @@ static int
 all_selected()
 {
   int i, ret=TRUE;
-  for (i = 1; i <= 12; ++i)
+  for (i = 1; i <= 12; i=i+1)
   {
     char button_id[32];
     sprintf(button_id, "step%d_togglebutton", i);
@@ -1756,7 +1757,7 @@ on_button_select_all_clicked(GtkWidget *button, gpointer user_data)
     setting = FALSE;
 
   int i;
-  for (i = 1; i <= 12; ++i)
+  for (i = 1; i <= 12; i=i+1)
     select_button(i, setting);
 }
 
@@ -1764,19 +1765,19 @@ static char * escapify(const char * s)
 {
     int i,j;
     char * ret = MALLOC(2*strlen(s)*sizeof(char));
-    for (i = 0, j = 0; i <= strlen(s); ++i)
+    for (i = 0, j = 0; i <= strlen(s); i=i+1)
     {
         switch(s[i])
         {
             case '\\':
                 ret[j] = ret[j+1] = s[i];
-                ++j;
+                j= j+1;
                 break;
             default:
                 ret[j] = s[i];
                 break;
         }
-        ++j;
+        j= j+1;
     }
     return ret;
 }
