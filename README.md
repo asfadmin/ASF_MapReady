@@ -79,7 +79,7 @@ On other systems, the package names may vary.
 The following commands on the most recent Ubuntu should get you up
 and running:
 
-* sudo apt-get install git bison flex g++ gcc libgdal-dev libgtk2.0-dev libglade2-dev libgsl-dev libproj-dev libtiff-dev libgeotiff-dev shapelib libshp-dev libcunit1-dev
+* sudo apt-get install git bison flex g++ gcc libgdal-dev libgtk2.0-dev libglade2-dev libgsl-dev libproj-dev libtiff-dev libgeotiff-dev shapelib libshp-dev libcunit1-dev fftw-dev
 * git clone git@github.com/asfadmin/ASF_MapReady.git ASF_MapReady
 * cd ASF_MapReady
 * ./configure
