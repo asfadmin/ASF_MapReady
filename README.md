@@ -90,3 +90,43 @@ Optional:
 
 As noted above, if you skip the last step, add "/path/to/ASF_MapReady/bin" to your
 PATH in ~/.bashrc.
+
+#########################################################################  
+
+### [MapReady In Docker](https://github.com/asfadmin/MapReadyDocker)
+
+Independent project to build ASF MapReady in a containerized modern OS ([Redhat 8.10 Universal Base Image](https://github.com/asfadmin/MapReadyDocker)). Project offers a [public image](https://github.com/asfadmin/MapReadyDocker/pkgs/container/mapready) and the source [Dockerfile](https://github.com/asfadmin/MapReadyDocker/blob/main/build/asf_mapready.Dockerfile). If trying to build on another OS, see the [specific-dependencies](https://github.com/asfadmin/MapReadyDocker/blob/main/README.md#specific-dependencies) breakdown of workable dependency versions. 
+
+`MapReady in Docker` **does not** offer any new functionality or bug fixes, it is only an effort to enable ongoing workflow development/maintenance on a newer OS. 
+
+#### Usage
+
+```
+# Pull public image from GitHub Container Registry
+docker run -it ghcr.io/asfadmin/mapready:v1.1.0
+
+# Add /usr/local/lib/ to LD_LIBRARY_PATH
+[root@43b365c2b259 /]# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/
+
+# Do MapReady Stuff
+[root@43b365c2b259 /]# /usr/local/bin/asf_import 
+
+Usage:
+   asf_import [-amplitude | -sigma | -gamma | -beta | -power] [-db]
+              [-format <inputFormat>] [-ancillary-file <file>]
+              [-colormap <colormap_file>] [-band <band_id | all>]
+              [-no-ers2-gain-fix] [-image-data-type <type>] [-lut <file>]
+              [-lat <lower> <upper>] [-prc] [-log <logFile>]
+              [-quiet] [-real-quiet] [-license] [-version] [-multilook]
+              [-azimuth-look-count <looks>] [-range-look-count <looks>]
+              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]
+              [-range-scale[=<scale>] [-complex] [-metadata <file>]
+              [-interferogam <file>] [-coherence <file>] [-slave <file>]
+              [-baseline <file>] [-cpx_gamma <file>] [-line <start line subset>]
+              [-sample <start sample subset>] [-width <subset width>]
+              [-height <subset height>] [-uavsar <type>]
+              [-subset <latUL> <lonUL> <latLR> <lonLR>] [-help]
+              <inBaseName> <outBaseName>
+```
+
+
