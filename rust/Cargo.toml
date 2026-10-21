@@ -1,0 +1,32 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/asf-core",
+    "crates/asf-meta",
+    "crates/asf-raster",
+    "crates/asf-import",
+    "crates/asf-resample",
+    "crates/asf-geocode",
+    "crates/asf-export",
+    "crates/asf-stats",
+    "crates/asf-adjust-bands",
+    "crates/asf-color-browse",
+    "tools/asf_import",
+    "tools/resample",
+    "tools/asf_geocode",
+    "tools/adjust_bands",
+    "tools/color_browse",
+    "tools/stats",
+    "tools/asf_export",
+]
+
+[workspace.package]
+edition = "2021"
+license = "BSD-3-Clause"
+repository = "https://github.com/asfadmin/ASF_MapReady"
+
+[workspace.dependencies]
+anyhow = "1"
+thiserror = "1"
+clap = { version = "4", features = ["derive"] }
+tiff = "0.9"
