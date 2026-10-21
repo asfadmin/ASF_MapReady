@@ -152,6 +152,7 @@ name = "asf-stats"
 version = "0.1.0"
 dependencies = [
  "asf-core",
+ "asf-meta",
  "asf-raster",
 ]
 

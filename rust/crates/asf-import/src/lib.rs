@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use asf_core::{path::image_path, Error, Result};
 use asf_meta::{write_metadata, BandMetadata, DataType, GeneralMetadata, Metadata};
-use tiff::decoder::{Decoder, DecodingResult};
+use tiff::decoder::{Decoder, DecodingResult, Limits};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InputFormat {
@@ -102,6 +102,7 @@ pub fn import_sentinel(input: impl AsRef<Path>, output_base: impl AsRef<Path>) -
             sensor: Some("SENTINEL-1".to_string()),
         },
         bands,
+        statistics: None,
     };
 
     write_metadata(output_base, &metadata)?;
@@ -172,6 +173,8 @@ fn decode_measurement_as_f32(path: &Path) -> Result<DecodedMeasurement> {
     let mut decoder = Decoder::new(file).map_err(|error| {
         Error::InvalidInput(format!("Could not open TIFF {}: {error}", path.display()))
     })?;
+
+    decoder = decoder.with_limits(Limits::unlimited());
 
     let (width, height) = decoder.dimensions().map_err(|error| {
         Error::InvalidInput(format!(
