@@ -12,6 +12,9 @@ struct Cli {
     #[arg(short = 'f', long = "format", default_value = "sentinel")]
     format: String,
 
+    #[arg(long = "gamma")]
+    gamma: bool,
+
     #[arg(value_name = "INPUT")]
     input: String,
 
@@ -28,6 +31,7 @@ fn main() -> Result<()> {
         format,
         input: cli.input,
         output_base: cli.output_base,
+        gamma: cli.gamma,
     };
 
     asf_import::import(&options)?;

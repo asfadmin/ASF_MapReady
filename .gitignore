@@ -33,3 +33,7 @@ config.status
 # IDE
 .vscode/
 .idea/
+
+# Output from tools that shouldn't be accidentially committed
+*.img
+*.meta

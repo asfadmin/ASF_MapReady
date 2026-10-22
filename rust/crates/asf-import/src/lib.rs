@@ -27,15 +27,22 @@ pub struct ImportOptions {
     pub format: InputFormat,
     pub input: String,
     pub output_base: String,
+    pub gamma: bool,
 }
 
 pub fn import(options: &ImportOptions) -> Result<()> {
     match options.format {
-        InputFormat::Sentinel => import_sentinel(&options.input, &options.output_base),
+        InputFormat::Sentinel => {
+            import_sentinel(&options.input, &options.output_base, options.gamma)
+        }
     }
 }
 
-pub fn import_sentinel(input: impl AsRef<Path>, output_base: impl AsRef<Path>) -> Result<()> {
+pub fn import_sentinel(
+    input: impl AsRef<Path>,
+    output_base: impl AsRef<Path>,
+    gamma: bool,
+) -> Result<()> {
     let safe_dir = find_safe_dir(input.as_ref())?;
     let measurement_dir = safe_dir.join("measurement");
 
@@ -63,7 +70,11 @@ pub fn import_sentinel(input: impl AsRef<Path>, output_base: impl AsRef<Path>) -
     let mut bands = Vec::with_capacity(measurements.len());
 
     for (band_index, measurement) in measurements.iter().enumerate() {
-        let decoded = decode_measurement_as_f32(measurement)?;
+        let mut decoded = decode_measurement_as_f32(measurement)?;
+
+        if gamma {
+            apply_gamma(&mut decoded.samples);
+        }
 
         if band_index == 0 {
             line_count = decoded.height;
@@ -219,6 +230,14 @@ fn decode_measurement_as_f32(path: &Path) -> Result<DecodedMeasurement> {
         height: height as usize,
         samples,
     })
+}
+
+fn apply_gamma(samples: &mut [f32]) {
+    for sample in samples {
+        if sample.is_finite() && *sample != 0.0 {
+            *sample *= *sample;
+        }
+    }
 }
 
 fn infer_sentinel_band_name(path: &Path) -> String {
