@@ -5,10 +5,10 @@ use asf_adjust_bands::AdjustBandsOptions;
 
 #[derive(Debug, Parser)]
 #[command(name = "adjust_bands")]
-#[command(about = "Select or reorder bands in ASF internal rasters")]
+#[command(about = "Select one band from ASF internal rasters")]
 struct Cli {
-    #[arg(long = "bands", value_delimiter = ',')]
-    bands: Vec<String>,
+    #[arg(long = "bands", value_name = "BAND_NAME")]
+    bands: String,
 
     #[arg(value_name = "INPUT_BASE")]
     input_base: String,

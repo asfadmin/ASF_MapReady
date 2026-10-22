@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "adjust_bands_cli"
+name = "adjust_bands"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -78,6 +78,7 @@ name = "asf-adjust-bands"
 version = "0.1.0"
 dependencies = [
  "asf-core",
+ "asf-meta",
  "asf-raster",
 ]
 
