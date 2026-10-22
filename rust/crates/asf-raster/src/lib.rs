@@ -1,9 +1,9 @@
-use std::fs::{self, File};
-use std::io::{Read, Seek, SeekFrom};
+use std::fs::{self, File, OpenOptions};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::Path;
 
 use asf_core::{path::image_path, Error, Result};
-use asf_meta::{read_metadata, DataType, Metadata};
+use asf_meta::{read_metadata, write_metadata, DataType, Metadata};
 
 #[derive(Debug, Clone)]
 pub struct Raster {
@@ -38,8 +38,33 @@ pub fn open_raster(base_name: impl AsRef<Path>) -> Result<Raster> {
     Ok(Raster { metadata })
 }
 
-pub fn create_raster(_base_name: impl AsRef<Path>, _metadata: &Metadata) -> Result<Raster> {
-    todo!("create ASF .img + .meta raster")
+pub fn create_raster(base_name: impl AsRef<Path>, metadata: &Metadata) -> Result<Raster> {
+    let base_name = base_name.as_ref();
+
+    if metadata.general.data_type != DataType::F32 {
+        return Err(Error::UnsupportedDataType(format!(
+            "create_raster currently supports only REAL32 rasters, found {}",
+            metadata.general.data_type.as_meta_str()
+        )));
+    }
+
+    if metadata.bands.len() != metadata.general.band_count {
+        return Err(Error::InvalidInput(format!(
+            "Metadata band_count is {}, but bands contains {} names",
+            metadata.general.band_count,
+            metadata.bands.len()
+        )));
+    }
+
+    write_metadata(base_name, metadata)?;
+
+    let img_path = image_path(base_name);
+    let file = File::create(&img_path)?;
+    file.set_len(expected_image_size(metadata)?)?;
+
+    Ok(Raster {
+        metadata: metadata.clone(),
+    })
 }
 
 pub fn read_f32_band(base_name: impl AsRef<Path>, band_index: usize) -> Result<Vec<f32>> {
@@ -91,11 +116,60 @@ pub fn read_f32_band(base_name: impl AsRef<Path>, band_index: usize) -> Result<V
 }
 
 pub fn write_f32_band(
-    _base_name: impl AsRef<Path>,
-    _band_index: usize,
-    _samples: &[f32],
+    base_name: impl AsRef<Path>,
+    band_index: usize,
+    samples: &[f32],
 ) -> Result<()> {
-    todo!("write one f32 band")
+    let base_name = base_name.as_ref();
+    let raster = open_raster(base_name)?;
+    let metadata = &raster.metadata;
+
+    if metadata.general.data_type != DataType::F32 {
+        return Err(Error::UnsupportedDataType(format!(
+            "write_f32_band currently supports only REAL32 rasters, found {}",
+            metadata.general.data_type.as_meta_str()
+        )));
+    }
+
+    if band_index >= metadata.general.band_count {
+        return Err(Error::InvalidArgument(format!(
+            "Band index {} is out of range for raster with {} bands",
+            band_index, metadata.general.band_count
+        )));
+    }
+
+    let samples_per_band = metadata
+        .general
+        .line_count
+        .checked_mul(metadata.general.sample_count)
+        .ok_or_else(|| Error::InvalidInput("Raster dimensions overflow usize".to_string()))?;
+
+    if samples.len() != samples_per_band {
+        return Err(Error::InvalidArgument(format!(
+            "Band {} write expected {} samples, received {}",
+            band_index,
+            samples_per_band,
+            samples.len()
+        )));
+    }
+
+    let bytes_per_band = samples_per_band
+        .checked_mul(DataType::F32.byte_size())
+        .ok_or_else(|| Error::InvalidInput("Raster band byte size overflows usize".to_string()))?;
+
+    let byte_offset = band_index
+        .checked_mul(bytes_per_band)
+        .ok_or_else(|| Error::InvalidInput("Raster band offset overflows usize".to_string()))?;
+
+    let img_path = image_path(base_name);
+    let mut file = OpenOptions::new().write(true).open(&img_path)?;
+    file.seek(SeekFrom::Start(byte_offset as u64))?;
+
+    for sample in samples {
+        file.write_all(&sample.to_le_bytes())?;
+    }
+
+    Ok(())
 }
 
 fn expected_image_size(metadata: &Metadata) -> Result<u64> {

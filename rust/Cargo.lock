@@ -144,6 +144,7 @@ name = "asf-resample"
 version = "0.1.0"
 dependencies = [
  "asf-core",
+ "asf-meta",
  "asf-raster",
 ]
 
@@ -176,7 +177,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "asf_import_cli"
+name = "asf_import"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -318,7 +319,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "resample_cli"
+name = "resample"
 version = "0.1.0"
 dependencies = [
  "anyhow",

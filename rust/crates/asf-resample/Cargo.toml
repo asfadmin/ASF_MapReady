@@ -6,4 +6,5 @@ license.workspace = true
 
 [dependencies]
 asf-core = { path = "../asf-core" }
+asf-meta = { path = "../asf-meta" }
 asf-raster = { path = "../asf-raster" }
