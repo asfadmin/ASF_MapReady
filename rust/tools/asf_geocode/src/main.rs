@@ -10,24 +10,9 @@ enum ProjectionArg {
     Utm,
 }
 
-#[derive(Debug, Clone, Copy, ValueEnum)]
-enum MethodArg {
-    Nearest,
-    Bilinear,
-}
-
-impl From<MethodArg> for ResampleMethod {
-    fn from(value: MethodArg) -> Self {
-        match value {
-            MethodArg::Nearest => Self::Nearest,
-            MethodArg::Bilinear => Self::Bilinear,
-        }
-    }
-}
-
 #[derive(Debug, Parser)]
 #[command(name = "asf_geocode")]
-#[command(about = "Geocode ASF internal rasters")]
+#[command(about = "Geocode ASF internal rasters. Current Rust milestone is pass-through only.")]
 struct Cli {
     #[arg(short = 'p', long = "projection", value_enum)]
     projection: ProjectionArg,
@@ -40,15 +25,6 @@ struct Cli {
 
     #[arg(long = "pixel-size")]
     pixel_size: Option<f64>,
-
-    #[arg(long = "resample-method", value_enum, default_value_t = MethodArg::Bilinear)]
-    resample_method: MethodArg,
-
-    #[arg(long = "background")]
-    background: Option<f32>,
-
-    #[arg(long = "band")]
-    band: Option<String>,
 
     #[arg(value_name = "INPUT_BASE")]
     input_base: String,
@@ -79,9 +55,9 @@ fn main() -> Result<()> {
         output_base: cli.output_base,
         projection,
         pixel_size: cli.pixel_size,
-        resample_method: cli.resample_method.into(),
-        background: cli.background,
-        band: cli.band,
+        resample_method: ResampleMethod::Nearest,
+        background: None,
+        band: None,
     };
 
     asf_geocode::geocode(&options)?;

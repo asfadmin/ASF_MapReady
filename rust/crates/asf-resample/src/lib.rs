@@ -72,6 +72,7 @@ fn scaled_count(input_count: usize, scale: f64) -> Result<usize> {
         )));
     }
 
+    // if we don't like the edge coverage, we can use ceil() here.
     let output_count = ((input_count as f64) * scale).round();
 
     if output_count < 1.0 {

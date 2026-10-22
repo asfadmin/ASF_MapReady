@@ -111,6 +111,7 @@ name = "asf-geocode"
 version = "0.1.0"
 dependencies = [
  "asf-core",
+ "asf-meta",
  "asf-raster",
 ]
 
@@ -167,7 +168,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "asf_geocode_cli"
+name = "asf_geocode"
 version = "0.1.0"
 dependencies = [
  "anyhow",
