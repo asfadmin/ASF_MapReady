@@ -37,3 +37,5 @@ config.status
 # Output from tools that shouldn't be accidentially committed
 *.img
 *.meta
+*.tif
+*.tiff

@@ -103,7 +103,9 @@ name = "asf-export"
 version = "0.1.0"
 dependencies = [
  "asf-core",
+ "asf-meta",
  "asf-raster",
+ "tiff",
 ]
 
 [[package]]
@@ -159,7 +161,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "asf_export_cli"
+name = "asf_export"
 version = "0.1.0"
 dependencies = [
  "anyhow",

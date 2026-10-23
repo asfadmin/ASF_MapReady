@@ -54,6 +54,9 @@ struct Cli {
     #[arg(long = "band")]
     band: Option<String>,
 
+    #[arg(long = "rgb", value_name = "RED GREEN BLUE")]
+    rgb: Option<String>,
+
     #[arg(value_name = "INPUT_BASE")]
     input_base: String,
 
@@ -70,6 +73,7 @@ fn main() -> Result<()> {
         format: cli.format.into(),
         byte_scale: cli.byte_scale.into(),
         band: cli.band,
+        rgb: cli.rgb,
     };
 
     asf_export::export(&options)?;
