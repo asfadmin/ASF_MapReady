@@ -313,20 +313,22 @@ fn import_sentinel_grd(
 
     writer.flush()?;
 
-    let metadata = Metadata {
-        general: GeneralMetadata {
-            line_count: first.height,
-            sample_count: first.width,
-            band_count: bands.len(),
-            data_type: DataType::F32,
-            x_pixel_size: 10.0,
-            y_pixel_size: 10.0,
-            no_data: Some(0.0),
-            sensor: Some(product.mission.clone()),
-        },
-        bands,
-        statistics: None,
-    };
+        let metadata = Metadata {
+            general: GeneralMetadata {
+                line_count: first.height,
+                sample_count: first.width,
+                band_count: bands.len(),
+                data_type: DataType::F32,
+                x_pixel_size: 10.0,
+                y_pixel_size: 10.0,
+                no_data: Some(0.0),
+                sensor: Some(product.mission.clone()),
+            },
+            bands,
+            statistics: None,
+            source_geolocation: None,
+            georeferencing: None,
+        };
 
     write_metadata(output_base, &metadata)?;
 
