@@ -30,3 +30,4 @@ anyhow = "1"
 thiserror = "1"
 clap = { version = "4", features = ["derive"] }
 tiff = "0.9"
+roxmltree = "0.20"

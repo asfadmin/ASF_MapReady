@@ -9,3 +9,4 @@ asf-core = { path = "../asf-core" }
 asf-meta = { path = "../asf-meta" }
 asf-raster = { path = "../asf-raster" }
 tiff.workspace = true
+roxmltree.workspace = true

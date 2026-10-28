@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 
 use asf_core::{path::image_path, Error, Result};
 use asf_meta::{write_metadata, BandMetadata, DataType, GeneralMetadata, Metadata};
+use roxmltree::{Document, Node};
 use tiff::decoder::{Decoder, DecodingResult, Limits};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -379,30 +380,35 @@ struct SentinelLutLine {
     values: Vec<f32>,
 }
 
+
 fn read_sentinel_calibration(path: &Path, radiometry: Radiometry) -> Result<SentinelLut> {
     let xml = read_text(path)?;
+    let document = parse_xml_document(&xml, path)?;
     let field = radiometry.calibration_field()?;
-    let vectors = elements_named(&xml, "calibrationVector");
 
-    if vectors.is_empty() {
-        return Err(Error::InvalidInput(format!(
-            "No calibrationVector elements found in {}",
-            path.display()
-        )));
-    }
+    let vectors = document
+        .descendants()
+        .filter(|node| node.has_tag_name("calibrationVector"));
 
-    let mut lines = Vec::with_capacity(vectors.len());
+    let mut lines = Vec::new();
 
     for vector in vectors {
-        let line = parse_required_usize_child(&vector, "line", path)?;
-        let pixels = parse_required_usize_list_child(&vector, "pixel", path)?;
-        let values = parse_required_f32_list_child(&vector, field, path)?;
+        let line = parse_required_usize_child(vector, "line", path)?;
+        let pixels = parse_required_usize_list_child(vector, "pixel", path)?;
+        let values = parse_required_f32_list_child(vector, field, path)?;
 
         lines.push(SentinelLutLine {
             line,
             pixels,
             values,
         });
+    }
+
+    if lines.is_empty() {
+        return Err(Error::InvalidInput(format!(
+            "No calibrationVector elements found in {}",
+            path.display()
+        )));
     }
 
     validate_lut(path, &lines)?;
@@ -412,9 +418,17 @@ fn read_sentinel_calibration(path: &Path, radiometry: Radiometry) -> Result<Sent
 
 fn read_sentinel_noise(path: &Path, max_line: usize, max_pixel: usize) -> Result<SentinelLut> {
     let xml = read_text(path)?;
+    let document = parse_xml_document(&xml, path)?;
 
-    let regular_vectors = elements_named(&xml, "noiseVector");
-    let range_vectors = elements_named(&xml, "noiseRangeVector");
+    let regular_vectors = document
+        .descendants()
+        .filter(|node| node.has_tag_name("noiseVector"))
+        .collect::<Vec<_>>();
+
+    let range_vectors = document
+        .descendants()
+        .filter(|node| node.has_tag_name("noiseRangeVector"))
+        .collect::<Vec<_>>();
 
     let (vectors, value_tag) = if !regular_vectors.is_empty() {
         (regular_vectors, "noiseLut")
@@ -430,9 +444,9 @@ fn read_sentinel_noise(path: &Path, max_line: usize, max_pixel: usize) -> Result
     let mut lines = Vec::with_capacity(vectors.len());
 
     for vector in vectors {
-        let line = parse_required_usize_child(&vector, "line", path)?;
-        let mut pixels = parse_required_usize_list_child(&vector, "pixel", path)?;
-        let values = parse_required_f32_list_child(&vector, value_tag, path)?;
+        let line = parse_required_usize_child(vector, "line", path)?;
+        let mut pixels = parse_required_usize_list_child(vector, "pixel", path)?;
+        let values = parse_required_f32_list_child(vector, value_tag, path)?;
 
         if let Some(last_pixel) = pixels.last_mut() {
             *last_pixel = max_pixel.saturating_sub(1);
@@ -787,81 +801,38 @@ fn infer_product_type(safe_dir: &Path) -> Result<SentinelProductType> {
     }
 }
 
+
 fn read_text(path: &Path) -> Result<String> {
     let mut text = String::new();
     File::open(path)?.read_to_string(&mut text)?;
     Ok(text)
 }
-fn elements_named(xml: &str, tag: &str) -> Vec<String> {
-    let close = format!("</{tag}>");
 
-    let mut elements = Vec::new();
-    let mut rest = xml;
-
-    while let Some(open_start) = find_opening_tag(rest, tag) {
-        let after_open_start = &rest[open_start..];
-
-        let Some(open_end) = after_open_start.find('>') else {
-            break;
-        };
-
-        let content_start = open_start + open_end + 1;
-        let after_open = &rest[content_start..];
-
-        if let Some(close_index) = after_open.find(&close) {
-            elements.push(after_open[..close_index].to_string());
-            rest = &after_open[close_index + close.len()..];
-        } else {
-            break;
-        }
-    }
-
-    elements
+fn parse_xml_document<'a>(xml: &'a str, path: &Path) -> Result<Document<'a>> {
+    Document::parse(xml).map_err(|error| {
+        Error::InvalidInput(format!(
+            "Could not parse Sentinel XML {}: {error}",
+            path.display()
+        ))
+    })
 }
 
-fn child_text<'a>(xml: &'a str, tag: &str) -> Option<&'a str> {
-    let close = format!("</{tag}>");
-
-    let open_start = find_opening_tag(xml, tag)?;
-    let after_open_start = &xml[open_start..];
-    let open_end = after_open_start.find('>')?;
-
-    let content_start = open_start + open_end + 1;
-    let after_open = &xml[content_start..];
-    let close_index = after_open.find(&close)?;
-
-    Some(after_open[..close_index].trim())
-}
-
-fn find_opening_tag(xml: &str, tag: &str) -> Option<usize> {
-    let needle = format!("<{tag}");
-
-    let mut search_start = 0;
-
-    while let Some(relative_index) = xml[search_start..].find(&needle) {
-        let index = search_start + relative_index;
-        let after_tag_name = index + needle.len();
-
-        let next_char = xml[after_tag_name..].chars().next();
-
-        if matches!(next_char, Some('>') | Some(' ') | Some('\t') | Some('\n') | Some('\r')) {
-            return Some(index);
-        }
-
-        search_start = after_tag_name;
-    }
-
-    None
-}
-
-fn parse_required_usize_child(xml: &str, tag: &str, path: &Path) -> Result<usize> {
-    child_text(xml, tag)
+fn required_child_text<'a>(node: Node<'a, 'a>, tag: &str, path: &Path) -> Result<&'a str> {
+    node.children()
+        .find(|child| child.has_tag_name(tag))
+        .and_then(|child| child.text())
+        .map(str::trim)
+        .filter(|text| !text.is_empty())
         .ok_or_else(|| {
             Error::InvalidInput(format!(
                 "Missing <{tag}> in Sentinel XML {}",
                 path.display()
             ))
-        })?
+        })
+}
+
+fn parse_required_usize_child(node: Node<'_, '_>, tag: &str, path: &Path) -> Result<usize> {
+    required_child_text(node, tag, path)?
         .parse::<usize>()
         .map_err(|error| {
             Error::InvalidInput(format!(
@@ -871,15 +842,9 @@ fn parse_required_usize_child(xml: &str, tag: &str, path: &Path) -> Result<usize
         })
 }
 
-fn parse_required_usize_list_child(xml: &str, tag: &str, path: &Path) -> Result<Vec<usize>> {
-    let text = child_text(xml, tag).ok_or_else(|| {
-        Error::InvalidInput(format!(
-            "Missing <{tag}> in Sentinel XML {}",
-            path.display()
-        ))
-    })?;
-
-    text.split_whitespace()
+fn parse_required_usize_list_child(node: Node<'_, '_>, tag: &str, path: &Path) -> Result<Vec<usize>> {
+    required_child_text(node, tag, path)?
+        .split_whitespace()
         .map(|value| {
             value.parse::<usize>().map_err(|error| {
                 Error::InvalidInput(format!(
@@ -891,15 +856,9 @@ fn parse_required_usize_list_child(xml: &str, tag: &str, path: &Path) -> Result<
         .collect()
 }
 
-fn parse_required_f32_list_child(xml: &str, tag: &str, path: &Path) -> Result<Vec<f32>> {
-    let text = child_text(xml, tag).ok_or_else(|| {
-        Error::InvalidInput(format!(
-            "Missing <{tag}> in Sentinel XML {}",
-            path.display()
-        ))
-    })?;
-
-    text.split_whitespace()
+fn parse_required_f32_list_child(node: Node<'_, '_>, tag: &str, path: &Path) -> Result<Vec<f32>> {
+    required_child_text(node, tag, path)?
+        .split_whitespace()
         .map(|value| {
             value.parse::<f32>().map_err(|error| {
                 Error::InvalidInput(format!(
