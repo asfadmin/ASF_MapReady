@@ -3,7 +3,10 @@ use std::io::{BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 
 use asf_core::{path::image_path, Error, Result};
-use asf_meta::{write_metadata, BandMetadata, DataType, GeneralMetadata, Metadata};
+use asf_meta::{
+    write_metadata, BandMetadata, DataType, GeneralMetadata, GeolocationGridPoint, Metadata,
+    SourceGeolocationMetadata,
+};
 use roxmltree::{Document, Node};
 use tiff::decoder::{Decoder, DecodingResult, Limits};
 
@@ -313,22 +316,24 @@ fn import_sentinel_grd(
 
     writer.flush()?;
 
-        let metadata = Metadata {
-            general: GeneralMetadata {
-                line_count: first.height,
-                sample_count: first.width,
-                band_count: bands.len(),
-                data_type: DataType::F32,
-                x_pixel_size: 10.0,
-                y_pixel_size: 10.0,
-                no_data: Some(0.0),
-                sensor: Some(product.mission.clone()),
-            },
-            bands,
-            statistics: None,
-            source_geolocation: None,
-            georeferencing: None,
-        };
+    let source_geolocation = read_sentinel_geolocation_grid(&first.annotation_path)?;
+
+    let metadata = Metadata {
+        general: GeneralMetadata {
+            line_count: first.height,
+            sample_count: first.width,
+            band_count: bands.len(),
+            data_type: DataType::F32,
+            x_pixel_size: 10.0,
+            y_pixel_size: 10.0,
+            no_data: Some(0.0),
+            sensor: Some(product.mission.clone()),
+        },
+        bands,
+        statistics: None,
+        source_geolocation: Some(source_geolocation),
+        georeferencing: None,
+    };
 
     write_metadata(output_base, &metadata)?;
 
@@ -469,6 +474,80 @@ fn read_sentinel_noise(path: &Path, max_line: usize, max_pixel: usize) -> Result
     validate_lut(path, &lines)?;
 
     Ok(SentinelLut { lines })
+}
+
+fn read_sentinel_geolocation_grid(path: &Path) -> Result<SourceGeolocationMetadata> {
+    let xml = read_text(path)?;
+    let document = parse_xml_document(&xml, path)?;
+
+    let mut points = Vec::new();
+
+    for point_node in document
+        .descendants()
+        .filter(|node| node.has_tag_name("geolocationGridPoint"))
+    {
+        points.push(GeolocationGridPoint {
+            line: parse_required_usize_child(point_node, "line", path)?,
+            pixel: parse_required_usize_child(point_node, "pixel", path)?,
+            latitude: parse_required_f64_child(point_node, "latitude", path)?,
+            longitude: parse_required_f64_child(point_node, "longitude", path)?,
+            height: parse_optional_f64_child(point_node, "height", path)?,
+            incidence_angle: parse_optional_f64_child(point_node, "incidenceAngle", path)?,
+        });
+    }
+
+    if points.is_empty() {
+        return Err(Error::InvalidInput(format!(
+            "No Sentinel geolocationGridPoint elements found in {}",
+            path.display()
+        )));
+    }
+
+    validate_geolocation_grid(path, &points)?;
+
+    Ok(SourceGeolocationMetadata { points })
+}
+
+fn validate_geolocation_grid(path: &Path, points: &[GeolocationGridPoint]) -> Result<()> {
+    for point in points {
+        if !point.latitude.is_finite()
+            || !point.longitude.is_finite()
+            || !(-90.0..=90.0).contains(&point.latitude)
+            || !(-180.0..=180.0).contains(&point.longitude)
+        {
+            return Err(Error::InvalidInput(format!(
+                "Invalid Sentinel geolocation grid point in {} at line {}, pixel {}: latitude={}, longitude={}",
+                path.display(),
+                point.line,
+                point.pixel,
+                point.latitude,
+                point.longitude
+            )));
+        }
+
+        if point.height.is_some_and(|height| !height.is_finite()) {
+            return Err(Error::InvalidInput(format!(
+                "Invalid Sentinel geolocation grid height in {} at line {}, pixel {}",
+                path.display(),
+                point.line,
+                point.pixel
+            )));
+        }
+
+        if point
+            .incidence_angle
+            .is_some_and(|incidence_angle| !incidence_angle.is_finite())
+        {
+            return Err(Error::InvalidInput(format!(
+                "Invalid Sentinel geolocation grid incidence angle in {} at line {}, pixel {}",
+                path.display(),
+                point.line,
+                point.pixel
+            )));
+        }
+    }
+
+    Ok(())
 }
 
 fn normalize_noise_lut(lines: &mut [SentinelLutLine]) {
@@ -833,6 +912,8 @@ fn required_child_text<'a>(node: Node<'a, 'a>, tag: &str, path: &Path) -> Result
         })
 }
 
+// ... existing code ...
+
 fn parse_required_usize_child(node: Node<'_, '_>, tag: &str, path: &Path) -> Result<usize> {
     required_child_text(node, tag, path)?
         .parse::<usize>()
@@ -842,6 +923,36 @@ fn parse_required_usize_child(node: Node<'_, '_>, tag: &str, path: &Path) -> Res
                 path.display()
             ))
         })
+}
+
+fn parse_required_f64_child(node: Node<'_, '_>, tag: &str, path: &Path) -> Result<f64> {
+    required_child_text(node, tag, path)?
+        .parse::<f64>()
+        .map_err(|error| {
+            Error::InvalidInput(format!(
+                "Invalid float in <{tag}> in Sentinel XML {}: {error}",
+                path.display()
+            ))
+        })
+}
+
+fn parse_optional_f64_child(node: Node<'_, '_>, tag: &str, path: &Path) -> Result<Option<f64>> {
+    let Some(text) = node
+        .children()
+        .find(|child| child.has_tag_name(tag))
+        .and_then(|child| child.text())
+        .map(str::trim)
+        .filter(|text| !text.is_empty())
+    else {
+        return Ok(None);
+    };
+
+    text.parse::<f64>().map(Some).map_err(|error| {
+        Error::InvalidInput(format!(
+            "Invalid float in optional <{tag}> in Sentinel XML {}: {error}",
+            path.display()
+        ))
+    })
 }
 
 fn parse_required_usize_list_child(node: Node<'_, '_>, tag: &str, path: &Path) -> Result<Vec<usize>> {
