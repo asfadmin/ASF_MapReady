@@ -44,6 +44,14 @@ pub fn resample(options: &ResampleOptions) -> Result<()> {
     output_metadata.general.line_count = output_line_count;
     output_metadata.general.x_pixel_size = options.square_pixel_size;
     output_metadata.general.y_pixel_size = options.square_pixel_size;
+    scale_source_geolocation(
+        &mut output_metadata,
+        input_metadata.general.sample_count,
+        input_metadata.general.line_count,
+        output_sample_count,
+        output_line_count,
+    );
+    output_metadata.georeferencing = None;
     output_metadata.statistics = None;
 
     create_raster(&options.output_base, &output_metadata)?;
@@ -63,6 +71,38 @@ pub fn resample(options: &ResampleOptions) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn scale_source_geolocation(
+    metadata: &mut asf_meta::Metadata,
+    input_sample_count: usize,
+    input_line_count: usize,
+    output_sample_count: usize,
+    output_line_count: usize,
+) {
+    let Some(source_geolocation) = &mut metadata.source_geolocation else {
+        return;
+    };
+
+    if input_sample_count == 0 || input_line_count == 0 {
+        return;
+    }
+
+    let x_scale = output_sample_count as f64 / input_sample_count as f64;
+    let y_scale = output_line_count as f64 / input_line_count as f64;
+
+    let max_output_pixel = output_sample_count.saturating_sub(1);
+    let max_output_line = output_line_count.saturating_sub(1);
+
+    for point in &mut source_geolocation.points {
+        point.pixel = ((point.pixel as f64) * x_scale)
+            .round()
+            .clamp(0.0, max_output_pixel as f64) as usize;
+
+        point.line = ((point.line as f64) * y_scale)
+            .round()
+            .clamp(0.0, max_output_line as f64) as usize;
+    }
 }
 
 fn scaled_count(input_count: usize, scale: f64) -> Result<usize> {
