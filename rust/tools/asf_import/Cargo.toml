@@ -1,0 +1,14 @@
+[package]
+name = "asf_import"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "asf_import"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+asf-import = { path = "../../crates/asf-import" }

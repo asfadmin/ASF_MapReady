@@ -1,0 +1,9 @@
+[package]
+name = "asf-raster"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+asf-core = { path = "../asf-core" }
+asf-meta = { path = "../asf-meta" }
