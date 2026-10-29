@@ -273,6 +273,57 @@ fn write_geotiff_rgb_image(
         .write_tag(Tag::Unknown(33922), &tiepoint[..])
         .map_err(tiff_error)?;
 
+    if let Some(affine) = georeferencing.affine {
+        let transformation = [
+            affine.pixel_x,
+            affine.line_x,
+            0.0_f64,
+            affine.origin_x,
+            affine.pixel_y,
+            affine.line_y,
+            0.0_f64,
+            affine.origin_y,
+            0.0_f64,
+            0.0_f64,
+            0.0_f64,
+            0.0_f64,
+            0.0_f64,
+            0.0_f64,
+            0.0_f64,
+            1.0_f64,
+        ];
+
+        tiff_image
+            .encoder()
+            .write_tag(Tag::Unknown(34264), &transformation[..])
+            .map_err(tiff_error)?;
+    } else {
+        let pixel_scale = [
+            georeferencing.pixel_size_x.abs(),
+            georeferencing.pixel_size_y.abs(),
+            0.0_f64,
+        ];
+
+        let tiepoint = [
+            0.0_f64,
+            0.0_f64,
+            0.0_f64,
+            georeferencing.origin_x,
+            georeferencing.origin_y,
+            0.0_f64,
+        ];
+
+        tiff_image
+            .encoder()
+            .write_tag(Tag::Unknown(33550), &pixel_scale[..])
+            .map_err(tiff_error)?;
+
+        tiff_image
+            .encoder()
+            .write_tag(Tag::Unknown(33922), &tiepoint[..])
+            .map_err(tiff_error)?;
+    }
+
     let geo_key_directory = geo_key_directory(georeferencing)?;
 
     tiff_image

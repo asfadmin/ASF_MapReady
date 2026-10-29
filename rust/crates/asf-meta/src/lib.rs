@@ -52,6 +52,17 @@ pub struct GeoreferencingMetadata {
     pub pixel_size_y: f64,
     pub origin_x: f64,
     pub origin_y: f64,
+    pub affine: Option<AffineTransform>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct AffineTransform {
+    pub origin_x: f64,
+    pub pixel_x: f64,
+    pub line_x: f64,
+    pub origin_y: f64,
+    pub pixel_y: f64,
+    pub line_y: f64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -163,6 +174,12 @@ pub fn read_metadata(base_name: impl AsRef<Path>) -> Result<Metadata> {
     let mut georeferencing_pixel_size_y = None;
     let mut georeferencing_origin_x = None;
     let mut georeferencing_origin_y = None;
+    let mut georeferencing_affine_origin_x = None;
+    let mut georeferencing_affine_pixel_x = None;
+    let mut georeferencing_affine_line_x = None;
+    let mut georeferencing_affine_origin_y = None;
+    let mut georeferencing_affine_pixel_y = None;
+    let mut georeferencing_affine_line_y = None;
     let mut in_georeferencing = false;
 
     for line in text.lines() {
@@ -280,6 +297,12 @@ pub fn read_metadata(base_name: impl AsRef<Path>) -> Result<Metadata> {
                 "pixel_size_y" => georeferencing_pixel_size_y = Some(parse_f64_field(key, value)?),
                 "origin_x" => georeferencing_origin_x = Some(parse_f64_field(key, value)?),
                 "origin_y" => georeferencing_origin_y = Some(parse_f64_field(key, value)?),
+                "affine_origin_x" => georeferencing_affine_origin_x = Some(parse_f64_field(key, value)?),
+                "affine_pixel_x" => georeferencing_affine_pixel_x = Some(parse_f64_field(key, value)?),
+                "affine_line_x" => georeferencing_affine_line_x = Some(parse_f64_field(key, value)?),
+                "affine_origin_y" => georeferencing_affine_origin_y = Some(parse_f64_field(key, value)?),
+                "affine_pixel_y" => georeferencing_affine_pixel_y = Some(parse_f64_field(key, value)?),
+                "affine_line_y" => georeferencing_affine_line_y = Some(parse_f64_field(key, value)?),
                 _ => {}
             }
 
@@ -351,6 +374,37 @@ pub fn read_metadata(base_name: impl AsRef<Path>) -> Result<Metadata> {
             let origin_x = require_field("georeferencing.origin_x", georeferencing_origin_x)?;
             let origin_y = require_field("georeferencing.origin_y", georeferencing_origin_y)?;
 
+            let affine = match (
+                georeferencing_affine_origin_x,
+                georeferencing_affine_pixel_x,
+                georeferencing_affine_line_x,
+                georeferencing_affine_origin_y,
+                georeferencing_affine_pixel_y,
+                georeferencing_affine_line_y,
+            ) {
+                (
+                    Some(origin_x),
+                    Some(pixel_x),
+                    Some(line_x),
+                    Some(origin_y),
+                    Some(pixel_y),
+                    Some(line_y),
+                ) => Some(AffineTransform {
+                    origin_x,
+                    pixel_x,
+                    line_x,
+                    origin_y,
+                    pixel_y,
+                    line_y,
+                }),
+                (None, None, None, None, None, None) => None,
+                _ => {
+                    return Err(Error::Metadata(
+                        "Incomplete georeferencing affine transform fields".to_string(),
+                    ));
+                }
+            };
+
             Some(GeoreferencingMetadata {
                 projection: ProjectionMetadata::Utm {
                     zone,
@@ -361,6 +415,7 @@ pub fn read_metadata(base_name: impl AsRef<Path>) -> Result<Metadata> {
                 pixel_size_y,
                 origin_x,
                 origin_y,
+                affine,
             })
         }
         Some(other) => {
@@ -495,6 +550,22 @@ pub fn write_metadata(base_name: impl AsRef<Path>, metadata: &Metadata) -> Resul
         writeln!(text, "    pixel_size_y: {}", georeferencing.pixel_size_y).unwrap();
         writeln!(text, "    origin_x: {}", georeferencing.origin_x).unwrap();
         writeln!(text, "    origin_y: {}", georeferencing.origin_y).unwrap();
+        // ... existing code ...
+
+        writeln!(text, "    pixel_size_x: {}", georeferencing.pixel_size_x).unwrap();
+        writeln!(text, "    pixel_size_y: {}", georeferencing.pixel_size_y).unwrap();
+        writeln!(text, "    origin_x: {}", georeferencing.origin_x).unwrap();
+        writeln!(text, "    origin_y: {}", georeferencing.origin_y).unwrap();
+
+        if let Some(affine) = georeferencing.affine {
+            writeln!(text, "    affine_origin_x: {}", affine.origin_x).unwrap();
+            writeln!(text, "    affine_pixel_x: {}", affine.pixel_x).unwrap();
+            writeln!(text, "    affine_line_x: {}", affine.line_x).unwrap();
+            writeln!(text, "    affine_origin_y: {}", affine.origin_y).unwrap();
+            writeln!(text, "    affine_pixel_y: {}", affine.pixel_y).unwrap();
+            writeln!(text, "    affine_line_y: {}", affine.line_y).unwrap();
+        }
+
         writeln!(text, "  }}").unwrap();
     }
 

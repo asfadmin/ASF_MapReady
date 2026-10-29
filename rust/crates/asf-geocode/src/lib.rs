@@ -1,7 +1,7 @@
 use asf_core::{Error, Result};
 use asf_meta::{
-    DataType, GeolocationGridPoint, GeoreferencingMetadata, Hemisphere, ProjectionMetadata,
-    SourceGeolocationMetadata,
+    AffineTransform, DataType, GeolocationGridPoint, GeoreferencingMetadata, Hemisphere,
+    ProjectionMetadata, SourceGeolocationMetadata,
 };
 use asf_raster::{create_raster, open_raster, read_f32_band, write_f32_band, ResampleMethod};
 
@@ -14,6 +14,7 @@ pub struct GeocodeOptions {
     pub resample_method: ResampleMethod,
     pub background: Option<f32>,
     pub band: Option<String>,
+    pub preserve_orientation: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -90,6 +91,20 @@ pub fn geocode(options: &GeocodeOptions) -> Result<()> {
     let hemisphere = infer_hemisphere(source_geolocation)?;
     let epsg = utm_epsg(zone, hemisphere);
     let projected_points = project_geolocation_points(source_geolocation, zone, hemisphere)?;
+
+    if options.preserve_orientation {
+        return geocode_preserve_orientation(
+            options,
+            input_metadata,
+            source_geolocation,
+            &projected_points,
+            zone,
+            hemisphere,
+            epsg,
+            pixel_size,
+        );
+    }
+
     let bounds = projected_bounds(&projected_points)?;
     let cells = build_geolocation_cells(&projected_points)?;
 
@@ -111,6 +126,7 @@ pub fn geocode(options: &GeocodeOptions) -> Result<()> {
         pixel_size_y: pixel_size,
         origin_x: bounds.min_x,
         origin_y: bounds.max_y,
+        affine: None,
     });
     output_metadata.statistics = None;
 
@@ -190,6 +206,249 @@ fn validate_options(options: &GeocodeOptions) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn geocode_preserve_orientation(
+    options: &GeocodeOptions,
+    input_metadata: &asf_meta::Metadata,
+    source_geolocation: &SourceGeolocationMetadata,
+    projected_points: &[ProjectedPoint],
+    zone: u8,
+    hemisphere: Hemisphere,
+    epsg: u16,
+    requested_pixel_size: f64,
+) -> Result<()> {
+    if options.resample_method != ResampleMethod::Nearest {
+        return Err(Error::InvalidArgument(
+            "--preserve-orientation currently supports only nearest-neighbor resampling".to_string(),
+        ));
+    }
+
+    let x_scale = input_metadata.general.x_pixel_size / requested_pixel_size;
+    let y_scale = input_metadata.general.y_pixel_size / requested_pixel_size;
+
+    if !x_scale.is_finite() || !y_scale.is_finite() || x_scale <= 0.0 || y_scale <= 0.0 {
+        return Err(Error::InvalidInput(format!(
+            "Invalid preserve-orientation scale factors: x_scale={}, y_scale={}",
+            x_scale, y_scale
+        )));
+    }
+
+    let output_sample_count = scaled_count(input_metadata.general.sample_count, x_scale)?;
+    let output_line_count = scaled_count(input_metadata.general.line_count, y_scale)?;
+
+    let affine = affine_from_projected_grid(projected_points)?;
+
+    let output_affine = AffineTransform {
+        origin_x: affine.origin_x,
+        pixel_x: affine.pixel_x / x_scale,
+        line_x: affine.line_x / y_scale,
+        origin_y: affine.origin_y,
+        pixel_y: affine.pixel_y / x_scale,
+        line_y: affine.line_y / y_scale,
+    };
+
+    let mut output_metadata = input_metadata.clone();
+    output_metadata.general.sample_count = output_sample_count;
+    output_metadata.general.line_count = output_line_count;
+    output_metadata.general.x_pixel_size = requested_pixel_size;
+    output_metadata.general.y_pixel_size = requested_pixel_size;
+    scale_source_geolocation(
+        &mut output_metadata,
+        input_metadata.general.sample_count,
+        input_metadata.general.line_count,
+        output_sample_count,
+        output_line_count,
+    );
+    output_metadata.georeferencing = Some(GeoreferencingMetadata {
+        projection: ProjectionMetadata::Utm {
+            zone,
+            hemisphere,
+            epsg: Some(epsg),
+        },
+        pixel_size_x: requested_pixel_size,
+        pixel_size_y: requested_pixel_size,
+        origin_x: output_affine.origin_x,
+        origin_y: output_affine.origin_y,
+        affine: Some(output_affine),
+    });
+    output_metadata.statistics = None;
+
+    create_raster(&options.output_base, &output_metadata)?;
+
+    let fill_value = input_metadata
+        .general
+        .no_data
+        .map(|value| value as f32)
+        .unwrap_or(0.0);
+
+    for band_index in 0..input_metadata.general.band_count {
+        let input_band = read_f32_band(&options.input_base, band_index)?;
+        let output_band = resample_preserve_orientation_nearest(
+            &input_band,
+            input_metadata.general.sample_count,
+            input_metadata.general.line_count,
+            output_sample_count,
+            output_line_count,
+            fill_value,
+        )?;
+
+        write_f32_band(&options.output_base, band_index, &output_band)?;
+    }
+
+    // source_geolocation is intentionally accepted as a parameter so this mode
+    // documents that it still depends on Sentinel source geolocation metadata.
+    let _ = source_geolocation;
+
+    Ok(())
+}
+
+fn scaled_count(input_count: usize, scale: f64) -> Result<usize> {
+    let output_count = ((input_count as f64) * scale).round();
+
+    if output_count < 1.0 {
+        return Ok(1);
+    }
+
+    if output_count > usize::MAX as f64 {
+        return Err(Error::InvalidInput(format!(
+            "Scaled preserve-orientation dimension overflows usize: {output_count}"
+        )));
+    }
+
+    Ok(output_count as usize)
+}
+
+fn resample_preserve_orientation_nearest(
+    input: &[f32],
+    input_width: usize,
+    input_height: usize,
+    output_width: usize,
+    output_height: usize,
+    fill_value: f32,
+) -> Result<Vec<f32>> {
+    let expected_input_len = input_width
+        .checked_mul(input_height)
+        .ok_or_else(|| Error::InvalidInput("Input raster dimensions overflow usize".to_string()))?;
+
+    if input.len() != expected_input_len {
+        return Err(Error::InvalidInput(format!(
+            "Input band expected {} samples, found {}",
+            expected_input_len,
+            input.len()
+        )));
+    }
+
+    let output_len = output_width.checked_mul(output_height).ok_or_else(|| {
+        Error::InvalidInput("Output raster dimensions overflow usize".to_string())
+    })?;
+
+    let mut output = vec![fill_value; output_len];
+
+    let x_ratio = input_width as f64 / output_width as f64;
+    let y_ratio = input_height as f64 / output_height as f64;
+
+    for output_y in 0..output_height {
+        let input_y = ((output_y as f64 + 0.5) * y_ratio - 0.5).round() as isize;
+
+        for output_x in 0..output_width {
+            let input_x = ((output_x as f64 + 0.5) * x_ratio - 0.5).round() as isize;
+
+            if input_x < 0
+                || input_y < 0
+                || input_x >= input_width as isize
+                || input_y >= input_height as isize
+            {
+                continue;
+            }
+
+            output[output_y * output_width + output_x] =
+                input[input_y as usize * input_width + input_x as usize];
+        }
+    }
+
+    Ok(output)
+}
+
+fn scale_source_geolocation(
+    metadata: &mut asf_meta::Metadata,
+    input_sample_count: usize,
+    input_line_count: usize,
+    output_sample_count: usize,
+    output_line_count: usize,
+) {
+    let Some(source_geolocation) = &mut metadata.source_geolocation else {
+        return;
+    };
+
+    if input_sample_count == 0 || input_line_count == 0 {
+        return;
+    }
+
+    let x_scale = output_sample_count as f64 / input_sample_count as f64;
+    let y_scale = output_line_count as f64 / input_line_count as f64;
+
+    let max_output_pixel = output_sample_count.saturating_sub(1);
+    let max_output_line = output_line_count.saturating_sub(1);
+
+    for point in &mut source_geolocation.points {
+        point.pixel = ((point.pixel as f64) * x_scale)
+            .round()
+            .clamp(0.0, max_output_pixel as f64) as usize;
+
+        point.line = ((point.line as f64) * y_scale)
+            .round()
+            .clamp(0.0, max_output_line as f64) as usize;
+    }
+}
+
+fn affine_from_projected_grid(points: &[ProjectedPoint]) -> Result<AffineTransform> {
+    let top_left = points
+        .iter()
+        .min_by(|a, b| {
+            a.source_line
+                .total_cmp(&b.source_line)
+                .then(a.source_pixel.total_cmp(&b.source_pixel))
+        })
+        .ok_or_else(|| Error::InvalidInput("Cannot build affine transform from empty grid".to_string()))?;
+
+    let top_right = points
+        .iter()
+        .filter(|point| (point.source_line - top_left.source_line).abs() < f64::EPSILON)
+        .max_by(|a, b| a.source_pixel.total_cmp(&b.source_pixel))
+        .ok_or_else(|| Error::InvalidInput("Cannot find top-right geolocation point".to_string()))?;
+
+    let bottom_left = points
+        .iter()
+        .filter(|point| (point.source_pixel - top_left.source_pixel).abs() < f64::EPSILON)
+        .max_by(|a, b| a.source_line.total_cmp(&b.source_line))
+        .ok_or_else(|| Error::InvalidInput("Cannot find bottom-left geolocation point".to_string()))?;
+
+    let pixel_span = top_right.source_pixel - top_left.source_pixel;
+    let line_span = bottom_left.source_line - top_left.source_line;
+
+    if pixel_span == 0.0 || line_span == 0.0 {
+        return Err(Error::InvalidInput(
+            "Cannot build affine transform from degenerate geolocation grid".to_string(),
+        ));
+    }
+
+    let pixel_x = (top_right.x - top_left.x) / pixel_span;
+    let pixel_y = (top_right.y - top_left.y) / pixel_span;
+    let line_x = (bottom_left.x - top_left.x) / line_span;
+    let line_y = (bottom_left.y - top_left.y) / line_span;
+
+    let origin_x = top_left.x - pixel_x * top_left.source_pixel - line_x * top_left.source_line;
+    let origin_y = top_left.y - pixel_y * top_left.source_pixel - line_y * top_left.source_line;
+
+    Ok(AffineTransform {
+        origin_x,
+        pixel_x,
+        line_x,
+        origin_y,
+        pixel_y,
+        line_y,
+    })
 }
 
 fn project_geolocation_points(

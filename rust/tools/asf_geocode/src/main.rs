@@ -26,6 +26,9 @@ struct Cli {
     #[arg(long = "pixel-size")]
     pixel_size: Option<f64>,
 
+    #[arg(long = "preserve-orientation")]
+    preserve_orientation: bool,
+
     #[arg(value_name = "INPUT_BASE")]
     input_base: String,
 
@@ -58,7 +61,9 @@ fn main() -> Result<()> {
         resample_method: ResampleMethod::Nearest,
         background: None,
         band: None,
+        preserve_orientation: cli.preserve_orientation,
     };
+
 
     asf_geocode::geocode(&options)?;
 
