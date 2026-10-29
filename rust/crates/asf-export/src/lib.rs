@@ -2,9 +2,10 @@ use std::fs::File;
 use std::path::Path;
 
 use asf_core::{Error, Result};
-use asf_meta::{DataType, Metadata};
+use asf_meta::{DataType, GeoreferencingMetadata, Metadata, ProjectionMetadata};
 use asf_raster::{open_raster, read_f32_band};
 use tiff::encoder::{colortype, TiffEncoder};
+use tiff::tags::Tag;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OutputFormat {
@@ -99,6 +100,13 @@ fn validate_raster(metadata: &Metadata) -> Result<()> {
     if metadata.general.line_count == 0 || metadata.general.sample_count == 0 {
         return Err(Error::InvalidInput(
             "Cannot export a raster with zero lines or samples".to_string(),
+        ));
+    }
+
+    if metadata.georeferencing.is_none() {
+        return Err(Error::InvalidInput(
+            "GeoTIFF export requires projected georeferencing metadata. Run asf_geocode before asf_export."
+                .to_string(),
         ));
     }
 
@@ -227,15 +235,80 @@ fn write_geotiff_rgb_image(
     width: usize,
     height: usize,
     image: &[u8],
-    _metadata: &Metadata,
+    metadata: &Metadata,
 ) -> Result<()> {
-    let tiff_image = encoder
+    let mut tiff_image = encoder
         .new_image::<colortype::RGB8>(width as u32, height as u32)
+        .map_err(tiff_error)?;
+
+    let georeferencing = metadata.georeferencing.as_ref().ok_or_else(|| {
+        Error::InvalidInput(
+            "GeoTIFF export requires projected georeferencing metadata. Run asf_geocode before asf_export."
+                .to_string(),
+        )
+    })?;
+
+    let pixel_scale = [
+        georeferencing.pixel_size_x.abs(),
+        georeferencing.pixel_size_y.abs(),
+        0.0_f64,
+    ];
+
+    let tiepoint = [
+        0.0_f64,
+        0.0_f64,
+        0.0_f64,
+        georeferencing.origin_x,
+        georeferencing.origin_y,
+        0.0_f64,
+    ];
+
+    tiff_image
+        .encoder()
+        .write_tag(Tag::Unknown(33550), &pixel_scale[..])
+        .map_err(tiff_error)?;
+
+    tiff_image
+        .encoder()
+        .write_tag(Tag::Unknown(33922), &tiepoint[..])
+        .map_err(tiff_error)?;
+
+    let geo_key_directory = geo_key_directory(georeferencing)?;
+
+    tiff_image
+        .encoder()
+        .write_tag(Tag::Unknown(34735), &geo_key_directory[..])
         .map_err(tiff_error)?;
 
     tiff_image.write_data(image).map_err(tiff_error)?;
 
     Ok(())
+}
+
+fn geo_key_directory(georeferencing: &GeoreferencingMetadata) -> Result<Vec<u16>> {
+    match &georeferencing.projection {
+        ProjectionMetadata::Utm { epsg, .. } => {
+            let epsg = epsg.ok_or_else(|| {
+                Error::InvalidInput(
+                    "GeoTIFF export requires an EPSG code for UTM georeferencing".to_string(),
+                )
+            })?;
+
+            Ok(vec![
+                // GeoKeyDirectory header:
+                // KeyDirectoryVersion, KeyRevision, MinorRevision, NumberOfKeys
+                1, 1, 0, 4,
+                // GTModelTypeGeoKey = ModelTypeProjected
+                1024, 0, 1, 1,
+                // GTRasterTypeGeoKey = RasterPixelIsArea
+                1025, 0, 1, 1,
+                // GeographicTypeGeoKey = GCS_WGS_84
+                2048, 0, 1, 4326,
+                // ProjectedCSTypeGeoKey = EPSG projected CRS, e.g. 32606
+                3072, 0, 1, epsg,
+            ])
+        }
+    }
 }
 
 fn tiff_error(error: tiff::TiffError) -> Error {
