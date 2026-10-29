@@ -1,7 +1,6 @@
 use asf_core::{Error, Result};
 use asf_meta::{
-    DataType, GeolocationGridPoint, GeoreferencingMetadata, Hemisphere, ProjectionMetadata,
-    SourceGeolocationMetadata,
+    DataType, GeoreferencingMetadata, Hemisphere, ProjectionMetadata, SourceGeolocationMetadata,
 };
 use asf_raster::{create_raster, open_raster, read_f32_band, write_f32_band, ResampleMethod};
 
@@ -20,6 +19,24 @@ pub struct GeocodeOptions {
 pub enum Projection {
     LatLon,
     Utm { zone: u8, north: bool },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct ProjectedBounds {
+    min_x: f64,
+    max_x: f64,
+    min_y: f64,
+    max_y: f64,
+}
+
+impl ProjectedBounds {
+    fn width(self) -> f64 {
+        self.max_x - self.min_x
+    }
+
+    fn height(self) -> f64 {
+        self.max_y - self.min_y
+    }
 }
 
 pub fn geocode(options: &GeocodeOptions) -> Result<()> {
@@ -51,11 +68,18 @@ pub fn geocode(options: &GeocodeOptions) -> Result<()> {
 
     output_metadata.general.x_pixel_size = pixel_size;
     output_metadata.general.y_pixel_size = pixel_size;
+    output_metadata.general.x_pixel_size = pixel_size;
+    output_metadata.general.y_pixel_size = pixel_size;
     output_metadata.georeferencing = Some(build_georeferencing(
         &options.projection,
         pixel_size,
         source_geolocation,
+        input_metadata.general.sample_count,
+        input_metadata.general.line_count,
     )?);
+    output_metadata.statistics = None;
+
+    create_raster(&options.output_base, &output_metadata)?;
     output_metadata.statistics = None;
 
     create_raster(&options.output_base, &output_metadata)?;
@@ -122,6 +146,8 @@ fn build_georeferencing(
     projection: &Projection,
     pixel_size: f64,
     source_geolocation: &SourceGeolocationMetadata,
+    sample_count: usize,
+    line_count: usize,
 ) -> Result<GeoreferencingMetadata> {
     let Projection::Utm { zone, .. } = projection else {
         return Err(Error::InvalidArgument(
@@ -129,18 +155,11 @@ fn build_georeferencing(
         ));
     };
 
-    let tie_point = select_tie_point(source_geolocation)?;
     let hemisphere = infer_hemisphere(source_geolocation)?;
     let epsg = utm_epsg(*zone, hemisphere);
-    let (tie_easting, tie_northing) = lat_lon_to_utm(
-        tie_point.latitude,
-        tie_point.longitude,
-        *zone,
-        hemisphere,
-    )?;
+    let bounds = projected_source_bounds(source_geolocation, *zone, hemisphere)?;
 
-    let origin_x = tie_easting - (tie_point.pixel as f64 * pixel_size);
-    let origin_y = tie_northing + (tie_point.line as f64 * pixel_size);
+    validate_pass_through_extent(bounds, sample_count, line_count, pixel_size)?;
 
     Ok(GeoreferencingMetadata {
         projection: ProjectionMetadata::Utm {
@@ -150,21 +169,9 @@ fn build_georeferencing(
         },
         pixel_size_x: pixel_size,
         pixel_size_y: pixel_size,
-        origin_x,
-        origin_y,
+        origin_x: bounds.min_x,
+        origin_y: bounds.max_y,
     })
-}
-
-fn select_tie_point(source_geolocation: &SourceGeolocationMetadata) -> Result<&GeolocationGridPoint> {
-    source_geolocation
-        .points
-        .iter()
-        .min_by_key(|point| point.line.saturating_add(point.pixel))
-        .ok_or_else(|| {
-            Error::InvalidInput(
-                "Source geolocation metadata does not contain any grid points".to_string(),
-            )
-        })
 }
 
 fn infer_hemisphere(source_geolocation: &SourceGeolocationMetadata) -> Result<Hemisphere> {
@@ -188,6 +195,105 @@ fn infer_hemisphere(source_geolocation: &SourceGeolocationMetadata) -> Result<He
         Ok(Hemisphere::North)
     } else {
         Ok(Hemisphere::South)
+    }
+}
+
+fn projected_source_bounds(
+    source_geolocation: &SourceGeolocationMetadata,
+    zone: u8,
+    hemisphere: Hemisphere,
+) -> Result<ProjectedBounds> {
+    let mut bounds: Option<ProjectedBounds> = None;
+
+    for point in &source_geolocation.points {
+        let (x, y) = lat_lon_to_utm(point.latitude, point.longitude, zone, hemisphere)?;
+
+        bounds = Some(match bounds {
+            Some(bounds) => ProjectedBounds {
+                min_x: bounds.min_x.min(x),
+                max_x: bounds.max_x.max(x),
+                min_y: bounds.min_y.min(y),
+                max_y: bounds.max_y.max(y),
+            },
+            None => ProjectedBounds {
+                min_x: x,
+                max_x: x,
+                min_y: y,
+                max_y: y,
+            },
+        });
+    }
+
+    let bounds = bounds.ok_or_else(|| {
+        Error::InvalidInput(
+            "Source geolocation metadata does not contain any grid points".to_string(),
+        )
+    })?;
+
+    if !bounds.min_x.is_finite()
+        || !bounds.max_x.is_finite()
+        || !bounds.min_y.is_finite()
+        || !bounds.max_y.is_finite()
+        || bounds.width() <= 0.0
+        || bounds.height() <= 0.0
+    {
+        return Err(Error::InvalidInput(format!(
+            "Projected source geolocation bounds are invalid: min_x={}, max_x={}, min_y={}, max_y={}",
+            bounds.min_x, bounds.max_x, bounds.min_y, bounds.max_y
+        )));
+    }
+
+    Ok(bounds)
+}
+
+fn validate_pass_through_extent(
+    bounds: ProjectedBounds,
+    sample_count: usize,
+    line_count: usize,
+    pixel_size: f64,
+) -> Result<()> {
+    let raster_width = sample_count as f64 * pixel_size;
+    let raster_height = line_count as f64 * pixel_size;
+
+    if raster_width <= 0.0 || raster_height <= 0.0 {
+        return Err(Error::InvalidInput(format!(
+            "Invalid pass-through raster extent: width={}, height={}",
+            raster_width, raster_height
+        )));
+    }
+
+    let source_width = bounds.width();
+    let source_height = bounds.height();
+
+    let width_relative_error = relative_error(raster_width, source_width);
+    let height_relative_error = relative_error(raster_height, source_height);
+
+    // This is intentionally permissive because Sentinel GRD geometry is not a
+    // perfect north-up rectangle. It is still strict enough to catch the major
+    // problem: pass-through dimensions pretending to be a true geocoded grid.
+    let allowed_relative_error = 0.35_f64;
+
+    if width_relative_error > allowed_relative_error || height_relative_error > allowed_relative_error {
+        return Err(Error::InvalidInput(format!(
+            "Current asf_geocode milestone cannot safely geocode this product by pass-through. \
+Projected source extent is approximately {:.3} x {:.3} meters, but raster dimensions with pixel size {} imply {:.3} x {:.3} meters. \
+A real UTM resampling geocode step is required.",
+            source_width,
+            source_height,
+            pixel_size,
+            raster_width,
+            raster_height
+        )));
+    }
+
+    Ok(())
+}
+
+fn relative_error(actual: f64, expected: f64) -> f64 {
+    if expected == 0.0 {
+        f64::INFINITY
+    } else {
+        ((actual - expected) / expected).abs()
     }
 }
 
