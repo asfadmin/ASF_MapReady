@@ -26,3 +26,16 @@ include/config.h
 make_support/system_rules
 config.log
 config.status
+
+# Rust
+/rust/target/
+
+# IDE
+.vscode/
+.idea/
+
+# Output from tools that shouldn't be accidentially committed
+*.img
+*.meta
+*.tif
+*.tiff
