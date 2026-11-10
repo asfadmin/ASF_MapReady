@@ -290,9 +290,33 @@ fn import_sentinel_grd(
         let calibration = read_sentinel_calibration(&measurement.calibration_path, radiometry)?;
         let noise = read_sentinel_noise(&measurement.noise_path, decoded.height, decoded.width)?;
 
+        let mut row_bytes = Vec::with_capacity(decoded.width * std::mem::size_of::<f32>());
+        let mut cal_line = vec![0.0_f32; decoded.width];
+        let mut noise_line = vec![0.0_f32; decoded.width];
+        let mut cal_scratch_lower = vec![0.0_f32; decoded.width];
+        let mut cal_scratch_upper = vec![0.0_f32; decoded.width];
+        let mut noise_scratch_lower = vec![0.0_f32; decoded.width];
+        let mut noise_scratch_upper = vec![0.0_f32; decoded.width];
+
+        let mut written_samples_for_band = 0_usize;
+
         for line in 0..decoded.height {
-            let cal_line = interpolate_lut_line(&calibration, line, decoded.width)?;
-            let noise_line = interpolate_lut_line(&noise, line, decoded.width)?;
+            row_bytes.clear();
+
+            interpolate_lut_line_into(
+                &calibration,
+                line,
+                &mut cal_line,
+                &mut cal_scratch_lower,
+                &mut cal_scratch_upper,
+            )?;
+            interpolate_lut_line_into(
+                &noise,
+                line,
+                &mut noise_line,
+                &mut noise_scratch_lower,
+                &mut noise_scratch_upper,
+            )?;
 
             let row_start = line * decoded.width;
             let row_end = row_start + decoded.width;
@@ -305,8 +329,33 @@ fn import_sentinel_grd(
                     radiometry,
                 )?;
 
-                writer.write_all(&value.to_le_bytes())?;
+                row_bytes.extend_from_slice(&value.to_le_bytes());
             }
+
+            if row_bytes.len() != decoded.width * std::mem::size_of::<f32>() {
+                return Err(Error::InvalidInput(format!(
+                    "Internal import error on line {line}: expected {} output bytes, built {}",
+                    decoded.width * std::mem::size_of::<f32>(),
+                    row_bytes.len()
+                )));
+            }
+
+            writer.write_all(&row_bytes)?;
+            written_samples_for_band += decoded.width;
+        }
+
+        let expected_samples_for_band = decoded
+            .width
+            .checked_mul(decoded.height)
+            .ok_or_else(|| Error::InvalidInput("Decoded raster dimensions overflow usize".to_string()))?;
+
+        if written_samples_for_band != expected_samples_for_band {
+            return Err(Error::InvalidInput(format!(
+                "Internal import error for {}: expected to write {} samples, wrote {}",
+                measurement.measurement_path.display(),
+                expected_samples_for_band,
+                written_samples_for_band
+            )));
         }
 
         bands.push(BandMetadata {
@@ -316,7 +365,31 @@ fn import_sentinel_grd(
 
     writer.flush()?;
 
+    let expected_samples = first
+        .width
+        .checked_mul(first.height)
+        .and_then(|samples_per_band| samples_per_band.checked_mul(product.measurements.len()))
+        .ok_or_else(|| Error::InvalidInput("Imported raster sample count overflows usize".to_string()))?;
+
+    let expected_bytes = expected_samples
+        .checked_mul(std::mem::size_of::<f32>())
+        .ok_or_else(|| Error::InvalidInput("Imported raster byte count overflows usize".to_string()))?;
+
+    let actual_bytes = fs::metadata(&output_img)?.len();
+
+    if actual_bytes != expected_bytes as u64 {
+        return Err(Error::InvalidInput(format!(
+            "Imported raster size mismatch for {}. Expected {} bytes from {} samples x {} bands, found {} bytes",
+            output_img.display(),
+            expected_bytes,
+            first.width * first.height,
+            product.measurements.len(),
+            actual_bytes
+        )));
+    }
+
     let source_geolocation = read_sentinel_geolocation_grid(&first.annotation_path)?;
+
 
     let metadata = Metadata {
         general: GeneralMetadata {
@@ -575,9 +648,21 @@ fn normalize_noise_lut(lines: &mut [SentinelLutLine]) {
     }
 }
 
-fn interpolate_lut_line(lut: &SentinelLut, line: usize, sample_count: usize) -> Result<Vec<f32>> {
+fn interpolate_lut_line_into(
+    lut: &SentinelLut,
+    line: usize,
+    output: &mut [f32],
+    scratch_lower: &mut [f32],
+    scratch_upper: &mut [f32],
+) -> Result<()> {
     if lut.lines.is_empty() {
         return Err(Error::InvalidInput("Cannot interpolate an empty Sentinel LUT".to_string()));
+    }
+
+    if scratch_lower.len() != output.len() || scratch_upper.len() != output.len() {
+        return Err(Error::InvalidInput(
+            "Sentinel LUT interpolation scratch buffers must match output length".to_string(),
+        ));
     }
 
     let lower_index = match lut
@@ -605,46 +690,82 @@ fn interpolate_lut_line(lut: &SentinelLut, line: usize, sample_count: usize) -> 
         (line.saturating_sub(lower.line)) as f32 / (upper.line - lower.line) as f32
     };
 
-    let mut values = Vec::with_capacity(sample_count);
+    interpolate_lut_pixels_into(lower, scratch_lower)?;
+    interpolate_lut_pixels_into(upper, scratch_upper)?;
 
-    for sample in 0..sample_count {
-        let lower_value = interpolate_lut_pixels(lower, sample)?;
-        let upper_value = interpolate_lut_pixels(upper, sample)?;
-        values.push(lower_value + (upper_value - lower_value) * line_fraction);
+    for ((value, lower_value), upper_value) in output
+        .iter_mut()
+        .zip(scratch_lower.iter())
+        .zip(scratch_upper.iter())
+    {
+        *value = *lower_value + (*upper_value - *lower_value) * line_fraction;
     }
 
-    Ok(values)
+    Ok(())
 }
 
-fn interpolate_lut_pixels(line: &SentinelLutLine, sample: usize) -> Result<f32> {
+fn interpolate_lut_pixels_into(line: &SentinelLutLine, output: &mut [f32]) -> Result<()> {
     if line.pixels.is_empty() || line.values.is_empty() {
         return Err(Error::InvalidInput(
             "Cannot interpolate an empty Sentinel LUT line".to_string(),
         ));
     }
 
-    if sample <= line.pixels[0] {
-        return Ok(line.values[0]);
+    if line.pixels.len() != line.values.len() {
+        return Err(Error::InvalidInput(
+            "Sentinel LUT pixel/value count mismatch".to_string(),
+        ));
     }
+
+    if output.is_empty() {
+        return Ok(());
+    }
+
+    let first_pixel = line.pixels[0].min(output.len() - 1);
+    output[..=first_pixel].fill(line.values[0]);
 
     for index in 0..line.pixels.len() - 1 {
         let left_pixel = line.pixels[index];
         let right_pixel = line.pixels[index + 1];
+        let left_value = line.values[index];
+        let right_value = line.values[index + 1];
 
-        if sample <= right_pixel {
-            let left_value = line.values[index];
-            let right_value = line.values[index + 1];
+        if left_pixel >= output.len() {
+            break;
+        }
 
-            if right_pixel == left_pixel {
-                return Ok(left_value);
-            }
+        let start = if index == 0 {
+            left_pixel.saturating_add(1)
+        } else {
+            left_pixel
+        };
 
-            let fraction = (sample - left_pixel) as f32 / (right_pixel - left_pixel) as f32;
-            return Ok(left_value + (right_value - left_value) * fraction);
+        let end = right_pixel.min(output.len() - 1);
+
+        if start > end {
+            continue;
+        }
+
+        if right_pixel == left_pixel {
+            output[start..=end].fill(left_value);
+            continue;
+        }
+
+        let denominator = (right_pixel - left_pixel) as f32;
+
+        for sample in start..=end {
+            let fraction = (sample - left_pixel) as f32 / denominator;
+            output[sample] = left_value + (right_value - left_value) * fraction;
         }
     }
 
-    Ok(*line.values.last().expect("validated non-empty values"))
+    if let Some((&last_pixel, &last_value)) = line.pixels.last().zip(line.values.last()) {
+        if last_pixel < output.len() {
+            output[last_pixel..].fill(last_value);
+        }
+    }
+
+    Ok(())
 }
 
 fn validate_lut(path: &Path, lines: &[SentinelLutLine]) -> Result<()> {
