@@ -20,7 +20,7 @@ pub struct GeocodeOptions {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Projection {
     LatLon,
-    Utm { zone: u8, north: bool },
+    Utm { zone: Option<u8>, north: bool },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -82,10 +82,29 @@ pub fn geocode(options: &GeocodeOptions) -> Result<()> {
         )
     })?;
 
-    let Projection::Utm { zone, .. } = options.projection else {
+    let Projection::Utm {
+        zone: requested_zone,
+        ..
+    } = options.projection
+    else {
         return Err(Error::InvalidArgument(
             "The current geocoding milestone supports only -p utm".to_string(),
         ));
+    };
+
+    let automatically_determined_zone = determine_zone(source_geolocation)?;
+    let zone = match requested_zone {
+        Some(zone) => {
+            if zone != automatically_determined_zone {
+                return Err(Error::InvalidArgument(format!(
+                    "Requested UTM zone {zone} is incompatible with source geolocation. \
+                     Automatically determined UTM zone is {automatically_determined_zone}."
+                )));
+            }
+
+            zone
+        }
+        None => automatically_determined_zone,
     };
 
     let hemisphere = infer_hemisphere(source_geolocation)?;
@@ -186,13 +205,16 @@ fn validate_options(options: &GeocodeOptions) -> Result<()> {
                 "The current geocoding milestone supports only -p utm".to_string(),
             ));
         }
-        Projection::Utm { zone, .. } => {
+        Projection::Utm {
+            zone: Some(zone), ..
+        } => {
             if !(1..=60).contains(zone) {
                 return Err(Error::InvalidArgument(format!(
                     "UTM zone must be in the range 1..=60, got {zone}"
                 )));
             }
         }
+        Projection::Utm { zone: None, .. } => {}
     }
 
     match options.resample_method {
@@ -886,6 +908,128 @@ fn sample_nearest(
 
     Some(input[y as usize * input_width + x as usize])
 }
+
+fn determine_zone(source_geolocation: &SourceGeolocationMetadata) -> Result<u8> {
+    let (center_latitude, center_longitude) = source_geolocation_center_lat_lon(source_geolocation)?;
+
+    if !(-80.0..=84.0).contains(&center_latitude) {
+        return Err(Error::InvalidInput(format!(
+            "Cannot determine UTM zone for latitude {center_latitude}; UTM is valid only from 80°S to 84°N"
+        )));
+    }
+
+    // Standard Norway exception.
+    if (56.0..64.0).contains(&center_latitude) && (3.0..12.0).contains(&center_longitude) {
+        return Ok(32);
+    }
+
+    // Standard Svalbard exceptions.
+    if (72.0..84.0).contains(&center_latitude) {
+        if (0.0..9.0).contains(&center_longitude) {
+            return Ok(31);
+        }
+
+        if (9.0..21.0).contains(&center_longitude) {
+            return Ok(33);
+        }
+
+        if (21.0..33.0).contains(&center_longitude) {
+            return Ok(35);
+        }
+
+        if (33.0..42.0).contains(&center_longitude) {
+            return Ok(37);
+        }
+    }
+
+    let zone = (((center_longitude + 180.0) / 6.0).floor() as i32 + 1).clamp(1, 60);
+
+    Ok(zone as u8)
+}
+
+fn source_geolocation_center_lat_lon(source_geolocation: &SourceGeolocationMetadata) -> Result<(f64, f64)> {
+    let mut latitude_sum = 0.0_f64;
+    let mut longitude_sum = 0.0_f64;
+    let mut longitude_count = 0_usize;
+    let mut count = 0_usize;
+
+    for point in &source_geolocation.points {
+        if !point.latitude.is_finite()
+            || !point.longitude.is_finite()
+            || !(-90.0..=90.0).contains(&point.latitude)
+            || !(-180.0..=180.0).contains(&point.longitude)
+        {
+            continue;
+        }
+
+        latitude_sum += point.latitude;
+        longitude_sum += point.longitude;
+        longitude_count += 1;
+        count += 1;
+    }
+
+    if count == 0 {
+        return Err(Error::InvalidInput(
+            "Cannot determine UTM zone because source geolocation contains no valid latitude/longitude points"
+                .to_string(),
+        ));
+    }
+
+    let mean_latitude = latitude_sum / count as f64;
+
+    // If the grid does not cross the antimeridian, the ordinary longitude mean is fine.
+    let ordinary_mean_longitude = longitude_sum / longitude_count as f64;
+
+    let mut min_longitude = f64::INFINITY;
+    let mut max_longitude = f64::NEG_INFINITY;
+
+    for point in &source_geolocation.points {
+        if point.longitude.is_finite() && (-180.0..=180.0).contains(&point.longitude) {
+            min_longitude = min_longitude.min(point.longitude);
+            max_longitude = max_longitude.max(point.longitude);
+        }
+    }
+
+    if max_longitude - min_longitude <= 180.0 {
+        return Ok((mean_latitude, ordinary_mean_longitude));
+    }
+
+    // Antimeridian-crossing case: average longitudes after shifting negative
+    // values into 0..360 space, then normalize back to -180..180.
+    let mut unwrapped_longitude_sum = 0.0_f64;
+    let mut unwrapped_count = 0_usize;
+
+    for point in &source_geolocation.points {
+        if !point.longitude.is_finite() || !(-180.0..=180.0).contains(&point.longitude) {
+            continue;
+        }
+
+        let longitude = if point.longitude < 0.0 {
+            point.longitude + 360.0
+        } else {
+            point.longitude
+        };
+
+        unwrapped_longitude_sum += longitude;
+        unwrapped_count += 1;
+    }
+
+    if unwrapped_count == 0 {
+        return Err(Error::InvalidInput(
+            "Cannot determine UTM zone because source geolocation contains no valid longitudes"
+                .to_string(),
+        ));
+    }
+
+    let mut mean_longitude = unwrapped_longitude_sum / unwrapped_count as f64;
+
+    if mean_longitude > 180.0 {
+        mean_longitude -= 360.0;
+    }
+
+    Ok((mean_latitude, mean_longitude))
+}
+
 
 fn infer_hemisphere(source_geolocation: &SourceGeolocationMetadata) -> Result<Hemisphere> {
     let mut latitude_sum = 0.0_f64;

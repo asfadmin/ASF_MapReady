@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result};
 use clap::{Parser, ValueEnum};
 
 use asf_geocode::{GeocodeOptions, Projection};
@@ -12,7 +12,7 @@ enum ProjectionArg {
 
 #[derive(Debug, Parser)]
 #[command(name = "asf_geocode")]
-#[command(about = "Geocode ASF internal rasters. Current Rust milestone is pass-through only.")]
+#[command(about = "Geocode ASF internal rasters.")]
 struct Cli {
     #[arg(short = 'p', long = "projection", value_enum)]
     projection: ProjectionArg,
@@ -41,16 +41,10 @@ fn main() -> Result<()> {
 
     let projection = match cli.projection {
         ProjectionArg::Latlon => Projection::LatLon,
-        ProjectionArg::Utm => {
-            let Some(zone) = cli.zone else {
-                bail!("--zone is required when using -p utm");
-            };
-
-            Projection::Utm {
-                zone,
-                north: !cli.south,
-            }
-        }
+        ProjectionArg::Utm => Projection::Utm {
+            zone: cli.zone,
+            north: !cli.south,
+        },
     };
 
     let options = GeocodeOptions {
@@ -63,7 +57,6 @@ fn main() -> Result<()> {
         band: None,
         preserve_orientation: cli.preserve_orientation,
     };
-
 
     asf_geocode::geocode(&options)?;
 
