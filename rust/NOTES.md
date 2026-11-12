@@ -628,3 +628,35 @@ A later milestone can:
 - append an incidence angle band if needed by downstream processing
 
 Do not implement incidence angle bands before validation of the current georeferencing and browse workflow unless production needs change.
+
+## Deferred: legacy geocode polar fallback behavior
+
+The legacy Sentinel browse workflow included a geocode retry cascade for some
+failure cases:
+
+- first try the normal geocode path
+- if geocode fails and the scene center latitude is within approximately
+  ±70°, continue with the resampled image without geocoding
+- if geocode fails and the scene center latitude is beyond approximately
+  ±70°, retry polar stereographic projection choices historically stored in
+  MapReady `.proj` files
+- if the first polar stereographic retry fails, retry a second
+  hemisphere-specific polar stereographic projection
+
+This behavior is intentionally not implemented in the Rust workflow yet.
+
+Rationale:
+
+- the Rust geocoder is a narrow Sentinel geolocation-grid implementation,
+  not a port of the broad legacy MapReady projection/spline stack
+- observed Rust test data has not reproduced the legacy geocode failures
+- passing the resampled raster forward without geocoding is not currently
+  equivalent in Rust, because `asf_export` expects projected georeferencing
+  metadata and `resample` intentionally clears projected georeferencing
+- legacy `.proj` file compatibility is not required for the Rust-only
+  Sentinel browse goal
+
+If high-latitude Sentinel products later show real Rust geocode failures or
+unacceptable UTM browse placement, prefer adding a narrow first-class Rust
+polar stereographic geocode mode over implementing legacy projection-file
+retry parsing.
