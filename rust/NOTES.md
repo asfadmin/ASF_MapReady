@@ -71,7 +71,9 @@ Target options by tool:
 - `asf_export`
   - `--format geotiff`
   - `--byte truncate`
-  - `--rgb "Ps Pv Pd"`
+  - `--byte sigma`
+  - `--rgb "Ps Pv Pd"` for dual-pol color browse
+  - no `--rgb` for single-band grayscale browse
 
 The target workflow may eventually support:
 
@@ -98,7 +100,9 @@ Implemented so far:
 - `asf-adjust-bands`
 - `asf-color-browse`
 - `asf-stats`
-- `asf-export`
+- `sqrt_img` for applying square root to Rust-owned `REAL32` rasters
+- `asf_export --format geotiff --byte sigma` for grayscale/single-band export
+- `asf_export` can export one-band input without `--rgb`
 - CLI tools for the target commands
 - Sentinel-only `asf_import` path
 - Rust-owned `.meta` reader/writer
@@ -107,6 +111,8 @@ Implemented so far:
 - `resample --square PIXEL_SIZE` for Rust-owned `f32` rasters
 - `adjust_bands --bands BAND_NAME` for selecting one named band
 - `color_browse --noise-cal VALUE [--tmpDir DIR] CO_POL CROSS_POL OUTPUT`
+  - for VV+VH, VV IS CO_POL AND VH IS CROSS_POL
+  - for HV+HH, HH IS CO_POL AND HV IS CROSS_POL
 - `asf_export --format geotiff --byte truncate --rgb "R G B"`
 - Rust-owned source geolocation metadata
 - Rust-owned projected georeferencing metadata
@@ -536,10 +542,12 @@ Current behavior:
 
 Known limitations:
 
-- supports only `--byte truncate`
-- rejects `--byte sigma`, `--byte minmax`, and `--byte none`
+- supports `--byte truncate`
+- supports `--byte sigma`
+- supports RGB export with `--rgb`
+- supports grayscale export for one-band input or with `--band BAND_NAME`
+- still rejects `--byte minmax` and `--byte none`
 - rejects formats other than `geotiff`
-- does not support grayscale/single-band export
 - does not support `--band`
 - does not yet use metadata statistics for scaling
 - does not implement general MapReady export behavior

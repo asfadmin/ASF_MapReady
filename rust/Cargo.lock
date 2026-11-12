@@ -153,6 +153,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "asf-sqrt-img"
+version = "0.1.0"
+dependencies = [
+ "asf-core",
+ "asf-meta",
+ "asf-raster",
+]
+
+[[package]]
 name = "asf-stats"
 version = "0.1.0"
 dependencies = [
@@ -343,6 +352,15 @@ name = "simd-adler32"
 version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
+
+[[package]]
+name = "sqrt_img"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "asf-sqrt-img",
+ "clap",
+]
 
 [[package]]
 name = "stats"

@@ -18,6 +18,7 @@ members = [
     "tools/color_browse",
     "tools/stats",
     "tools/asf_export",
+    "tools/sqrt_img",
 ]
 
 [workspace.package]
