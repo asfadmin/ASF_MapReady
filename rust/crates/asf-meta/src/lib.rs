@@ -550,7 +550,6 @@ pub fn write_metadata(base_name: impl AsRef<Path>, metadata: &Metadata) -> Resul
         writeln!(text, "    pixel_size_y: {}", georeferencing.pixel_size_y).unwrap();
         writeln!(text, "    origin_x: {}", georeferencing.origin_x).unwrap();
         writeln!(text, "    origin_y: {}", georeferencing.origin_y).unwrap();
-        // ... existing code ...
 
         writeln!(text, "    pixel_size_x: {}", georeferencing.pixel_size_x).unwrap();
         writeln!(text, "    pixel_size_y: {}", georeferencing.pixel_size_y).unwrap();
