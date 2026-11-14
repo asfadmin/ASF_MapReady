@@ -1,4 +1,6 @@
-use asf_core::{Error, Result};
+use std::fs;
+
+use asf_core::{path::image_path, Error, Result};
 use asf_meta::{
     AffineTransform, DataType, GeolocationGridPoint, GeoreferencingMetadata, Hemisphere,
     ProjectionMetadata, SourceGeolocationMetadata,
@@ -130,6 +132,14 @@ pub fn geocode(options: &GeocodeOptions) -> Result<()> {
     let output_sample_count = output_count(bounds.width(), pixel_size)?;
     let output_line_count = output_count(bounds.height(), pixel_size)?;
 
+    validate_output_raster_size(
+        &options.input_base,
+        output_sample_count,
+        output_line_count,
+        input_metadata.general.band_count,
+        input_metadata.general.data_type,
+    )?;
+
     let mut output_metadata = input_metadata.clone();
     output_metadata.general.sample_count = output_sample_count;
     output_metadata.general.line_count = output_line_count;
@@ -230,6 +240,63 @@ fn validate_options(options: &GeocodeOptions) -> Result<()> {
     Ok(())
 }
 
+
+const MAX_GEOCODE_OUTPUT_TO_INPUT_RATIO: u64 = 16;
+const MIN_MAX_GEOCODE_OUTPUT_BYTES: u64 = 1_073_741_824;
+
+fn validate_output_raster_size(
+    input_base: &str,
+    output_width: usize,
+    output_height: usize,
+    band_count: usize,
+    data_type: DataType,
+) -> Result<()> {
+    let output_bytes = raster_byte_count(output_width, output_height, band_count, data_type)?;
+    let input_bytes = fs::metadata(image_path(input_base))?.len();
+
+    let max_output_bytes = input_bytes
+        .saturating_mul(MAX_GEOCODE_OUTPUT_TO_INPUT_RATIO)
+        .max(MIN_MAX_GEOCODE_OUTPUT_BYTES);
+
+    if output_bytes > max_output_bytes {
+        return Err(Error::InvalidInput(format!(
+            "Refusing to create geocoded output raster of {} bytes. \
+             Input image is {} bytes, configured limit is {} bytes, and requested output dimensions are {}x{}x{} {}. \
+             This usually indicates invalid projected bounds, an incompatible UTM zone, or antimeridian handling trouble.",
+            output_bytes,
+            input_bytes,
+            max_output_bytes,
+            output_width,
+            output_height,
+            band_count,
+            data_type.as_meta_str()
+        )));
+    }
+
+    Ok(())
+}
+
+fn raster_byte_count(
+    width: usize,
+    height: usize,
+    band_count: usize,
+    data_type: DataType,
+) -> Result<u64> {
+    let bytes = width
+        .checked_mul(height)
+        .and_then(|pixels| pixels.checked_mul(band_count))
+        .and_then(|samples| samples.checked_mul(data_type.byte_size()))
+        .ok_or_else(|| Error::InvalidInput("Output raster byte count overflows usize".to_string()))?;
+
+    if bytes > u64::MAX as usize {
+        return Err(Error::InvalidInput(format!(
+            "Output raster byte count overflows u64: {bytes}"
+        )));
+    }
+
+    Ok(bytes as u64)
+}
+
 fn geocode_preserve_orientation(
     options: &GeocodeOptions,
     input_metadata: &asf_meta::Metadata,
@@ -258,6 +325,14 @@ fn geocode_preserve_orientation(
 
     let output_sample_count = scaled_count(input_metadata.general.sample_count, x_scale)?;
     let output_line_count = scaled_count(input_metadata.general.line_count, y_scale)?;
+
+    validate_output_raster_size(
+        &options.input_base,
+        output_sample_count,
+        output_line_count,
+        input_metadata.general.band_count,
+        input_metadata.general.data_type,
+    )?;
 
     let affine = affine_from_projected_grid(projected_points)?;
 
@@ -950,8 +1025,10 @@ fn determine_zone(source_geolocation: &SourceGeolocationMetadata) -> Result<u8> 
 fn source_geolocation_center_lat_lon(source_geolocation: &SourceGeolocationMetadata) -> Result<(f64, f64)> {
     let mut latitude_sum = 0.0_f64;
     let mut longitude_sum = 0.0_f64;
-    let mut longitude_count = 0_usize;
     let mut count = 0_usize;
+
+    let mut min_longitude = f64::INFINITY;
+    let mut max_longitude = f64::NEG_INFINITY;
 
     for point in &source_geolocation.points {
         if !point.latitude.is_finite()
@@ -964,8 +1041,10 @@ fn source_geolocation_center_lat_lon(source_geolocation: &SourceGeolocationMetad
 
         latitude_sum += point.latitude;
         longitude_sum += point.longitude;
-        longitude_count += 1;
         count += 1;
+
+        min_longitude = min_longitude.min(point.longitude);
+        max_longitude = max_longitude.max(point.longitude);
     }
 
     if count == 0 {
@@ -977,27 +1056,11 @@ fn source_geolocation_center_lat_lon(source_geolocation: &SourceGeolocationMetad
 
     let mean_latitude = latitude_sum / count as f64;
 
-    // If the grid does not cross the antimeridian, the ordinary longitude mean is fine.
-    let ordinary_mean_longitude = longitude_sum / longitude_count as f64;
-
-    let mut min_longitude = f64::INFINITY;
-    let mut max_longitude = f64::NEG_INFINITY;
-
-    for point in &source_geolocation.points {
-        if point.longitude.is_finite() && (-180.0..=180.0).contains(&point.longitude) {
-            min_longitude = min_longitude.min(point.longitude);
-            max_longitude = max_longitude.max(point.longitude);
-        }
-    }
-
     if max_longitude - min_longitude <= 180.0 {
-        return Ok((mean_latitude, ordinary_mean_longitude));
+        return Ok((mean_latitude, longitude_sum / count as f64));
     }
 
-    // Antimeridian-crossing case: average longitudes after shifting negative
-    // values into 0..360 space, then normalize back to -180..180.
     let mut unwrapped_longitude_sum = 0.0_f64;
-    let mut unwrapped_count = 0_usize;
 
     for point in &source_geolocation.points {
         if !point.longitude.is_finite() || !(-180.0..=180.0).contains(&point.longitude) {
@@ -1011,17 +1074,9 @@ fn source_geolocation_center_lat_lon(source_geolocation: &SourceGeolocationMetad
         };
 
         unwrapped_longitude_sum += longitude;
-        unwrapped_count += 1;
     }
 
-    if unwrapped_count == 0 {
-        return Err(Error::InvalidInput(
-            "Cannot determine UTM zone because source geolocation contains no valid longitudes"
-                .to_string(),
-        ));
-    }
-
-    let mut mean_longitude = unwrapped_longitude_sum / unwrapped_count as f64;
+    let mut mean_longitude = unwrapped_longitude_sum / count as f64;
 
     if mean_longitude > 180.0 {
         mean_longitude -= 360.0;
@@ -1029,7 +1084,6 @@ fn source_geolocation_center_lat_lon(source_geolocation: &SourceGeolocationMetad
 
     Ok((mean_latitude, mean_longitude))
 }
-
 
 fn infer_hemisphere(source_geolocation: &SourceGeolocationMetadata) -> Result<Hemisphere> {
     let mut latitude_sum = 0.0_f64;
@@ -1060,6 +1114,13 @@ fn utm_epsg(zone: u8, hemisphere: Hemisphere) -> u16 {
         Hemisphere::North => 32600 + zone as u16,
         Hemisphere::South => 32700 + zone as u16,
     }
+}
+
+fn normalize_longitude_delta_radians(delta: f64) -> f64 {
+    let two_pi = std::f64::consts::TAU;
+    let pi = std::f64::consts::PI;
+
+    (delta + pi).rem_euclid(two_pi) - pi
 }
 
 fn lat_lon_to_utm(
@@ -1094,6 +1155,7 @@ fn lat_lon_to_utm(
     let latitude = latitude_degrees.to_radians();
     let longitude = longitude_degrees.to_radians();
     let central_meridian = ((zone as f64 - 1.0) * 6.0 - 180.0 + 3.0).to_radians();
+    let longitude_delta = normalize_longitude_delta_radians(longitude - central_meridian);
 
     let sin_latitude = latitude.sin();
     let cos_latitude = latitude.cos();
@@ -1103,7 +1165,7 @@ fn lat_lon_to_utm(
         semi_major_axis / (1.0 - eccentricity_squared * sin_latitude * sin_latitude).sqrt();
     let t = tan_latitude * tan_latitude;
     let c = second_eccentricity_squared * cos_latitude * cos_latitude;
-    let a = cos_latitude * (longitude - central_meridian);
+    let a = cos_latitude * longitude_delta;
 
     let meridional_arc = semi_major_axis
         * ((1.0
