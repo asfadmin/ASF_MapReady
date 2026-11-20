@@ -39,3 +39,7 @@ config.status
 *.meta
 *.tif
 *.tiff
+
+# working dirs
+/data
+/rust/data

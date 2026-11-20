@@ -629,34 +629,46 @@ A later milestone can:
 
 Do not implement incidence angle bands before validation of the current georeferencing and browse workflow unless production needs change.
 
-## Deferred: legacy geocode polar fallback behavior
+## Planned: polar stereographic geocoding
 
-The legacy Sentinel browse workflow included a geocode retry cascade for some
-failure cases:
+The science team has requested polar stereographic support for high-latitude
+Sentinel browse generation.
 
-- first try the normal geocode path
-- if geocode fails and the scene center latitude is within approximately
-  ±70°, continue with the resampled image without geocoding
-- if geocode fails and the scene center latitude is beyond approximately
-  ±70°, retry polar stereographic projection choices historically stored in
-  MapReady `.proj` files
-- if the first polar stereographic retry fails, retry a second
-  hemisphere-specific polar stereographic projection
+Do not implement this as a legacy failure-retry cascade. The Rust workflow
+should choose projections explicitly and deterministically rather than trying
+UTM first and switching projections only after a failure.
 
-This behavior is intentionally not implemented in the Rust workflow yet.
+Planned behavior:
 
-Rationale:
+- `asf_geocode -p utm`
+  - force UTM geocoding
+  - determine the UTM zone from Sentinel source geolocation unless a compatible
+    zone is explicitly supplied
+  - fail clearly when the scene is outside the supported UTM domain
 
-- the Rust geocoder is a narrow Sentinel geolocation-grid implementation,
-  not a port of the broad legacy MapReady projection/spline stack
-- observed Rust test data has not reproduced the legacy geocode failures
-- passing the resampled raster forward without geocoding is not currently
-  equivalent in Rust, because `asf_export` expects projected georeferencing
-  metadata and `resample` intentionally clears projected georeferencing
-- legacy `.proj` file compatibility is not required for the Rust-only
-  Sentinel browse goal
+- `asf_geocode -p polar-stereographic`
+  - force polar stereographic geocoding
+  - infer hemisphere from Sentinel source geolocation
+  - use a narrow WGS84 polar stereographic implementation suitable for Sentinel
+    browse generation
 
-If high-latitude Sentinel products later show real Rust geocode failures or
-unacceptable UTM browse placement, prefer adding a narrow first-class Rust
-polar stereographic geocode mode over implementing legacy projection-file
-retry parsing.
+- `asf_geocode -p auto`
+  - choose UTM or polar stereographic from source geolocation before geocoding
+  - do not use geocode failure as the projection-selection trigger
+  - initial policy should use polar stereographic for high-latitude scenes and
+    UTM otherwise
+
+The exact automatic latitude threshold should be treated as a browse-production
+policy decision. A practical first default is ±70° because it matches the
+historical high-latitude behavior, but this should be documented as a policy
+threshold rather than a mathematical UTM validity limit. UTM itself is
+conventionally valid approximately from 80°S to 84°N.
+
+Prefer a first-class Rust projection implementation over parsing legacy
+MapReady `.proj` files. Legacy `.proj` file compatibility is not required for
+the Rust-only Sentinel browse goal.
+
+The old legacy behavior of passing a resampled raster forward without
+geocoding should remain out of scope unless a specific production requirement
+appears. In the current Rust workflow, downstream GeoTIFF export expects
+projected georeferencing metadata.
